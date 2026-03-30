@@ -154,3 +154,48 @@ export const BOSSES: Record<number, EnemyDefinition> = {
   2: COPPERHEAD_CASSIDY,
   3: IRON_EYE_ISABELLA,
 };
+
+// ---------------------------------------------------------------------------
+// Act 1 encounter generation
+// ---------------------------------------------------------------------------
+
+/** Spawn counts per enemy type (from SPEC). */
+interface EncounterTemplate {
+  type: string;
+  minCount: number;
+  maxCount: number;
+}
+
+const ACT1_ENCOUNTER_TEMPLATES: EncounterTemplate[] = [
+  { type: 'coyote', minCount: 1, maxCount: 2 },
+  { type: 'rattlesnake', minCount: 1, maxCount: 1 },
+  { type: 'bandit', minCount: 1, maxCount: 2 },
+  { type: 'vulture', minCount: 1, maxCount: 2 },
+];
+
+/** Roll a random Act 1 combat encounter. */
+export function rollAct1Encounter(): EnemyDefinition[] {
+  const template =
+    ACT1_ENCOUNTER_TEMPLATES[
+      Math.floor(Math.random() * ACT1_ENCOUNTER_TEMPLATES.length)
+    ];
+  const count =
+    template.minCount +
+    Math.floor(Math.random() * (template.maxCount - template.minCount + 1));
+  const def = ACT1_ENEMIES[template.type];
+  return Array.from({ length: count }, () => ({ ...def }));
+}
+
+/** Roll an Act 1 elite encounter (slightly tougher, always single enemy). */
+export function rollAct1EliteEncounter(): EnemyDefinition[] {
+  const types = Object.values(ACT1_ENEMIES).filter((e) => e.type !== 'vulture');
+  const base = types[Math.floor(Math.random() * types.length)];
+  return [
+    {
+      ...base,
+      health: Math.round(base.health * 1.5),
+      minDamage: base.minDamage + 2,
+      maxDamage: base.maxDamage + 3,
+    },
+  ];
+}
