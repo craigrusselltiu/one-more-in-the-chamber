@@ -6,6 +6,15 @@ import { Player } from './Player';
 import { Enemy } from './Enemy';
 import { ResourceResolver } from './ResourceResolver';
 import type { ResourceOutput } from './ResourceResolver';
+import { BoardHazardManager } from '../board/BoardHazardManager';
+import { chooseEnemyIntent, executeBoardManipulation } from './EnemyAI';
+import { BossController } from './BossController';
+import {
+  rollEliteModifier,
+  applyEliteModifier,
+  shouldSuppressCascadeDamage,
+} from './EliteModifiers';
+import type { EliteModifierId, EliteModifier } from './EliteModifiers';
 
 export interface CombatConfig {
   enemies: EnemyDefinition[];
@@ -17,6 +26,10 @@ export interface CombatConfig {
   abilityCharge: number;
   swapsPerTurn?: number;
   deadeyeShots?: number;
+  /** Set to true for elite encounters to apply a random board modifier. */
+  isElite?: boolean;
+  /** Set to true for boss encounters to activate phase-based AI. */
+  isBoss?: boolean;
 }
 
 export interface CombatResult {
@@ -48,6 +61,9 @@ export class CombatManager {
   private player: Player;
   private enemies: Enemy[] = [];
   private resolver: ResourceResolver;
+  private hazardManager: BoardHazardManager;
+  private bossController: BossController | null = null;
+  private eliteModifier: EliteModifier | null = null;
   private phase: CombatPhase = 'turn-start';
   private turnNumber = 0;
   private swapsPerTurn: number;
@@ -62,6 +78,7 @@ export class CombatManager {
   constructor(board: Board, config: CombatConfig) {
     this.board = board;
     this.resolver = new ResourceResolver();
+    this.hazardManager = new BoardHazardManager(board);
     this.swapsPerTurn = config.swapsPerTurn ?? 2;
     this.deadeyeMaxShots = config.deadeyeShots ?? 3;
 
@@ -78,6 +95,17 @@ export class CombatManager {
     // Initialize enemies
     for (const def of config.enemies) {
       this.enemies.push(new Enemy(def));
+    }
+
+    // Boss controller for phase-based bosses
+    if (config.isBoss && config.enemies.length > 0) {
+      this.bossController = new BossController(config.enemies[0].type);
+    }
+
+    // Elite modifier: random board modifier at fight start
+    if (config.isElite) {
+      this.eliteModifier = rollEliteModifier();
+      applyEliteModifier(this.eliteModifier, this.hazardManager);
     }
 
     // Set board tile types
@@ -139,6 +167,18 @@ export class CombatManager {
     return alive[this.targetedEnemyIndex] ?? alive[0] ?? null;
   }
 
+  getHazardManager(): BoardHazardManager {
+    return this.hazardManager;
+  }
+
+  getEliteModifier(): EliteModifier | null {
+    return this.eliteModifier;
+  }
+
+  getBossPhase(): number | null {
+    return this.bossController?.getPhase() ?? null;
+  }
+
   // ---------------------------------------------------------------------------
   // Turn Flow
   // ---------------------------------------------------------------------------
@@ -156,9 +196,16 @@ export class CombatManager {
     // Per-turn: +1 ability charge
     this.player.abilityCharge++;
 
-    // Announce enemy intents for this turn
+    // Announce enemy intents for this turn (using type-specific AI)
     for (const enemy of this.aliveEnemies()) {
-      enemy.rollNextIntent();
+      if (this.bossController && this.isBossEnemy(enemy)) {
+        enemy.state.intent = this.bossController.chooseBossIntent(
+          enemy,
+          this.aliveEnemies().length,
+        );
+      } else {
+        enemy.state.intent = chooseEnemyIntent(enemy, this.aliveEnemies().length);
+      }
     }
 
     this.setPhase('consumable-window');
@@ -204,6 +251,11 @@ export class CombatManager {
       EventBus.emit(GameEvent.SWAPS_CHANGE, this.swapsRemaining, this.swapsPerTurn);
       this.setPhase('swap-phase');
       return;
+    }
+
+    // Resolve adjacent hazards freed by these matches
+    for (const match of result.matches) {
+      this.hazardManager.resolveAdjacentHazards(match.tiles);
     }
 
     // Process all matches from this swap (including cascades)
@@ -329,7 +381,7 @@ export class CombatManager {
         break;
       case 'bandage':
         this.player.heal(10);
-        // TODO: cleanse poison tiles on board
+        this.hazardManager.clearAllOfType('poison');
         break;
       case 'barbed_wire':
         this.player.thorns = 1;
@@ -356,13 +408,13 @@ export class CombatManager {
         break;
       }
       case 'skeleton_key':
-        // TODO: unlock all locked tiles on board
+        this.hazardManager.clearAllOfType('lock');
         break;
       case 'tumbleweed':
         this.board.reshuffle();
         break;
       case 'signal_flare':
-        // TODO: reveal all buried tiles
+        this.hazardManager.clearAllOfType('sand');
         break;
       case 'stick_of_tnt':
         // TODO: clear entire row, generate resources
@@ -424,10 +476,14 @@ export class CombatManager {
         this.nextMatchMultiplier = 1.0;
       }
 
+      // Cracked Ground: suppress cascade damage for first 2 turns
+      const eliteId = this.eliteModifier?.id as EliteModifierId | null;
+      const suppressDamage = shouldSuppressCascadeDamage(eliteId, this.turnNumber);
+
       // Apply multiplier to damage/block/gold/healing (not to status effects)
       const scaled: ResourceOutput = {
         ...output,
-        damage: Math.round(output.damage * multiplier),
+        damage: suppressDamage ? 0 : Math.round(output.damage * multiplier),
         block: Math.round(output.block * multiplier),
         gold: Math.round(output.gold * multiplier),
         healing: Math.round(output.healing * multiplier),
@@ -540,7 +596,24 @@ export class CombatManager {
     // Check for deaths from venom
     if (this.isCombatOver()) return;
 
-    // 2. Each alive enemy acts (left to right)
+    // 2. Tick bomb countdowns -- detonations damage the player
+    const bombResult = this.hazardManager.tickBombs();
+    if (bombResult.totalDamage > 0) {
+      this.player.takeDamage(bombResult.totalDamage);
+      EventBus.emit(GameEvent.PLAYER_HP_CHANGE, this.player.health, this.player.maxHealth);
+      if (this.player.isDead()) return;
+    }
+
+    // 3. Boss per-turn effects (passive locks, bombs, etc.)
+    if (this.bossController) {
+      const boss = this.getBossEnemy();
+      if (boss) {
+        this.bossController.checkPhaseTransition(boss, this.hazardManager);
+        this.bossController.executePerTurnEffects(this.hazardManager);
+      }
+    }
+
+    // 4. Each alive enemy acts (left to right)
     for (const enemy of this.aliveEnemies()) {
       const action = enemy.executeIntent();
 
@@ -569,10 +642,9 @@ export class CombatManager {
           this.trySummonEnemy(enemy);
           break;
         case 'board-manipulation':
-          // Board manipulation is a stub for now -- will be wired to hazard system
+          executeBoardManipulation(enemy, enemy.state.intent, this.hazardManager);
           break;
         case 'ability':
-          // Generic ability -- no additional effect beyond what executeIntent does
           break;
       }
 
@@ -582,11 +654,22 @@ export class CombatManager {
 
   /**
    * Try to summon a new enemy. Max 3 on field.
+   * Boss summons use BossController.createBossMinion for SPEC-accurate minions.
    */
   private trySummonEnemy(summoner: Enemy): void {
     if (this.aliveEnemies().length >= 3) return;
 
-    // Summon a weaker version of the summoner's type
+    // Boss summons a specific minion type
+    if (this.bossController && this.isBossEnemy(summoner)) {
+      const minionDef = BossController.createBossMinion(summoner.getDefinition().type);
+      if (minionDef) {
+        this.enemies.push(new Enemy(minionDef));
+        this.emitFullState();
+        return;
+      }
+    }
+
+    // Regular summon: weaker version of the summoner's type
     const def = summoner.getDefinition();
     const minionDef: EnemyDefinition = {
       type: def.type,
@@ -640,6 +723,17 @@ export class CombatManager {
   private getTargetedAliveEnemy(): Enemy | null {
     const alive = this.aliveEnemies();
     return alive[this.targetedEnemyIndex] ?? alive[0] ?? null;
+  }
+
+  private isBossEnemy(enemy: Enemy): boolean {
+    // The first enemy in the list is the boss when bossController is active
+    return this.enemies.indexOf(enemy) === 0;
+  }
+
+  private getBossEnemy(): Enemy | null {
+    if (!this.bossController) return null;
+    const boss = this.enemies[0];
+    return boss && !boss.state.isDead ? boss : null;
   }
 
   private setPhase(phase: CombatPhase): void {

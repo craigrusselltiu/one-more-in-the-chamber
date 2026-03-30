@@ -1,0 +1,251 @@
+import type { Board } from './Board';
+import type { GridPosition } from '../../types/combat';
+import type { TileHazardState } from '../../types/tiles';
+
+const BOARD_SIZE = 8;
+
+export interface HazardPlacement {
+  position: GridPosition;
+  hazard: TileHazardState;
+}
+
+/**
+ * BoardHazardManager: places, ticks, and removes hazards on the board.
+ *
+ * Hazard types (from SPEC):
+ *   Lock     -- can't swap. Match adjacent to free.
+ *   Poison   -- hurts player or debuffs on match.
+ *   Bomb     -- countdown timer. Detonates (damages player) if not matched. Matching defuses.
+ *   Sand     -- hidden tile. Match adjacent to reveal.
+ *   Barricade -- blocks cascading through. Match adjacent to break.
+ */
+export class BoardHazardManager {
+  private board: Board;
+
+  constructor(board: Board) {
+    this.board = board;
+  }
+
+  // ---------------------------------------------------------------------------
+  // Placement
+  // ---------------------------------------------------------------------------
+
+  /** Lock N random non-hazarded tiles. */
+  placeRandomLocks(count: number): HazardPlacement[] {
+    return this.placeRandomHazard({ type: 'lock' }, count);
+  }
+
+  /** Poison N random non-hazarded tiles. */
+  placeRandomPoison(count: number): HazardPlacement[] {
+    return this.placeRandomHazard({ type: 'poison' }, count);
+  }
+
+  /** Place a bomb on N random non-hazarded tiles with a countdown. */
+  placeRandomBombs(count: number, countdown = 3): HazardPlacement[] {
+    return this.placeRandomHazard({ type: 'bomb', countdown }, count);
+  }
+
+  /** Bury (sand) N random non-hazarded tiles. */
+  placeRandomSand(count: number): HazardPlacement[] {
+    return this.placeRandomHazard({ type: 'sand' }, count);
+  }
+
+  /** Place barricades on an entire row. */
+  placeBarricadeRow(row: number): HazardPlacement[] {
+    const placements: HazardPlacement[] = [];
+    const grid = this.board.getGrid();
+    for (let col = 0; col < BOARD_SIZE; col++) {
+      const tile = grid[row]?.[col];
+      if (tile && !tile.hazard) {
+        tile.hazard = { type: 'barricade' };
+        placements.push({ position: { row, col }, hazard: { type: 'barricade' } });
+      }
+    }
+    return placements;
+  }
+
+  /** Place barricades on an entire column. */
+  placeBarricadeColumn(col: number): HazardPlacement[] {
+    const placements: HazardPlacement[] = [];
+    const grid = this.board.getGrid();
+    for (let row = 0; row < BOARD_SIZE; row++) {
+      const tile = grid[row]?.[col];
+      if (tile && !tile.hazard) {
+        tile.hazard = { type: 'barricade' };
+        placements.push({ position: { row, col }, hazard: { type: 'barricade' } });
+      }
+    }
+    return placements;
+  }
+
+  /** Lock the bottom row. */
+  lockBottomRow(): HazardPlacement[] {
+    const placements: HazardPlacement[] = [];
+    const grid = this.board.getGrid();
+    const row = BOARD_SIZE - 1;
+    for (let col = 0; col < BOARD_SIZE; col++) {
+      const tile = grid[row]?.[col];
+      if (tile && !tile.hazard) {
+        tile.hazard = { type: 'lock' };
+        placements.push({ position: { row, col }, hazard: { type: 'lock' } });
+      }
+    }
+    return placements;
+  }
+
+  /** Lock an entire row. */
+  lockRow(row: number): HazardPlacement[] {
+    const placements: HazardPlacement[] = [];
+    const grid = this.board.getGrid();
+    for (let col = 0; col < BOARD_SIZE; col++) {
+      const tile = grid[row]?.[col];
+      if (tile && !tile.hazard) {
+        tile.hazard = { type: 'lock' };
+        placements.push({ position: { row, col }, hazard: { type: 'lock' } });
+      }
+    }
+    return placements;
+  }
+
+  // ---------------------------------------------------------------------------
+  // Bomb ticking
+  // ---------------------------------------------------------------------------
+
+  /**
+   * Tick all bomb countdowns down by 1. Returns positions of detonated bombs
+   * (countdown reached 0) and the damage they deal.
+   */
+  tickBombs(): { detonations: GridPosition[]; totalDamage: number } {
+    const grid = this.board.getGrid();
+    const detonations: GridPosition[] = [];
+    const BOMB_DAMAGE = 10;
+
+    for (let row = 0; row < BOARD_SIZE; row++) {
+      for (let col = 0; col < BOARD_SIZE; col++) {
+        const tile = grid[row][col];
+        if (!tile || !tile.hazard || tile.hazard.type !== 'bomb') continue;
+
+        tile.hazard.countdown--;
+        if (tile.hazard.countdown <= 0) {
+          detonations.push({ row, col });
+          tile.hazard = null;
+        }
+      }
+    }
+
+    return { detonations, totalDamage: detonations.length * BOMB_DAMAGE };
+  }
+
+  // ---------------------------------------------------------------------------
+  // Hazard clearing (called when adjacent matches occur)
+  // ---------------------------------------------------------------------------
+
+  /**
+   * After a match resolves, check if any hazarded tiles are adjacent to
+   * matched tiles and should be freed. Call this after each match step.
+   */
+  resolveAdjacentHazards(matchedPositions: GridPosition[]): GridPosition[] {
+    const grid = this.board.getGrid();
+    const freed: GridPosition[] = [];
+    const seen = new Set<string>();
+
+    for (const pos of matchedPositions) {
+      const neighbors = this.getNeighbors(pos);
+      for (const n of neighbors) {
+        const key = `${n.row},${n.col}`;
+        if (seen.has(key)) continue;
+        seen.add(key);
+
+        const tile = grid[n.row]?.[n.col];
+        if (!tile || !tile.hazard) continue;
+
+        const hazType = tile.hazard.type;
+        // Lock: match adjacent to free
+        // Sand: match adjacent to reveal
+        // Barricade: match adjacent to break
+        // Bomb: matching the bomb tile itself defuses; adjacent matches don't defuse
+        if (hazType === 'lock' || hazType === 'sand' || hazType === 'barricade') {
+          tile.hazard = null;
+          freed.push(n);
+        }
+      }
+    }
+
+    return freed;
+  }
+
+  /** Remove all hazards of a specific type from the board. */
+  clearAllOfType(type: TileHazardState['type']): GridPosition[] {
+    const grid = this.board.getGrid();
+    const cleared: GridPosition[] = [];
+
+    for (let row = 0; row < BOARD_SIZE; row++) {
+      for (let col = 0; col < BOARD_SIZE; col++) {
+        const tile = grid[row][col];
+        if (tile?.hazard?.type === type) {
+          tile.hazard = null;
+          cleared.push({ row, col });
+        }
+      }
+    }
+
+    return cleared;
+  }
+
+  /** Count tiles with a specific hazard type. */
+  countHazards(type: TileHazardState['type']): number {
+    const grid = this.board.getGrid();
+    let count = 0;
+    for (let row = 0; row < BOARD_SIZE; row++) {
+      for (let col = 0; col < BOARD_SIZE; col++) {
+        if (grid[row][col]?.hazard?.type === type) count++;
+      }
+    }
+    return count;
+  }
+
+  // ---------------------------------------------------------------------------
+  // Helpers
+  // ---------------------------------------------------------------------------
+
+  private placeRandomHazard(hazard: TileHazardState, count: number): HazardPlacement[] {
+    const candidates = this.getFreeTiles();
+    const placements: HazardPlacement[] = [];
+
+    for (let i = 0; i < count && candidates.length > 0; i++) {
+      const idx = Math.floor(Math.random() * candidates.length);
+      const pos = candidates.splice(idx, 1)[0];
+      const tile = this.board.getGrid()[pos.row][pos.col];
+      if (tile) {
+        tile.hazard = { ...hazard };
+        placements.push({ position: pos, hazard: { ...hazard } });
+      }
+    }
+
+    return placements;
+  }
+
+  private getFreeTiles(): GridPosition[] {
+    const grid = this.board.getGrid();
+    const free: GridPosition[] = [];
+    for (let row = 0; row < BOARD_SIZE; row++) {
+      for (let col = 0; col < BOARD_SIZE; col++) {
+        const tile = grid[row][col];
+        if (tile && !tile.hazard && !tile.isExplosive && !tile.isShowdown) {
+          free.push({ row, col });
+        }
+      }
+    }
+    return free;
+  }
+
+  private getNeighbors(pos: GridPosition): GridPosition[] {
+    const neighbors: GridPosition[] = [];
+    const { row, col } = pos;
+    if (row > 0) neighbors.push({ row: row - 1, col });
+    if (row < BOARD_SIZE - 1) neighbors.push({ row: row + 1, col });
+    if (col > 0) neighbors.push({ row, col: col - 1 });
+    if (col < BOARD_SIZE - 1) neighbors.push({ row, col: col + 1 });
+    return neighbors;
+  }
+}
