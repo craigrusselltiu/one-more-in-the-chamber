@@ -1,19 +1,20 @@
 /**
- * Supabase client initialization.
- * TODO: wire up with actual Supabase URL and anon key.
+ * Supabase client singleton.
+ * Lazily initialized -- returns null when env vars are missing (offline mode).
  */
 
-export interface SupabaseConfig {
-  url: string;
-  anonKey: string;
-}
+import { createClient, SupabaseClient } from '@supabase/supabase-js';
 
-// Placeholder -- replace with real values at deploy time
-const config: SupabaseConfig = {
-  url: import.meta.env.VITE_SUPABASE_URL ?? '',
-  anonKey: import.meta.env.VITE_SUPABASE_ANON_KEY ?? '',
-};
+let client: SupabaseClient | null = null;
 
-export function getSupabaseConfig(): SupabaseConfig {
-  return config;
+export function getSupabase(): SupabaseClient | null {
+  if (client) return client;
+
+  const url = import.meta.env.VITE_SUPABASE_URL;
+  const key = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+  if (!url || !key) return null;
+
+  client = createClient(url, key);
+  return client;
 }
