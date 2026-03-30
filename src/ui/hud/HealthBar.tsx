@@ -3,26 +3,47 @@ import { memo } from 'react';
 interface HealthBarProps {
   current: number;
   max: number;
-  label: string;
+  label?: string;
+  /** Width in pixels at internal resolution. Default 64. */
+  width?: number;
+  /** Color override. Default auto (green/yellow/red by %). */
+  color?: string;
 }
 
 /**
- * HealthBar: colored rect (green > yellow > red gradient by %).
- * HP numbers overlaid.
+ * HealthBar: colored rect (green > yellow > red by %).
+ * HP numbers overlaid. Used for both player and enemies.
  */
-export const HealthBar = memo(function HealthBar({ current, max, label }: HealthBarProps) {
-  const pct = max > 0 ? current / max : 0;
-  const color = pct > 0.5 ? '#40D840' : pct > 0.25 ? '#D4A030' : '#D04040';
+export const HealthBar = memo(function HealthBar({
+  current,
+  max,
+  label,
+  width = 64,
+  color,
+}: HealthBarProps) {
+  const pct = max > 0 ? Math.max(0, Math.min(1, current / max)) : 0;
+  const barColor =
+    color ?? (pct > 0.5 ? '#40D840' : pct > 0.25 ? '#D4A030' : '#D04040');
 
   return (
-    <div className="mb-1">
-      <div className="text-stone-400 text-[8px] mb-0.5">{label}</div>
-      <div className="relative w-16 h-2 bg-stone-800 border border-stone-600">
+    <div className="mb-0.5">
+      {label && (
+        <div className="text-stone-400 text-[7px] mb-px leading-none">
+          {label}
+        </div>
+      )}
+      <div
+        className="relative bg-stone-800 border border-stone-600"
+        style={{ width, height: 8 }}
+      >
         <div
-          className="absolute inset-0 h-full"
-          style={{ width: `${pct * 100}%`, backgroundColor: color }}
+          className="absolute inset-y-0 left-0"
+          style={{
+            width: `${pct * 100}%`,
+            backgroundColor: barColor,
+          }}
         />
-        <span className="absolute inset-0 flex items-center justify-center text-[7px] text-white">
+        <span className="absolute inset-0 flex items-center justify-center text-[7px] text-white leading-none font-bold">
           {current}/{max}
         </span>
       </div>

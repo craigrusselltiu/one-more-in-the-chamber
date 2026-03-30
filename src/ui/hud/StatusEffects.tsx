@@ -16,18 +16,24 @@ const STATUS_COLORS: Record<string, string> = {
 };
 
 const STATUS_LABELS: Record<string, string> = {
-  block: 'B',
-  dodge: 'D',
-  ace: 'A',
-  crit: 'C',
-  thorns: 'T',
-  venom: 'V',
-  vulnerable: 'Vu',
+  block: 'BLK',
+  dodge: 'DDG',
+  ace: 'ACE',
+  crit: 'CRT',
+  thorns: 'THN',
+  venom: 'VNM',
+  vulnerable: 'VUL',
 };
 
+function formatValue(type: string, value: number): string {
+  if (type === 'dodge' || type === 'crit') return `${value}%`;
+  if (type === 'ace') return `${value.toFixed(1)}x`;
+  return String(value);
+}
+
 /**
- * StatusEffects: horizontal row of 14x14 colored squares with labels.
- * Spaced out under health bar.
+ * StatusEffects: horizontal row of small icons with value labels.
+ * Spaced out under health bar per SPEC.
  */
 export const StatusEffects = memo(function StatusEffects({ effects }: StatusEffectsProps) {
   if (effects.length === 0) return null;
@@ -36,17 +42,23 @@ export const StatusEffects = memo(function StatusEffects({ effects }: StatusEffe
     <div className="flex gap-0.5 mt-0.5">
       {effects.map((effect, i) => (
         <div
-          key={i}
-          className="flex items-center justify-center text-[6px] text-white font-bold border"
+          key={`${effect.type}-${i}`}
+          className="flex flex-col items-center justify-center border"
           style={{
-            width: 14,
+            minWidth: 18,
             height: 14,
             backgroundColor: STATUS_COLORS[effect.type] ?? '#808080',
             borderColor: STATUS_COLORS[effect.type] ?? '#808080',
+            padding: '0 1px',
           }}
-          title={`${effect.type}: ${effect.value}`}
+          title={`${STATUS_LABELS[effect.type]}: ${formatValue(effect.type, effect.value)}`}
         >
-          {STATUS_LABELS[effect.type] ?? '?'}
+          <span className="text-[5px] text-white/80 leading-none">
+            {STATUS_LABELS[effect.type] ?? '?'}
+          </span>
+          <span className="text-[6px] text-white font-bold leading-none">
+            {formatValue(effect.type, effect.value)}
+          </span>
         </div>
       ))}
     </div>

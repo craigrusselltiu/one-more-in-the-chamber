@@ -1,0 +1,134 @@
+import { create } from 'zustand';
+import type { CombatState, EnemyState, PlayerStatusEffect, EnemyStatusEffect, CombatPhase } from '../types/combat';
+
+/**
+ * Combat store: reactive state for React HUD components.
+ * Updated by EventBus listeners bridging Phaser -> React.
+ */
+interface CombatStore {
+  // Player
+  playerHealth: number;
+  playerMaxHealth: number;
+  playerBlock: number;
+  dodgeChance: number;
+  aceMultiplier: number;
+  critChance: number;
+  thorns: number;
+
+  // Ability
+  abilityCharge: number;
+  abilityThreshold: number;
+  isDeadeyeActive: boolean;
+  deadeyeShotsRemaining: number;
+
+  // Resources
+  gold: number;
+  swapsRemaining: number;
+  swapsPerTurn: number;
+
+  // Enemies
+  enemies: EnemyState[];
+  targetedEnemyIndex: number;
+
+  // Combat flow
+  phase: CombatPhase;
+  turnNumber: number;
+  comboCount: number;
+  currentAct: number;
+
+  // Actions
+  syncFromCombatState: (state: CombatState) => void;
+  setPlayerHealth: (current: number, max: number) => void;
+  setGold: (gold: number) => void;
+  setSwaps: (remaining: number, total: number) => void;
+  setAbilityCharge: (charge: number, threshold: number) => void;
+  setTargetedEnemy: (index: number) => void;
+  setCombo: (combo: number) => void;
+  setAct: (act: number) => void;
+  reset: () => void;
+}
+
+const initialState = {
+  playerHealth: 100,
+  playerMaxHealth: 100,
+  playerBlock: 0,
+  dodgeChance: 0,
+  aceMultiplier: 1.0,
+  critChance: 0,
+  thorns: 0,
+  abilityCharge: 0,
+  abilityThreshold: 10,
+  isDeadeyeActive: false,
+  deadeyeShotsRemaining: 0,
+  gold: 0,
+  swapsRemaining: 2,
+  swapsPerTurn: 2,
+  enemies: [] as EnemyState[],
+  targetedEnemyIndex: 0,
+  phase: 'turn-start' as CombatPhase,
+  turnNumber: 0,
+  comboCount: 0,
+  currentAct: 1,
+};
+
+export const useCombatStore = create<CombatStore>((set) => ({
+  ...initialState,
+
+  syncFromCombatState: (state: CombatState) =>
+    set({
+      playerBlock: state.playerBlock,
+      dodgeChance: state.dodgeChance,
+      aceMultiplier: state.aceMultiplier,
+      critChance: state.critChance,
+      thorns: state.thorns,
+      abilityCharge: state.abilityCharge,
+      abilityThreshold: state.abilityThreshold,
+      isDeadeyeActive: state.isDeadeyeActive,
+      deadeyeShotsRemaining: state.deadeyeShotsRemaining,
+      swapsRemaining: state.swapsRemaining,
+      swapsPerTurn: state.swapsPerTurn,
+      enemies: state.enemies,
+      targetedEnemyIndex: state.targetedEnemyIndex,
+      phase: state.phase,
+      turnNumber: state.turnNumber,
+    }),
+
+  setPlayerHealth: (current, max) =>
+    set({ playerHealth: current, playerMaxHealth: max }),
+
+  setGold: (gold) => set({ gold }),
+
+  setSwaps: (remaining, total) =>
+    set({ swapsRemaining: remaining, swapsPerTurn: total }),
+
+  setAbilityCharge: (charge, threshold) =>
+    set({ abilityCharge: charge, abilityThreshold: threshold }),
+
+  setTargetedEnemy: (index) => set({ targetedEnemyIndex: index }),
+
+  setCombo: (combo) => set({ comboCount: combo }),
+
+  setAct: (act) => set({ currentAct: act }),
+
+  reset: () => set(initialState),
+}));
+
+/** Derive player status effects from combat store state. */
+export function getPlayerStatusEffects(store: CombatStore): PlayerStatusEffect[] {
+  const effects: PlayerStatusEffect[] = [];
+  if (store.playerBlock > 0) effects.push({ type: 'block', value: store.playerBlock });
+  if (store.dodgeChance > 0) effects.push({ type: 'dodge', value: store.dodgeChance });
+  if (store.aceMultiplier > 1.0) effects.push({ type: 'ace', value: store.aceMultiplier });
+  if (store.critChance > 0) effects.push({ type: 'crit', value: store.critChance });
+  if (store.thorns > 0) effects.push({ type: 'thorns', value: store.thorns });
+  return effects;
+}
+
+/** Derive enemy status effects from an enemy state. */
+export function getEnemyStatusEffects(enemy: EnemyState): EnemyStatusEffect[] {
+  const effects: EnemyStatusEffect[] = [];
+  if (enemy.block > 0) effects.push({ type: 'block', value: enemy.block });
+  if (enemy.venomStacks > 0) effects.push({ type: 'venom', value: enemy.venomStacks });
+  if (enemy.vulnerable > 0) effects.push({ type: 'vulnerable', value: enemy.vulnerable });
+  return effects;
+}
