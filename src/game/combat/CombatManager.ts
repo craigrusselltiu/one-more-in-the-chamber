@@ -313,6 +313,7 @@ export class CombatManager {
   /**
    * Fire a Deadeye shot at a specific tile position.
    * Destroys the tile and generates its resource.
+   * Deadeye + Showdown: shooting a showdown tile clears all tiles of a random type.
    */
   deadeyeShoot(row: number, col: number): void {
     if (!this.isDeadeyeActive || this.deadeyeShotsRemaining <= 0) return;
@@ -321,24 +322,36 @@ export class CombatManager {
     if (!tile) return;
 
     const type = tile.type;
-    const upgradeLevel = this.player.getUpgradeLevel(type);
 
-    // Handle showdown tile: clears all tiles of a random type
+    // Handle showdown tile: clears all tiles of a random type on the board
     if (tile.isShowdown) {
+      // Destroy the showdown tile first
+      const grid = this.board.getGrid();
+      grid[row][col]?.destroy();
+      grid[row][col] = null;
+
+      // Pick a random tile type and clear all of them
       const types = this.board.getActiveTileTypes();
       const randomType = types[Math.floor(Math.random() * types.length)];
-      const output = this.resolver.resolveSingle(randomType, upgradeLevel);
-      this.applyResourceOutput(output);
+      const upgradeLevel = this.player.getUpgradeLevel(randomType);
+
+      const count = this.board.clearAllOfType(randomType);
+      // Generate resources for each cleared tile (1.0x per tile)
+      if (count > 0) {
+        const output = this.resolver.resolveCount(randomType, count, upgradeLevel);
+        this.applyResourceOutput(output);
+      }
     } else {
       // Normal tile: destroy and generate resource
+      const upgradeLevel = this.player.getUpgradeLevel(type);
       const output = this.resolver.resolveSingle(type, upgradeLevel);
       this.applyResourceOutput(output);
-    }
 
-    // Destroy the tile on the board (gravity + cascade handled after all shots)
-    const grid = this.board.getGrid();
-    grid[row][col]?.destroy();
-    grid[row][col] = null;
+      // Destroy the tile on the board
+      const grid = this.board.getGrid();
+      grid[row][col]?.destroy();
+      grid[row][col] = null;
+    }
 
     this.deadeyeShotsRemaining--;
 
@@ -353,7 +366,8 @@ export class CombatManager {
     this.isDeadeyeActive = false;
     this.deadeyeShotsRemaining = 0;
 
-    // Resolve gravity + cascades after all shots
+    // Apply gravity + fill after all shots, then resolve cascades
+    this.board.applyGravityAndFill();
     const cascadeMatches = await this.board.resolveMatches();
     this.processMatches(cascadeMatches);
 

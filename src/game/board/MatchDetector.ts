@@ -116,6 +116,7 @@ export class MatchDetector {
             isExplosive: runLength === 4,
             isShowdown: runLength >= 5,
             isCross: false,
+            crossIntersections: [],
             matchBonus: runLength === 4 ? 1.5 : runLength >= 5 ? 2.0 : 1.0,
           });
         }
@@ -189,6 +190,22 @@ export class MatchDetector {
         const mergedTiles = [...allTiles.values()];
         const totalLength = mergedTiles.length;
 
+        // Find intersection points: positions that appear in 2+ original matches
+        const posCount = new Map<string, number>();
+        for (const idx of group) {
+          for (const tile of matches[idx].tiles) {
+            const key = posKey(tile);
+            posCount.set(key, (posCount.get(key) ?? 0) + 1);
+          }
+        }
+        const intersections: GridPosition[] = [];
+        for (const [key, count] of posCount) {
+          if (count > 1) {
+            const parts = key.split(',');
+            intersections.push({ row: Number(parts[0]), col: Number(parts[1]) });
+          }
+        }
+
         result.push({
           tiles: mergedTiles,
           tileType: matches[i].tileType,
@@ -196,6 +213,7 @@ export class MatchDetector {
           isExplosive: false,
           isShowdown: false,
           isCross: true,
+          crossIntersections: intersections,
           matchBonus: 1.0, // Cross clear: 1.0x per tile
         });
       }
