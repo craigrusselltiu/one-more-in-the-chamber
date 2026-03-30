@@ -86,3 +86,13 @@ export interface BoardHazard {
   type: 'lock' | 'poison' | 'bomb' | 'sand' | 'barricade';
   countdown?: number;
 }
+
+/** Static definition for an enemy type. */
+export interface EnemyDefinition {
+  type: string;
+  name: string;
+  health: number;
+  minDamage: number;
+  maxDamage: number;
+  abilities: string[];
+}
