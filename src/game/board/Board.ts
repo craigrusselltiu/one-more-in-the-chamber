@@ -263,7 +263,8 @@ export class Board {
       isExplosive: false,
       isShowdown: true,
       isCross: false,
-      matchBonus: 2.0,
+      crossIntersections: [],
+      matchBonus: 1.0, // Each cleared tile generates 1.0x resource
     };
 
     // Apply gravity and fill
@@ -519,6 +520,34 @@ export class Board {
 
   getActiveTileTypes(): TileType[] {
     return [...this.activeTileTypes];
+  }
+
+  /**
+   * Clear all tiles of a given type from the board.
+   * Returns the number of tiles cleared. Used by Deadeye + Showdown.
+   */
+  clearAllOfType(type: TileType): number {
+    let count = 0;
+    for (let row = 0; row < BOARD_SIZE; row++) {
+      for (let col = 0; col < BOARD_SIZE; col++) {
+        const tile = this.grid[row][col];
+        if (tile && tile.type === type) {
+          tile.destroy();
+          this.grid[row][col] = null;
+          count++;
+        }
+      }
+    }
+    return count;
+  }
+
+  /**
+   * Apply gravity and fill empty cells. Used after Deadeye
+   * destroys tiles, before cascade resolution.
+   */
+  applyGravityAndFill(): void {
+    this.cascadeResolver.applyGravity(this);
+    this.fillEmptyTiles();
   }
 
   setInputEnabled(enabled: boolean): void {

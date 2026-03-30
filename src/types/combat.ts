@@ -73,6 +73,8 @@ export interface MatchResult {
   isExplosive: boolean;
   isShowdown: boolean;
   isCross: boolean;
+  /** Intersection points for cross clears (L/T/+ patterns). */
+  crossIntersections: GridPosition[];
   matchBonus: number;
 }
 

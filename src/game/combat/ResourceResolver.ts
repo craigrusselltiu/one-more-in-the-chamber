@@ -40,6 +40,15 @@ export class ResourceResolver {
     return this.computeOutput(type, perTile, 1, 1.0);
   }
 
+  /** Resolve resources for multiple tiles of the same type at 1.0x each. */
+  resolveCount(type: TileType, count: number, upgradeLevel: number): ResourceOutput {
+    const def = TILE_DEFINITIONS[type];
+    if (!def) return this.emptyOutput();
+
+    const perTile = def.baseValue + upgradeLevel * def.upgradeValue;
+    return this.computeOutput(type, perTile, count, 1.0);
+  }
+
   private computeOutput(
     type: TileType,
     perTile: number,
