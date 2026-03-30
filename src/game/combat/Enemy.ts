@@ -1,13 +1,6 @@
-import type { EnemyState, EnemyIntent } from '../../types/combat';
+import type { EnemyState, EnemyIntent, EnemyDefinition } from '../../types/combat';
 
-export interface EnemyDefinition {
-  type: string;
-  name: string;
-  health: number;
-  minDamage: number;
-  maxDamage: number;
-  abilities: string[];
-}
+export type { EnemyDefinition };
 
 /**
  * Enemy: state + AI intent selection.

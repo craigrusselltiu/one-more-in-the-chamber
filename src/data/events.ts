@@ -110,4 +110,21 @@ export const EVENTS: EventDefinition[] = [
       },
     ],
   },
+  {
+    id: 'dynamite_stash',
+    title: 'The Dynamite Stash',
+    flavourText: 'Crate of unstable dynamite.',
+    choices: [
+      {
+        label: 'Take carefully',
+        description: '+2 Stick of TNT.',
+        effect: 'gain_tnt',
+      },
+      {
+        label: 'Blow it up',
+        description: 'Skip next node, -15 HP.',
+        effect: 'skip_node_lose_hp',
+      },
+    ],
+  },
 ];
