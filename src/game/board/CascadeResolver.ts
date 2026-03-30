@@ -13,8 +13,9 @@ export class CascadeResolver {
     while (matches.length > 0) {
       allMatches.push(...matches);
       this.clearMatches(board, matches);
+      this.spawnSpecials(board, matches);
       this.applyGravity(board);
-      this.fillEmpty(board);
+      board.fillEmptyTiles();
       matches = board.findMatches();
     }
 
@@ -34,7 +35,27 @@ export class CascadeResolver {
     }
   }
 
-  private applyGravity(board: Board): void {
+  /**
+   * Spawn explosive/showdown tiles after 4-match or 5-match.
+   * Places the special tile at the center of the cleared match area.
+   */
+  private spawnSpecials(board: Board, matches: MatchResult[]): void {
+    for (const match of matches) {
+      if (match.isCross) continue; // Cross clears don't spawn specials
+
+      if (match.isShowdown && match.tiles.length > 0) {
+        // 5-match: spawn showdown tile at midpoint
+        const mid = match.tiles[Math.floor(match.tiles.length / 2)];
+        board.spawnSpecialTile(mid.row, mid.col, match.tileType, 'showdown');
+      } else if (match.isExplosive && match.tiles.length > 0) {
+        // 4-match: spawn explosive tile at midpoint
+        const mid = match.tiles[Math.floor(match.tiles.length / 2)];
+        board.spawnSpecialTile(mid.row, mid.col, match.tileType, 'explosive');
+      }
+    }
+  }
+
+  applyGravity(board: Board): void {
     const grid = board.getGrid();
     const size = board.getBoardSize();
 
@@ -48,25 +69,9 @@ export class CascadeResolver {
             const tile = grid[writeRow][col]!;
             tile.row = writeRow;
             tile.col = col;
-            const origin = board.getOrigin();
-            tile.setPosition(origin.x + col * 32, origin.y + writeRow * 32);
+            board.updateTilePosition(tile);
           }
           writeRow--;
-        }
-      }
-    }
-  }
-
-  private fillEmpty(board: Board): void {
-    const grid = board.getGrid();
-    const size = board.getBoardSize();
-
-    for (let col = 0; col < size; col++) {
-      for (let row = 0; row < size; row++) {
-        if (grid[row][col] === null) {
-          // Tile creation requires a Phaser scene reference.
-          // This is wired through Board.fillEmptyTiles() in the full implementation.
-          // For now, leave empty cells as null -- Board handles fill after cascade.
         }
       }
     }
