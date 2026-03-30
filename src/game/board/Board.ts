@@ -530,6 +530,21 @@ export class Board {
     return this.selectedTile ? { ...this.selectedTile } : null;
   }
 
+  /**
+   * Clear all hazards of a given type from the board.
+   * Used by consumables (Skeleton Key, Bandage, Signal Flare).
+   */
+  clearHazardsByType(hazardType: 'lock' | 'poison' | 'bomb' | 'sand' | 'barricade'): void {
+    for (let row = 0; row < BOARD_SIZE; row++) {
+      for (let col = 0; col < BOARD_SIZE; col++) {
+        const tile = this.grid[row][col];
+        if (tile && tile.hazard?.type === hazardType) {
+          tile.hazard = null;
+        }
+      }
+    }
+  }
+
   update(): void {
     // Per-frame updates (animations, etc.)
   }

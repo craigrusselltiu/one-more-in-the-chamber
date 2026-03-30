@@ -1,0 +1,268 @@
+import type { ArtifactInstance } from '../../types/game';
+import type { MatchResult } from '../../types/combat';
+import type { ResourceOutput } from './ResourceResolver';
+import type { Player } from './Player';
+import type { Enemy } from './Enemy';
+
+/**
+ * ArtifactSystem: applies individual artifact effects at combat hook points.
+ *
+ * Each artifact's runtime behavior is implemented here.
+ * Artifacts are found at elite combat, shops, treasure nodes, and events.
+ * They cannot be discarded or sold.
+ */
+export class ArtifactSystem {
+  private artifactIds: Set<string>;
+
+  /** Horseshoe Charm: first match of each fight gets 2x resources. */
+  private firstMatchThisFight = true;
+  /** Quickdraw Holster: tracks whether this is the first swap of the turn. */
+  private isFirstSwapOfTurn = true;
+  /** Sharpshooter's Eye: bonus crit from swaps this turn. */
+  private swapCritBonus = 0;
+  /** Worn Lasso: once/fight non-adjacent swap used. */
+  private lassoUsedThisFight = false;
+
+  constructor(artifacts: ArtifactInstance[]) {
+    this.artifactIds = new Set(artifacts.map((a) => a.id));
+  }
+
+  has(artifactId: string): boolean {
+    return this.artifactIds.has(artifactId);
+  }
+
+  // ---------------------------------------------------------------------------
+  // Fight Start
+  // ---------------------------------------------------------------------------
+
+  onFightStart(player: Player): void {
+    this.firstMatchThisFight = true;
+    this.lassoUsedThisFight = false;
+    this.swapCritBonus = 0;
+
+    // Horseshoe Charm: +5 max HP (applied once when acquired, but we
+    // ensure it's reflected at fight start)
+    if (this.has('horseshoe_charm')) {
+      if (player.maxHealth === 100) {
+        // Only bump once -- check if already bumped
+        player.maxHealth += 5;
+        player.health = Math.min(player.health + 5, player.maxHealth);
+      }
+    }
+
+    // Lucky Bullet: +10% crit chance at fight start
+    if (this.has('lucky_bullet')) {
+      player.critChance += 10;
+    }
+
+    // Fully Loaded: Deadeye 3 shots -> 6
+    if (this.has('fully_loaded')) {
+      player.deadeyeShots = 6;
+    }
+  }
+
+  /** Get number of Deadeye shots (3 default, 6 with Fully Loaded). */
+  getDeadeyeShots(): number {
+    return this.has('fully_loaded') ? 6 : 3;
+  }
+
+  // ---------------------------------------------------------------------------
+  // Turn Start
+  // ---------------------------------------------------------------------------
+
+  onTurnStart(player: Player): void {
+    this.isFirstSwapOfTurn = true;
+    this.swapCritBonus = 0;
+
+    // Stolen Badge: +2 block/turn
+    if (this.has('stolen_badge')) {
+      player.addBlock(2);
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // Swap Hook
+  // ---------------------------------------------------------------------------
+
+  /** Called after each swap. Returns whether swaps should be refunded (Quickdraw kill). */
+  onSwapPerformed(enemyKilledThisSwap: boolean): { refundSwaps: boolean } {
+    const isFirst = this.isFirstSwapOfTurn;
+    this.isFirstSwapOfTurn = false;
+
+    // Sharpshooter's Eye: +5% crit per swap used this turn
+    if (this.has('sharpshooters_eye')) {
+      this.swapCritBonus += 5;
+    }
+
+    // Quickdraw Holster: first swap/turn, kill = refund swaps
+    if (this.has('quickdraw_holster') && isFirst && enemyKilledThisSwap) {
+      return { refundSwaps: true };
+    }
+
+    return { refundSwaps: false };
+  }
+
+  getSwapCritBonus(): number {
+    return this.swapCritBonus;
+  }
+
+  // ---------------------------------------------------------------------------
+  // Match Modification
+  // ---------------------------------------------------------------------------
+
+  /**
+   * Modify resource output based on artifact effects.
+   * Called after trait modifications.
+   */
+  modifyMatchOutput(
+    match: MatchResult,
+    output: ResourceOutput,
+    _player: Player,
+    targetEnemy: Enemy | null,
+    _enemies: Enemy[],
+  ): ResourceOutput {
+    const modified = { ...output };
+
+    // Horseshoe Charm: first match/fight gets 2x resources
+    if (this.has('horseshoe_charm') && this.firstMatchThisFight) {
+      this.firstMatchThisFight = false;
+      modified.damage *= 2;
+      modified.block *= 2;
+      modified.gold *= 2;
+      modified.healing *= 2;
+    }
+
+    // Gold Tooth: Bullet matches 15% chance for 1 gold
+    if (this.has('gold_tooth') && match.tileType === 'bullet') {
+      if (Math.random() < 0.15) {
+        modified.gold += 1;
+      }
+    }
+
+    // Bandit's Bandana: 4+ matches 25% chance for 1 gold
+    if (this.has('bandits_bandana') && match.length >= 4) {
+      if (Math.random() < 0.25) {
+        modified.gold += 1;
+      }
+    }
+
+    // Rusty Deputy Badge: +3 block per iron match
+    if (this.has('rusty_deputy_badge') && match.tileType === 'iron') {
+      modified.block += 3;
+    }
+
+    // Twin Revolvers: Bullets hit 2x at 60% each (net 120%)
+    if (this.has('twin_revolvers') && match.tileType === 'bullet') {
+      // Instead of 100% once, we do 60% + 60% = 120% average
+      modified.damage = Math.round(modified.damage * 1.2);
+    }
+
+    // Bounty Board: +15% damage vs enemies with board abilities
+    if (this.has('bounty_board') && targetEnemy) {
+      const def = targetEnemy.getDefinition();
+      const hasBoardAbility = def.abilities.some((a) =>
+        ['poison', 'lock', 'bury', 'bomb', 'barricade'].includes(a),
+      );
+      if (hasBoardAbility) {
+        modified.damage = Math.round(modified.damage * 1.15);
+      }
+    }
+
+    // Iron Horse Shoes: Iron matches 20% for 1 ability charge
+    if (this.has('iron_horse_shoes') && match.tileType === 'iron') {
+      if (Math.random() < 0.2) {
+        modified.abilityCharges += 1;
+      }
+    }
+
+    return modified;
+  }
+
+  // ---------------------------------------------------------------------------
+  // Crit Hook
+  // ---------------------------------------------------------------------------
+
+  /**
+   * Apply artifact effects when a crit triggers.
+   * Called after the crit multiplier is applied to the match.
+   */
+  onCritTriggered(
+    player: Player,
+    targetEnemy: Enemy | null,
+  ): void {
+    // Dead Man's Hand: crits apply 1 Vulnerable
+    if (this.has('dead_mans_hand') && targetEnemy) {
+      targetEnemy.addVulnerable(1);
+    }
+
+    // Rigged Deck: crits give 5 gold
+    if (this.has('rigged_deck')) {
+      player.addGold(5);
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // Turn End
+  // ---------------------------------------------------------------------------
+
+  onTurnEnd(): void {
+    // Sharpshooter's Eye crit bonus resets at turn end
+    this.swapCritBonus = 0;
+  }
+
+  // ---------------------------------------------------------------------------
+  // Enemy Summoned
+  // ---------------------------------------------------------------------------
+
+  /** Called when a new enemy is summoned into combat. */
+  onEnemySummoned(enemy: Enemy): void {
+    // Coyote Pelt: summoned enemies take 5 damage immediately
+    if (this.has('coyote_pelt')) {
+      enemy.takeDamage(5);
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // Non-Adjacent Swap (Worn Lasso)
+  // ---------------------------------------------------------------------------
+
+  /** Whether the Worn Lasso non-adjacent swap is available this fight. */
+  hasLassoAvailable(): boolean {
+    return this.has('worn_lasso') && !this.lassoUsedThisFight;
+  }
+
+  useLasso(): void {
+    this.lassoUsedThisFight = true;
+  }
+
+  // ---------------------------------------------------------------------------
+  // Shop Price Modifier
+  // ---------------------------------------------------------------------------
+
+  /** Get shop price multiplier from artifacts. */
+  getShopPriceMultiplier(): number {
+    let multiplier = 1.0;
+    // Stolen Badge: shops +10%
+    if (this.has('stolen_badge')) {
+      multiplier += 0.1;
+    }
+    return multiplier;
+  }
+
+  // ---------------------------------------------------------------------------
+  // Silver Bullet (boss crit bonus)
+  // ---------------------------------------------------------------------------
+
+  /** Get extra crit chance vs bosses. */
+  getBossCritBonus(): number {
+    return this.has('silver_bullet') ? 20 : 0;
+  }
+
+  // ---------------------------------------------------------------------------
+  // Max consumable slots
+  // ---------------------------------------------------------------------------
+
+  getMaxConsumableSlots(): number {
+    return this.has('saddlebag') ? 4 : 3;
+  }
+}

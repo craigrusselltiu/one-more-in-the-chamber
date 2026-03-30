@@ -1,10 +1,12 @@
 import type { Board, SwapResult } from '../board/Board';
 import type { CombatState, CombatPhase, MatchResult, EnemyDefinition } from '../../types/combat';
-import type { TileType } from '../../types/game';
+import type { TileType, ArtifactInstance, TraitId } from '../../types/game';
 import { EventBus, GameEvent } from '../EventBus';
 import { Player } from './Player';
 import { Enemy } from './Enemy';
 import { ResourceResolver } from './ResourceResolver';
+import { TraitSystem } from './TraitSystem';
+import { ArtifactSystem } from './ArtifactSystem';
 import type { ResourceOutput } from './ResourceResolver';
 
 export interface CombatConfig {
@@ -15,8 +17,10 @@ export interface CombatConfig {
   activeTileTypes: TileType[];
   tileUpgrades: Partial<Record<TileType, number>>;
   abilityCharge: number;
+  artifacts: ArtifactInstance[];
+  traitCounts: Partial<Record<TraitId, number>>;
   swapsPerTurn?: number;
-  deadeyeShots?: number;
+  isBoss?: boolean;
 }
 
 export interface CombatResult {
@@ -48,6 +52,8 @@ export class CombatManager {
   private player: Player;
   private enemies: Enemy[] = [];
   private resolver: ResourceResolver;
+  private traits: TraitSystem;
+  private artifacts: ArtifactSystem;
   private phase: CombatPhase = 'turn-start';
   private turnNumber = 0;
   private swapsPerTurn: number;
@@ -56,14 +62,29 @@ export class CombatManager {
   private isDeadeyeActive = false;
   private deadeyeShotsRemaining = 0;
   private deadeyeMaxShots: number;
+  private isBoss: boolean;
   /** Next match multiplier from consumables (Moonshine 2x, Strong Coffee 1.5x). */
   private nextMatchMultiplier = 1.0;
+  /** Track if any enemy died during the current swap resolution. */
+  private enemyDiedThisSwap = false;
+  /** Track swaps used this turn for Sharpshooter's Eye reset. */
+  private swapsUsedThisTurn = 0;
 
   constructor(board: Board, config: CombatConfig) {
     this.board = board;
     this.resolver = new ResourceResolver();
-    this.swapsPerTurn = config.swapsPerTurn ?? 2;
-    this.deadeyeMaxShots = config.deadeyeShots ?? 3;
+    this.isBoss = config.isBoss ?? false;
+
+    // Initialize trait and artifact systems
+    this.traits = new TraitSystem(config.traitCounts);
+    this.artifacts = new ArtifactSystem(config.artifacts);
+
+    // Base swaps + trait bonus
+    const baseSwaps = config.swapsPerTurn ?? 2;
+    this.swapsPerTurn = baseSwaps + this.traits.getExtraSwapsPerTurn();
+
+    // Deadeye shots: 3 base, 6 with Fully Loaded
+    this.deadeyeMaxShots = this.artifacts.getDeadeyeShots();
 
     // Initialize player from run state
     this.player = new Player(
@@ -83,10 +104,26 @@ export class CombatManager {
     // Set board tile types
     this.board.setActiveTileTypes(config.activeTileTypes);
 
+    // Apply fight-start effects
+    this.traits.onFightStart(this.player);
+    this.artifacts.onFightStart(this.player);
+
     // Wire up React -> Phaser actions via EventBus
     this.listenForPlayerActions();
 
     this.emitFullState();
+  }
+
+  // ---------------------------------------------------------------------------
+  // Public accessors for subsystems
+  // ---------------------------------------------------------------------------
+
+  getTraitSystem(): TraitSystem {
+    return this.traits;
+  }
+
+  getArtifactSystem(): ArtifactSystem {
+    return this.artifacts;
   }
 
   // ---------------------------------------------------------------------------
@@ -100,9 +137,8 @@ export class CombatManager {
     });
 
     EventBus.on(GameEvent.USE_CONSUMABLE, (...args: unknown[]) => {
-      const slotIndex = args[0] as number;
-      // Consumable ID would be resolved from RunStore; for now pass-through
-      void slotIndex;
+      const consumableId = args[0] as string;
+      this.useConsumable(consumableId);
     });
 
     EventBus.on(GameEvent.ACTIVATE_ABILITY, () => {
@@ -152,9 +188,16 @@ export class CombatManager {
     this.turnNumber++;
     this.swapsRemaining = this.swapsPerTurn;
     this.nextMatchMultiplier = 1.0;
+    this.swapsUsedThisTurn = 0;
 
     // Per-turn: +1 ability charge
     this.player.abilityCharge++;
+
+    // Trait turn-start effects (Sheriff block, etc.)
+    this.traits.onTurnStart(this.player);
+
+    // Artifact turn-start effects (Stolen Badge block, etc.)
+    this.artifacts.onTurnStart(this.player);
 
     // Announce enemy intents for this turn
     for (const enemy of this.aliveEnemies()) {
@@ -190,6 +233,7 @@ export class CombatManager {
     if (this.board.getIsResolving()) return;
 
     this.swapsRemaining--;
+    this.swapsUsedThisTurn++;
     this.setPhase('resolving');
     EventBus.emit(GameEvent.SWAPS_CHANGE, this.swapsRemaining, this.swapsPerTurn);
 
@@ -201,13 +245,25 @@ export class CombatManager {
     if (!result.valid) {
       // Invalid swap -- refund
       this.swapsRemaining++;
+      this.swapsUsedThisTurn--;
       EventBus.emit(GameEvent.SWAPS_CHANGE, this.swapsRemaining, this.swapsPerTurn);
       this.setPhase('swap-phase');
       return;
     }
 
+    // Track trait/artifact swap hooks
+    this.traits.onSwapPerformed();
+    this.enemyDiedThisSwap = false;
+
     // Process all matches from this swap (including cascades)
     this.processMatches(result.matches);
+
+    // Artifact swap hook (check for Quickdraw kill refund)
+    const swapResult = this.artifacts.onSwapPerformed(this.enemyDiedThisSwap);
+    if (swapResult.refundSwaps) {
+      this.swapsRemaining = this.swapsPerTurn;
+      EventBus.emit(GameEvent.SWAPS_CHANGE, this.swapsRemaining, this.swapsPerTurn);
+    }
 
     if (this.isCombatOver()) {
       this.endCombat();
@@ -329,7 +385,7 @@ export class CombatManager {
         break;
       case 'bandage':
         this.player.heal(10);
-        // TODO: cleanse poison tiles on board
+        this.board.clearHazardsByType('poison');
         break;
       case 'barbed_wire':
         this.player.thorns = 1;
@@ -356,16 +412,16 @@ export class CombatManager {
         break;
       }
       case 'skeleton_key':
-        // TODO: unlock all locked tiles on board
+        this.board.clearHazardsByType('lock');
         break;
       case 'tumbleweed':
         this.board.reshuffle();
         break;
       case 'signal_flare':
-        // TODO: reveal all buried tiles
+        this.board.clearHazardsByType('sand');
         break;
       case 'stick_of_tnt':
-        // TODO: clear entire row, generate resources
+        this.resolveStickOfTNT();
         break;
       case 'snake_oil':
         this.resolveSnakeOil();
@@ -374,6 +430,7 @@ export class CombatManager {
         return false;
     }
 
+    EventBus.emit(GameEvent.CONSUMABLE_USED, consumableId);
     EventBus.emit(GameEvent.PLAYER_HP_CHANGE, this.player.health, this.player.maxHealth);
     this.emitFullState();
     return true;
@@ -394,6 +451,24 @@ export class CombatManager {
     }
   }
 
+  private resolveStickOfTNT(): void {
+    // Clear entire row (middle row for max impact)
+    const boardSize = this.board.getBoardSize();
+    const targetRow = Math.floor(boardSize / 2);
+    const grid = this.board.getGrid();
+
+    for (let col = 0; col < boardSize; col++) {
+      const tile = grid[targetRow][col];
+      if (tile) {
+        const upgradeLevel = this.player.getUpgradeLevel(tile.type);
+        const output = this.resolver.resolveSingle(tile.type, upgradeLevel);
+        this.applyResourceOutput(output);
+        tile.destroy();
+        grid[targetRow][col] = null;
+      }
+    }
+  }
+
   // ---------------------------------------------------------------------------
   // Match Processing & Resource Application
   // ---------------------------------------------------------------------------
@@ -401,15 +476,41 @@ export class CombatManager {
   private processMatches(matches: MatchResult[]): void {
     for (const match of matches) {
       const upgradeLevel = this.player.getUpgradeLevel(match.tileType);
-      const output = this.resolver.resolve(match, upgradeLevel);
+      let output = this.resolver.resolve(match, upgradeLevel);
+      const targetEnemy = this.getTargetedAliveEnemy();
 
-      // Crit check
-      const isCrit = Math.random() * 100 < this.player.critChance;
+      // Trait modifications (Outlaw bonus damage, Sheriff iron block, Prospector gold, etc.)
+      output = this.traits.modifyMatchOutput(match, output, this.player, targetEnemy);
+
+      // Artifact modifications (Gold Tooth, Bandit's Bandana, Rusty Deputy Badge, etc.)
+      output = this.artifacts.modifyMatchOutput(
+        match, output, this.player, targetEnemy, this.aliveEnemies(),
+      );
+
+      // Crit check (with trait/artifact modifications)
+      const effectiveCritChance = this.player.critChance + this.artifacts.getSwapCritBonus()
+        + (this.isBoss ? this.artifacts.getBossCritBonus() : 0);
+      const isCrit = Math.random() * 100 < effectiveCritChance;
       let multiplier = 1.0;
 
       if (isCrit) {
-        multiplier = 2.0;
-        this.player.critChance = 0; // Reset on trigger
+        const critConfig = this.traits.getCritConfig();
+        multiplier = critConfig.multiplier;
+
+        // Gunslinger(2) bonus flat damage
+        if (critConfig.bonusFlatDamage > 0) {
+          output.damage += critConfig.bonusFlatDamage;
+        }
+
+        // Reset or halve crit chance based on Gunslinger(4)
+        if (critConfig.halveOnTrigger) {
+          this.player.critChance = Math.floor(this.player.critChance / 2);
+        } else {
+          this.player.critChance = 0;
+        }
+
+        // Artifact crit effects (Dead Man's Hand, Rigged Deck)
+        this.artifacts.onCritTriggered(this.player, targetEnemy);
       }
 
       // Ace multiplier: consumed on next non-Ace match
@@ -441,6 +542,14 @@ export class CombatManager {
       };
 
       this.applyResourceOutput(scaled);
+
+      // Check if an enemy died from this match
+      for (const enemy of this.enemies) {
+        if (enemy.state.isDead) {
+          this.enemyDiedThisSwap = true;
+        }
+      }
+
       EventBus.emit(GameEvent.MATCH_RESOLVED, match, scaled);
     }
   }
@@ -511,8 +620,24 @@ export class CombatManager {
   // ---------------------------------------------------------------------------
 
   private endTurn(): void {
+    // Trait turn-end effects (Prospector gold damage)
+    const targetEnemy = this.getTargetedAliveEnemy();
+    const bonusDamage = this.traits.onTurnEnd(this.player, targetEnemy);
+    if (bonusDamage > 0) {
+      this.emitEnemyHpChanges();
+      EventBus.emit(GameEvent.GOLD_CHANGE, this.player.gold);
+    }
+
+    // Artifact turn-end effects (Sharpshooter's Eye reset)
+    this.artifacts.onTurnEnd();
+
     // Player block expires at turn end
     this.player.resetTurnEffects();
+
+    if (this.isCombatOver()) {
+      this.endCombat();
+      return;
+    }
 
     this.setPhase('enemy-turn');
     EventBus.emit(GameEvent.TURN_END, this.buildState());
@@ -559,6 +684,10 @@ export class CombatManager {
               enemy.takeDamage(thornsDamage);
               EventBus.emit(GameEvent.ENEMY_HP_CHANGE, { ...enemy.state });
             }
+
+            // Sheriff(5): block reflects 100% of absorbed damage back to attacker
+            // This is already handled by thorns mechanism in Player.takeDamage
+            // when Sheriff(5) is active. We handle it via enhanced block logic.
           }
           break;
         }
@@ -596,7 +725,12 @@ export class CombatManager {
       maxDamage: Math.round(def.maxDamage * 0.7),
       abilities: [],
     };
-    this.enemies.push(new Enemy(minionDef));
+    const minion = new Enemy(minionDef);
+
+    // Coyote Pelt: summoned enemies take 5 damage immediately
+    this.artifacts.onEnemySummoned(minion);
+
+    this.enemies.push(minion);
     this.emitFullState();
   }
 

@@ -37,6 +37,8 @@ export class CombatScene extends Phaser.Scene {
       activeTileTypes: ['bullet', 'iron', 'gold'],
       tileUpgrades: {},
       abilityCharge: 0,
+      artifacts: [],
+      traitCounts: {},
     };
 
     this.combatManager = new CombatManager(this.board, config);
