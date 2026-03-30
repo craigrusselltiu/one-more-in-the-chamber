@@ -41,6 +41,7 @@ export const ConsumableSlots = memo(function ConsumableSlots() {
             effect={def?.effect}
             filled={!!instance}
             canUse={canUse && !!instance}
+            consumableId={instance?.id}
           />
         );
       })}
@@ -64,12 +65,16 @@ const ConsumableSlot = memo(function ConsumableSlot({
   effect,
   filled,
   canUse,
-}: ConsumableSlotProps) {
+  consumableId,
+}: ConsumableSlotProps & { consumableId?: string }) {
+  const removeConsumable = useRunStore((s) => s.removeConsumable);
+
   const handleUse = useCallback(() => {
-    if (canUse) {
-      EventBus.emit(GameEvent.USE_CONSUMABLE, index);
+    if (canUse && consumableId) {
+      EventBus.emit(GameEvent.USE_CONSUMABLE, consumableId);
+      removeConsumable(index);
     }
-  }, [canUse, index]);
+  }, [canUse, consumableId, index, removeConsumable]);
 
   const bgColor = filled && category
     ? CATEGORY_COLORS[category] ?? '#555'
