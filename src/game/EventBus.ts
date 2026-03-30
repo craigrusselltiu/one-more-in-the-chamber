@@ -35,4 +35,8 @@ export const GameEvent = {
   TURN_START: 'turn:start',
   TURN_END: 'turn:end',
   COMBAT_END: 'combat:end',
+  MATCH_RESOLVED: 'match:resolved',
+  ENEMY_DIED: 'enemy:died',
+  DEADEYE_ACTIVATED: 'deadeye:activated',
+  CONSUMABLE_USED: 'consumable:used',
 } as const;
