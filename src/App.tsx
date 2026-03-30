@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import Phaser from 'phaser';
 import { gameConfig } from './game/GameConfig';
 import { MainMenu } from './ui/screens/MainMenu';
+import { TileSelectScreen } from './ui/screens/TileSelectScreen';
 import { MapScreen } from './ui/screens/MapScreen';
 import { ShopScreen } from './ui/screens/ShopScreen';
 import { RestSiteScreen } from './ui/screens/RestSiteScreen';
@@ -12,6 +13,7 @@ import { EventBus, GameEvent } from './game/EventBus';
 
 export type Screen =
   | 'main-menu'
+  | 'tile-select'
   | 'combat'
   | 'map'
   | 'shop'
@@ -55,6 +57,11 @@ export default function App() {
         {screen === 'main-menu' && (
           <div className="pointer-events-auto">
             <MainMenu />
+          </div>
+        )}
+        {screen === 'tile-select' && (
+          <div className="pointer-events-auto">
+            <TileSelectScreen />
           </div>
         )}
         {screen === 'combat' && (
