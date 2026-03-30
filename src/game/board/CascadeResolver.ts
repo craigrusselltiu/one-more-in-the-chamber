@@ -2,6 +2,8 @@ import type { TileType } from '../../types/game';
 import type { Board } from './Board';
 import type { MatchResult, GridPosition } from '../../types/combat';
 
+export type GravityDirection = 'down' | 'left';
+
 /**
  * CascadeResolver: gravity + chain resolution.
  * After matches clear, tiles fall and new tiles spawn. Repeat until stable.
@@ -9,8 +11,20 @@ import type { MatchResult, GridPosition } from '../../types/combat';
  * Handles special tile mechanics during clearing:
  * - Explosive tiles: when matched, detonate 3x3 area around them
  * - Cross clear (L/T/+): clear full row + column from intersection point(s)
+ *
+ * Supports gravity direction override (e.g. Dusty Dan Phase 2: gravity shifts left).
  */
 export class CascadeResolver {
+  private gravityDirection: GravityDirection = 'down';
+
+  setGravityDirection(direction: GravityDirection): void {
+    this.gravityDirection = direction;
+  }
+
+  getGravityDirection(): GravityDirection {
+    return this.gravityDirection;
+  }
+
   async resolve(board: Board): Promise<MatchResult[]> {
     const allMatches: MatchResult[] = [];
     let matches = board.findMatches();
@@ -161,6 +175,14 @@ export class CascadeResolver {
   }
 
   applyGravity(board: Board): void {
+    if (this.gravityDirection === 'left') {
+      this.applyGravityLeft(board);
+    } else {
+      this.applyGravityDown(board);
+    }
+  }
+
+  private applyGravityDown(board: Board): void {
     const grid = board.getGrid();
     const size = board.getBoardSize();
 
@@ -177,6 +199,29 @@ export class CascadeResolver {
             board.updateTilePosition(tile);
           }
           writeRow--;
+        }
+      }
+    }
+  }
+
+  /** Gravity shifts left: tiles fall to the left instead of down. */
+  private applyGravityLeft(board: Board): void {
+    const grid = board.getGrid();
+    const size = board.getBoardSize();
+
+    for (let row = 0; row < size; row++) {
+      let writeCol = 0;
+      for (let col = 0; col < size; col++) {
+        if (grid[row][col] !== null) {
+          if (col !== writeCol) {
+            grid[row][writeCol] = grid[row][col];
+            grid[row][col] = null;
+            const tile = grid[row][writeCol]!;
+            tile.row = row;
+            tile.col = writeCol;
+            board.updateTilePosition(tile);
+          }
+          writeCol++;
         }
       }
     }

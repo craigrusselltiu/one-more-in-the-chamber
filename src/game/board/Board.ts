@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 import { Tile, TILE_SIZE } from './Tile';
 import { MatchDetector } from './MatchDetector';
 import { CascadeResolver } from './CascadeResolver';
+import type { GravityDirection } from './CascadeResolver';
 import type { TileType } from '../../types/game';
 import type { GridPosition, MatchResult } from '../../types/combat';
 import { EventBus, GameEvent } from '../EventBus';
@@ -548,6 +549,14 @@ export class Board {
   applyGravityAndFill(): void {
     this.cascadeResolver.applyGravity(this);
     this.fillEmptyTiles();
+  }
+
+  setGravityDirection(direction: GravityDirection): void {
+    this.cascadeResolver.setGravityDirection(direction);
+  }
+
+  getGravityDirection(): GravityDirection {
+    return this.cascadeResolver.getGravityDirection();
   }
 
   setInputEnabled(enabled: boolean): void {

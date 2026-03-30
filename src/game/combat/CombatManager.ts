@@ -85,6 +85,8 @@ export class CombatManager {
   private enemyDiedThisSwap = false;
   /** Track swaps used this turn for Sharpshooter's Eye reset. */
   private swapsUsedThisTurn = 0;
+  /** Whether the current swap being resolved was non-adjacent (lasso). */
+  private currentSwapIsLasso = false;
 
   constructor(board: Board, config: CombatConfig) {
     this.board = board;
@@ -286,6 +288,9 @@ export class CombatManager {
 
     const from = { row: fromRow, col: fromCol };
     const to = { row: toRow, col: toCol };
+
+    // Track whether this swap is non-adjacent (lasso) for Mustang(4) bonus
+    this.currentSwapIsLasso = !this.board.isAdjacent(from, to);
 
     const result: SwapResult = await this.board.trySwap(from, to);
 
@@ -546,7 +551,7 @@ export class CombatManager {
       const targetEnemy = this.getTargetedAliveEnemy();
 
       // Trait modifications (Outlaw bonus damage, Sheriff iron block, Prospector gold, etc.)
-      output = this.traits.modifyMatchOutput(match, output, this.player, targetEnemy);
+      output = this.traits.modifyMatchOutput(match, output, this.player, targetEnemy, this.currentSwapIsLasso);
 
       // Artifact modifications (Gold Tooth, Bandit's Bandana, Rusty Deputy Badge, etc.)
       output = this.artifacts.modifyMatchOutput(
@@ -747,7 +752,7 @@ export class CombatManager {
     if (this.bossController) {
       const boss = this.getBossEnemy();
       if (boss) {
-        this.bossController.checkPhaseTransition(boss, this.hazardManager);
+        this.bossController.checkPhaseTransition(boss, this.hazardManager, this.board);
         this.bossController.executePerTurnEffects(this.hazardManager);
       }
     }

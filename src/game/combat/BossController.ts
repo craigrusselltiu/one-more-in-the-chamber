@@ -1,5 +1,6 @@
 import type { EnemyIntent, EnemyDefinition } from '../../types/combat';
 import type { Enemy } from './Enemy';
+import type { Board } from '../board/Board';
 import type { BoardHazardManager } from '../board/BoardHazardManager';
 import { ACT1_ENEMIES } from '../../data/enemies';
 
@@ -34,6 +35,7 @@ export class BossController {
   checkPhaseTransition(
     boss: Enemy,
     hazardManager: BoardHazardManager,
+    board: Board,
   ): boolean {
     if (this.bossType !== 'dusty_dan') return false;
 
@@ -48,6 +50,9 @@ export class BossController {
       const row = 3 + Math.floor(Math.random() * 2); // row 3 or 4
       hazardManager.placeBarricadeRow(row);
       boss.addBlock(10);
+
+      // Gravity shifts left -- tiles fall sideways instead of down
+      board.setGravityDirection('left');
       return true;
     }
 
