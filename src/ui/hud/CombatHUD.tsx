@@ -1,39 +1,59 @@
 import { memo } from 'react';
-import { HealthBar } from './HealthBar';
-import { StatusEffects } from './StatusEffects';
-import { EnemyIntent } from './EnemyIntent';
-import { EnemyTargeting } from './EnemyTargeting';
+import { CombatBridge } from './CombatBridge';
+import { TopBar } from './TopBar';
 import { ArtifactBar } from './ArtifactBar';
-import { AbilityMeter } from './AbilityMeter';
+import { PlayerPanel } from './PlayerPanel';
+import { EnemyTargeting } from './EnemyTargeting';
+import { ComboDisplay } from './ComboDisplay';
+import { EndTurnButton } from './EndTurnButton';
 
 /**
  * CombatHUD: React overlay during combat.
- * Layout matches SPEC combat mockup at 480x270 internal resolution.
+ * Layout matches SPEC combat mockup at 480x270 internal resolution:
+ *
+ *   [ Act I ][    gold count    ][ swaps: 2 ][ gear ]   <- TopBar (~16px)
+ *   [ artifacts row (left-aligned, under top bar) ]     <- ArtifactBar (~14px)
+ *   [        ]                         [         ]
+ *   [ PLAYER ]      [ 8x8 BOARD ]     [ ENEMIES ]      <- main area
+ *   [ HP bar ]      [  (Phaser)  ]    [ up to 3  ]
+ *   [ status ]      [            ]    [ HP bars   ]
+ *   [ ability]      [  combo xN  ]    [ status    ]
+ *   [        ]                        [ intent    ]
+ *   [ [_][_][_] ]              [ END TURN ]             <- bottom area
+ *
+ * Phaser owns the board canvas. React owns this overlay.
  */
 export const CombatHUD = memo(function CombatHUD() {
   return (
-    <div className="absolute inset-0 pointer-events-none font-mono text-xs">
+    <div className="absolute inset-0 pointer-events-none font-mono text-xs select-none">
+      {/* EventBus -> Zustand bridge (invisible) */}
+      <CombatBridge />
+
       {/* Top HUD bar */}
-      <div className="flex justify-between items-center px-2 py-1 bg-black/40 pointer-events-auto">
-        <span className="text-amber-400">Act I</span>
-        <span className="text-yellow-300">Gold: 0</span>
-        <span className="text-stone-300">Swaps: 2</span>
-      </div>
+      <TopBar />
 
       {/* Artifact row */}
       <ArtifactBar />
 
-      {/* Player area (left side) */}
-      <div className="absolute left-1 top-16">
-        <HealthBar current={100} max={100} label="P" />
-        <StatusEffects effects={[]} />
-        <AbilityMeter charge={0} threshold={10} />
-      </div>
+      {/* Main combat area */}
+      <div className="absolute inset-x-0 top-8 bottom-0 flex">
+        {/* Player area (left side, ~112px) */}
+        <div className="w-28 flex flex-col justify-center px-1">
+          <PlayerPanel />
+        </div>
 
-      {/* Enemy area (right side) */}
-      <div className="absolute right-1 top-16">
-        <EnemyTargeting />
-        <EnemyIntent />
+        {/* Board area (center, Phaser renders the board here) */}
+        <div className="flex-1 flex flex-col items-center justify-end pb-2">
+          <ComboDisplay />
+          <div className="mt-1">
+            <EndTurnButton />
+          </div>
+        </div>
+
+        {/* Enemy area (right side, ~112px) */}
+        <div className="w-28 flex flex-col justify-center px-1">
+          <EnemyTargeting />
+        </div>
       </div>
     </div>
   );
