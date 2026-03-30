@@ -50,6 +50,11 @@ export const GameEvent = {
   CASCADE_END: 'cascade:end',
   COMBO_UPDATE: 'combo:update',
 
+  // Combat events
+  ENEMY_DIED: 'enemy:died',
+  DEADEYE_ACTIVATED: 'deadeye:activated',
+  CONSUMABLE_USED: 'consumable:used',
+
   // Player actions (React -> Phaser)
   TARGET_ENEMY: 'player:target-enemy',
   USE_CONSUMABLE: 'player:use-consumable',
