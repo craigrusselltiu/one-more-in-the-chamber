@@ -3,7 +3,7 @@ import type { TileType } from '../../types/game';
 import type { TileHazardState } from '../../types/tiles';
 import { TILE_COLORS } from '../../data/tiles';
 
-const TILE_SIZE = 32;
+export const TILE_SIZE = 32;
 const TILE_INNER = 30;
 
 /**
@@ -21,6 +21,7 @@ export class Tile {
 
   private rect: Phaser.GameObjects.Rectangle;
   private label: Phaser.GameObjects.Text;
+  private highlight: Phaser.GameObjects.Rectangle | null = null;
 
   constructor(
     scene: Phaser.Scene,
@@ -86,21 +87,81 @@ export class Tile {
 
   setType(newType: TileType): void {
     this.type = newType;
+    this.updateVisuals();
+  }
+
+  setExplosive(value: boolean): void {
+    this.isExplosive = value;
+    this.isShowdown = false;
+    this.updateVisuals();
+  }
+
+  setShowdown(value: boolean): void {
+    this.isShowdown = value;
+    this.isExplosive = false;
+    this.updateVisuals();
+  }
+
+  private updateVisuals(): void {
     const color = Phaser.Display.Color.HexStringToColor(
-      TILE_COLORS[newType] ?? '#808080',
+      TILE_COLORS[this.type] ?? '#808080',
     ).color;
-    this.rect.setFillStyle(color, 0.2);
-    this.rect.setStrokeStyle(1, color);
+
+    if (this.isExplosive) {
+      this.rect.setFillStyle(color, 0.5);
+      this.rect.setStrokeStyle(2, 0xffff00);
+    } else if (this.isShowdown) {
+      this.rect.setFillStyle(color, 0.6);
+      this.rect.setStrokeStyle(2, 0xff00ff);
+    } else {
+      this.rect.setFillStyle(color, 0.2);
+      this.rect.setStrokeStyle(1, color);
+    }
+
     this.label.setText(this.abbreviation());
   }
 
   setPosition(x: number, y: number): void {
-    this.rect.setPosition(Math.round(x + TILE_SIZE / 2), Math.round(y + TILE_SIZE / 2));
-    this.label.setPosition(Math.round(x + TILE_SIZE / 2), Math.round(y + TILE_SIZE / 2));
+    this.rect.setPosition(
+      Math.round(x + TILE_SIZE / 2),
+      Math.round(y + TILE_SIZE / 2),
+    );
+    this.label.setPosition(
+      Math.round(x + TILE_SIZE / 2),
+      Math.round(y + TILE_SIZE / 2),
+    );
+    if (this.highlight) {
+      this.highlight.setPosition(
+        Math.round(x + TILE_SIZE / 2),
+        Math.round(y + TILE_SIZE / 2),
+      );
+    }
+  }
+
+  setSelected(selected: boolean): void {
+    if (selected && !this.highlight) {
+      const pos = this.rect.getCenter();
+      this.highlight = this.scene.add
+        .rectangle(Math.round(pos.x), Math.round(pos.y), TILE_SIZE, TILE_SIZE)
+        .setStrokeStyle(2, 0xffffff)
+        .setFillStyle(0xffffff, 0.15);
+    } else if (!selected && this.highlight) {
+      this.highlight.destroy();
+      this.highlight = null;
+    }
+  }
+
+  getWorldCenter(): { x: number; y: number } {
+    const pos = this.rect.getCenter();
+    return { x: Math.round(pos.x), y: Math.round(pos.y) };
   }
 
   destroy(): void {
     this.rect.destroy();
     this.label.destroy();
+    if (this.highlight) {
+      this.highlight.destroy();
+      this.highlight = null;
+    }
   }
 }
