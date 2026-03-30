@@ -55,6 +55,11 @@ export const GameEvent = {
   USE_CONSUMABLE: 'player:use-consumable',
   ACTIVATE_ABILITY: 'player:activate-ability',
   END_TURN_EARLY: 'player:end-turn-early',
+
+  // Map / run flow
+  NODE_SELECTED: 'map:node-selected',
+  RUN_STARTED: 'run:started',
+  RUN_ENDED: 'run:ended',
 } as const;
 
 /**
@@ -78,4 +83,7 @@ export interface EventPayloads {
   [GameEvent.USE_CONSUMABLE]: [slotIndex: number];
   [GameEvent.ACTIVATE_ABILITY]: [];
   [GameEvent.END_TURN_EARLY]: [];
+  [GameEvent.NODE_SELECTED]: [nodeId: string];
+  [GameEvent.RUN_STARTED]: [];
+  [GameEvent.RUN_ENDED]: [completed: boolean];
 }

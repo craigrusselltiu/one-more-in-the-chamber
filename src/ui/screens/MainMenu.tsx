@@ -1,14 +1,17 @@
 import { memo } from 'react';
 import { EventBus, GameEvent } from '../../game/EventBus';
+import { useRunStore } from '../../store/runStore';
 import type { Screen } from '../../App';
 
 export const MainMenu = memo(function MainMenu() {
+  const run = useRunStore((s) => s.run);
+  const hasActiveRun = run && run.status === 'active';
+
   const handleNewGame = () => {
-    EventBus.emit(GameEvent.SCREEN_CHANGE, 'combat' satisfies Screen);
+    EventBus.emit(GameEvent.SCREEN_CHANGE, 'tile-select' satisfies Screen);
   };
 
   const handleContinue = () => {
-    // TODO: check for active run in IndexedDB
     EventBus.emit(GameEvent.SCREEN_CHANGE, 'map' satisfies Screen);
   };
 
@@ -23,8 +26,12 @@ export const MainMenu = memo(function MainMenu() {
       <div className="flex flex-col gap-3 w-48">
         <button
           onClick={handleContinue}
-          className="px-4 py-2 bg-stone-700/50 text-stone-500 font-mono text-sm border border-stone-600 cursor-not-allowed"
-          disabled
+          disabled={!hasActiveRun}
+          className={`px-4 py-2 font-mono text-sm border ${
+            hasActiveRun
+              ? 'bg-amber-900/60 text-amber-300 border-amber-700 hover:bg-amber-800/60'
+              : 'bg-stone-700/50 text-stone-500 border-stone-600 cursor-not-allowed'
+          }`}
         >
           Continue
         </button>

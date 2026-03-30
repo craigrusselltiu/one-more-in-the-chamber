@@ -1,5 +1,6 @@
 import { create } from 'zustand';
-import type { RunState, TileType, ArtifactInstance, ConsumableInstance, Act } from '../types/game';
+import type { RunState, TileType, ArtifactInstance, ConsumableInstance, Act, MapState } from '../types/game';
+import { generateMap } from '../game/map/MapGenerator';
 
 interface RunStore {
   run: RunState | null;
@@ -12,14 +13,17 @@ interface RunStore {
   addTileType: (type: TileType) => void;
   upgradeTile: (type: TileType) => void;
   setCurrentNode: (nodeId: string) => void;
+  markNodeVisited: (nodeId: string) => void;
   advanceAct: () => void;
+  setMapState: (map: MapState) => void;
   endRun: (completed: boolean) => void;
 }
 
 export const useRunStore = create<RunStore>((set) => ({
   run: null,
 
-  startRun: (seed, starterTile) =>
+  startRun: (seed, starterTile) => {
+    const mapState = generateMap(seed, 1);
     set({
       run: {
         id: crypto.randomUUID(),
@@ -37,10 +41,11 @@ export const useRunStore = create<RunStore>((set) => ({
         traitCounts: {},
         consumables: [],
         abilityCharge: 0,
-        mapState: null,
+        mapState,
         status: 'active',
       },
-    }),
+    });
+  },
 
   updateHealth: (delta) =>
     set((state) => {
@@ -102,10 +107,40 @@ export const useRunStore = create<RunStore>((set) => ({
       return { run: { ...state.run, currentNodeId: nodeId } };
     }),
 
+  markNodeVisited: (nodeId) =>
+    set((state) => {
+      if (!state.run?.mapState) return state;
+      const nodes = state.run.mapState.nodes.map((n) =>
+        n.id === nodeId ? { ...n, visited: true } : n,
+      );
+      return {
+        run: {
+          ...state.run,
+          currentNodeId: nodeId,
+          mapState: { ...state.run.mapState, nodes, currentNodeId: nodeId },
+        },
+      };
+    }),
+
   advanceAct: () =>
     set((state) => {
       if (!state.run || state.run.currentAct >= 3) return state;
-      return { run: { ...state.run, currentAct: (state.run.currentAct + 1) as Act } };
+      const nextAct = (state.run.currentAct + 1) as Act;
+      const mapState = generateMap(state.run.seed, nextAct);
+      return {
+        run: {
+          ...state.run,
+          currentAct: nextAct,
+          currentNodeId: null,
+          mapState,
+        },
+      };
+    }),
+
+  setMapState: (map) =>
+    set((state) => {
+      if (!state.run) return state;
+      return { run: { ...state.run, mapState: map } };
     }),
 
   endRun: (completed) =>
