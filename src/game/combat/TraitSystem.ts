@@ -92,12 +92,14 @@ export class TraitSystem {
   /**
    * Modify resource output based on trait effects.
    * Called after ResourceResolver computes the base output.
+   * @param isLassoSwap Whether the originating swap was non-adjacent (lasso).
    */
   modifyMatchOutput(
     match: MatchResult,
     output: ResourceOutput,
     _player: Player,
     targetEnemy: Enemy | null,
+    isLassoSwap = false,
   ): ResourceOutput {
     const modified = { ...output };
     const is4Plus = match.length >= 4;
@@ -152,10 +154,9 @@ export class TraitSystem {
     // --- Mustang ---
 
     // Mustang(4): 5+ tile lasso (non-adjacent) matches: +50% damage
-    // This requires knowing if the match came from a non-adjacent swap,
-    // which CombatManager tracks and passes through the match result.
-    // For now we mark it in the match length check.
-    // Non-adjacent swap tracking would need CombatManager to flag it.
+    if (isLassoSwap && match.length >= 5 && this.isActive('mustang', 4)) {
+      modified.damage = Math.round(modified.damage * 1.5);
+    }
 
     return modified;
   }
