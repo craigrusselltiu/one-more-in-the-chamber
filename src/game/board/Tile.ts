@@ -24,6 +24,7 @@ export class Tile {
   private highlight: Phaser.GameObjects.Rectangle | null = null;
   private statusDot: Phaser.GameObjects.Rectangle | null = null;
   private statusLabel: Phaser.GameObjects.Text | null = null;
+  private destroyed = false;
 
   get hazard(): TileHazardState | null {
     return this._hazard;
@@ -31,7 +32,7 @@ export class Tile {
 
   set hazard(val: TileHazardState | null) {
     this._hazard = val;
-    this.updateStatusIndicator();
+    if (!this.destroyed) this.updateStatusIndicator();
   }
 
   constructor(
@@ -118,7 +119,7 @@ export class Tile {
    * hazard object (e.g. bomb countdown tick that doesn't reach zero).
    */
   refreshStatusIndicator(): void {
-    this.updateStatusIndicator();
+    if (!this.destroyed) this.updateStatusIndicator();
   }
 
   private updateVisuals(): void {
@@ -244,7 +245,86 @@ export class Tile {
     return { x: Math.round(pos.x), y: Math.round(pos.y) };
   }
 
+  // -- Animation methods --
+
+  /**
+   * Tween this tile to a new position over the given duration.
+   * Status indicator objects are tweened to their offset position alongside.
+   */
+  tweenToPosition(x: number, y: number, duration: number, delay = 0): Promise<void> {
+    if (this.destroyed) return Promise.resolve();
+
+    const targetX = Math.round(x + TILE_SIZE / 2);
+    const targetY = Math.round(y + TILE_SIZE / 2);
+
+    return new Promise((resolve) => {
+      const targets: Phaser.GameObjects.GameObject[] = [this.rect, this.label];
+      if (this.highlight) targets.push(this.highlight);
+
+      // Tween status indicator separately to its offset position
+      if (this.statusDot) {
+        this.scene.tweens.add({
+          targets: this.statusDot,
+          x: Math.round(targetX + 10),
+          y: Math.round(targetY + 10),
+          duration,
+          delay,
+          ease: 'Cubic.easeIn',
+        });
+      }
+      if (this.statusLabel) {
+        this.scene.tweens.add({
+          targets: this.statusLabel,
+          x: Math.round(targetX + 10),
+          y: Math.round(targetY + 10),
+          duration,
+          delay,
+          ease: 'Cubic.easeIn',
+        });
+      }
+
+      this.scene.tweens.add({
+        targets,
+        x: targetX,
+        y: targetY,
+        duration,
+        delay,
+        ease: 'Cubic.easeIn',
+        onComplete: () => resolve(),
+      });
+    });
+  }
+
+  /**
+   * Animate clearing: scale down + fade out, then destroy.
+   */
+  animateClear(duration: number): Promise<void> {
+    if (this.destroyed) return Promise.resolve();
+
+    return new Promise((resolve) => {
+      const targets: Phaser.GameObjects.GameObject[] = [this.rect, this.label];
+      if (this.highlight) targets.push(this.highlight);
+      if (this.statusDot) targets.push(this.statusDot);
+      if (this.statusLabel) targets.push(this.statusLabel);
+
+      this.scene.tweens.add({
+        targets,
+        alpha: 0,
+        scaleX: 0.3,
+        scaleY: 0.3,
+        duration,
+        ease: 'Power2',
+        onComplete: () => {
+          this.destroy();
+          resolve();
+        },
+      });
+    });
+  }
+
   destroy(): void {
+    if (this.destroyed) return;
+    this.destroyed = true;
     this.rect.destroy();
     this.label.destroy();
     if (this.highlight) {
