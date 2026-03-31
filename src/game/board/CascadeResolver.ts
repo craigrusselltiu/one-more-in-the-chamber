@@ -1,11 +1,12 @@
 import type { TileType } from '../../types/game';
 import type { Board } from './Board';
-import type { MatchResult } from '../../types/combat';
+import type { Tile } from './Tile';
+import type { MatchResult, GridPosition } from '../../types/combat';
 
 export type GravityDirection = 'down' | 'left';
 
 /**
- * CascadeResolver: gravity + chain resolution.
+ * CascadeResolver: gravity + chain resolution with animations.
  * After matches clear, tiles fall and new tiles spawn. Repeat until stable.
  *
  * Handles special tile mechanics during clearing:
@@ -25,18 +26,42 @@ export class CascadeResolver {
     return this.gravityDirection;
   }
 
-  async resolve(board: Board): Promise<MatchResult[]> {
+  /**
+   * Resolve all cascades with animations.
+   * @param onStep Called after each cascade step with that step's matches,
+   *               so effects (damage, block, etc.) can be applied mid-cascade.
+   */
+  async resolve(
+    board: Board,
+    onStep?: (matches: MatchResult[]) => void,
+  ): Promise<MatchResult[]> {
     const allMatches: MatchResult[] = [];
     let matches = board.findMatches();
 
     while (matches.length > 0) {
-      allMatches.push(...matches);
-      // clearMatches destroys tiles from cross-clears and explosions but does NOT
-      // add them to allMatches -- cleared tiles do not trigger their effects (T2).
-      this.clearMatches(board, matches);
+      // Step 1: Collect tiles to clear and extra results, animate clear
+      const { extraResults, tilesToAnimate } = this.prepareClear(board, matches);
+      await board.animateTileClear(tilesToAnimate);
+
+      // Apply this step's effects immediately (damage, block, gold, etc.)
+      const stepMatches = [...matches, ...extraResults];
+      allMatches.push(...stepMatches);
+      if (onStep) {
+        onStep(stepMatches);
+        // Brief pause so the player can see the effect applied
+        await new Promise(r => setTimeout(r, 250));
+      }
+
+      // Step 2: Spawn special tiles at cleared positions
       this.spawnSpecials(board, matches);
-      this.applyGravity(board);
-      board.fillEmptyTiles();
+
+      // Step 3: Apply gravity with animation
+      const moves = this.applyGravityTracked(board);
+      await board.animateGravityDrop(moves);
+
+      // Step 4: Fill empty tiles with drop animation
+      await board.fillEmptyTilesAnimated();
+
       matches = board.findMatches();
     }
 
@@ -44,11 +69,13 @@ export class CascadeResolver {
   }
 
   /**
-   * Destroy all tiles in the given matches, plus any tiles cleared by
-   * cross-clear expansion and explosive detonation. Cleared tiles do NOT
-   * trigger their effects -- only matched tiles do (T2 mechanic).
+   * Collect all tiles that need clearing, null their grid cells,
+   * and return the Tile objects for animation plus any extra MatchResults.
    */
-  private clearMatches(board: Board, matches: MatchResult[]): void {
+  private prepareClear(
+    board: Board,
+    matches: MatchResult[],
+  ): { extraResults: MatchResult[]; tilesToAnimate: Tile[] } {
     const grid = board.getGrid();
     const size = board.getBoardSize();
     const posKey = (r: number, c: number) => `${r},${c}`;
@@ -62,21 +89,17 @@ export class CascadeResolver {
     }
 
     // Phase 2: Expand for cross clears and explosive detonations
-    // Capture tile types before any destruction
     const extraTiles = new Map<string, TileType>();
 
-    // Cross clear expansion: clear full row + column from each intersection
     for (const match of matches) {
       if (!match.isCross || match.crossIntersections.length === 0) continue;
       for (const inter of match.crossIntersections) {
-        // Entire row through intersection
         for (let c = 0; c < size; c++) {
           const key = posKey(inter.row, c);
           if (matchPositions.has(key) || extraTiles.has(key)) continue;
           const tile = grid[inter.row]?.[c];
           if (tile) extraTiles.set(key, tile.type);
         }
-        // Entire column through intersection
         for (let r = 0; r < size; r++) {
           const key = posKey(r, inter.col);
           if (matchPositions.has(key) || extraTiles.has(key)) continue;
@@ -86,8 +109,6 @@ export class CascadeResolver {
       }
     }
 
-    // Explosive detonation: 3x3 area around explosive tiles that are part of a match
-    // Per SPEC: explosive tiles "must be matched to detonate"
     for (const match of matches) {
       for (const pos of match.tiles) {
         const tile = grid[pos.row]?.[pos.col];
@@ -106,12 +127,14 @@ export class CascadeResolver {
       }
     }
 
-    // Phase 3: Destroy all tiles (match tiles first, then extras)
+    // Phase 3: Collect Tile references, then null grid cells
+    const tilesToAnimate: Tile[] = [];
+
     for (const match of matches) {
       for (const pos of match.tiles) {
         const tile = grid[pos.row]?.[pos.col];
         if (tile) {
-          tile.destroy();
+          tilesToAnimate.push(tile);
           grid[pos.row][pos.col] = null;
         }
       }
@@ -123,11 +146,36 @@ export class CascadeResolver {
       const c = Number(parts[1]);
       const tile = grid[r]?.[c];
       if (tile) {
-        tile.destroy();
+        tilesToAnimate.push(tile);
         grid[r][c] = null;
       }
     }
 
+    // Phase 4: Group extra tiles by type into additional MatchResults
+    const byType = new Map<TileType, GridPosition[]>();
+    for (const [key, type] of extraTiles) {
+      const parts = key.split(',');
+      const pos: GridPosition = { row: Number(parts[0]), col: Number(parts[1]) };
+      const list = byType.get(type) ?? [];
+      list.push(pos);
+      byType.set(type, list);
+    }
+
+    const extraResults: MatchResult[] = [];
+    for (const [type, tiles] of byType) {
+      extraResults.push({
+        tiles,
+        tileType: type,
+        length: tiles.length,
+        isExplosive: false,
+        isShowdown: false,
+        isCross: false,
+        crossIntersections: [],
+        matchBonus: 1.0,
+      });
+    }
+
+    return { extraResults, tilesToAnimate };
   }
 
   /**
@@ -136,20 +184,82 @@ export class CascadeResolver {
    */
   private spawnSpecials(board: Board, matches: MatchResult[]): void {
     for (const match of matches) {
-      if (match.isCross) continue; // Cross clears don't spawn specials
+      if (match.isCross) continue;
 
       if (match.isShowdown && match.tiles.length > 0) {
-        // 5-match: spawn showdown tile at midpoint
         const mid = match.tiles[Math.floor(match.tiles.length / 2)];
         board.spawnSpecialTile(mid.row, mid.col, match.tileType, 'showdown');
       } else if (match.isExplosive && match.tiles.length > 0) {
-        // 4-match: spawn explosive tile at midpoint
         const mid = match.tiles[Math.floor(match.tiles.length / 2)];
         board.spawnSpecialTile(mid.row, mid.col, match.tileType, 'explosive');
       }
     }
   }
 
+  private applyGravityTracked(
+    board: Board,
+  ): Array<{ tile: Tile; toX: number; toY: number }> {
+    if (this.gravityDirection === 'left') {
+      return this.applyGravityLeftTracked(board);
+    }
+    return this.applyGravityDownTracked(board);
+  }
+
+  private applyGravityDownTracked(
+    board: Board,
+  ): Array<{ tile: Tile; toX: number; toY: number }> {
+    const grid = board.getGrid();
+    const size = board.getBoardSize();
+    const moves: Array<{ tile: Tile; toX: number; toY: number }> = [];
+
+    for (let col = 0; col < size; col++) {
+      let writeRow = size - 1;
+      for (let row = size - 1; row >= 0; row--) {
+        if (grid[row][col] !== null) {
+          if (row !== writeRow) {
+            const tile = grid[row][col]!;
+            grid[writeRow][col] = tile;
+            grid[row][col] = null;
+            tile.row = writeRow;
+            tile.col = col;
+            moves.push({ tile, toX: board.tileX(col), toY: board.tileY(writeRow) });
+          }
+          writeRow--;
+        }
+      }
+    }
+
+    return moves;
+  }
+
+  private applyGravityLeftTracked(
+    board: Board,
+  ): Array<{ tile: Tile; toX: number; toY: number }> {
+    const grid = board.getGrid();
+    const size = board.getBoardSize();
+    const moves: Array<{ tile: Tile; toX: number; toY: number }> = [];
+
+    for (let row = 0; row < size; row++) {
+      let writeCol = 0;
+      for (let col = 0; col < size; col++) {
+        if (grid[row][col] !== null) {
+          if (col !== writeCol) {
+            const tile = grid[row][col]!;
+            grid[row][writeCol] = tile;
+            grid[row][col] = null;
+            tile.row = row;
+            tile.col = writeCol;
+            moves.push({ tile, toX: board.tileX(writeCol), toY: board.tileY(row) });
+          }
+          writeCol++;
+        }
+      }
+    }
+
+    return moves;
+  }
+
+  /** Non-animated gravity for use in non-cascade contexts (showdown, etc.) */
   applyGravity(board: Board): void {
     if (this.gravityDirection === 'left') {
       this.applyGravityLeft(board);
@@ -180,7 +290,6 @@ export class CascadeResolver {
     }
   }
 
-  /** Gravity shifts left: tiles fall to the left instead of down. */
   private applyGravityLeft(board: Board): void {
     const grid = board.getGrid();
     const size = board.getBoardSize();

@@ -61,6 +61,9 @@ export const GameEvent = {
   ACTIVATE_ABILITY: 'player:activate-ability',
   END_TURN_EARLY: 'player:end-turn-early',
 
+  // Board input -> CombatManager
+  SWAP_REQUESTED: 'board:swap-requested',
+
   // Map / run flow
   NODE_SELECTED: 'map:node-selected',
   RUN_STARTED: 'run:started',

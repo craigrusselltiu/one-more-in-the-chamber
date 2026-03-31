@@ -15,10 +15,10 @@ const INTENT_COLORS: Record<IntentKind, string> = {
 
 const INTENT_ICONS: Record<IntentKind, string> = {
   attack: 'ATK',
-  block: 'BLK',
-  ability: 'ABL',
-  summon: 'SUM',
-  'board-manipulation': 'BRD',
+  block: 'DEF',
+  ability: 'BUFF',
+  summon: 'CALL',
+  'board-manipulation': 'HEX',
 };
 
 /**

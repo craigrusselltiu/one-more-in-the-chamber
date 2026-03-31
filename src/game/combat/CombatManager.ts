@@ -162,24 +162,45 @@ export class CombatManager {
   // EventBus Listeners (React -> Phaser)
   // ---------------------------------------------------------------------------
 
+  /** Bound listeners for proper cleanup. */
+  private boundListeners: Array<{ event: string; fn: (...args: unknown[]) => void }> = [];
+
   private listenForPlayerActions(): void {
-    EventBus.on(GameEvent.TARGET_ENEMY, (...args: unknown[]) => {
+    const on = (event: string, fn: (...args: unknown[]) => void) => {
+      EventBus.on(event, fn);
+      this.boundListeners.push({ event, fn });
+    };
+
+    on(GameEvent.TARGET_ENEMY, (...args: unknown[]) => {
       const index = args[0] as number;
       this.setTargetedEnemy(index);
     });
 
-    EventBus.on(GameEvent.USE_CONSUMABLE, (...args: unknown[]) => {
+    on(GameEvent.USE_CONSUMABLE, (...args: unknown[]) => {
       const consumableId = args[0] as string;
       this.useConsumable(consumableId);
     });
 
-    EventBus.on(GameEvent.ACTIVATE_ABILITY, () => {
+    on(GameEvent.ACTIVATE_ABILITY, () => {
       this.activateDeadeye();
     });
 
-    EventBus.on(GameEvent.END_TURN_EARLY, () => {
+    on(GameEvent.END_TURN_EARLY, () => {
       this.endTurnEarly();
     });
+
+    on(GameEvent.SWAP_REQUESTED, (...args: unknown[]) => {
+      const [fromRow, fromCol, toRow, toCol] = args as number[];
+      this.performSwap(fromRow, fromCol, toRow, toCol);
+    });
+  }
+
+  /** Remove all EventBus listeners. Call on scene shutdown. */
+  destroy(): void {
+    for (const { event, fn } of this.boundListeners) {
+      EventBus.off(event, fn);
+    }
+    this.boundListeners = [];
   }
 
   // ---------------------------------------------------------------------------
@@ -280,6 +301,10 @@ export class CombatManager {
     toRow: number,
     toCol: number,
   ): Promise<void> {
+    // Auto-enter swap phase from consumable window when player starts swapping
+    if (this.phase === 'consumable-window') {
+      this.enterSwapPhase();
+    }
     if (this.phase !== 'swap-phase' || this.swapsRemaining <= 0) return;
     if (this.board.getIsResolving()) return;
 
@@ -294,7 +319,24 @@ export class CombatManager {
     // Track whether this swap is non-adjacent (lasso) for Mustang(4) bonus
     this.currentSwapIsLasso = !this.board.isAdjacent(from, to);
 
-    const result: SwapResult = await this.board.trySwap(from, to);
+    // Track trait/artifact swap hooks
+    this.traits.onSwapPerformed();
+    this.enemyDiedThisSwap = false;
+
+    // Process each cascade step's matches immediately (damage, block, etc.)
+    const onCascadeStep = (stepMatches: MatchResult[]) => {
+      for (const match of stepMatches) {
+        this.hazardManager.resolveAdjacentHazards(match.tiles);
+      }
+      this.processMatches(stepMatches);
+      // Emit full state so React HUD updates (HP bars, etc.) mid-cascade
+      this.emitFullState();
+      this.emitEnemyHpChanges();
+      EventBus.emit(GameEvent.PLAYER_HP_CHANGE, this.player.health, this.player.maxHealth);
+      EventBus.emit(GameEvent.GOLD_CHANGE, this.player.gold);
+    };
+
+    const result: SwapResult = await this.board.trySwap(from, to, onCascadeStep);
 
     if (!result.valid) {
       // Invalid swap -- refund
@@ -334,6 +376,12 @@ export class CombatManager {
     if (swapResult.refundSwaps) {
       this.swapsRemaining = this.swapsPerTurn;
       EventBus.emit(GameEvent.SWAPS_CHANGE, this.swapsRemaining, this.swapsPerTurn);
+    }
+
+    // Auto-retarget if targeted enemy died during cascade
+    const alive = this.aliveEnemies();
+    if (alive.length > 0 && this.targetedEnemyIndex >= alive.length) {
+      this.targetedEnemyIndex = 0;
     }
 
     if (this.isCombatOver()) {
@@ -793,6 +841,8 @@ export class CombatManager {
 
     // 4. Each alive enemy acts (left to right)
     for (const enemy of this.aliveEnemies()) {
+      // Re-check: enemy may have died from venom, thorns, or mid-turn effects
+      if (enemy.state.isDead) continue;
       const action = enemy.executeIntent();
 
       switch (action.type) {

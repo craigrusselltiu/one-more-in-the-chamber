@@ -8,7 +8,7 @@ import type { EnemyState } from '../../types/combat';
 
 /**
  * EnemyTargeting: shows up to 3 enemy panels on the right side.
- * Each panel has: name, intent, HP bar, status effects.
+ * Each panel has: sprite placeholder, name, intent, HP bar, status effects.
  * Click/tap an enemy to target it (free action).
  */
 export const EnemyTargeting = memo(function EnemyTargeting() {
@@ -24,7 +24,7 @@ export const EnemyTargeting = memo(function EnemyTargeting() {
   }
 
   return (
-    <div className="flex flex-col gap-1">
+    <div className="flex flex-col gap-1 items-center">
       {enemies.map((enemy, index) => (
         <EnemyPanel
           key={enemy.id}
@@ -71,13 +71,23 @@ const EnemyPanel = memo(function EnemyPanel({
   return (
     <button
       onClick={handleClick}
-      className="text-left px-1 py-0.5 pointer-events-auto"
+      className="flex flex-col items-center text-center px-1 py-0.5 pointer-events-auto"
       style={{
         border: `1px solid ${borderColor}`,
         backgroundColor: isTargeted ? 'rgba(255, 215, 0, 0.08)' : 'rgba(0,0,0,0.3)',
       }}
       title={`Target: ${enemy.enemyType}`}
     >
+      {/* Enemy sprite placeholder */}
+      <div
+        className="border border-stone-600 border-dashed mb-0.5 flex items-center justify-center"
+        style={{ width: 40, height: 40 }}
+      >
+        <span className="text-stone-600 capitalize" style={{ fontSize: '6px' }}>
+          {enemy.enemyType.slice(0, 4)}
+        </span>
+      </div>
+
       {/* Enemy name */}
       <div className="text-[7px] text-stone-300 leading-none mb-0.5 capitalize">
         {enemy.enemyType}

@@ -12,7 +12,7 @@ export const RestSiteScreen = memo(function RestSiteScreen() {
   const run = useRunStore((s) => s.run);
   const updateHealth = useRunStore((s) => s.updateHealth);
   const upgradeTile = useRunStore((s) => s.upgradeTile);
-  const [choice, setChoice] = useState<'none' | 'rest' | 'upgrade'>('none');
+  const [choice, setChoice] = useState<'none' | 'rest' | 'upgrade' | 'upgraded'>('none');
   const [selectedTile, setSelectedTile] = useState<TileType | null>(null);
 
   if (!run) return null;
@@ -32,37 +32,53 @@ export const RestSiteScreen = memo(function RestSiteScreen() {
   const handleConfirmUpgrade = () => {
     if (!selectedTile) return;
     upgradeTile(selectedTile);
-    setChoice('rest'); // reuse 'rest' as "done" state
+    setChoice('upgraded');
   };
 
   const handleLeave = () => {
     EventBus.emit(GameEvent.SCREEN_CHANGE, 'map' satisfies Screen);
   };
 
-  // Already made a choice
-  if (choice === 'rest' || (choice === 'upgrade' && !selectedTile && run)) {
-    if (choice === 'rest') {
-      return (
-        <div className="flex flex-col items-center justify-center h-full bg-[#1a1a2e]/95">
-          <div className="text-3xl mb-4">
-            {'\u2618'}
-          </div>
-          <h2 className="text-xl text-amber-400 font-mono mb-2">Campfire</h2>
-          <p className="text-stone-300 font-mono text-sm mb-4">
-            You rest by the fire. Healed {healAmount} HP.
-          </p>
-          <p className="text-red-400 font-mono text-xs mb-6">
-            HP: {run.health}/{run.maxHealth}
-          </p>
-          <button
-            onClick={handleLeave}
-            className="px-6 py-2 bg-amber-900/60 text-amber-300 font-mono text-sm border border-amber-700 hover:bg-amber-800/60"
-          >
-            Continue
-          </button>
-        </div>
-      );
-    }
+  // Rested
+  if (choice === 'rest') {
+    return (
+      <div className="flex flex-col items-center justify-center h-full bg-[#1a1a2e]/95">
+        <div className="text-3xl mb-4">{'\u2618'}</div>
+        <h2 className="text-xl text-amber-400 font-mono mb-2">Rested</h2>
+        <p className="text-stone-300 font-mono text-sm mb-4">
+          You rest by the fire. Healed {healAmount} HP.
+        </p>
+        <p className="text-red-400 font-mono text-xs mb-6">
+          HP: {run.health}/{run.maxHealth}
+        </p>
+        <button
+          onClick={handleLeave}
+          className="px-6 py-2 bg-amber-900/60 text-amber-300 font-mono text-sm border border-amber-700 hover:bg-amber-800/60"
+        >
+          Continue
+        </button>
+      </div>
+    );
+  }
+
+  // Upgraded
+  if (choice === 'upgraded') {
+    const tileDef = selectedTile ? TILE_DEFINITIONS[selectedTile] : null;
+    return (
+      <div className="flex flex-col items-center justify-center h-full bg-[#1a1a2e]/95">
+        <div className="text-3xl mb-4">{'\u2B06'}</div>
+        <h2 className="text-xl text-amber-400 font-mono mb-2">Upgraded</h2>
+        <p className="text-stone-300 font-mono text-sm mb-4">
+          {tileDef?.label ?? 'Tile'} has been upgraded.
+        </p>
+        <button
+          onClick={handleLeave}
+          className="px-6 py-2 bg-amber-900/60 text-amber-300 font-mono text-sm border border-amber-700 hover:bg-amber-800/60"
+        >
+          Continue
+        </button>
+      </div>
+    );
   }
 
   // Upgrade tile selection

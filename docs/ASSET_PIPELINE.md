@@ -6,7 +6,7 @@
 
 **One command. No manual intervention. Game-ready output.**
 
-Define what you need in a manifest. Run `python pipeline/generate.py`. Get sprite sheets that Phaser can load directly. No Blender, no Aseprite, no cherry-picking from outputs.
+Define what you need in a manifest. Run `python assets/generate.py`. Get sprite sheets that Phaser can load directly. No Blender, no Aseprite, no cherry-picking from outputs.
 
 Visual cohesion is enforced by **constraints** (locked palette, fixed resolution, consistent prompting, aggressive post-processing), not by manual cleanup.
 
@@ -50,7 +50,7 @@ If we generated at higher resolution and downscaled, we'd lose control of indivi
 ## Pipeline Overview
 
 ```
-assets.json                        (you define what you need)
+assets/manifest.json                (you define what you need)
     |
     v
 [1] Reference Generation           (one hero image per character, via AI API)
@@ -78,27 +78,29 @@ Every step is scripted. The only human input is the manifest.
 |---|---|---|
 | Python 3.10+ | Pipeline orchestrator | Yes |
 | Pillow (PIL) | Image post-processing | Yes |
-| AI image API | Sprite generation | Yes (one of below) |
+| `huggingface_hub` | AI image generation (free) | Yes |
 
-**AI API options (pick one):**
+**AI API: Hugging Face Inference API (free tier)**
 
-| Provider | Pros | Cons | Cost |
-|---|---|---|---|
-| **Replicate** | Hosts SDXL + ControlNet + IP-Adapter. Simple REST API. No local GPU. | Pay per run. | ~$0.005/image |
-| **Fal.ai** | Fast inference. Same model support. Python SDK. | Pay per run. | ~$0.003/image |
-| **ComfyUI (local)** | Free. Full control. Custom workflows. | Needs GPU (8GB+ VRAM). Local setup. | $0 |
+| | |
+|---|---|
+| **Models** | SDXL, ControlNet, IP-Adapter -- all hosted on the Hub |
+| **Cost** | Free. No credit card. Rate-limited but fine for batch asset generation. |
+| **Auth** | Free HF account + API token |
+| **SDK** | `huggingface_hub` Python package |
+| **Fallback** | ComfyUI (local, free, needs GPU 8GB+ VRAM) for unlimited generation |
 
-**Estimated cost for full game asset set (cloud):** ~500-800 images = **$3-5 total**.
+The free tier is sufficient for the full game asset set (~500-800 images). Rate limits add latency but the pipeline handles retries and batching automatically.
 
 ---
 
 ## The Manifest
 
-`pipeline/assets.json` defines every asset the game needs. The pipeline reads this and generates everything.
+`assets/manifest.json` defines every asset the game needs. The pipeline reads this and generates everything.
 
 ```json
 {
-  "palette": "pipeline/palette.png",
+  "palette": "assets/palette.png",
   "output_dir": "public/assets/sprites",
 
   "characters": [
@@ -178,9 +180,9 @@ Every step is scripted. The only human input is the manifest.
   ],
 
   "backgrounds": [
-    { "id": "act1_combat", "description": "dusty desert trail at sunset, cacti, distant mesas", "size": [270, 480] },
-    { "id": "act2_combat", "description": "dark canyon interior, mine cart tracks, lantern glow", "size": [270, 480] },
-    { "id": "act3_combat", "description": "old western town main street, saloon, water tower",   "size": [270, 480] }
+    { "id": "act1_combat", "description": "dusty desert trail at sunset, cacti, distant mesas", "size": [480, 270] },
+    { "id": "act2_combat", "description": "dark canyon interior, mine cart tracks, lantern glow", "size": [480, 270] },
+    { "id": "act3_combat", "description": "old western town main street, saloon, water tower",   "size": [480, 270] }
   ],
 
   "cutscenes": [
@@ -191,7 +193,7 @@ Every step is scripted. The only human input is the manifest.
         "close-up of large coyote with tattered bandana, arms crossed, smirking",
         "text card: DUSTY DAN McGRAW, bold western font, dark background"
       ],
-      "size": [270, 480]
+      "size": [480, 270]
     }
   ]
 }
@@ -203,7 +205,7 @@ Add new assets by adding entries to the manifest. Regenerate by running the pipe
 
 ## Master Palette
 
-The single most important consistency tool. Every pixel in the game maps to one of these colors. Defined once in `pipeline/palette.png` (a 1-pixel-tall image with one pixel per color).
+The single most important consistency tool. Every pixel in the game maps to one of these colors. Defined once in `assets/palette.png` (a 1-pixel-tall image with one pixel per color).
 
 **32 colors, western-themed:**
 
@@ -246,7 +248,7 @@ The pipeline generates 4 candidates and auto-selects the one with the best palet
 For each frame of each animation, generate using:
 
 - **IP-Adapter / character reference**: The reference image from Pass 1. This locks the character's appearance (proportions, colors, clothing, features).
-- **ControlNet pose**: A pre-defined pose skeleton for this specific animation frame. Stored as stick-figure PNGs in `pipeline/poses/`.
+- **ControlNet pose**: A pre-defined pose skeleton for this specific animation frame. Stored as stick-figure PNGs in `assets/poses/`.
 - **Prompt**: Same base prompt + animation-specific action text.
 
 ```
@@ -254,18 +256,18 @@ Prompt: "pixel art, [character description], [action: e.g. 'swinging sword overh
          side view, [palette colors], clean lines, game sprite,
          transparent background, 32-color pixel art"
 
-Reference: pipeline/refs/red_panda.png    (IP-Adapter input)
-Pose:      pipeline/poses/humanoid/attack_03.png  (ControlNet input)
+Reference: assets/refs/red_panda.png    (IP-Adapter input)
+Pose:      assets/poses/humanoid/attack_03.png  (ControlNet input)
 ```
 
 The combination of IP-Adapter (locks appearance) + ControlNet (locks pose) + consistent prompt (locks style) produces frames that are consistent enough for pixel art. Post-processing handles the rest.
 
 ### Pre-defined Pose Templates
 
-Stored in `pipeline/poses/`. One set per body type. Reused for every character of that type.
+Stored in `assets/poses/`. One set per body type. Reused for every character of that type.
 
 ```
-pipeline/poses/
+assets/poses/
 ├── humanoid/              # Red panda, bandits, deputies, bosses
 │   ├── idle_01.png ... idle_06.png
 │   ├── attack_01.png ... attack_06.png
@@ -305,7 +307,7 @@ Same as tiles but at 16x16. Simpler shapes, fewer details.
 
 ### Backgrounds
 
-Generated at target resolution (480x320 for combat backgrounds). Higher detail than sprites but still pixel art styled.
+Generated at target resolution (480x270). Higher detail than sprites but still pixel art styled.
 
 ```
 Prompt: "pixel art background, [scene description], [palette colors],
@@ -316,7 +318,7 @@ Single generation per background. Post-processed with palette snap.
 
 ### Boss Cutscene Frames
 
-Full-scene illustrations. Generated at 480x320. Each cutscene has 2-3 key frames defined in the manifest.
+Full-scene illustrations. Generated at 480x270. Each cutscene has 2-3 key frames defined in the manifest.
 
 ```
 Prompt: "pixel art cinematic scene, [frame description], dramatic lighting,
@@ -411,11 +413,11 @@ public/assets/sprites/ui/status_block.png
 ## Directory Structure
 
 ```
-pipeline/
+assets/
 ├── generate.py              # Main entry point
-├── assets.json              # Asset manifest
+├── manifest.json            # Asset manifest
 ├── palette.png              # Master palette (32 colors)
-├── config.py                # API keys, provider selection, generation params
+├── config.py                # HF token, generation params
 ├── steps/
 │   ├── reference.py         # Pass 1: generate reference images
 │   ├── frames.py            # Pass 2: generate animation frames
@@ -440,49 +442,47 @@ pipeline/
 
 ```bash
 # Generate everything defined in the manifest
-python pipeline/generate.py
+python assets/generate.py
 
 # Generate only a specific category
-python pipeline/generate.py --only characters
-python pipeline/generate.py --only tiles
-python pipeline/generate.py --only enemies
+python assets/generate.py --only characters
+python assets/generate.py --only tiles
+python assets/generate.py --only enemies
 
 # Regenerate a specific asset (by id)
-python pipeline/generate.py --regenerate red_panda
-python pipeline/generate.py --regenerate bullet
+python assets/generate.py --regenerate red_panda
+python assets/generate.py --regenerate bullet
 
 # Regenerate a specific animation of a specific character
-python pipeline/generate.py --regenerate red_panda:attack
+python assets/generate.py --regenerate red_panda:attack
 
 # Regenerate only the reference image (forces all frames to regenerate too)
-python pipeline/generate.py --regenerate red_panda --new-reference
+python assets/generate.py --regenerate red_panda --new-reference
 
 # Dry run: show what would be generated without calling the API
-python pipeline/generate.py --dry-run
+python assets/generate.py --dry-run
 ```
 
 ### First Run
 
 ```bash
 # 1. Install dependencies
-pip install pillow replicate  # or: pip install pillow fal-client
+pip install pillow huggingface_hub
 
-# 2. Set API key
-export REPLICATE_API_TOKEN=your_key  # or FAL_KEY
+# 2. Set API token (free -- sign up at huggingface.co)
+export HF_TOKEN=hf_your_token_here
 
-# 3. Configure provider in pipeline/config.py
-
-# 4. Generate all assets
-python pipeline/generate.py
+# 3. Generate all assets
+python assets/generate.py
 ```
 
-First full generation takes ~15-30 minutes (API latency). Subsequent runs skip cached assets and only generate new/changed entries.
+First full generation takes ~20-40 minutes (free tier rate limits). Subsequent runs skip cached assets and only generate new/changed entries.
 
 ---
 
 ## Caching and Iteration
 
-- **Reference images** are cached in `pipeline/refs/`. They persist across runs. Only regenerated with `--new-reference`.
+- **Reference images** are cached in `assets/refs/`. They persist across runs. Only regenerated with `--new-reference`.
 - **Generated frames** are cached by content hash of (prompt + reference + pose). If the manifest description hasn't changed, frames aren't regenerated.
 - **Post-processed outputs** are re-run every time (fast, <1 second per asset).
 - To iterate on a character's look: update the `description` in the manifest, run with `--regenerate [id] --new-reference`. New reference = new look, all frames regenerate to match.

@@ -31,12 +31,13 @@ export class Board {
   private selectedTile: GridPosition | null = null;
   private inputEnabled = true;
 
-  constructor(scene: Phaser.Scene, x: number, y: number) {
+  constructor(scene: Phaser.Scene, x: number, y: number, tileTypes?: TileType[]) {
     this.scene = scene;
     this.originX = x;
     this.originY = y;
     this.matchDetector = new MatchDetector();
     this.cascadeResolver = new CascadeResolver();
+    if (tileTypes) this.activeTileTypes = tileTypes;
     this.initGrid();
     this.setupInput();
   }
@@ -93,11 +94,16 @@ export class Board {
 
   // -- Input handling --
 
+  private dragStart: GridPosition | null = null;
+
   private setupInput(): void {
     this.scene.input.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
       if (!this.inputEnabled || this.isResolving) return;
       const pos = this.pointerToGrid(pointer);
       if (!pos) return;
+
+      // Start tracking drag from this tile
+      this.dragStart = pos;
 
       if (this.selectedTile) {
         if (
@@ -106,11 +112,16 @@ export class Board {
         ) {
           // Clicked same tile: deselect
           this.clearSelection();
+          this.dragStart = null;
         } else if (this.isAdjacent(this.selectedTile, pos)) {
-          // Clicked adjacent tile: attempt swap
+          // Clicked adjacent tile: route through CombatManager
           const from = { ...this.selectedTile };
           this.clearSelection();
-          this.trySwap(from, pos);
+          this.dragStart = null;
+          EventBus.emit(
+            GameEvent.SWAP_REQUESTED,
+            from.row, from.col, pos.row, pos.col,
+          );
         } else {
           // Clicked non-adjacent: select the new tile
           this.clearSelection();
@@ -119,6 +130,29 @@ export class Board {
       } else {
         this.selectTile(pos);
       }
+    });
+
+    this.scene.input.on('pointerup', (pointer: Phaser.Input.Pointer) => {
+      if (!this.inputEnabled || this.isResolving || !this.dragStart) return;
+      const pos = this.pointerToGrid(pointer);
+      if (!pos) { this.dragStart = null; return; }
+
+      // If released on a different adjacent tile, treat as drag-swap
+      if (
+        (pos.row !== this.dragStart.row || pos.col !== this.dragStart.col) &&
+        this.isAdjacent(this.dragStart, pos)
+      ) {
+        const from = { ...this.dragStart };
+        this.clearSelection();
+        this.dragStart = null;
+        EventBus.emit(
+          GameEvent.SWAP_REQUESTED,
+          from.row, from.col, pos.row, pos.col,
+        );
+        return;
+      }
+
+      this.dragStart = null;
     });
   }
 
@@ -162,7 +196,11 @@ export class Board {
    * Attempt to swap two tiles. Validates adjacency and match production.
    * Returns the result including all matches from the full cascade chain.
    */
-  async trySwap(from: GridPosition, to: GridPosition): Promise<SwapResult> {
+  async trySwap(
+    from: GridPosition,
+    to: GridPosition,
+    onCascadeStep?: (matches: MatchResult[]) => void,
+  ): Promise<SwapResult> {
     if (this.isResolving) return { valid: false, matches: [] };
 
     const tileA = this.grid[from.row]?.[from.col];
@@ -193,7 +231,7 @@ export class Board {
     // Valid swap: resolve all cascades
     this.isResolving = true;
     EventBus.emit(GameEvent.SWAPS_CHANGE);
-    const allMatches = await this.cascadeResolver.resolve(this);
+    const allMatches = await this.cascadeResolver.resolve(this, onCascadeStep);
 
     // After cascade: check for no valid moves
     if (!this.hasValidMoves()) {
@@ -373,6 +411,110 @@ export class Board {
     }
   }
 
+  /**
+   * Fill empty cells and animate new tiles dropping from above.
+   * Tiles fall one by one per column, staggered sequentially.
+   */
+  async fillEmptyTilesAnimated(): Promise<void> {
+    const tweens: Promise<void>[] = [];
+    let globalIndex = 0;
+
+    if (this.cascadeResolver.getGravityDirection() === 'left') {
+      // Gravity left: new tiles enter from the right edge
+      for (let row = 0; row < BOARD_SIZE; row++) {
+        let emptyCount = 0;
+        for (let col = 0; col < BOARD_SIZE; col++) {
+          if (this.grid[row][col] === null) emptyCount++;
+        }
+
+        let spawnIndex = 0;
+        for (let col = BOARD_SIZE - 1; col >= 0; col--) {
+          if (this.grid[row][col] === null) {
+            const type = this.randomTileType();
+            const startX = this.originX + BOARD_SIZE * TILE_SIZE + (emptyCount - spawnIndex) * TILE_SIZE;
+            const tile = new Tile(this.scene, startX, this.tileY(row), type, row, col);
+            this.grid[row][col] = tile;
+            tweens.push(tile.tweenToPosition(this.tileX(col), this.tileY(row), 150, globalIndex * 25));
+            spawnIndex++;
+            globalIndex++;
+          }
+        }
+      }
+    } else {
+      // Gravity down: new tiles enter from the top edge
+      for (let col = 0; col < BOARD_SIZE; col++) {
+        let emptyCount = 0;
+        for (let row = 0; row < BOARD_SIZE; row++) {
+          if (this.grid[row][col] === null) emptyCount++;
+        }
+
+        let spawnIndex = 0;
+        for (let row = 0; row < BOARD_SIZE; row++) {
+          if (this.grid[row][col] === null) {
+            const type = this.randomTileType();
+            const startY = this.originY - (emptyCount - spawnIndex) * TILE_SIZE;
+            const tile = new Tile(this.scene, this.tileX(col), startY, type, row, col);
+            this.grid[row][col] = tile;
+            tweens.push(tile.tweenToPosition(this.tileX(col), this.tileY(row), 150, globalIndex * 25));
+            spawnIndex++;
+            globalIndex++;
+          }
+        }
+      }
+    }
+
+    if (tweens.length > 0) {
+      await Promise.all(tweens);
+    }
+  }
+
+  // -- Animation helpers --
+
+  /**
+   * Animate tiles that were cleared: fade out and destroy.
+   * Grid cells should already be nulled before calling this.
+   */
+  async animateTileClear(tiles: Tile[]): Promise<void> {
+    if (tiles.length === 0) return;
+    await Promise.all(tiles.map(t => t.animateClear(120)));
+  }
+
+  /**
+   * Animate gravity drop for tiles that have moved.
+   * Each entry: the tile and its new target position.
+   */
+  async animateGravityDrop(
+    moves: Array<{ tile: Tile; toX: number; toY: number }>,
+  ): Promise<void> {
+    if (moves.length === 0) return;
+    await Promise.all(
+      moves.map(m => m.tile.tweenToPosition(m.toX, m.toY, 180)),
+    );
+  }
+
+  /**
+   * Play intro animation: tiles drop from above, column by column.
+   */
+  async playIntroAnimation(): Promise<void> {
+    const tweens: Promise<void>[] = [];
+    for (let col = 0; col < BOARD_SIZE; col++) {
+      for (let row = 0; row < BOARD_SIZE; row++) {
+        const tile = this.grid[row][col];
+        if (!tile) continue;
+        const finalY = this.tileY(row);
+        const startY = this.originY - (BOARD_SIZE - row + 1) * TILE_SIZE;
+        tile.setPosition(this.tileX(col), startY);
+        // Stagger: each column starts slightly after the previous,
+        // and within a column, lower rows land later
+        const delay = col * 50 + row * 20;
+        tweens.push(
+          tile.tweenToPosition(this.tileX(col), finalY, 200, delay),
+        );
+      }
+    }
+    await Promise.all(tweens);
+  }
+
   // -- Valid move detection --
 
   /**
@@ -531,6 +673,10 @@ export class Board {
     return [...this.activeTileTypes];
   }
 
+  getScene(): Phaser.Scene {
+    return this.scene;
+  }
+
   /**
    * Pick a random tile from the board, remove it, and return its type.
    * Returns null if the board has no tiles. Used by the Ricochet mechanic.
@@ -612,6 +758,13 @@ export class Board {
         }
       }
     }
+  }
+
+  /**
+   * Destroy the board and all tiles. Called on scene shutdown.
+   */
+  destroy(): void {
+    this.destroyAllTiles();
   }
 
   update(): void {

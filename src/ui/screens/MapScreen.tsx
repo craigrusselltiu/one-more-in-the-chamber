@@ -259,7 +259,7 @@ function navigateToNode(node: MapNode) {
     shop: 'shop',
     rest: 'rest-site',
     event: 'event',
-    treasure: 'map', // Treasure handled inline (artifact pick)
+    treasure: 'treasure',
     boss: 'combat',
   };
 

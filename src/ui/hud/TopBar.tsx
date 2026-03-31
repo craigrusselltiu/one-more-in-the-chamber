@@ -23,13 +23,13 @@ export const TopBar = memo(function TopBar() {
       <div className="flex items-center gap-3">
         <span className="text-red-400">HP {health}/{maxHealth}</span>
         <span className="text-yellow-300">{gold} gold</span>
+        <button
+          className="text-stone-500 hover:text-stone-300"
+          title="Settings"
+        >
+          [=]
+        </button>
       </div>
-      <button
-        className="text-stone-500 hover:text-stone-300"
-        title="Settings"
-      >
-        [=]
-      </button>
     </div>
   );
 });

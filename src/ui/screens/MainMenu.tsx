@@ -16,43 +16,54 @@ export const MainMenu = memo(function MainMenu() {
   };
 
   return (
-    <div className="flex flex-col items-center justify-center h-full bg-[#1a1a2e]/90">
-      <h1 className="text-3xl font-bold text-amber-400 mb-2 font-mono tracking-wide">
-        ONE MORE IN THE CHAMBER
-      </h1>
-      <p className="text-sm text-stone-400 mb-8 font-mono">
-        A roguelike match-3 western
-      </p>
-      <div className="flex flex-col gap-3 w-48">
-        <button
-          onClick={handleContinue}
-          disabled={!hasActiveRun}
-          className={`px-4 py-2 font-mono text-sm border ${
-            hasActiveRun
-              ? 'bg-amber-900/60 text-amber-300 border-amber-700 hover:bg-amber-800/60'
-              : 'bg-stone-700/50 text-stone-500 border-stone-600 cursor-not-allowed'
-          }`}
-        >
-          Continue
-        </button>
+    <div className="relative bg-[#1a1a2e]" style={{ width: 960, height: 540 }}>
+      {/* Title -- centered on screen */}
+      <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+        <div className="text-center">
+          <h1 className="text-3xl font-bold text-amber-400 font-mono tracking-wide leading-tight">
+            ONE MORE
+            <br />
+            IN THE CHAMBER
+          </h1>
+          <p className="text-xs text-stone-500 font-mono mt-2">
+            A roguelike match-3 western
+          </p>
+        </div>
+      </div>
+
+      {/* Menu items -- bottom left */}
+      <div className="absolute left-6 bottom-8 flex flex-col gap-1">
+        {hasActiveRun && (
+          <button
+            onClick={handleContinue}
+            className="text-left text-sm font-mono text-stone-300 hover:text-amber-400 transition-colors"
+          >
+            Continue
+          </button>
+        )}
         <button
           onClick={handleNewGame}
-          className="px-4 py-2 bg-amber-900/60 text-amber-300 font-mono text-sm border border-amber-700 hover:bg-amber-800/60"
+          className="text-left text-sm font-mono text-stone-300 hover:text-amber-400 transition-colors"
         >
           New Game
         </button>
         <button
-          className="px-4 py-2 bg-stone-700/50 text-stone-400 font-mono text-sm border border-stone-600 hover:bg-stone-600/50"
+          className="text-left text-sm font-mono text-stone-600 cursor-not-allowed"
           disabled
         >
           Reputation Shop
         </button>
         <button
-          className="px-4 py-2 bg-stone-700/50 text-stone-400 font-mono text-sm border border-stone-600 hover:bg-stone-600/50"
+          className="text-left text-sm font-mono text-stone-600 cursor-not-allowed"
           disabled
         >
           Settings
         </button>
+      </div>
+
+      {/* Version -- bottom right */}
+      <div className="absolute right-4 bottom-3">
+        <span className="text-[9px] text-stone-700 font-mono">v0.1.0</span>
       </div>
     </div>
   );
