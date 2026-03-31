@@ -78,7 +78,7 @@ export const TILE_DEFINITIONS: Record<TileType, TileDefinition> = {
     baseValue: 1,
     upgradeValue: 1,
     pool: 'starter',
-    description: '+1 Deadeye charge per tile.',
+    description: '1 charge per 3-match; +1 per extra tile.',
   },
   stampede: {
     type: 'stampede',
