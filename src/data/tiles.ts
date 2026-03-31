@@ -105,10 +105,10 @@ export const TILE_DEFINITIONS: Record<TileType, TileDefinition> = {
     label: 'Buckshot',
     abbreviation: 'Bk',
     color: TILE_COLORS.buckshot,
-    baseValue: 5,
-    upgradeValue: 2,
+    baseValue: 1,
+    upgradeValue: 1,
     pool: 'additional',
-    description: 'Raw single-target damage.',
+    description: '1 damage per tile; upgrades add 1 damage per tile.',
   },
   ace: {
     type: 'ace',
