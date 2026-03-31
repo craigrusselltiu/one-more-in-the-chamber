@@ -129,6 +129,9 @@ export class BoardHazardManager {
         if (tile.hazard.countdown <= 0) {
           detonations.push({ row, col });
           tile.hazard = null;
+        } else {
+          // In-place mutation: nudge the setter to refresh the countdown display
+          tile.refreshStatusIndicator();
         }
       }
     }
