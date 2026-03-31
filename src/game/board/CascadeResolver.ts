@@ -1,6 +1,6 @@
 import type { TileType } from '../../types/game';
 import type { Board } from './Board';
-import type { MatchResult, GridPosition } from '../../types/combat';
+import type { MatchResult } from '../../types/combat';
 
 export type GravityDirection = 'down' | 'left';
 
@@ -31,8 +31,9 @@ export class CascadeResolver {
 
     while (matches.length > 0) {
       allMatches.push(...matches);
-      const extraResults = this.clearMatches(board, matches);
-      allMatches.push(...extraResults);
+      // clearMatches destroys tiles from cross-clears and explosions but does NOT
+      // add them to allMatches -- cleared tiles do not trigger their effects (T2).
+      this.clearMatches(board, matches);
       this.spawnSpecials(board, matches);
       this.applyGravity(board);
       board.fillEmptyTiles();
@@ -43,11 +44,11 @@ export class CascadeResolver {
   }
 
   /**
-   * Clear all tiles from matches plus any tiles from explosive detonation
-   * and cross clear expansion. Returns additional MatchResult entries
-   * for tiles cleared by these special mechanics (grouped by type).
+   * Destroy all tiles in the given matches, plus any tiles cleared by
+   * cross-clear expansion and explosive detonation. Cleared tiles do NOT
+   * trigger their effects -- only matched tiles do (T2 mechanic).
    */
-  private clearMatches(board: Board, matches: MatchResult[]): MatchResult[] {
+  private clearMatches(board: Board, matches: MatchResult[]): void {
     const grid = board.getGrid();
     const size = board.getBoardSize();
     const posKey = (r: number, c: number) => `${r},${c}`;
@@ -127,31 +128,6 @@ export class CascadeResolver {
       }
     }
 
-    // Phase 4: Group extra tiles by type into additional MatchResults
-    const byType = new Map<TileType, GridPosition[]>();
-    for (const [key, type] of extraTiles) {
-      const parts = key.split(',');
-      const pos: GridPosition = { row: Number(parts[0]), col: Number(parts[1]) };
-      const list = byType.get(type) ?? [];
-      list.push(pos);
-      byType.set(type, list);
-    }
-
-    const additionalResults: MatchResult[] = [];
-    for (const [type, tiles] of byType) {
-      additionalResults.push({
-        tiles,
-        tileType: type,
-        length: tiles.length,
-        isExplosive: false,
-        isShowdown: false,
-        isCross: false,
-        crossIntersections: [],
-        matchBonus: 1.0,
-      });
-    }
-
-    return additionalResults;
   }
 
   /**
