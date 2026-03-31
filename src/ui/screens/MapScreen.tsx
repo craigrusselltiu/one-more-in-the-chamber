@@ -1,7 +1,8 @@
 import { memo, useCallback, useRef, useEffect, useState } from 'react';
 import { EventBus, GameEvent } from '../../game/EventBus';
 import { useRunStore } from '../../store/runStore';
-import { getReachableNodes, getActName } from '../../game/map/MapGenerator';
+import { getReachableNodes } from '../../game/map/MapGenerator';
+import { TopBar } from '../hud/TopBar';
 import type { MapNode, MapNodeType } from '../../types/game';
 import type { Screen } from '../../App';
 
@@ -194,19 +195,8 @@ export const MapScreen = memo(function MapScreen() {
 
   return (
     <div className="flex flex-col h-full bg-[#1a1a2e]/95">
-      {/* Header */}
-      <div className="flex items-center justify-between px-4 py-2 border-b border-stone-700">
-        <div className="flex items-center gap-4">
-          <span className="text-amber-400 font-mono text-sm font-bold">
-            Act {run.currentAct} -- {getActName(run.currentAct)}
-          </span>
-        </div>
-        <div className="flex items-center gap-4 font-mono text-xs">
-          <span className="text-red-400">HP: {run.health}/{run.maxHealth}</span>
-          <span className="text-yellow-400">Gold: {run.gold}</span>
-          <span className="text-stone-400">Floor {run.currentAct}</span>
-        </div>
-      </div>
+      {/* Shared top bar */}
+      <TopBar />
 
       {/* Map area */}
       <div ref={containerRef} className="flex-1 overflow-y-auto flex justify-center">

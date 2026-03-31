@@ -7,6 +7,8 @@ interface RunStore {
   startRun: (seed: string, starterTile: TileType) => void;
   updateHealth: (delta: number) => void;
   updateGold: (delta: number) => void;
+  syncHealth: (current: number, max: number) => void;
+  syncGold: (amount: number) => void;
   addArtifact: (artifact: ArtifactInstance) => void;
   addConsumable: (consumable: ConsumableInstance) => void;
   removeConsumable: (index: number) => void;
@@ -58,6 +60,18 @@ export const useRunStore = create<RunStore>((set) => ({
     set((state) => {
       if (!state.run) return state;
       return { run: { ...state.run, gold: Math.max(0, state.run.gold + delta) } };
+    }),
+
+  syncHealth: (current, max) =>
+    set((state) => {
+      if (!state.run) return state;
+      return { run: { ...state.run, health: current, maxHealth: max } };
+    }),
+
+  syncGold: (amount) =>
+    set((state) => {
+      if (!state.run) return state;
+      return { run: { ...state.run, gold: amount } };
     }),
 
   addArtifact: (artifact) =>
