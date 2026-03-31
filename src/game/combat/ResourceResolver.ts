@@ -18,26 +18,27 @@ export interface ResourceOutput {
 /**
  * ResourceResolver: universal resource generation rule.
  * "When a tile is cleared by any means, it generates its own resource."
- * Per-tile values x tile count x match bonus.
+ * Base values scale with tile count and match bonus; upgrade bonuses are
+ * added flat to the total match output (not multiplied per tile).
  */
 export class ResourceResolver {
   resolve(match: MatchResult, tileUpgradeLevel: number): ResourceOutput {
     const def = TILE_DEFINITIONS[match.tileType];
     if (!def) return this.emptyOutput();
 
-    const perTile = def.baseValue + tileUpgradeLevel * def.upgradeValue;
-    const tileCount = match.tiles.length;
-    const bonus = match.matchBonus;
+    const count = match.tiles.length;
+    const baseTotal = def.baseValue * count * match.matchBonus;
+    const upgradeBonus = tileUpgradeLevel * def.upgradeValue;
 
-    return this.computeOutput(match.tileType, perTile, tileCount, bonus);
+    return this.computeOutput(match.tileType, baseTotal, upgradeBonus, count);
   }
 
   resolveSingle(type: TileType, upgradeLevel: number): ResourceOutput {
     const def = TILE_DEFINITIONS[type];
     if (!def) return this.emptyOutput();
 
-    const perTile = def.baseValue + upgradeLevel * def.upgradeValue;
-    return this.computeOutput(type, perTile, 1, 1.0);
+    const upgradeBonus = upgradeLevel * def.upgradeValue;
+    return this.computeOutput(type, def.baseValue, upgradeBonus, 1);
   }
 
   /** Resolve resources for multiple tiles of the same type at 1.0x each. */
@@ -45,18 +46,19 @@ export class ResourceResolver {
     const def = TILE_DEFINITIONS[type];
     if (!def) return this.emptyOutput();
 
-    const perTile = def.baseValue + upgradeLevel * def.upgradeValue;
-    return this.computeOutput(type, perTile, count, 1.0);
+    const baseTotal = def.baseValue * count;
+    const upgradeBonus = upgradeLevel * def.upgradeValue;
+    return this.computeOutput(type, baseTotal, upgradeBonus, count);
   }
 
   private computeOutput(
     type: TileType,
-    perTile: number,
+    baseTotal: number,
+    upgradeBonus: number,
     count: number,
-    bonus: number,
   ): ResourceOutput {
     const output = this.emptyOutput();
-    const total = Math.round(perTile * count * bonus);
+    const total = Math.round(baseTotal + upgradeBonus);
 
     switch (type) {
       case 'bullet':
@@ -77,25 +79,24 @@ export class ResourceResolver {
         output.damage = total;
         break;
       case 'smoke':
-        output.dodgePercent = count; // +1%/tile, not affected by match bonus
+        output.dodgePercent = count; // +1%/tile, not affected by match bonus or upgrades
         break;
       case 'dynamite':
-        // Match-size-based: 1 for 3-match, 2 for 4-match, 3 for 5-match
-        // Upgrades add +1 per upgrade level to the total (perTile - 1 = upgradeBonus)
-        output.abilityCharges = Math.max(0, count - 2) + Math.round(perTile - 1);
+        // Match-size-based: 1 for 3-match, 2 for 4-match, 3 for 5-match + flat upgrade bonus
+        output.abilityCharges = Math.max(0, count - 2) + Math.round(upgradeBonus);
         break;
       case 'stampede':
         output.damage = total;
         output.isAoE = true;
         break;
       case 'ace':
-        output.aceMultiplier = count * 0.25; // +0.25x/tile, not affected by match bonus
+        output.aceMultiplier = count * 0.25 + upgradeBonus; // base per-tile + flat upgrade bonus
         break;
       case 'venom':
-        output.venomStacks = count; // stacks, not affected by match bonus
+        output.venomStacks = count; // stacks, not affected by match bonus or upgrades
         break;
       case 'horseshoe':
-        output.critPercent = count * 5; // +5%/tile, not affected by match bonus
+        output.critPercent = count * 5 + upgradeBonus; // base per-tile + flat upgrade bonus
         break;
     }
 
