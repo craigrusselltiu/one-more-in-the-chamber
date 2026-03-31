@@ -706,9 +706,6 @@ export class CombatManager {
     // Artifact turn-end effects (Sharpshooter's Eye reset)
     this.artifacts.onTurnEnd();
 
-    // Player block expires at turn end
-    this.player.resetTurnEffects();
-
     if (this.isCombatOver()) {
       this.endCombat();
       return;
@@ -718,6 +715,9 @@ export class CombatManager {
     EventBus.emit(GameEvent.TURN_END, this.buildState());
 
     this.executeEnemyTurn();
+
+    // Player block expires after the enemy turn so it absorbs incoming attacks
+    this.player.resetTurnEffects();
 
     if (this.isCombatOver()) {
       this.endCombat();
