@@ -91,6 +91,7 @@ export class Tile {
       venom: 'Ve',
       ember: 'Em',
       horseshoe: 'Hs',
+      fifty_cal: '.50',
     };
     const prefix = this.isExplosive ? '!' : this.isShowdown ? '*' : '';
     return prefix + abbrevs[this.type];

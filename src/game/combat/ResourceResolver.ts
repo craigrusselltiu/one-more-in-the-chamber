@@ -28,8 +28,8 @@ export class ResourceResolver {
 
     const count = match.tiles.length;
 
-    // Buckshot is a per-tile upgrade exception: upgrade adds per tile, not flat per match.
-    if (match.tileType === 'buckshot') {
+    // Per-tile upgrade tiles: upgrade adds per tile, not flat per match.
+    if (match.tileType === 'buckshot' || match.tileType === 'fifty_cal') {
       const baseTotal = (def.baseValue + tileUpgradeLevel * def.upgradeValue) * count * match.matchBonus;
       return this.computeOutput(match.tileType, baseTotal, 0, count);
     }
@@ -44,6 +44,11 @@ export class ResourceResolver {
     const def = TILE_DEFINITIONS[type];
     if (!def) return this.emptyOutput();
 
+    // Per-tile upgrade tiles: upgrade applies per tile, so include in base for a single tile.
+    if (type === 'buckshot' || type === 'fifty_cal') {
+      return this.computeOutput(type, def.baseValue + upgradeLevel * def.upgradeValue, 0, 1);
+    }
+
     const upgradeBonus = upgradeLevel * def.upgradeValue;
     return this.computeOutput(type, def.baseValue, upgradeBonus, 1);
   }
@@ -53,8 +58,8 @@ export class ResourceResolver {
     const def = TILE_DEFINITIONS[type];
     if (!def) return this.emptyOutput();
 
-    // Buckshot is a per-tile upgrade exception: upgrade adds per tile, not flat per match.
-    if (type === 'buckshot') {
+    // Per-tile upgrade tiles: upgrade adds per tile, not flat per match.
+    if (type === 'buckshot' || type === 'fifty_cal') {
       const baseTotal = (def.baseValue + upgradeLevel * def.upgradeValue) * count;
       return this.computeOutput(type, baseTotal, 0, count);
     }
@@ -76,6 +81,7 @@ export class ResourceResolver {
     switch (type) {
       case 'bullet':
       case 'buckshot':
+      case 'fifty_cal':
       case 'ember':
         output.damage = total;
         break;
