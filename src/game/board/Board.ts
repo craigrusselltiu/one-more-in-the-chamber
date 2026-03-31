@@ -225,6 +225,13 @@ export class Board {
 
   // -- Showdown tile resolution --
 
+  /**
+   * Resolve a swap involving a showdown tile.
+   * The showdown tile is consumed; all tiles of the swapped tile's type are
+   * triggered (their damage/effects apply at 1x per tile) and removed from
+   * the board. Returns a MatchResult for CombatManager to process via
+   * processMatches, followed by any cascade matches from the refilled board.
+   */
   private async resolveShowdownSwap(
     from: GridPosition,
     to: GridPosition,
@@ -232,7 +239,6 @@ export class Board {
     const tileA = this.grid[from.row][from.col]!;
     const tileB = this.grid[to.row][to.col]!;
 
-    // The showdown tile is destroyed; all tiles of the adjacent tile's type are cleared
     const showdownTile = tileA.isShowdown ? tileA : tileB;
     const targetTile = tileA.isShowdown ? tileB : tileA;
     const targetType = targetTile.type;
@@ -240,39 +246,41 @@ export class Board {
 
     this.isResolving = true;
 
-    // Destroy the showdown tile
+    // Consume the showdown tile first so it is excluded from the type scan below
     showdownTile.destroy();
     this.grid[showdownPos.row][showdownPos.col] = null;
 
-    // Destroy all tiles of the target type
-    const cleared: GridPosition[] = [];
+    // Trigger all tiles of the target type: collect positions, then destroy
+    const triggered: GridPosition[] = [];
     for (let row = 0; row < BOARD_SIZE; row++) {
       for (let col = 0; col < BOARD_SIZE; col++) {
         const tile = this.grid[row][col];
         if (tile && tile.type === targetType) {
-          cleared.push({ row, col });
+          triggered.push({ row, col });
           tile.destroy();
           this.grid[row][col] = null;
         }
       }
     }
 
+    // Build a MatchResult so CombatManager.processMatches applies effects
+    // (damage, block, gold, etc.) for every triggered tile at 1.0x per tile.
     const showdownMatch: MatchResult = {
-      tiles: cleared,
+      tiles: triggered,
       tileType: targetType,
-      length: cleared.length,
+      length: triggered.length,
       isExplosive: false,
       isShowdown: true,
       isCross: false,
       crossIntersections: [],
-      matchBonus: 1.0, // Each cleared tile generates 1.0x resource
+      matchBonus: 1.0,
     };
 
-    // Apply gravity and fill
+    // Apply gravity and fill so cascades resolve from a stable board state
     this.cascadeResolver.applyGravity(this);
     this.fillEmptyTiles();
 
-    // Continue resolving any new matches
+    // Resolve any new matches that form after the board refills
     const cascadeMatches = await this.cascadeResolver.resolve(this);
     const allMatches = [showdownMatch, ...cascadeMatches];
 
