@@ -1,6 +1,7 @@
 import { memo } from 'react';
 import { useRunStore } from '../../store/runStore';
 import { ARTIFACTS } from '../../data/artifacts';
+import { Tooltip } from './Tooltip';
 import type { TraitId } from '../../types/game';
 
 /** Primary color for each trait tag. */
@@ -35,9 +36,9 @@ export const ArtifactBar = memo(function ArtifactBar() {
             ? TRAIT_COLORS[inst.tags[0]] ?? DEFAULT_COLOR
             : DEFAULT_COLOR;
 
-        return (
+        const label = def?.name ?? inst.id;
+        const square = (
           <div
-            key={`${inst.id}-${i}`}
             className="flex items-center justify-center text-[5px] text-white font-bold"
             style={{
               width: 14,
@@ -45,10 +46,17 @@ export const ArtifactBar = memo(function ArtifactBar() {
               backgroundColor: color,
               border: `1px solid ${color}`,
             }}
-            title={def ? `${def.name}: ${def.effect}` : inst.id}
           >
-            {(def?.name ?? inst.id).charAt(0).toUpperCase()}
+            {label.charAt(0).toUpperCase()}
           </div>
+        );
+
+        return def ? (
+          <Tooltip key={`${inst.id}-${i}`} name={def.name} description={def.effect}>
+            {square}
+          </Tooltip>
+        ) : (
+          <div key={`${inst.id}-${i}`}>{square}</div>
         );
       })}
     </div>

@@ -3,6 +3,7 @@ import { EventBus, GameEvent } from '../../game/EventBus';
 import { useRunStore } from '../../store/runStore';
 import { useCombatStore } from '../../store/combatStore';
 import { CONSUMABLES } from '../../data/consumables';
+import { Tooltip } from './Tooltip';
 
 const CATEGORY_COLORS: Record<string, string> = {
   offensive: '#D04040',
@@ -81,7 +82,7 @@ const ConsumableSlot = memo(function ConsumableSlot({
     : 'transparent';
   const borderColor = canUse ? '#FFD700' : '#555';
 
-  return (
+  const button = (
     <button
       onClick={handleUse}
       disabled={!canUse}
@@ -93,7 +94,6 @@ const ConsumableSlot = memo(function ConsumableSlot({
         border: `1px solid ${borderColor}`,
         opacity: filled ? 1 : 0.4,
       }}
-      title={filled ? `${name}: ${effect}` : 'Empty slot'}
     >
       {filled && name && (
         <span className="text-[6px] text-white font-bold leading-none">
@@ -102,4 +102,8 @@ const ConsumableSlot = memo(function ConsumableSlot({
       )}
     </button>
   );
+
+  return filled && name && effect ? (
+    <Tooltip name={name} description={effect}>{button}</Tooltip>
+  ) : button;
 });
