@@ -116,7 +116,7 @@ export const TILE_DEFINITIONS: Record<TileType, TileDefinition> = {
     abbreviation: 'Ac',
     color: TILE_COLORS.ace,
     baseValue: 0.25,
-    upgradeValue: 0.1,
+    upgradeValue: 0.25,
     pool: 'additional',
     description: '+0.25x multiplier on next non-Ace match.',
   },
