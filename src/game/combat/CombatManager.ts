@@ -87,6 +87,8 @@ export class CombatManager {
   private swapsUsedThisTurn = 0;
   /** Whether the current swap being resolved was non-adjacent (lasso). */
   private currentSwapIsLasso = false;
+  /** Whether a ricochet triggered a random tile removal that needs gravity+cascade resolution. */
+  private ricochetTriggeredThisResolution = false;
 
   constructor(board: Board, config: CombatConfig) {
     this.board = board;
@@ -311,9 +313,21 @@ export class CombatManager {
     // Track trait/artifact swap hooks
     this.traits.onSwapPerformed();
     this.enemyDiedThisSwap = false;
+    this.ricochetTriggeredThisResolution = false;
 
     // Process all matches from this swap (including cascades)
     this.processMatches(result.matches);
+
+    // Ricochet: apply gravity + fill the gap(s) left by triggered tiles,
+    // then resolve any new cascades. Loop in case a cascade produces more ricochets.
+    while (this.ricochetTriggeredThisResolution) {
+      this.ricochetTriggeredThisResolution = false;
+      this.board.applyGravityAndFill();
+      const ricochetCascades = await this.board.resolveMatches();
+      if (ricochetCascades.length > 0) {
+        this.processMatches(ricochetCascades);
+      }
+    }
 
     // Artifact swap hook (check for Quickdraw kill refund)
     const swapResult = this.artifacts.onSwapPerformed(this.enemyDiedThisSwap);
@@ -618,6 +632,11 @@ export class CombatManager {
 
       this.applyResourceOutput(scaled);
 
+      // Ricochet: after the match resolves, trigger one random remaining tile
+      if (match.tileType === 'ricochet') {
+        this.triggerRandomTileForRicochet();
+      }
+
       // Check if an enemy died from this match
       for (const enemy of this.enemies) {
         if (enemy.state.isDead) {
@@ -627,6 +646,21 @@ export class CombatManager {
 
       EventBus.emit(GameEvent.MATCH_RESOLVED, match, scaled);
     }
+  }
+
+  /**
+   * Select a random tile on the board, fire its effect, and remove it.
+   * Marks ricochetTriggeredThisResolution so the caller can apply
+   * gravity + fill + cascade resolution after processMatches completes.
+   */
+  private triggerRandomTileForRicochet(): void {
+    const type = this.board.pickAndRemoveRandomTile();
+    if (type === null) return;
+
+    const upgradeLevel = this.player.getUpgradeLevel(type);
+    const output = this.resolver.resolveSingle(type, upgradeLevel);
+    this.applyResourceOutput(output);
+    this.ricochetTriggeredThisResolution = true;
   }
 
   private applyResourceOutput(output: ResourceOutput): void {
