@@ -10,12 +10,12 @@ export class BootScene extends Phaser.Scene {
   }
 
   preload(): void {
-    // MVP: no external assets to load.
-    // Future: load sprite sheets, audio, fonts here.
+    this.load.audio('combat_theme', 'assets/audio/combat_theme.mp3');
+    this.load.audio('main_menu', 'assets/audio/main_menu.mp3');
   }
 
   create(): void {
     this.cameras.main.setRoundPixels(true);
-    this.scene.start('CombatScene');
+    // CombatScene is started on demand when navigating to combat.
   }
 }
