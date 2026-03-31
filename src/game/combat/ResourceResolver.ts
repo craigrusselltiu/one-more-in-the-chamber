@@ -80,7 +80,9 @@ export class ResourceResolver {
         output.dodgePercent = count; // +1%/tile, not affected by match bonus
         break;
       case 'dynamite':
-        output.abilityCharges = count; // +1/tile, not affected by match bonus
+        // Match-size-based: 1 for 3-match, 2 for 4-match, 3 for 5-match
+        // Upgrades add +1 per upgrade level to the total (perTile - 1 = upgradeBonus)
+        output.abilityCharges = Math.max(0, count - 2) + Math.round(perTile - 1);
         break;
       case 'stampede':
         output.damage = total;
