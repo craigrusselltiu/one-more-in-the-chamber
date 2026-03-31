@@ -524,6 +524,29 @@ export class Board {
   }
 
   /**
+   * Pick a random tile from the board, remove it, and return its type.
+   * Returns null if the board has no tiles. Used by the Ricochet mechanic.
+   */
+  pickAndRemoveRandomTile(): TileType | null {
+    const candidates: GridPosition[] = [];
+    for (let row = 0; row < BOARD_SIZE; row++) {
+      for (let col = 0; col < BOARD_SIZE; col++) {
+        if (this.grid[row][col] !== null) {
+          candidates.push({ row, col });
+        }
+      }
+    }
+    if (candidates.length === 0) return null;
+
+    const pick = candidates[Math.floor(Math.random() * candidates.length)];
+    const tile = this.grid[pick.row][pick.col]!;
+    const type = tile.type;
+    tile.destroy();
+    this.grid[pick.row][pick.col] = null;
+    return type;
+  }
+
+  /**
    * Clear all tiles of a given type from the board.
    * Returns the number of tiles cleared. Used by Deadeye + Showdown.
    */

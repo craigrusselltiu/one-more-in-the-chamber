@@ -16,6 +16,7 @@ export const TILE_COLORS: Record<TileType, string> = {
   venom: '#60A040',
   ember: '#E07020',
   horseshoe: '#C8A040',
+  fifty_cal: '#7090B8',
 };
 
 /** Tile definitions with base values from SPEC. */
@@ -146,9 +147,19 @@ export const TILE_DEFINITIONS: Record<TileType, TileDefinition> = {
     abbreviation: 'Hs',
     color: TILE_COLORS.horseshoe,
     baseValue: 5,
-    upgradeValue: 2,
+    upgradeValue: 5,
     pool: 'additional',
     description: '+5% crit chance per tile.',
+  },
+  fifty_cal: {
+    type: 'fifty_cal',
+    label: '.50 Cal',
+    abbreviation: '.50',
+    color: TILE_COLORS.fifty_cal,
+    baseValue: 5,
+    upgradeValue: 1,
+    pool: 'additional',
+    description: '5 damage per tile; upgrades add 1 damage per tile.',
   },
 };
 
@@ -163,4 +174,5 @@ export const ADDITIONAL_POOL: TileType[] = [
   'venom',
   'ember',
   'horseshoe',
+  'fifty_cal',
 ];

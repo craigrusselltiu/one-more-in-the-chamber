@@ -37,7 +37,8 @@ export type TileType =
   | 'ace'
   | 'venom'
   | 'ember'
-  | 'horseshoe';
+  | 'horseshoe'
+  | 'fifty_cal';
 
 export type TraitId =
   | 'outlaw'
