@@ -18,15 +18,17 @@ const NODE_STYLES: Record<MapNodeType, { color: string; symbol: string; label: s
 };
 
 const NODE_RADIUS = 14;
-const ROW_HEIGHT = 52;
-const COL_WIDTH = 52;
-const PADDING_X = 40;
-const PADDING_TOP = 60;
+/** Horizontal spacing between floors (row -> x). */
+const FLOOR_SPACING = 52;
+/** Vertical spacing between path branches (col -> y). */
+const PATH_SPACING = 42;
+const PADDING_LEFT = 40;
+const PADDING_TOP = 24;
 
 function getNodePos(node: MapNode): { x: number; y: number } {
   return {
-    x: PADDING_X + node.col * COL_WIDTH,
-    y: PADDING_TOP + node.row * ROW_HEIGHT,
+    x: PADDING_LEFT + node.row * FLOOR_SPACING,
+    y: PADDING_TOP + node.col * PATH_SPACING,
   };
 }
 
@@ -41,8 +43,9 @@ export const MapScreen = memo(function MapScreen() {
   const nodes = mapState?.nodes ?? [];
   const reachable = mapState ? getReachableNodes(mapState) : [];
 
-  const canvasWidth = PADDING_X * 2 + 6 * COL_WIDTH;
-  const canvasHeight = PADDING_TOP + 12 * ROW_HEIGHT + 40;
+  // 13 floors horizontal, 7 paths vertical
+  const canvasWidth = PADDING_LEFT + 12 * FLOOR_SPACING + 40;
+  const canvasHeight = PADDING_TOP + 6 * PATH_SPACING + 24;
 
   // Draw map
   useEffect(() => {
@@ -67,8 +70,8 @@ export const MapScreen = memo(function MapScreen() {
         ctx.beginPath();
         ctx.moveTo(from.x, from.y);
         // Curved line for visual interest
-        const midY = (from.y + to.y) / 2;
-        ctx.bezierCurveTo(from.x, midY, to.x, midY, to.x, to.y);
+        const midX = (from.x + to.x) / 2;
+        ctx.bezierCurveTo(midX, from.y, midX, to.y, to.x, to.y);
         ctx.stroke();
       }
     }
@@ -126,7 +129,7 @@ export const MapScreen = memo(function MapScreen() {
     const node = nodes.find((n) => n.id === mapState.currentNodeId);
     if (node) {
       const pos = getNodePos(node);
-      containerRef.current.scrollTop = Math.max(0, pos.y - 150);
+      containerRef.current.scrollLeft = Math.max(0, pos.x - 200);
     }
   }, [mapState?.currentNodeId, nodes]);
 
@@ -187,7 +190,7 @@ export const MapScreen = memo(function MapScreen() {
 
   if (!run || !mapState) {
     return (
-      <div className="flex flex-col items-center justify-center h-full bg-[#1a1a2e]/90">
+      <div className="flex flex-col items-center justify-center bg-[#1a1a2e]" style={{ width: 960, height: 540 }}>
         <p className="text-stone-400 font-mono text-sm">No active run</p>
       </div>
     );
@@ -198,21 +201,20 @@ export const MapScreen = memo(function MapScreen() {
       {/* Shared top bar */}
       <TopBar />
 
-      {/* Map area */}
-      <div ref={containerRef} className="flex-1 overflow-y-auto flex justify-center">
+      {/* Map area -- horizontal scroll, centered */}
+      <div ref={containerRef} className="flex-1 overflow-x-auto overflow-y-hidden flex items-center justify-center">
         <canvas
           ref={canvasRef}
           width={canvasWidth}
           height={canvasHeight}
           onClick={handleCanvasClick}
           onMouseMove={handleCanvasMove}
-          className="cursor-pointer"
-          style={{ imageRendering: 'pixelated' }}
+          className="cursor-pointer shrink-0"
         />
       </div>
 
       {/* Tooltip / node info */}
-      <div className="h-16 flex items-center justify-center border-t border-stone-700 px-4">
+      <div className="h-8 flex items-center justify-center border-t border-stone-700 px-4">
         {hoveredNode ? (
           <div className="flex items-center gap-3">
             <span
@@ -233,7 +235,7 @@ export const MapScreen = memo(function MapScreen() {
       </div>
 
       {/* Legend */}
-      <div className="flex justify-center gap-4 py-2 border-t border-stone-700/50">
+      <div className="flex justify-center gap-4 py-1.5 border-t border-stone-700/50">
         {(['combat', 'elite', 'shop', 'rest', 'event', 'treasure', 'boss'] as const).map((type) => (
           <div key={type} className="flex items-center gap-1">
             <span
