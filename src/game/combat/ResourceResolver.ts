@@ -27,6 +27,13 @@ export class ResourceResolver {
     if (!def) return this.emptyOutput();
 
     const count = match.tiles.length;
+
+    // Buckshot is a per-tile upgrade exception: upgrade adds per tile, not flat per match.
+    if (match.tileType === 'buckshot') {
+      const baseTotal = (def.baseValue + tileUpgradeLevel * def.upgradeValue) * count * match.matchBonus;
+      return this.computeOutput(match.tileType, baseTotal, 0, count);
+    }
+
     const baseTotal = def.baseValue * count * match.matchBonus;
     const upgradeBonus = tileUpgradeLevel * def.upgradeValue;
 
@@ -45,6 +52,12 @@ export class ResourceResolver {
   resolveCount(type: TileType, count: number, upgradeLevel: number): ResourceOutput {
     const def = TILE_DEFINITIONS[type];
     if (!def) return this.emptyOutput();
+
+    // Buckshot is a per-tile upgrade exception: upgrade adds per tile, not flat per match.
+    if (type === 'buckshot') {
+      const baseTotal = (def.baseValue + upgradeLevel * def.upgradeValue) * count;
+      return this.computeOutput(type, baseTotal, 0, count);
+    }
 
     const baseTotal = def.baseValue * count;
     const upgradeBonus = upgradeLevel * def.upgradeValue;
