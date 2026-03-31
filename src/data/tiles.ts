@@ -146,7 +146,7 @@ export const TILE_DEFINITIONS: Record<TileType, TileDefinition> = {
     abbreviation: 'Hs',
     color: TILE_COLORS.horseshoe,
     baseValue: 5,
-    upgradeValue: 2,
+    upgradeValue: 5,
     pool: 'additional',
     description: '+5% crit chance per tile.',
   },
