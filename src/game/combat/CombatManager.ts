@@ -811,9 +811,10 @@ export class CombatManager {
   }
 
   private executeEnemyTurn(): void {
-    // 1. Venom ticks on all enemies
+    // 1. Venom ticks on all enemies (upgrade adds +1 bonus damage per tick per level)
+    const venomUpgrade = this.player.getUpgradeLevel('venom');
     for (const enemy of this.aliveEnemies()) {
-      const venomDamage = enemy.tickVenom();
+      const venomDamage = enemy.tickVenom(venomUpgrade);
       if (venomDamage > 0) {
         EventBus.emit(GameEvent.ENEMY_HP_CHANGE, { ...enemy.state });
       }

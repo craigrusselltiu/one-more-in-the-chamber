@@ -147,12 +147,13 @@ export class Enemy {
   }
 
   /**
-   * Venom tick: damage equal to stack count, then stacks decrease by 1.
+   * Venom tick: damage equal to stack count + bonus from upgrades, then stacks decrease by 1.
+   * @param bonusDamagePerTick - flat bonus from venom tile upgrades (+1 per upgrade level)
    * Returns damage dealt.
    */
-  tickVenom(): number {
+  tickVenom(bonusDamagePerTick = 0): number {
     if (this.state.venomStacks <= 0) return 0;
-    const damage = this.state.venomStacks;
+    const damage = this.state.venomStacks + bonusDamagePerTick;
     this.state.health = Math.max(0, this.state.health - damage);
     this.state.venomStacks--;
     if (this.state.health <= 0) {
