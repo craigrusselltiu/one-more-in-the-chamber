@@ -270,6 +270,7 @@ export class CombatManager {
         enemy.state.intent = this.bossController.chooseBossIntent(
           enemy,
           this.aliveEnemies().length,
+          this.hazardManager,
         );
       } else {
         enemy.state.intent = chooseEnemyIntent(enemy, this.aliveEnemies().length);
