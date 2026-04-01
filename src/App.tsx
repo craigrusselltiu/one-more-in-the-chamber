@@ -165,13 +165,28 @@ export default function App() {
         }
       }
 
-      // Return to map after a brief delay
+      // Return to map (or tile-select after boss) after a brief delay
       setTimeout(() => {
-        if (result.victory) {
-          EventBus.emit(GameEvent.SCREEN_CHANGE, 'map');
-        } else {
+        if (!result.victory) {
           EventBus.emit(GameEvent.SCREEN_CHANGE, 'score');
           store.endRun(false);
+          return;
+        }
+
+        // Check if the just-completed fight was a boss
+        const currentRun = store.run;
+        const currentNode = currentRun?.mapState?.nodes.find((n) => n.id === currentRun?.currentNodeId);
+        if (currentNode?.type === 'boss') {
+          if (currentRun!.currentAct >= 3) {
+            // Final boss: run complete
+            store.endRun(true);
+            EventBus.emit(GameEvent.SCREEN_CHANGE, 'score');
+          } else {
+            // Between-act: pick a new tile before advancing
+            EventBus.emit(GameEvent.SCREEN_CHANGE, 'tile-select');
+          }
+        } else {
+          EventBus.emit(GameEvent.SCREEN_CHANGE, 'map');
         }
       }, 1000);
     };
