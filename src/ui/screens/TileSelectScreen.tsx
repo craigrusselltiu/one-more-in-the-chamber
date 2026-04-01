@@ -19,7 +19,7 @@ export const TileSelectScreen = memo(function TileSelectScreen() {
   const advanceAct = useRunStore((s) => s.advanceAct);
   const [selected, setSelected] = useState<TileType | null>(null);
 
-  const isStarterSelection = !run;
+  const isStarterSelection = !run || run.status !== 'active';
   const pool = isStarterSelection ? STARTER_POOL : ADDITIONAL_POOL;
 
   // Pick 3 random tiles from pool (excluding already-owned)

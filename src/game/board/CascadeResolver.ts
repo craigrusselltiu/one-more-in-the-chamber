@@ -97,41 +97,68 @@ export class CascadeResolver {
       }
     }
 
-    // Phase 2: Expand for cross clears and explosive detonations
+    // Phase 2: Expand for cross clears, explosive detonations, and chain reactions.
+    // Special tiles hit by AOE are triggered, not just cleared:
+    //   - Explosive tiles chain-detonate (3x3 around them)
+    //   - Showdown tiles clear all tiles of their type
     const extraTiles = new Map<string, TileType>();
+    const explosiveQueue: GridPosition[] = [];
 
-    for (const match of matches) {
-      if (!match.isCross || match.crossIntersections.length === 0) continue;
-      for (const inter of match.crossIntersections) {
-        for (let c = 0; c < size; c++) {
-          const key = posKey(inter.row, c);
-          if (matchPositions.has(key) || extraTiles.has(key)) continue;
-          const tile = grid[inter.row]?.[c];
-          if (tile) extraTiles.set(key, tile.type);
-        }
-        for (let r = 0; r < size; r++) {
-          const key = posKey(r, inter.col);
-          if (matchPositions.has(key) || extraTiles.has(key)) continue;
-          const tile = grid[r]?.[inter.col];
-          if (tile) extraTiles.set(key, tile.type);
-        }
-      }
-    }
-
+    // Seed explosive queue from matched explosive tiles
     for (const match of matches) {
       for (const pos of match.tiles) {
         const tile = grid[pos.row]?.[pos.col];
-        if (!tile?.isExplosive) continue;
-        for (let dr = -1; dr <= 1; dr++) {
-          for (let dc = -1; dc <= 1; dc++) {
-            const r = pos.row + dr;
-            const c = pos.col + dc;
-            if (r < 0 || r >= size || c < 0 || c >= size) continue;
-            const key = posKey(r, c);
-            if (matchPositions.has(key) || extraTiles.has(key)) continue;
-            const adjTile = grid[r]?.[c];
-            if (adjTile) extraTiles.set(key, adjTile.type);
+        if (tile?.isExplosive) explosiveQueue.push(pos);
+      }
+    }
+
+    // Helper: add a tile to extraTiles and queue chain reactions
+    const addExtra = (r: number, c: number) => {
+      const key = posKey(r, c);
+      if (matchPositions.has(key) || extraTiles.has(key)) return;
+      const tile = grid[r]?.[c];
+      if (!tile) return;
+      extraTiles.set(key, tile.type);
+      if (tile.isExplosive) explosiveQueue.push({ row: r, col: c });
+      if (tile.isShowdown) {
+        // Showdown triggered by AOE: clear all tiles of its type
+        for (let sr = 0; sr < size; sr++) {
+          for (let sc = 0; sc < size; sc++) {
+            const sKey = posKey(sr, sc);
+            if (matchPositions.has(sKey) || extraTiles.has(sKey)) continue;
+            const st = grid[sr]?.[sc];
+            if (st && st.type === tile.type) {
+              extraTiles.set(sKey, st.type);
+              if (st.isExplosive) explosiveQueue.push({ row: sr, col: sc });
+            }
           }
+        }
+      }
+    };
+
+    // Cross clears: clear entire row + column at intersection points
+    for (const match of matches) {
+      if (!match.isCross || match.crossIntersections.length === 0) continue;
+      for (const inter of match.crossIntersections) {
+        for (let c = 0; c < size; c++) addExtra(inter.row, c);
+        for (let r = 0; r < size; r++) addExtra(r, inter.col);
+      }
+    }
+
+    // Explosive chain detonation (BFS — each detonated explosive expands 3x3)
+    const detonated = new Set<string>();
+    while (explosiveQueue.length > 0) {
+      const pos = explosiveQueue.shift()!;
+      const dKey = posKey(pos.row, pos.col);
+      if (detonated.has(dKey)) continue;
+      detonated.add(dKey);
+
+      for (let dr = -1; dr <= 1; dr++) {
+        for (let dc = -1; dc <= 1; dc++) {
+          const r = pos.row + dr;
+          const c = pos.col + dc;
+          if (r < 0 || r >= size || c < 0 || c >= size) continue;
+          addExtra(r, c);
         }
       }
     }

@@ -216,7 +216,7 @@ export class Board {
 
     // Handle showdown tile swap: destroy all tiles of the adjacent type
     if (tileA.isShowdown || tileB.isShowdown) {
-      return this.resolveShowdownSwap(from, to);
+      return this.resolveShowdownSwap(from, to, onCascadeStep);
     }
 
     // Perform the swap
@@ -275,6 +275,7 @@ export class Board {
   private async resolveShowdownSwap(
     from: GridPosition,
     to: GridPosition,
+    onCascadeStep?: (matches: MatchResult[]) => void,
   ): Promise<SwapResult> {
     const tileA = this.grid[from.row][from.col]!;
     const tileB = this.grid[to.row][to.col]!;
@@ -316,12 +317,17 @@ export class Board {
       matchBonus: 1.0,
     };
 
+    // Apply showdown effects immediately so the player sees them right away
+    if (onCascadeStep) {
+      onCascadeStep([showdownMatch]);
+    }
+
     // Apply gravity and fill so cascades resolve from a stable board state
     this.cascadeResolver.applyGravity(this);
     this.fillEmptyTiles();
 
     // Resolve any new matches that form after the board refills
-    const cascadeMatches = await this.cascadeResolver.resolve(this);
+    const cascadeMatches = await this.cascadeResolver.resolve(this, onCascadeStep);
     const allMatches = [showdownMatch, ...cascadeMatches];
 
     if (!this.hasValidMoves()) {

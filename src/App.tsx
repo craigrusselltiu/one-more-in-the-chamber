@@ -202,7 +202,7 @@ export default function App() {
   const pointerMode = screen === 'combat' ? 'none' : 'auto';
 
   return (
-    <div className="relative w-full h-full">
+    <div className="relative w-full h-full" onContextMenu={(e) => e.preventDefault()}>
       <div ref={gameContainerRef} className="absolute inset-0" />
 
       {/* Scaled overlay: 960x540 virtual pixels, CSS-transformed to match Phaser canvas */}

@@ -3,6 +3,7 @@ import { EventBus, GameEvent } from '../../game/EventBus';
 import { useRunStore } from '../../store/runStore';
 import { getReachableNodes } from '../../game/map/MapGenerator';
 import { TopBar } from '../hud/TopBar';
+import { ArtifactBar } from '../hud/ArtifactBar';
 import type { MapNode, MapNodeType } from '../../types/game';
 import type { Screen } from '../../App';
 
@@ -200,6 +201,7 @@ export const MapScreen = memo(function MapScreen() {
     <div className="flex flex-col h-full bg-[#1a1a2e]/95">
       {/* Shared top bar */}
       <TopBar />
+      <ArtifactBar />
 
       {/* Map area -- horizontal scroll, centered */}
       <div ref={containerRef} className="flex-1 overflow-x-auto overflow-y-hidden flex items-center justify-center">

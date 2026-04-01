@@ -350,6 +350,7 @@ export class CombatManager {
     // Track trait/artifact swap hooks
     this.traits.onSwapPerformed();
     this.enemyDiedThisSwap = false;
+    this.ricochetTriggeredThisResolution = false;
 
     // Process each cascade step's matches immediately (damage, block, etc.)
     const onCascadeStep = (stepMatches: MatchResult[]) => {
@@ -374,19 +375,6 @@ export class CombatManager {
       this.setPhase('swap-phase');
       return;
     }
-
-    // Resolve adjacent hazards freed by these matches
-    for (const match of result.matches) {
-      this.hazardManager.resolveAdjacentHazards(match.tiles);
-    }
-
-    // Track trait/artifact swap hooks
-    this.traits.onSwapPerformed();
-    this.enemyDiedThisSwap = false;
-    this.ricochetTriggeredThisResolution = false;
-
-    // Process all matches from this swap (including cascades)
-    this.processMatches(result.matches);
 
     // Ricochet: apply gravity + fill the gap(s) left by triggered tiles,
     // then resolve any new cascades. Loop in case a cascade produces more ricochets.
@@ -837,6 +825,7 @@ export class CombatManager {
 
     // Player block expires after the enemy turn so it absorbs incoming attacks
     this.player.resetTurnEffects();
+    this.emitFullState();
 
     if (this.isCombatOver()) {
       this.endCombat();

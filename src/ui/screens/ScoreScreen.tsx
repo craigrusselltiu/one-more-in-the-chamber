@@ -26,7 +26,10 @@ export const ScoreScreen = memo(function ScoreScreen() {
     const baseElite = eliteNodes * 200;
     const baseBoss = bossNodes * 500;
     const baseComplete = completed ? 1000 : 0;
-    const baseScore = baseCombat + baseElite + baseBoss + baseComplete;
+    const actBonus = (run.currentAct - 1) * 200;
+    const otherNodes = nodesVisited - combatNodes - eliteNodes - bossNodes;
+    const nodeBonus = otherNodes * 50;
+    const baseScore = baseCombat + baseElite + baseBoss + baseComplete + actBonus + nodeBonus;
 
     // Bonus: gold earned, artifacts, trait breakpoints
     const goldBonus = run.gold;
@@ -53,6 +56,10 @@ export const ScoreScreen = memo(function ScoreScreen() {
       completed,
       gold: run.gold,
       artifacts: run.artifacts.length,
+      act: run.currentAct,
+      actBonus,
+      otherNodes,
+      nodeBonus,
     };
   }, [run]);
 
@@ -86,6 +93,8 @@ export const ScoreScreen = memo(function ScoreScreen() {
           <ScoreLine label="Combat" value={score.combatNodes * 100} detail={`${score.combatNodes} fights`} />
           <ScoreLine label="Elites" value={score.eliteNodes * 200} detail={`${score.eliteNodes} elites`} />
           <ScoreLine label="Bosses" value={score.bossNodes * 500} detail={`${score.bossNodes} bosses`} />
+          {score.actBonus > 0 && <ScoreLine label="Act Reached" value={score.actBonus} detail={`Act ${score.act}`} />}
+          {score.nodeBonus > 0 && <ScoreLine label="Explored" value={score.nodeBonus} detail={`${score.otherNodes} nodes`} />}
           {score.completed && <ScoreLine label="Run Complete" value={1000} />}
 
           <div className="border-t border-stone-600 my-1" />
@@ -114,13 +123,6 @@ export const ScoreScreen = memo(function ScoreScreen() {
             {score.finalScore.toLocaleString()}
           </span>
         </div>
-      </div>
-
-      {/* Stats */}
-      <div className="flex gap-6 mb-6">
-        <StatBadge label="Nodes" value={score.nodesVisited} />
-        <StatBadge label="Act" value={run.currentAct} />
-        <StatBadge label="HP" value={`${run.health}/${run.maxHealth}`} />
       </div>
 
       <button
@@ -153,15 +155,6 @@ function ScoreLine({
       <span className={`font-mono text-xs ${isMultiplier ? 'text-blue-300' : 'text-stone-200'}`}>
         {typeof value === 'number' ? (value > 0 ? `+${value}` : value.toString()) : value}
       </span>
-    </div>
-  );
-}
-
-function StatBadge({ label, value }: { label: string; value: number | string }) {
-  return (
-    <div className="flex flex-col items-center">
-      <span className="text-stone-200 font-mono text-sm font-bold">{value}</span>
-      <span className="text-stone-500 font-mono" style={{ fontSize: '10px' }}>{label}</span>
     </div>
   );
 }
