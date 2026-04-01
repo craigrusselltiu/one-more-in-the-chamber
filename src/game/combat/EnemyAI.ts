@@ -3,13 +3,19 @@ import type { Enemy } from './Enemy';
 import type { BoardHazardManager } from '../board/BoardHazardManager';
 
 /**
- * Type-specific AI intent selection for Act 1 enemies.
+ * Type-specific AI intent selection for enemies.
  *
- * Each enemy type has distinct behavior patterns from the SPEC:
+ * Act 1 enemies:
  *   Coyote      -- attack / howl (summon). No board manipulation.
  *   Rattlesnake -- poison / bite. Blocks occasionally. Poison 2 tiles.
  *   Bandit      -- attack / lock. Blocks before big hits. Lock 1 tile.
  *   Vulture     -- low damage. Buries tiles on hit. Bury 3 tiles.
+ *
+ * Act 2 enemies:
+ *   Prospector Gone Mad -- erratic bomber. Favors bombs, more frenzied when wounded.
+ *   Dynamite Outlaw     -- tanky. Barricades + block, then attacks.
+ *   Cave Bat            -- swarm unit. Aggressively buries tiles, low damage.
+ *   Mine Cart           -- timed hazard. Always threatens crash damage.
  */
 
 interface IntentOption {
@@ -22,6 +28,7 @@ export function chooseEnemyIntent(enemy: Enemy, aliveCount: number): EnemyIntent
   const hpRatio = enemy.state.health / enemy.state.maxHealth;
 
   switch (def.type) {
+    // Act 1
     case 'coyote':
       return chooseCoyoteIntent(enemy, aliveCount);
     case 'rattlesnake':
@@ -30,6 +37,15 @@ export function chooseEnemyIntent(enemy: Enemy, aliveCount: number): EnemyIntent
       return chooseBanditIntent(enemy, hpRatio);
     case 'vulture':
       return chooseVultureIntent(enemy);
+    // Act 2
+    case 'prospector_gone_mad':
+      return chooseProspectorIntent(enemy, hpRatio);
+    case 'dynamite_outlaw':
+      return chooseDynamiteOutlawIntent(enemy, hpRatio);
+    case 'cave_bat':
+      return chooseCaveBatIntent(enemy, aliveCount);
+    case 'mine_cart':
+      return chooseMineCartIntent(enemy);
     default:
       return enemy.chooseIntent();
   }
@@ -128,6 +144,90 @@ function chooseVultureIntent(enemy: Enemy): EnemyIntent {
   ];
 
   return weightedRandom(options);
+}
+
+// ---------------------------------------------------------------------------
+// Prospector Gone Mad: erratic bomber. Favors bombs, more frenzied when wounded.
+// Bombs force the player to match them before they detonate.
+// ---------------------------------------------------------------------------
+
+function chooseProspectorIntent(enemy: Enemy, hpRatio: number): EnemyIntent {
+  const damage = rollDamage(enemy);
+  const bombWeight = hpRatio < 0.4 ? 5 : 3;
+  const options: IntentOption[] = [
+    { intent: { type: 'attack', value: damage, description: `PICKAXE ${damage}` }, weight: 2 },
+    { intent: { type: 'board-manipulation', value: 1, description: 'BOMB' }, weight: bombWeight },
+  ];
+
+  // When badly wounded, may throw multiple bombs in desperation
+  if (hpRatio < 0.3) {
+    options.push({
+      intent: { type: 'board-manipulation', value: 2, description: 'BOMB 2' },
+      weight: 2,
+    });
+  }
+
+  return weightedRandom(options);
+}
+
+// ---------------------------------------------------------------------------
+// Dynamite Outlaw: tanky. Barricades + block, then attacks.
+// Blocks to absorb damage, barricades to cut off cascades.
+// ---------------------------------------------------------------------------
+
+function chooseDynamiteOutlawIntent(enemy: Enemy, hpRatio: number): EnemyIntent {
+  const damage = rollDamage(enemy);
+  const options: IntentOption[] = [
+    { intent: { type: 'attack', value: damage, description: `ATK ${damage}` }, weight: 3 },
+    { intent: { type: 'board-manipulation', value: 1, description: 'BARRICADE' }, weight: 2 },
+  ];
+
+  // Block more when healthy (hunkering down)
+  if (hpRatio > 0.5) {
+    options.push({
+      intent: { type: 'block', value: 8, description: 'BLOCK +8' },
+      weight: 2,
+    });
+  } else {
+    // Wounded: attacks become more desperate, less blocking
+    options.push({
+      intent: { type: 'block', value: 8, description: 'BLOCK +8' },
+      weight: 1,
+    });
+  }
+
+  return weightedRandom(options);
+}
+
+// ---------------------------------------------------------------------------
+// Cave Bat: swarm unit. Aggressively buries tiles, low damage.
+// Appears in groups of 3. Each bat buries tiles to disrupt the board.
+// ---------------------------------------------------------------------------
+
+function chooseCaveBatIntent(enemy: Enemy, aliveCount: number): EnemyIntent {
+  const damage = rollDamage(enemy);
+  // More bats alive = more coordinated burying
+  const buryWeight = aliveCount >= 3 ? 4 : 3;
+  const options: IntentOption[] = [
+    { intent: { type: 'attack', value: damage, description: `SCREECH ${damage}` }, weight: 2 },
+    { intent: { type: 'board-manipulation', value: 2, description: 'BURY 2' }, weight: buryWeight },
+  ];
+
+  return weightedRandom(options);
+}
+
+// ---------------------------------------------------------------------------
+// Mine Cart: timed hazard encounter. Threatens massive crash damage.
+// Not a traditional fight -- the player must deal enough damage before
+// time runs out or suffer 50 damage.
+// ---------------------------------------------------------------------------
+
+function chooseMineCartIntent(enemy: Enemy): EnemyIntent {
+  return {
+    type: 'attack',
+    value: enemy.getDefinition().maxDamage,
+    description: 'CRASH 50',
+  };
 }
 
 // ---------------------------------------------------------------------------
