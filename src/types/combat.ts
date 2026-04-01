@@ -89,7 +89,7 @@ export interface GridPosition {
 
 export interface BoardHazard {
   position: GridPosition;
-  type: 'lock' | 'poison' | 'bomb' | 'sand' | 'barricade' | 'fools_gold';
+  type: 'lock' | 'poison' | 'bomb' | 'sand' | 'fools_gold';
   countdown?: number;
 }
 

@@ -104,11 +104,28 @@ export class CascadeResolver {
     const extraTiles = new Map<string, TileType>();
     const explosiveQueue: GridPosition[] = [];
 
-    // Seed explosive queue from matched explosive tiles
+    // Seed explosive queue and trigger showdown tiles from matched tiles
     for (const match of matches) {
       for (const pos of match.tiles) {
         const tile = grid[pos.row]?.[pos.col];
-        if (tile?.isExplosive) explosiveQueue.push(pos);
+        if (!tile) continue;
+        if (tile.isExplosive) explosiveQueue.push(pos);
+        if (tile.isShowdown) {
+          // Showdown tile matched in cascade: clear all tiles of a random active type
+          const types = board.getActiveTileTypes();
+          const randomType = types[Math.floor(Math.random() * types.length)];
+          for (let sr = 0; sr < size; sr++) {
+            for (let sc = 0; sc < size; sc++) {
+              const sKey = posKey(sr, sc);
+              if (matchPositions.has(sKey) || extraTiles.has(sKey)) continue;
+              const st = grid[sr]?.[sc];
+              if (st && st.type === randomType) {
+                extraTiles.set(sKey, st.type);
+                if (st.isExplosive) explosiveQueue.push({ row: sr, col: sc });
+              }
+            }
+          }
+        }
       }
     }
 

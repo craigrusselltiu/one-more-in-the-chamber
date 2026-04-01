@@ -65,7 +65,7 @@ Comedic but cool. Spaghetti Western filtered through a Saturday morning cartoon.
 
 - 8x8 grid of tiles.
 - **Tile distribution is equal.** With 4 tile types, each tile has a 25% chance of spawning. With 6 types in Act 3, each has ~16.7%. This is the primary difficulty scaling mechanism — more tile types means harder to build specific matches.
-- **2 swaps per turn** (default). Increased by artifacts/traits.
+- **3 swaps per turn** (default). Increased by artifacts/traits.
 - Swaps create matches (3+). Tiles clear, new tiles fall, cascades resolve automatically.
 - **End turn early** at any time.
 - **No valid moves** (no adjacent swap produces a match of 3+) = turn ends, board reshuffles (guaranteed valid move after), enemy still acts.
@@ -98,8 +98,12 @@ Up to **3 enemies** can be on the field simultaneously.
 
 - **3-match:** 1.0x (base value).
 - **4-match:** 1.5x + spawns an **explosive tile** (an explosive version of the matched tile type; must be matched to detonate; clears 3x3 area).
-- **5-match:** 2.0x + spawns a **Showdown tile** (swap with any adjacent tile to destroy ALL tiles of that type on the board; the Showdown tile is destroyed).
+- **5-match:** 2.0x + spawns a **Showdown tile** (swap with any adjacent tile to destroy ALL tiles of that type on the board; the Showdown tile is destroyed). If a Showdown tile is matched in a cascade, hit by a cross clear, or caught in an explosive detonation, it triggers — clearing all tiles of a random type.
 - **L / T / + match (Cross Clear):** clears all tiles in horizontal + vertical lines from the intersection. Each tile = 1.0x per tile.
+
+**Chain reactions:** Explosive tiles hit by another explosive's detonation or a cross clear also detonate. Special tiles hit by AOE are always triggered, never silently cleared.
+
+**Flash lines:** When a match deals damage, a colored line flashes from the match to the enemy area (0.5s fade). Ricochet also flashes a line to the destroyed tile. Line color matches the tile type color.
 
 Match bonuses (1.5x, 2.0x) apply to: damage, block, gold, healing. Do NOT apply to: Ace multiplier, ability charges, Venom stacks, Smoke dodge, or Horseshoe crit chance.
 
@@ -130,7 +134,6 @@ Enemy-placed hazard tiles on the board:
 | **Poison** | Hurts player or debuffs on match. |
 | **Bomb** | Countdown timer. Detonates (damages player) if not matched before reaching 0. Matching it defuses it. |
 | **Sand/Bury** | Hidden tile. Match adjacent to reveal. |
-| **Barricade** | Blocks tiles from cascading through. Match adjacent to break. |
 
 ### Status Effects
 
@@ -399,7 +402,7 @@ Enemies deal **5-15 damage**. Player is learning the ropes.
 *Intro: Ridge at sunset. Howl. Coyote silhouettes — one, three, six. The biggest one stands, arms crossed, tattered bandana. Tilts head. Smiles. Text slams: **"DUSTY" DAN McGRAW**.*
 
 - **Phase 1 (100-50%):** Locks 1/turn, 10-15 damage. Can summon a coyote minion (10 HP).
-- **Transition (50%):** Flips table, barricade row + 10 block. Must break through.
+- **Transition (50%):** Flips table, lock row + 10 block. Must break through.
 - **Phase 2 (50-25%):** Locks 3/turn, 15-20 damage. Periodic blocks. **Gravity shifts left** — tiles fall sideways instead of down.
 - **Phase 3 (25-0%):** Bomb tile every turn + locks. No blocking. 15-20 damage. Frantic race.
 
@@ -410,7 +413,7 @@ Enemies deal **12-25 damage**. Board manipulation ramps up.
 | Enemy | HP | Count | Behaviour | Board manipulation |
 |---|---|---|---|---|
 | Prospector Gone Mad | 55 | 1 | Drops bombs. 12-18 damage. | Bomb tiles (3-turn fuse). |
-| Dynamite Outlaw | 80 | 1 | Barricades, big throws. Blocks before throw. 15-22 damage. | Barricades, row clears. |
+| Dynamite Outlaw | 80 | 1 | Locks tiles, big throws. Blocks before throw. 15-22 damage. | Locks, row clears. |
 | Cave Bat Swarm | 15 each | 3 | Each bat attacks independently. 5-8 damage each. Killing a bat removes its attacks. | Bury tiles. |
 | Mine Cart | N/A | 1 | **6 turns** to stop the cart by dealing enough damage. Failure = **50 damage** to player. | Pre-placed hazard tiles. |
 
@@ -430,7 +433,7 @@ Enemies deal **18-35 damage**. Heavy board control + raw stats.
 |---|---|---|---|---|
 | Corrupt Deputy | 65 | 1-2 | Locks 2-3/turn, warrants (suppress a tile type for 2 turns). Blocks. 18-25 damage. | Locks, type suppression. |
 | Saloon Brawler | 100 | 1 | Hits hard. No board tricks. Pure stat check. 22-30 damage. | None. |
-| Train Guard (elite) | 75 | 1-2 | Multi-stage train heist sequence. 15-20 damage. | Barricades, bombs. |
+| Train Guard (elite) | 75 | 1-2 | Multi-stage train heist sequence. 15-20 damage. | Locks, bombs. |
 
 **Boss: "Iron Eye" Isabella — Leopard Sheriff** (250 HP)
 
@@ -448,7 +451,7 @@ Elite encounters begin with a board modifier that lasts the entire fight:
 |---|---|
 | **Dust Storm** | 3 random tiles start buried. |
 | **Quicksand** | Bottom row is locked at fight start. |
-| **Narrow Canyon** | 2 columns are blocked by barricades (6x8 playable area). |
+| **Narrow Canyon** | 2 columns are locked (6x8 playable area). |
 | **Cracked Ground** | Cascades deal no damage for the first 2 turns. |
 
 ---
@@ -490,7 +493,7 @@ Slay the Spire-style branching node map. ~12-15 nodes per act with branching pat
 
 ### Between Acts
 
-Choose **1 of 3 tiles** from the additional pool. Already-chosen tiles cannot appear. This is both the reward and the difficulty scaling (more tile types = more board dilution).
+Choose **1 of 3 tiles** from the additional pool. Already-chosen tiles cannot appear. This is both the reward and the difficulty scaling (more tile types = more board dilution). **Player heals to full HP between acts.**
 
 ---
 
@@ -902,7 +905,6 @@ MVP uses **no image assets**. All visuals are Phaser graphics primitives (rectan
 | Bomb | Flashing red border, countdown number | -- |
 | Sand/Buried | Tan, no label (hidden) | `#C8B080` |
 | Fifty Cal | Steel blue | `#7090B8` |
-| Barricade | Dark brown, cross-hatched | `#4A3020` |
 
 All placeholder rendering is behind a single abstraction layer per entity type (e.g., `TileRenderer`, `CharacterRenderer`) so swapping to sprite-based rendering later is a one-file change per type.
 

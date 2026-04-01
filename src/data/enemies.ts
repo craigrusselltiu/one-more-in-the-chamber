@@ -45,7 +45,7 @@ export const DUSTY_DAN: EnemyDefinition = {
   health: 150,
   minDamage: 10,
   maxDamage: 20,
-  abilities: ['lock', 'summon', 'barricade', 'bomb', 'gravity_shift'],
+  abilities: ['lock', 'summon', 'bomb', 'gravity_shift'],
 };
 
 // ---------------------------------------------------------------------------
@@ -67,7 +67,7 @@ export const ACT2_ENEMIES: Record<string, EnemyDefinition> = {
     health: 80,
     minDamage: 15,
     maxDamage: 22,
-    abilities: ['barricade', 'block'],
+    abilities: ['lock', 'block'],
   },
   cave_bat: {
     type: 'cave_bat',
@@ -123,7 +123,7 @@ export const ACT3_ENEMIES: Record<string, EnemyDefinition> = {
     health: 75,
     minDamage: 15,
     maxDamage: 20,
-    abilities: ['barricade', 'bomb'],
+    abilities: ['lock', 'bomb'],
   },
 };
 

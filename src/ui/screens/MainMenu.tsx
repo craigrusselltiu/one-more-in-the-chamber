@@ -3,7 +3,7 @@ import { EventBus, GameEvent } from '../../game/EventBus';
 import { useRunStore } from '../../store/runStore';
 import type { Screen } from '../../App';
 
-const MENU_FONT = "'Cinzel', Georgia, serif";
+const MENU_FONT = 'monospace';
 
 function MenuButton({
   label,
@@ -23,6 +23,8 @@ function MenuButton({
           fontSize: '18px',
           letterSpacing: '1px',
           color: '#5a3a3a',
+          textShadow:
+            '-1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000, 0 0 4px rgba(0,0,0,0.5)',
         }}
       >
         {label}

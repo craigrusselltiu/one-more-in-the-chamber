@@ -61,6 +61,10 @@ export const GameEvent = {
   ACTIVATE_ABILITY: 'player:activate-ability',
   END_TURN_EARLY: 'player:end-turn-early',
 
+  // Visual effects
+  FLASH_LINE: 'vfx:flash-line',
+  FLASH_LINE_TO_ENEMY: 'vfx:flash-line-to-enemy',
+
   // Board input -> CombatManager
   SWAP_REQUESTED: 'board:swap-requested',
 

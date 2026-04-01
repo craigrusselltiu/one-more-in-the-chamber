@@ -158,6 +158,7 @@ export const useRunStore = create<RunStore>((set) => ({
           ...state.run,
           currentAct: nextAct,
           currentNodeId: null,
+          health: state.run.maxHealth,
           mapState,
         },
       };

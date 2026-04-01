@@ -7,7 +7,7 @@ import type { BoardHazardManager } from '../board/BoardHazardManager';
  * From SPEC:
  *   Dust Storm    -- 3 random tiles start buried.
  *   Quicksand     -- bottom row is locked at fight start.
- *   Narrow Canyon -- 2 columns blocked by barricades (6x8 playable area).
+ *   Narrow Canyon -- 2 columns locked (6x8 playable area).
  *   Cracked Ground -- cascades deal no damage for the first 2 turns.
  */
 
@@ -37,7 +37,7 @@ export const ELITE_MODIFIERS: EliteModifier[] = [
   {
     id: 'narrow_canyon',
     name: 'Narrow Canyon',
-    description: '2 columns are blocked by barricades.',
+    description: '2 columns are locked.',
   },
   {
     id: 'cracked_ground',
@@ -69,11 +69,11 @@ export function applyEliteModifier(
       break;
 
     case 'narrow_canyon': {
-      // Block 2 random columns (but not adjacent to avoid completely splitting the board)
+      // Lock 2 random columns (but not adjacent to avoid completely splitting the board)
       const col1 = Math.floor(Math.random() * 4); // 0-3
       const col2 = col1 + 3 + Math.floor(Math.random() * 2); // col1+3 or col1+4
-      hazardManager.placeBarricadeColumn(col1);
-      hazardManager.placeBarricadeColumn(Math.min(col2, 7));
+      hazardManager.lockColumn(col1);
+      hazardManager.lockColumn(Math.min(col2, 7));
       break;
     }
 

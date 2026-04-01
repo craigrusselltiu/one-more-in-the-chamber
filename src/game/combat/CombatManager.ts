@@ -111,7 +111,7 @@ export class CombatManager {
     this.artifacts = new ArtifactSystem(config.artifacts);
 
     // Base swaps + trait bonus
-    const baseSwaps = config.swapsPerTurn ?? 2;
+    const baseSwaps = config.swapsPerTurn ?? 3;
     this.swapsPerTurn = baseSwaps + this.traits.getExtraSwapsPerTurn();
 
     // Deadeye shots: 3 base, 6 with Fully Loaded, or explicit override
@@ -423,10 +423,14 @@ export class CombatManager {
   /**
    * Switch which enemy is targeted. Free action, available at any time.
    */
-  setTargetedEnemy(index: number): void {
+  setTargetedEnemy(fullListIndex: number): void {
+    // Convert full-list index (from UI) to alive-list index (internal)
+    const enemy = this.enemies[fullListIndex];
+    if (!enemy || enemy.state.isDead) return;
     const alive = this.aliveEnemies();
-    if (index >= 0 && index < alive.length) {
-      this.targetedEnemyIndex = index;
+    const aliveIndex = alive.indexOf(enemy);
+    if (aliveIndex >= 0) {
+      this.targetedEnemyIndex = aliveIndex;
       this.emitFullState();
     }
   }
@@ -705,9 +709,15 @@ export class CombatManager {
 
       this.applyResourceOutput(scaled);
 
+      // Flash a line from match to enemy on damage
+      if (scaled.damage > 0 && !scaled.isAoE) {
+        const mid = match.tiles[Math.floor(match.tiles.length / 2)];
+        EventBus.emit(GameEvent.FLASH_LINE_TO_ENEMY, mid, match.tileType);
+      }
+
       // Ricochet: after the match resolves, trigger one random remaining tile
       if (match.tileType === 'ricochet') {
-        this.triggerRandomTileForRicochet();
+        this.triggerRandomTileForRicochet(match);
       }
 
       // Check if an enemy died from this match
@@ -726,14 +736,18 @@ export class CombatManager {
    * Marks ricochetTriggeredThisResolution so the caller can apply
    * gravity + fill + cascade resolution after processMatches completes.
    */
-  private triggerRandomTileForRicochet(): void {
-    const type = this.board.pickAndRemoveRandomTile();
-    if (type === null) return;
+  private triggerRandomTileForRicochet(sourceMatch: MatchResult): void {
+    const result = this.board.pickAndRemoveRandomTile();
+    if (result === null) return;
 
-    const upgradeLevel = this.player.getUpgradeLevel(type);
-    const output = this.resolver.resolveSingle(type, upgradeLevel);
+    const upgradeLevel = this.player.getUpgradeLevel(result.type);
+    const output = this.resolver.resolveSingle(result.type, upgradeLevel);
     this.applyResourceOutput(output);
     this.ricochetTriggeredThisResolution = true;
+
+    // Flash a line from source match center to the destroyed tile
+    const mid = sourceMatch.tiles[Math.floor(sourceMatch.tiles.length / 2)];
+    EventBus.emit(GameEvent.FLASH_LINE, mid, result.position, sourceMatch.tileType);
   }
 
   private applyResourceOutput(output: ResourceOutput): void {
@@ -1034,6 +1048,13 @@ export class CombatManager {
   }
 
   private buildState(): CombatState {
+    // Convert alive-list index to full-list index for the UI
+    const alive = this.aliveEnemies();
+    const targetedEnemy = alive[this.targetedEnemyIndex] ?? alive[0];
+    const fullListIndex = targetedEnemy
+      ? this.enemies.indexOf(targetedEnemy)
+      : 0;
+
     return {
       turnNumber: this.turnNumber,
       swapsRemaining: this.swapsRemaining,
@@ -1044,7 +1065,7 @@ export class CombatManager {
       critChance: this.player.critChance,
       thorns: this.player.thorns,
       enemies: this.enemies.map((e) => ({ ...e.state })),
-      targetedEnemyIndex: this.targetedEnemyIndex,
+      targetedEnemyIndex: fullListIndex,
       phase: this.phase,
       abilityCharge: this.player.abilityCharge,
       abilityThreshold: this.player.abilityThreshold,

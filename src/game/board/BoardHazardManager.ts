@@ -17,7 +17,6 @@ export interface HazardPlacement {
  *   Poison   -- hurts player or debuffs on match.
  *   Bomb     -- countdown timer. Detonates (damages player) if not matched. Matching defuses.
  *   Sand     -- hidden tile. Match adjacent to reveal.
- *   Barricade -- blocks cascading through. Match adjacent to break.
  */
 export class BoardHazardManager {
   private board: Board;
@@ -73,29 +72,15 @@ export class BoardHazardManager {
     return placements;
   }
 
-  /** Place barricades on an entire row. */
-  placeBarricadeRow(row: number): HazardPlacement[] {
-    const placements: HazardPlacement[] = [];
-    const grid = this.board.getGrid();
-    for (let col = 0; col < BOARD_SIZE; col++) {
-      const tile = grid[row]?.[col];
-      if (tile && !tile.hazard) {
-        tile.hazard = { type: 'barricade' };
-        placements.push({ position: { row, col }, hazard: { type: 'barricade' } });
-      }
-    }
-    return placements;
-  }
-
-  /** Place barricades on an entire column. */
-  placeBarricadeColumn(col: number): HazardPlacement[] {
+  /** Lock an entire column. */
+  lockColumn(col: number): HazardPlacement[] {
     const placements: HazardPlacement[] = [];
     const grid = this.board.getGrid();
     for (let row = 0; row < BOARD_SIZE; row++) {
       const tile = grid[row]?.[col];
       if (tile && !tile.hazard) {
-        tile.hazard = { type: 'barricade' };
-        placements.push({ position: { row, col }, hazard: { type: 'barricade' } });
+        tile.hazard = { type: 'lock' };
+        placements.push({ position: { row, col }, hazard: { type: 'lock' } });
       }
     }
     return placements;
@@ -188,9 +173,8 @@ export class BoardHazardManager {
         const hazType = tile.hazard.type;
         // Lock: match adjacent to free
         // Sand: match adjacent to reveal
-        // Barricade: match adjacent to break
         // Bomb: matching the bomb tile itself defuses; adjacent matches don't defuse
-        if (hazType === 'lock' || hazType === 'sand' || hazType === 'barricade') {
+        if (hazType === 'lock' || hazType === 'sand') {
           tile.hazard = null;
           freed.push(n);
         }

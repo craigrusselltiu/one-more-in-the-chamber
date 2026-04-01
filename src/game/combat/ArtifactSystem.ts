@@ -161,7 +161,7 @@ export class ArtifactSystem {
     if (this.has('bounty_board') && targetEnemy) {
       const def = targetEnemy.getDefinition();
       const hasBoardAbility = def.abilities.some((a) =>
-        ['poison', 'lock', 'bury', 'bomb', 'barricade'].includes(a),
+        ['poison', 'lock', 'bury', 'bomb'].includes(a),
       );
       if (hasBoardAbility) {
         modified.damage = Math.round(modified.damage * 1.15);

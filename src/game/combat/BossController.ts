@@ -63,14 +63,14 @@ export class BossController {
   ): boolean {
     const hpRatio = boss.state.health / boss.state.maxHealth;
 
-    // Transition at 50%: barricade row + 10 block (one-time)
+    // Transition at 50%: lock row + 10 block (one-time)
     if (hpRatio <= 0.5 && !this.transitionTriggered) {
       this.transitionTriggered = true;
       this.phase = 2;
 
-      // "Flips table" -- barricade a middle row
+      // "Flips table" -- lock a middle row
       const row = 3 + Math.floor(Math.random() * 2); // row 3 or 4
-      hazardManager.placeBarricadeRow(row);
+      hazardManager.lockRow(row);
       boss.addBlock(10);
 
       // Gravity shifts left -- tiles fall sideways instead of down

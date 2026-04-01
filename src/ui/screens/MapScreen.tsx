@@ -33,7 +33,7 @@ function getNodePos(node: MapNode): { x: number; y: number } {
   };
 }
 
-export const MapScreen = memo(function MapScreen() {
+export const MapScreen = memo(function MapScreen({ readonly, onClose }: { readonly?: boolean; onClose?: () => void } = {}) {
   const run = useRunStore((s) => s.run);
   const markNodeVisited = useRunStore((s) => s.markNodeVisited);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -209,11 +209,23 @@ export const MapScreen = memo(function MapScreen() {
           ref={canvasRef}
           width={canvasWidth}
           height={canvasHeight}
-          onClick={handleCanvasClick}
+          onClick={readonly ? undefined : handleCanvasClick}
           onMouseMove={handleCanvasMove}
-          className="cursor-pointer shrink-0"
+          className={readonly ? 'shrink-0' : 'cursor-pointer shrink-0'}
         />
       </div>
+
+      {/* Close button for readonly overlay */}
+      {readonly && onClose && (
+        <div className="flex justify-center py-1 border-t border-stone-700">
+          <button
+            onClick={onClose}
+            className="px-4 py-0.5 bg-stone-800 text-stone-300 font-mono text-xs border border-stone-600 hover:bg-stone-700"
+          >
+            Close
+          </button>
+        </div>
+      )}
 
       {/* Tooltip / node info */}
       <div className="h-8 flex items-center justify-center border-t border-stone-700 px-4">

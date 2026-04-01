@@ -20,7 +20,7 @@ import type { BoardHazardManager } from '../board/BoardHazardManager';
  * Act 3 enemies:
  *   Corrupt Deputy  -- locks + type suppression. Blocks when wounded.
  *   Saloon Brawler  -- pure damage. No board manipulation.
- *   Train Guard     -- barricades + bombs. Board control focus.
+ *   Train Guard     -- locks + bombs. Board control focus.
  */
 
 interface IntentOption {
@@ -183,15 +183,15 @@ function chooseProspectorIntent(enemy: Enemy, hpRatio: number): EnemyIntent {
 }
 
 // ---------------------------------------------------------------------------
-// Dynamite Outlaw: tanky. Barricades + block, then attacks.
-// Blocks to absorb damage, barricades to cut off cascades.
+// Dynamite Outlaw: tanky. Locks + block, then attacks.
+// Blocks to absorb damage, locks tiles to cut off cascades.
 // ---------------------------------------------------------------------------
 
 function chooseDynamiteOutlawIntent(enemy: Enemy, hpRatio: number): EnemyIntent {
   const damage = rollDamage(enemy);
   const options: IntentOption[] = [
     { intent: { type: 'attack', value: damage, description: `ATK ${damage}` }, weight: 3 },
-    { intent: { type: 'board-manipulation', value: 1, description: 'BARRICADE' }, weight: 2 },
+    { intent: { type: 'board-manipulation', value: 2, description: 'LOCK 2' }, weight: 2 },
   ];
 
   // Block more when healthy (hunkering down)
@@ -303,8 +303,8 @@ function chooseSaloonBrawlerIntent(enemy: Enemy): EnemyIntent {
 }
 
 // ---------------------------------------------------------------------------
-// Train Guard: barricades + bombs. Board control focus.
-// Fortifies with barricades, plants bombs, attacks opportunistically.
+// Train Guard: locks + bombs. Board control focus.
+// Locks tiles, plants bombs, attacks opportunistically.
 // When wounded, shifts to more aggressive bombing.
 // ---------------------------------------------------------------------------
 
@@ -312,7 +312,7 @@ function chooseTrainGuardIntent(enemy: Enemy, hpRatio: number): EnemyIntent {
   const damage = rollDamage(enemy);
   const options: IntentOption[] = [
     { intent: { type: 'attack', value: damage, description: `ATK ${damage}` }, weight: 2 },
-    { intent: { type: 'board-manipulation', value: 1, description: 'BARRICADE' }, weight: 2 },
+    { intent: { type: 'board-manipulation', value: 2, description: 'LOCK 2' }, weight: 2 },
   ];
 
   // More bombs when wounded (desperate), fewer when healthy
@@ -369,12 +369,6 @@ export function executeBoardManipulation(
     const count = intent.value ?? 1;
     hazardManager.placeRandomBombs(count);
     return `${def.name} places ${count} bombs`;
-  }
-
-  if (desc.startsWith('BARRICADE')) {
-    const row = Math.floor(Math.random() * 8);
-    hazardManager.placeBarricadeRow(row);
-    return `${def.name} barricades row ${row}`;
   }
 
   return '';

@@ -90,12 +90,6 @@ export class Enemy {
         weight: 1,
       });
     }
-    if (abilities.includes('barricade')) {
-      actions.push({
-        intent: { type: 'board-manipulation', value: 1, description: 'BARRICADE' },
-        weight: 1,
-      });
-    }
 
     return this.weightedRandom(actions);
   }

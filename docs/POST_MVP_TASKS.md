@@ -16,12 +16,12 @@ Refined from the Post-MVP section of [SPEC.md](./SPEC.md). Each task includes sc
 - Tile count progression: 4 (Act 1) → 5 (Act 2) → 6 (Act 3). Board distribution stays equal per tile type.
 
 **Act 2 — The Canyon:**
-- Enemies: Prospector Gone Mad (55 HP, bombs), Dynamite Outlaw (80 HP, barricades), Cave Bat Swarm (3x 15 HP, bury tiles), Mine Cart (timed encounter, 6 turns, 50 damage on failure).
+- Enemies: Prospector Gone Mad (55 HP, bombs), Dynamite Outlaw (80 HP, locks), Cave Bat Swarm (3x 15 HP, bury tiles), Mine Cart (timed encounter, 6 turns, 50 damage on failure).
 - Enemy damage range: 12-25.
 - Boss: "Copperhead" Cassidy (200 HP). Phase 1: poison 4 tiles, alternating brew/strike. Transition at 50%: fool's gold tiles appear. Phase 2: poison + fool's gold, 20-25 damage strikes.
 
 **Act 3 — The Town:**
-- Enemies: Corrupt Deputy (65 HP, locks + type suppression), Saloon Brawler (100 HP, pure damage), Train Guard elite (75 HP, barricades + bombs).
+- Enemies: Corrupt Deputy (65 HP, locks + type suppression), Saloon Brawler (100 HP, pure damage), Train Guard elite (75 HP, locks + bombs).
 - Enemy damage range: 18-35.
 - Boss: "Iron Eye" Isabella (250 HP). Phase 1: row locks, 10 passive block/turn, 20-25 damage. Phase 2 at 65%: warrants suppress 2 tile types, locks need 2 adjacent matches. Phase 3 at 30%: 2 locks + 2 poisons/turn, 30-35 damage, no block.
 
