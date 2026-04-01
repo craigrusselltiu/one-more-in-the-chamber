@@ -3,6 +3,63 @@ import { EventBus, GameEvent } from '../../game/EventBus';
 import { useRunStore } from '../../store/runStore';
 import type { Screen } from '../../App';
 
+const MENU_FONT = "'Cinzel', Georgia, serif";
+
+function MenuButton({
+  label,
+  onClick,
+  disabled,
+}: {
+  label: string;
+  onClick?: () => void;
+  disabled?: boolean;
+}) {
+  if (disabled) {
+    return (
+      <div
+        className="py-1 px-3 text-left"
+        style={{
+          fontFamily: MENU_FONT,
+          fontSize: '18px',
+          letterSpacing: '1px',
+          color: '#5a3a3a',
+        }}
+      >
+        {label}
+      </div>
+    );
+  }
+
+  return (
+    <button
+      onClick={onClick}
+      className="group relative text-left py-1 px-3 bg-transparent border-none outline-none"
+      style={{
+        fontFamily: MENU_FONT,
+        fontSize: '18px',
+        letterSpacing: '1px',
+        color: '#e88888',
+        textShadow:
+          '-1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000, 0 0 4px rgba(0,0,0,0.5)',
+        cursor: 'pointer',
+      }}
+    >
+      {/* Hover highlight bar */}
+      <span
+        className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none rounded"
+        style={{
+          background:
+            'linear-gradient(90deg, rgba(232,136,136,0.25) 0%, rgba(232,136,136,0.05) 70%, transparent 100%)',
+        }}
+      />
+      {/* Text with shift animation */}
+      <span className="relative inline-block transition-transform duration-300 group-hover:translate-x-1.5">
+        {label}
+      </span>
+    </button>
+  );
+}
+
 export const MainMenu = memo(function MainMenu() {
   const run = useRunStore((s) => s.run);
   const hasActiveRun = run && run.status === 'active';
@@ -16,54 +73,37 @@ export const MainMenu = memo(function MainMenu() {
   };
 
   return (
-    <div className="relative bg-[#1a1a2e]" style={{ width: 960, height: 540 }}>
-      {/* Title -- centered on screen */}
-      <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-        <div className="text-center">
-          <h1 className="text-3xl font-bold text-amber-400 font-mono tracking-wide leading-tight">
-            ONE MORE
-            <br />
-            IN THE CHAMBER
-          </h1>
-          <p className="text-xs text-stone-500 font-mono mt-2">
-            A roguelike match-3 western
-          </p>
-        </div>
-      </div>
-
+    <div
+      className="relative"
+      style={{
+        width: 960,
+        height: 540,
+        backgroundImage: 'url(/assets/main_menu_bg.png)',
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+      }}
+    >
       {/* Menu items -- bottom left */}
-      <div className="absolute left-6 bottom-8 flex flex-col gap-1">
+      <div className="absolute left-8 bottom-10 flex flex-col gap-0.5">
         {hasActiveRun && (
-          <button
-            onClick={handleContinue}
-            className="text-left text-sm font-mono text-stone-300 hover:text-amber-400 transition-colors"
-          >
-            Continue
-          </button>
+          <MenuButton label="Continue" onClick={handleContinue} />
         )}
-        <button
-          onClick={handleNewGame}
-          className="text-left text-sm font-mono text-stone-300 hover:text-amber-400 transition-colors"
-        >
-          New Game
-        </button>
-        <button
-          className="text-left text-sm font-mono text-stone-600 cursor-not-allowed"
-          disabled
-        >
-          Reputation Shop
-        </button>
-        <button
-          className="text-left text-sm font-mono text-stone-600 cursor-not-allowed"
-          disabled
-        >
-          Settings
-        </button>
+        <MenuButton label="New Game" onClick={handleNewGame} />
+        <MenuButton label="Reputation Shop" disabled />
+        <MenuButton label="Settings" disabled />
       </div>
 
       {/* Version -- bottom right */}
       <div className="absolute right-4 bottom-3">
-        <span className="text-[9px] text-stone-700 font-mono">v0.1.0</span>
+        <span
+          style={{
+            fontFamily: MENU_FONT,
+            fontSize: '9px',
+            color: 'rgba(255,255,255,0.3)',
+          }}
+        >
+          v0.1.0
+        </span>
       </div>
     </div>
   );
