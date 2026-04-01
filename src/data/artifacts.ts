@@ -354,4 +354,121 @@ export const ARTIFACTS: ArtifactDefinition[] = [
     tags: ['prospector'],
     effect: 'Once/fight: 4+ gold match converts adjacent tiles into gold.',
   },
+
+  // --- Batch 3: Mustang / Gunslinger / cross-trait focus ---
+
+  // Mustang artifacts
+  {
+    id: 'trailblazers_compass',
+    name: "Trailblazer's Compass",
+    description: 'Never lost. Just taking the long way.',
+    tags: ['mustang'],
+    effect: 'Unused swaps at turn end deal 3 damage each to targeted enemy.',
+  },
+  {
+    id: 'broncos_fury',
+    name: "Bronco's Fury",
+    description: 'Wild ride. Wilder finish.',
+    tags: ['mustang'],
+    effect: 'Last swap each turn: +75% damage from resulting matches.',
+  },
+  {
+    id: 'dust_devil_boots',
+    name: 'Dust Devil Boots',
+    description: 'Kick up a storm.',
+    tags: ['mustang'],
+    effect: 'After using all swaps in a turn: shuffle the bottom 2 rows.',
+  },
+
+  // Gunslinger artifacts
+  {
+    id: 'ivory_handled_revolver',
+    name: 'Ivory-Handled Revolver',
+    description: 'Pretty to look at. Prettier when it fires.',
+    tags: ['gunslinger'],
+    effect: 'Crit chance persists between fights (no reset).',
+  },
+  {
+    id: 'notched_barrel',
+    name: 'Notched Barrel',
+    description: 'One notch per kill. Running out of barrel.',
+    tags: ['gunslinger'],
+    effect: '+5% crit chance per enemy killed this fight.',
+  },
+  {
+    id: 'snake_eyes',
+    name: 'Snake Eyes',
+    description: 'Roll the bones. Tempt fate.',
+    tags: ['gunslinger'],
+    effect: 'Crits grant +1 swap this turn.',
+  },
+
+  // Mustang cross-trait artifacts
+  {
+    id: 'hair_trigger_saddle',
+    name: 'Hair Trigger Saddle',
+    description: 'Shoot from the hip. From horseback.',
+    tags: ['mustang', 'gunslinger'],
+    effect: 'Non-adjacent swaps: +30% crit chance on resulting match.',
+  },
+  {
+    id: 'sidewinders_reins',
+    name: "Sidewinder's Reins",
+    description: 'The snake rides with you.',
+    tags: ['mustang', 'rattlesnake'],
+    effect: 'Swaps that move a poison tile: cleanse it and deal 4 damage.',
+  },
+  {
+    id: 'prospectors_mule',
+    name: "Prospector's Mule",
+    description: 'Stubborn but loaded.',
+    tags: ['mustang', 'prospector'],
+    effect: 'Gold matches grant +1 swap this turn. Once per turn.',
+  },
+  {
+    id: 'fuse_runners_spurs',
+    name: "Fuse Runner's Spurs",
+    description: 'Light it and ride.',
+    tags: ['mustang', 'sapper'],
+    effect: 'Non-adjacent swaps: place a player bomb (3-turn fuse) at swap origin.',
+  },
+
+  // Gunslinger cross-trait artifacts
+  {
+    id: 'venom_tipped_round',
+    name: 'Venom-Tipped Round',
+    description: 'One shot. Slow death.',
+    tags: ['gunslinger', 'rattlesnake'],
+    effect: 'Crits apply 2 venom stacks to targeted enemy.',
+  },
+  {
+    id: 'hair_trigger_detonator',
+    name: 'Hair-Trigger Detonator',
+    description: 'Precision demolition.',
+    tags: ['gunslinger', 'sapper'],
+    effect: 'Crits on tiles adjacent to bombs: detonate the bomb immediately.',
+  },
+
+  // Other cross-trait artifacts
+  {
+    id: 'serpents_shield',
+    name: "Serpent's Shield",
+    description: 'Law with a venomous bite.',
+    tags: ['sheriff', 'rattlesnake'],
+    effect: 'Matching poison tiles: +3 block per poison tile matched.',
+  },
+  {
+    id: 'black_powder_cache',
+    name: 'Black Powder Cache',
+    description: 'Stolen from the armory.',
+    tags: ['sapper', 'outlaw'],
+    effect: '4+ matches: 30% to spawn a player bomb on the board.',
+  },
+  {
+    id: 'blasting_pan',
+    name: 'Blasting Pan',
+    description: 'Found gold. Found dynamite. Same hole.',
+    tags: ['sapper', 'prospector'],
+    effect: 'Defusing bombs yields 3 gold.',
+  },
 ];
