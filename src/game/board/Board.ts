@@ -515,12 +515,11 @@ export class Board {
   }
 
   /**
-   * Play intro animation: tiles fall from above like cascade fill.
-   * Each column's tiles are stacked above the board and drop sequentially.
+   * Play intro animation: all tiles start stacked above the board
+   * and drop into place simultaneously, same as gravity drop.
    */
   async playIntroAnimation(): Promise<void> {
-    const tweens: Promise<void>[] = [];
-    let globalIndex = 0;
+    const moves: Array<{ tile: Tile; toX: number; toY: number }> = [];
 
     for (let col = 0; col < BOARD_SIZE; col++) {
       for (let row = 0; row < BOARD_SIZE; row++) {
@@ -528,14 +527,11 @@ export class Board {
         if (!tile) continue;
         const startY = this.originY - (BOARD_SIZE - row) * TILE_SIZE;
         tile.setPosition(this.tileX(col), startY);
-        tweens.push(
-          tile.tweenToPosition(this.tileX(col), this.tileY(row), 150, globalIndex * 25),
-        );
-        globalIndex++;
+        moves.push({ tile, toX: this.tileX(col), toY: this.tileY(row) });
       }
     }
 
-    await Promise.all(tweens);
+    await this.animateGravityDrop(moves);
   }
 
   // -- Valid move detection --
