@@ -2,6 +2,7 @@ import { memo, useCallback } from 'react';
 import { EventBus, GameEvent } from '../../game/EventBus';
 import { useCombatStore, getEnemyStatusEffects } from '../../store/combatStore';
 import { HealthBar } from './HealthBar';
+import { BlockBadge } from './BlockBadge';
 import { StatusEffects } from './StatusEffects';
 import { EnemyIntent } from './EnemyIntent';
 import type { EnemyState } from '../../types/combat';
@@ -66,6 +67,7 @@ const EnemyPanel = memo(function EnemyPanel({
   }
 
   const effects = getEnemyStatusEffects(enemy);
+  const nonBlockEffects = effects.filter((e) => e.type !== 'block');
   const borderColor = isTargeted ? '#FFD700' : '#555';
 
   return (
@@ -99,16 +101,23 @@ const EnemyPanel = memo(function EnemyPanel({
       {/* Intent */}
       <EnemyIntent intent={enemy.intent} />
 
-      {/* HP bar */}
-      <HealthBar
-        current={enemy.health}
-        max={enemy.maxHealth}
-        width={56}
-        color="#D04040"
-      />
+      {/* HP bar with BLK badge to the left */}
+      <div className="relative">
+        {enemy.block > 0 && (
+          <div className="absolute right-full top-0 mr-0.5">
+            <BlockBadge value={enemy.block} />
+          </div>
+        )}
+        <HealthBar
+          current={enemy.health}
+          max={enemy.maxHealth}
+          width={56}
+          color="#D04040"
+        />
+      </div>
 
-      {/* Status effects */}
-      <StatusEffects effects={effects} />
+      {/* Status effects (without block) */}
+      <StatusEffects effects={nonBlockEffects} />
     </button>
   );
 });

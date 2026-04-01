@@ -1,6 +1,7 @@
-import { memo } from 'react';
+import { memo, useMemo } from 'react';
 import { useCombatStore, getPlayerStatusEffects } from '../../store/combatStore';
 import { HealthBar } from './HealthBar';
+import { BlockBadge } from './BlockBadge';
 import { StatusEffects } from './StatusEffects';
 import { AbilityMeter } from './AbilityMeter';
 import { ConsumableSlots } from './ConsumableSlots';
@@ -12,8 +13,10 @@ import { ConsumableSlots } from './ConsumableSlots';
 export const PlayerPanel = memo(function PlayerPanel() {
   const health = useCombatStore((s) => s.playerHealth);
   const maxHealth = useCombatStore((s) => s.playerMaxHealth);
+  const block = useCombatStore((s) => s.playerBlock);
   const store = useCombatStore();
   const effects = getPlayerStatusEffects(store);
+  const nonBlockEffects = useMemo(() => effects.filter((e) => e.type !== 'block'), [effects]);
 
   return (
     <div className="flex flex-col items-center">
@@ -25,11 +28,18 @@ export const PlayerPanel = memo(function PlayerPanel() {
         <span className="text-stone-600" style={{ fontSize: '7px' }}>PLAYER</span>
       </div>
 
-      {/* HP bar */}
-      <HealthBar current={health} max={maxHealth} label="HP" />
+      {/* HP bar with BLK badge to the left */}
+      <div className="relative">
+        {block > 0 && (
+          <div className="absolute right-full top-0 mr-0.5" style={{ marginTop: 9 }}>
+            <BlockBadge value={block} />
+          </div>
+        )}
+        <HealthBar current={health} max={maxHealth} label="HP" />
+      </div>
 
-      {/* Status effects row */}
-      <StatusEffects effects={effects} />
+      {/* Status effects row (without block) */}
+      <StatusEffects effects={nonBlockEffects} />
 
       {/* Ability meter */}
       <AbilityMeter />
