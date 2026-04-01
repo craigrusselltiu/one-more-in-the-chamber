@@ -45,18 +45,18 @@ export const StatusEffects = memo(function StatusEffects({ effects }: StatusEffe
           key={`${effect.type}-${i}`}
           className="flex flex-col items-center justify-center border"
           style={{
-            minWidth: 18,
-            height: 14,
+            minWidth: 24,
+            height: 18,
             backgroundColor: STATUS_COLORS[effect.type] ?? '#808080',
             borderColor: STATUS_COLORS[effect.type] ?? '#808080',
-            padding: '0 1px',
+            padding: '0 2px',
           }}
           title={`${STATUS_LABELS[effect.type]}: ${formatValue(effect.type, effect.value)}`}
         >
-          <span className="text-[5px] text-white/80 leading-none">
+          <span className="text-[6px] text-white/80 leading-none">
             {STATUS_LABELS[effect.type] ?? '?'}
           </span>
-          <span className="text-[6px] text-white font-bold leading-none">
+          <span className="text-[7px] text-white font-bold leading-none">
             {formatValue(effect.type, effect.value)}
           </span>
         </div>

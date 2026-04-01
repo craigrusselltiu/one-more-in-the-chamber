@@ -136,22 +136,36 @@ export class Board {
 
     this.scene.input.on('pointerup', (pointer: Phaser.Input.Pointer) => {
       if (!this.inputEnabled || this.isResolving || !this.dragStart) return;
-      const pos = this.pointerToGrid(pointer);
-      if (!pos) { this.dragStart = null; return; }
 
-      // If released on a different adjacent tile, treat as drag-swap
-      if (
-        (pos.row !== this.dragStart.row || pos.col !== this.dragStart.col) &&
-        this.isAdjacent(this.dragStart, pos)
-      ) {
-        const from = { ...this.dragStart };
-        this.clearSelection();
-        this.dragStart = null;
-        EventBus.emit(
-          GameEvent.SWAP_REQUESTED,
-          from.row, from.col, pos.row, pos.col,
-        );
-        return;
+      // Compute drag direction from pixel distance, not grid position.
+      // This way the player doesn't need to release on the exact target tile.
+      const startCX = this.originX + this.dragStart.col * TILE_SIZE + TILE_SIZE / 2;
+      const startCY = this.originY + this.dragStart.row * TILE_SIZE + TILE_SIZE / 2;
+      const dx = pointer.x - startCX;
+      const dy = pointer.y - startCY;
+      const threshold = TILE_SIZE * 0.3; // ~10px minimum drag
+
+      if (Math.abs(dx) > threshold || Math.abs(dy) > threshold) {
+        // Determine primary drag direction
+        let targetRow = this.dragStart.row;
+        let targetCol = this.dragStart.col;
+        if (Math.abs(dx) >= Math.abs(dy)) {
+          targetCol += dx > 0 ? 1 : -1;
+        } else {
+          targetRow += dy > 0 ? 1 : -1;
+        }
+
+        // Validate target is on the board
+        if (targetRow >= 0 && targetRow < BOARD_SIZE && targetCol >= 0 && targetCol < BOARD_SIZE) {
+          const from = { ...this.dragStart };
+          this.clearSelection();
+          this.dragStart = null;
+          EventBus.emit(
+            GameEvent.SWAP_REQUESTED,
+            from.row, from.col, targetRow, targetCol,
+          );
+          return;
+        }
       }
 
       this.dragStart = null;
@@ -501,25 +515,26 @@ export class Board {
   }
 
   /**
-   * Play intro animation: tiles drop from above, column by column.
+   * Play intro animation: tiles fall from above like cascade fill.
+   * Each column's tiles are stacked above the board and drop sequentially.
    */
   async playIntroAnimation(): Promise<void> {
     const tweens: Promise<void>[] = [];
+    let globalIndex = 0;
+
     for (let col = 0; col < BOARD_SIZE; col++) {
       for (let row = 0; row < BOARD_SIZE; row++) {
         const tile = this.grid[row][col];
         if (!tile) continue;
-        const finalY = this.tileY(row);
-        const startY = this.originY - (BOARD_SIZE - row + 1) * TILE_SIZE;
+        const startY = this.originY - (BOARD_SIZE - row) * TILE_SIZE;
         tile.setPosition(this.tileX(col), startY);
-        // Stagger: each column starts slightly after the previous,
-        // and within a column, lower rows land later
-        const delay = col * 50 + row * 20;
         tweens.push(
-          tile.tweenToPosition(this.tileX(col), finalY, 200, delay),
+          tile.tweenToPosition(this.tileX(col), this.tileY(row), 150, globalIndex * 25),
         );
+        globalIndex++;
       }
     }
+
     await Promise.all(tweens);
   }
 
@@ -704,10 +719,10 @@ export class Board {
   }
 
   /**
-   * Pick a random tile from the board, remove it, and return its type.
+   * Pick a random tile from the board, remove it, and return its type + position.
    * Returns null if the board has no tiles. Used by the Ricochet mechanic.
    */
-  pickAndRemoveRandomTile(): TileType | null {
+  pickAndRemoveRandomTile(): { type: TileType; position: GridPosition } | null {
     const candidates: GridPosition[] = [];
     for (let row = 0; row < BOARD_SIZE; row++) {
       for (let col = 0; col < BOARD_SIZE; col++) {
@@ -723,7 +738,7 @@ export class Board {
     const type = tile.type;
     tile.destroy();
     this.grid[pick.row][pick.col] = null;
-    return type;
+    return { type, position: pick };
   }
 
   /**
@@ -775,7 +790,7 @@ export class Board {
    * Clear all hazards of a given type from the board.
    * Used by consumables (Skeleton Key, Bandage, Signal Flare).
    */
-  clearHazardsByType(hazardType: 'lock' | 'poison' | 'bomb' | 'sand' | 'barricade'): void {
+  clearHazardsByType(hazardType: 'lock' | 'poison' | 'bomb' | 'sand'): void {
     for (let row = 0; row < BOARD_SIZE; row++) {
       for (let col = 0; col < BOARD_SIZE; col++) {
         const tile = this.grid[row][col];

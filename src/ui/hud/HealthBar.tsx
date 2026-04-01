@@ -28,13 +28,13 @@ export const HealthBar = memo(function HealthBar({
   return (
     <div className="mb-0.5">
       {label && (
-        <div className="text-stone-400 text-[7px] mb-px leading-none">
+        <div className="text-stone-400 text-[8px] mb-px leading-none">
           {label}
         </div>
       )}
       <div
         className="relative bg-stone-800 border border-stone-600"
-        style={{ width, height: 8 }}
+        style={{ width, height: 10 }}
       >
         <div
           className="absolute inset-y-0 left-0"
@@ -43,7 +43,7 @@ export const HealthBar = memo(function HealthBar({
             backgroundColor: barColor,
           }}
         />
-        <span className="absolute inset-0 flex items-center justify-center text-[7px] text-white leading-none font-bold">
+        <span className="absolute inset-0 flex items-center justify-center text-[8px] text-white leading-none font-bold">
           {current}/{max}
         </span>
       </div>

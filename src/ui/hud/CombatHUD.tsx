@@ -11,10 +11,10 @@ import { useCombatStore } from '../../store/combatStore';
 /**
  * CombatHUD: React overlay during combat.
  *
- * The board is 256px wide centered in 480px game width.
- * Board left edge: 112px, right edge: 368px.
- * Player panel centered between left screen edge (0) and board left (112) -> at ~56px center.
- * Enemy panel centered between board right (368) and right screen edge (480) -> at ~424px center.
+ * The board is 224px wide centered in 480px game width.
+ * Board left edge: 128px, right edge: 352px.
+ * Player panel centered between left screen edge (0) and board left (128).
+ * Enemy panel centered between board right (352) and right screen edge (480).
  *
  * All panels use pointer-events-auto so they're clickable;
  * the board area passes through to Phaser.
@@ -31,18 +31,18 @@ export const CombatHUD = memo(function CombatHUD() {
       <CombatBridge />
 
       {/* Top HUD bar */}
-      <TopBar />
+      <TopBar showMapButton showConsumables />
 
       {/* Artifact row */}
       <ArtifactBar />
 
       {/* Main combat area */}
-      <div className="absolute inset-x-0 top-4 bottom-0 flex">
+      <div className="absolute inset-x-0 top-5 bottom-0 flex">
         {/* Player area -- centered between screen left and board left */}
-        {/* Board left is at 112/480 = 23.3% of width */}
+        {/* Board left is at 128/480 = 26.67% of width */}
         <div
           className="flex flex-col items-center justify-center px-1"
-          style={{ width: '23.3%' }}
+          style={{ width: '26.67%' }}
         >
           <PlayerPanel />
         </div>
@@ -55,7 +55,7 @@ export const CombatHUD = memo(function CombatHUD() {
         {/* Enemy area -- centered between board right and screen right */}
         <div
           className="flex flex-col items-center justify-center px-1"
-          style={{ width: '23.3%' }}
+          style={{ width: '26.67%' }}
         >
           <EnemyTargeting />
         </div>

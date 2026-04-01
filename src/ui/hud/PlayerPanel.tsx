@@ -4,11 +4,10 @@ import { HealthBar } from './HealthBar';
 import { BlockBadge } from './BlockBadge';
 import { StatusEffects } from './StatusEffects';
 import { AbilityMeter } from './AbilityMeter';
-import { ConsumableSlots } from './ConsumableSlots';
 
 /**
  * PlayerPanel: left-side player area during combat.
- * Shows: sprite placeholder, HP bar, status effects, ability meter, consumable slots.
+ * Shows: sprite placeholder, HP bar, status effects, ability meter.
  */
 export const PlayerPanel = memo(function PlayerPanel() {
   const health = useCombatStore((s) => s.playerHealth);
@@ -23,19 +22,19 @@ export const PlayerPanel = memo(function PlayerPanel() {
       {/* Character sprite placeholder */}
       <div
         className="border border-stone-600 border-dashed mb-1 flex items-center justify-center"
-        style={{ width: 48, height: 48 }}
+        style={{ width: 96, height: 96 }}
       >
-        <span className="text-stone-600" style={{ fontSize: '7px' }}>PLAYER</span>
+        <span className="text-stone-600" style={{ fontSize: '9px' }}>PLAYER</span>
       </div>
 
       {/* HP bar with BLK badge to the left */}
       <div className="relative">
         {block > 0 && (
-          <div className="absolute right-full top-0 mr-0.5" style={{ marginTop: 9 }}>
+          <div className="absolute right-full top-0 mr-0.5" style={{ marginTop: 11 }}>
             <BlockBadge value={block} />
           </div>
         )}
-        <HealthBar current={health} max={maxHealth} label="HP" />
+        <HealthBar current={health} max={maxHealth} label="HP" width={80} />
       </div>
 
       {/* Status effects row (without block) */}
@@ -43,11 +42,6 @@ export const PlayerPanel = memo(function PlayerPanel() {
 
       {/* Ability meter */}
       <AbilityMeter />
-
-      {/* Consumable slots */}
-      <div className="mt-2 pointer-events-auto">
-        <ConsumableSlots />
-      </div>
     </div>
   );
 });

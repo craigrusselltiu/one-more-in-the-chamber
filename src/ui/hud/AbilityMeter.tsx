@@ -59,7 +59,7 @@ export const AbilityMeter = memo(function AbilityMeter() {
       <div
         className="relative bg-stone-800 border"
         style={{
-          width: 64,
+          width: 80,
           height: 6,
           borderColor: ready ? '#FFD700' : '#555',
         }}
@@ -73,7 +73,7 @@ export const AbilityMeter = memo(function AbilityMeter() {
         />
       </div>
       <div
-        className="text-[6px] text-center leading-none mt-px"
+        className="text-[7px] text-center leading-none mt-px"
         style={{ color: ready ? '#FFD700' : '#888' }}
       >
         {ready ? 'READY' : `${charge}/${threshold}`}

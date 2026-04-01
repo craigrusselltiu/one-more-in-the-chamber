@@ -13,16 +13,16 @@ export const BlockBadge = memo(function BlockBadge({ value }: BlockBadgeProps) {
     <div
       className="flex flex-col items-center justify-center border"
       style={{
-        minWidth: 18,
-        height: 14,
+        minWidth: 24,
+        height: 18,
         backgroundColor: '#6888A0',
         borderColor: '#6888A0',
-        padding: '0 1px',
+        padding: '0 2px',
       }}
       title={`BLK: ${value}`}
     >
-      <span className="text-[5px] text-white/80 leading-none">BLK</span>
-      <span className="text-[6px] text-white font-bold leading-none">{value}</span>
+      <span className="text-[6px] text-white/80 leading-none">BLK</span>
+      <span className="text-[7px] text-white font-bold leading-none">{value}</span>
     </div>
   );
 });

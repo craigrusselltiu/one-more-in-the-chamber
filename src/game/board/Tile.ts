@@ -3,8 +3,8 @@ import type { TileType } from '../../types/game';
 import type { TileHazardState } from '../../types/tiles';
 import { TILE_COLORS } from '../../data/tiles';
 
-export const TILE_SIZE = 32;
-const TILE_INNER = 30;
+export const TILE_SIZE = 28;
+const TILE_INNER = 26;
 
 /**
  * Tile: sprite + state for a single board cell.
@@ -151,7 +151,6 @@ export class Tile {
    *   poison    → green dot + "P"
    *   bomb      → red dot + countdown number
    *   sand      → sandy dot + "?"
-   *   barricade → dark dot + "B"
    */
   private updateStatusIndicator(): void {
     const cx = this.rect.x;
@@ -198,7 +197,6 @@ export class Tile {
       case 'poison':    return { dotColor: 0x40d840, text: 'P' };
       case 'bomb':      return { dotColor: 0xff4040, text: String(hazard.countdown) };
       case 'sand':      return { dotColor: 0xe8c170, text: '?' };
-      case 'barricade': return { dotColor: 0x888888, text: 'B' };
       case 'fools_gold': return { dotColor: 0xffd700, text: '' }; // never shown
     }
   }

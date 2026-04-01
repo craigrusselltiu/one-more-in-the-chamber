@@ -83,15 +83,15 @@ const EnemyPanel = memo(function EnemyPanel({
       {/* Enemy sprite placeholder */}
       <div
         className="border border-stone-600 border-dashed mb-0.5 flex items-center justify-center"
-        style={{ width: 40, height: 40 }}
+        style={{ width: 80, height: 80 }}
       >
-        <span className="text-stone-600 capitalize" style={{ fontSize: '6px' }}>
+        <span className="text-stone-600 capitalize" style={{ fontSize: '8px' }}>
           {enemy.enemyType.slice(0, 4)}
         </span>
       </div>
 
       {/* Enemy name */}
-      <div className="text-[7px] text-stone-300 leading-none mb-0.5 capitalize">
+      <div className="text-[8px] text-stone-300 leading-none mb-0.5 capitalize">
         {enemy.enemyType}
         {isTargeted && (
           <span className="text-yellow-400 ml-0.5">&lt;</span>
@@ -111,7 +111,7 @@ const EnemyPanel = memo(function EnemyPanel({
         <HealthBar
           current={enemy.health}
           max={enemy.maxHealth}
-          width={56}
+          width={70}
           color="#D04040"
         />
       </div>
