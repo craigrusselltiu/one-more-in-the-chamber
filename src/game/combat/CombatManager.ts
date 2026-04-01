@@ -709,10 +709,13 @@ export class CombatManager {
 
       this.applyResourceOutput(scaled);
 
-      // Flash a line from match to enemy on damage
+      // Flash a line from match to targeted enemy on damage
       if (scaled.damage > 0 && !scaled.isAoE) {
         const mid = match.tiles[Math.floor(match.tiles.length / 2)];
-        EventBus.emit(GameEvent.FLASH_LINE_TO_ENEMY, mid, match.tileType);
+        const alive = this.aliveEnemies();
+        const target = alive[this.targetedEnemyIndex];
+        const fullIdx = target ? this.enemies.indexOf(target) : 0;
+        EventBus.emit(GameEvent.FLASH_LINE_TO_ENEMY, mid, match.tileType, fullIdx, this.enemies.length);
       }
 
       // Ricochet: after the match resolves, trigger one random remaining tile

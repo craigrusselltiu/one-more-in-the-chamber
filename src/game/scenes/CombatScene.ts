@@ -95,16 +95,29 @@ export class CombatScene extends Phaser.Scene {
     this.drawFlashLine(x1, y1, x2, y2, tileType);
   }
 
-  /** Flash a line from a board position toward the right side (enemy area). */
+  /** Flash a line from a board position to the targeted enemy's center. */
   private onFlashLineToEnemy(...args: unknown[]): void {
     const from = args[0] as GridPosition;
     const tileType = args[1] as TileType;
+    const enemyIndex = (args[2] as number) ?? 0;
+    const enemyCount = (args[3] as number) ?? 1;
     const origin = this.board.getOrigin();
     const x1 = origin.x + from.col * TILE_SIZE + TILE_SIZE / 2;
     const y1 = origin.y + from.row * TILE_SIZE + TILE_SIZE / 2;
-    // Target: right edge of board area
-    const x2 = origin.x + 8 * TILE_SIZE + 16;
-    const y2 = y1;
+
+    // Enemy area: centered between board right edge and screen right
+    const boardRight = origin.x + 8 * TILE_SIZE;
+    const x2 = Math.round((boardRight + GAME_WIDTH) / 2);
+
+    // Enemies are stacked vertically, centered in the combat area.
+    // Each panel is ~32px tall in Phaser coords with ~2px gap.
+    const panelHeight = 32;
+    const gap = 2;
+    const totalHeight = enemyCount * panelHeight + (enemyCount - 1) * gap;
+    const areaCenter = GAME_HEIGHT / 2;
+    const stackTop = areaCenter - totalHeight / 2;
+    const y2 = Math.round(stackTop + enemyIndex * (panelHeight + gap) + panelHeight / 2);
+
     this.drawFlashLine(x1, y1, x2, y2, tileType);
   }
 
@@ -115,7 +128,7 @@ export class CombatScene extends Phaser.Scene {
     this.tweens.add({
       targets: line,
       alpha: 0,
-      duration: 500,
+      duration: 1000,
       onComplete: () => line.destroy(),
     });
   }
