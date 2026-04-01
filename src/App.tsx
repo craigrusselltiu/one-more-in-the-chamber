@@ -44,8 +44,20 @@ const ENCOUNTER_ROLLERS: Record<Act, { regular: () => EnemyDefinition[]; elite: 
   3: { regular: rollAct3Encounter, elite: rollAct3EliteEncounter },
 };
 
+/** Mine Cart timed encounter config. */
+const MINE_CART_TURN_LIMIT = 6;
+const MINE_CART_FAILURE_DAMAGE = 50;
+
+interface EncounterInfo {
+  enemies: EnemyDefinition[];
+  isElite: boolean;
+  isBoss: boolean;
+  turnLimit?: number;
+  timedFailureDamage?: number;
+}
+
 /** Roll enemies for a given act and node type. */
-function rollEncounter(act: Act, nodeType: MapNodeType): { enemies: EnemyDefinition[]; isElite: boolean; isBoss: boolean } {
+function rollEncounter(act: Act, nodeType: MapNodeType): EncounterInfo {
   if (nodeType === 'boss') {
     return { enemies: [BOSSES[act]], isElite: false, isBoss: true };
   }
@@ -53,7 +65,15 @@ function rollEncounter(act: Act, nodeType: MapNodeType): { enemies: EnemyDefinit
   if (nodeType === 'elite') {
     return { enemies: rollers.elite(), isElite: true, isBoss: false };
   }
-  return { enemies: rollers.regular(), isElite: false, isBoss: false };
+  const enemies = rollers.regular();
+  const isMineCart = enemies.some((e) => e.type === 'mine_cart');
+  return {
+    enemies,
+    isElite: false,
+    isBoss: false,
+    turnLimit: isMineCart ? MINE_CART_TURN_LIMIT : undefined,
+    timedFailureDamage: isMineCart ? MINE_CART_FAILURE_DAMAGE : undefined,
+  };
 }
 
 export default function App() {
@@ -96,10 +116,10 @@ export default function App() {
       if (run) {
         const currentNode = run.mapState?.nodes.find((n) => n.id === run.currentNodeId);
         const nodeType = currentNode?.type ?? 'combat';
-        const { enemies, isElite, isBoss } = rollEncounter(run.currentAct, nodeType);
+        const encounter = rollEncounter(run.currentAct, nodeType);
 
         const combatConfig: CombatConfig = {
-          enemies,
+          enemies: encounter.enemies,
           playerHealth: run.health,
           playerMaxHealth: run.maxHealth,
           playerGold: run.gold,
@@ -108,8 +128,10 @@ export default function App() {
           abilityCharge: run.abilityCharge,
           artifacts: run.artifacts,
           traitCounts: run.traitCounts,
-          isElite,
-          isBoss,
+          isElite: encounter.isElite,
+          isBoss: encounter.isBoss,
+          turnLimit: encounter.turnLimit,
+          timedFailureDamage: encounter.timedFailureDamage,
         };
 
         // Reset combat store before starting

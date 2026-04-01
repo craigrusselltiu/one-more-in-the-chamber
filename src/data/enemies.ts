@@ -80,9 +80,9 @@ export const ACT2_ENEMIES: Record<string, EnemyDefinition> = {
   mine_cart: {
     type: 'mine_cart',
     name: 'Mine Cart',
-    health: 0,
-    minDamage: 50,
-    maxDamage: 50,
+    health: 100,
+    minDamage: 0,
+    maxDamage: 0,
     abilities: ['hazard'],
   },
 };

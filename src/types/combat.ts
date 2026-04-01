@@ -18,6 +18,8 @@ export interface CombatState {
   abilityThreshold: number;
   isDeadeyeActive: boolean;
   deadeyeShotsRemaining: number;
+  /** Turn limit for timed encounters (e.g. Mine Cart). 0 = no limit. */
+  turnLimit: number;
 }
 
 export type CombatPhase =

@@ -234,11 +234,24 @@ function chooseCaveBatIntent(enemy: Enemy, aliveCount: number): EnemyIntent {
 // time runs out or suffer 50 damage.
 // ---------------------------------------------------------------------------
 
-function chooseMineCartIntent(enemy: Enemy): EnemyIntent {
+function chooseMineCartIntent(_enemy: Enemy): EnemyIntent {
+  // Fallback for non-timed context (shouldn't happen in practice)
   return {
     type: 'attack',
-    value: enemy.getDefinition().maxDamage,
-    description: 'CRASH 50',
+    value: 0,
+    description: 'CRASH',
+  };
+}
+
+/**
+ * Intent for Mine Cart in a timed encounter context.
+ * Shows turns remaining until crash instead of a real attack.
+ */
+export function chooseMineCartTimedIntent(turnsLeft: number, failureDamage: number): EnemyIntent {
+  return {
+    type: 'ability',
+    value: failureDamage,
+    description: turnsLeft <= 1 ? `CRASH ${failureDamage}` : `CRASH in ${turnsLeft}`,
   };
 }
 

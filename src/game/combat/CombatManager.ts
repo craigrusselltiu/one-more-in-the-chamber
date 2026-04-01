@@ -9,7 +9,7 @@ import { TraitSystem } from './TraitSystem';
 import { ArtifactSystem } from './ArtifactSystem';
 import type { ResourceOutput } from './ResourceResolver';
 import { BoardHazardManager } from '../board/BoardHazardManager';
-import { chooseEnemyIntent, executeBoardManipulation } from './EnemyAI';
+import { chooseEnemyIntent, chooseMineCartTimedIntent, executeBoardManipulation } from './EnemyAI';
 import { BossController } from './BossController';
 import {
   rollEliteModifier,
@@ -34,6 +34,10 @@ export interface CombatConfig {
   isElite?: boolean;
   /** Set to true for boss encounters to activate phase-based AI. */
   isBoss?: boolean;
+  /** Turn limit for timed encounters (e.g. Mine Cart). 0 or undefined = no limit. */
+  turnLimit?: number;
+  /** Damage dealt to the player if a timed encounter expires. */
+  timedFailureDamage?: number;
 }
 
 export interface CombatResult {
@@ -79,6 +83,10 @@ export class CombatManager {
   private deadeyeShotsRemaining = 0;
   private deadeyeMaxShots: number;
   private isBoss: boolean;
+  /** Turn limit for timed encounters. 0 = unlimited. */
+  private turnLimit: number;
+  /** Damage dealt to the player when a timed encounter expires. */
+  private timedFailureDamage: number;
   /** Next match multiplier from consumables (Moonshine 2x, Strong Coffee 1.5x). */
   private nextMatchMultiplier = 1.0;
   /** Track if any enemy died during the current swap resolution. */
@@ -95,6 +103,8 @@ export class CombatManager {
     this.resolver = new ResourceResolver();
     this.hazardManager = new BoardHazardManager(board);
     this.isBoss = config.isBoss ?? false;
+    this.turnLimit = config.turnLimit ?? 0;
+    this.timedFailureDamage = config.timedFailureDamage ?? 0;
 
     // Initialize trait and artifact systems
     this.traits = new TraitSystem(config.traitCounts);
@@ -131,6 +141,12 @@ export class CombatManager {
     if (config.isElite) {
       this.eliteModifier = rollEliteModifier();
       applyEliteModifier(this.eliteModifier, this.hazardManager);
+    }
+
+    // Timed encounter: pre-place hazard tiles (e.g. Mine Cart)
+    if (this.turnLimit > 0) {
+      this.hazardManager.placeRandomSand(3);
+      this.hazardManager.placeRandomBombs(1);
     }
 
     // Set board tile types
@@ -251,6 +267,13 @@ export class CombatManager {
     if (this.isCombatOver()) return;
 
     this.turnNumber++;
+
+    // Timed encounter: if turn limit exceeded, apply failure damage and end
+    if (this.turnLimit > 0 && this.turnNumber > this.turnLimit) {
+      this.resolveTimedEncounterFailure();
+      return;
+    }
+
     this.swapsRemaining = this.swapsPerTurn;
     this.nextMatchMultiplier = 1.0;
     this.swapsUsedThisTurn = 0;
@@ -271,6 +294,10 @@ export class CombatManager {
           enemy,
           this.aliveEnemies().length,
         );
+      } else if (this.isTimedEnemy(enemy)) {
+        // Timed enemies show countdown instead of a real attack intent
+        const turnsLeft = this.turnLimit - this.turnNumber;
+        enemy.state.intent = chooseMineCartTimedIntent(turnsLeft, this.timedFailureDamage);
       } else {
         enemy.state.intent = chooseEnemyIntent(enemy, this.aliveEnemies().length);
       }
@@ -853,6 +880,8 @@ export class CombatManager {
     for (const enemy of this.aliveEnemies()) {
       // Re-check: enemy may have died from venom, thorns, or mid-turn effects
       if (enemy.state.isDead) continue;
+      // Timed enemies (Mine Cart) don't attack -- damage only on time expiry
+      if (this.isTimedEnemy(enemy)) continue;
       const action = enemy.executeIntent();
 
       switch (action.type) {
@@ -972,6 +1001,32 @@ export class CombatManager {
     return alive[this.targetedEnemyIndex] ?? alive[0] ?? null;
   }
 
+  /** Check if an enemy is a timed encounter entity (e.g. Mine Cart). */
+  private isTimedEnemy(enemy: Enemy): boolean {
+    return this.turnLimit > 0 && enemy.getDefinition().type === 'mine_cart';
+  }
+
+  /**
+   * Resolve a timed encounter that has expired (player ran out of turns).
+   * Applies failure damage, marks the timed enemy as "escaped", and ends combat.
+   */
+  private resolveTimedEncounterFailure(): void {
+    // Apply crash damage
+    if (this.timedFailureDamage > 0) {
+      this.player.takeDamage(this.timedFailureDamage);
+      EventBus.emit(GameEvent.PLAYER_HP_CHANGE, this.player.health, this.player.maxHealth);
+    }
+
+    // Mark all timed enemies as dead (the cart escapes / encounter ends)
+    for (const enemy of this.aliveEnemies()) {
+      if (this.isTimedEnemy(enemy)) {
+        enemy.state.isDead = true;
+      }
+    }
+
+    this.endCombat();
+  }
+
   private isBossEnemy(enemy: Enemy): boolean {
     // The first enemy in the list is the boss when bossController is active
     return this.enemies.indexOf(enemy) === 0;
@@ -1005,6 +1060,7 @@ export class CombatManager {
       abilityThreshold: this.player.abilityThreshold,
       isDeadeyeActive: this.isDeadeyeActive,
       deadeyeShotsRemaining: this.deadeyeShotsRemaining,
+      turnLimit: this.turnLimit,
     };
   }
 
