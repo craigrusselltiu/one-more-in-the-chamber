@@ -14,11 +14,20 @@ export type BossPhase = 1 | 2 | 3;
  *   Transition (50%): Barricade row + 10 block. One-time event.
  *   Phase 2 (50-25%): Locks 3/turn, 15-20 damage. Periodic blocks.
  *   Phase 3 (25-0%): Bomb tile every turn + locks. No blocking. 15-20 damage.
+ *
+ * "Copperhead" Cassidy -- Act 2 Boss (200 HP):
+ *   Phase 1 (100-50%): Poison 4 tiles/turn. Alternates brew (more poison) / strike
+ *     (15-20 damage + 2 bonus per poison tile on board). Occasional block (coil).
+ *   Transition (50%): Fool's gold tiles appear. One-time event.
+ *   Phase 2 (50-0%): Poison 2 + fool's gold 2 per turn. 20-25 damage strikes.
+ *     Board becomes a minefield of traps.
  */
 export class BossController {
   private bossType: string;
   private phase: BossPhase = 1;
   private transitionTriggered = false;
+  /** Tracks alternating brew/strike pattern for Copperhead Cassidy. */
+  private turnParity = 0;
 
   constructor(bossType: string) {
     this.bossType = bossType;
@@ -37,8 +46,21 @@ export class BossController {
     hazardManager: BoardHazardManager,
     board: Board,
   ): boolean {
-    if (this.bossType !== 'dusty_dan') return false;
+    switch (this.bossType) {
+      case 'dusty_dan':
+        return this.checkDustyDanTransition(boss, hazardManager, board);
+      case 'copperhead_cassidy':
+        return this.checkCopperheadTransition(boss, hazardManager);
+      default:
+        return false;
+    }
+  }
 
+  private checkDustyDanTransition(
+    boss: Enemy,
+    hazardManager: BoardHazardManager,
+    board: Board,
+  ): boolean {
     const hpRatio = boss.state.health / boss.state.maxHealth;
 
     // Transition at 50%: barricade row + 10 block (one-time)
@@ -65,15 +87,42 @@ export class BossController {
     return false;
   }
 
-  /**
-   * Choose intent for the boss based on current phase.
-   */
-  chooseBossIntent(boss: Enemy, aliveEnemyCount: number): EnemyIntent {
-    if (this.bossType !== 'dusty_dan') {
-      return boss.chooseIntent();
+  private checkCopperheadTransition(
+    boss: Enemy,
+    hazardManager: BoardHazardManager,
+  ): boolean {
+    const hpRatio = boss.state.health / boss.state.maxHealth;
+
+    // Transition at 50%: fool's gold tiles flood the board (one-time)
+    if (hpRatio <= 0.5 && !this.transitionTriggered) {
+      this.transitionTriggered = true;
+      this.phase = 2;
+
+      // Initial fool's gold burst on transition
+      hazardManager.placeRandomFoolsGold(4);
+      return true;
     }
 
-    return this.chooseDustyDanIntent(boss, aliveEnemyCount);
+    return false;
+  }
+
+  /**
+   * Choose intent for the boss based on current phase.
+   * @param hazardManager - needed by Copperhead to count poison tiles for bonus damage.
+   */
+  chooseBossIntent(
+    boss: Enemy,
+    aliveEnemyCount: number,
+    hazardManager?: BoardHazardManager,
+  ): EnemyIntent {
+    switch (this.bossType) {
+      case 'dusty_dan':
+        return this.chooseDustyDanIntent(boss, aliveEnemyCount);
+      case 'copperhead_cassidy':
+        return this.chooseCopperheadIntent(boss, hazardManager);
+      default:
+        return boss.chooseIntent();
+    }
   }
 
   /**
@@ -81,23 +130,44 @@ export class BossController {
    * Called during the enemy turn for passive per-turn effects.
    */
   executePerTurnEffects(hazardManager: BoardHazardManager): void {
-    if (this.bossType !== 'dusty_dan') return;
+    switch (this.bossType) {
+      case 'dusty_dan':
+        this.dustyDanPerTurn(hazardManager);
+        break;
+      case 'copperhead_cassidy':
+        this.copperheadPerTurn(hazardManager);
+        break;
+    }
+  }
 
+  private dustyDanPerTurn(hazardManager: BoardHazardManager): void {
     switch (this.phase) {
       case 1:
-        // Lock 1 tile per turn
         hazardManager.placeRandomLocks(1);
         break;
       case 2:
-        // Lock 3 tiles per turn
         hazardManager.placeRandomLocks(3);
         break;
       case 3:
-        // Bomb + lock every turn
         hazardManager.placeRandomBombs(1);
         hazardManager.placeRandomLocks(1);
         break;
     }
+  }
+
+  private copperheadPerTurn(hazardManager: BoardHazardManager): void {
+    switch (this.phase) {
+      case 1:
+        // Poison 4 tiles per turn
+        hazardManager.placeRandomPoison(4);
+        break;
+      case 2:
+        // Poison + fool's gold -- board becomes a minefield
+        hazardManager.placeRandomPoison(2);
+        hazardManager.placeRandomFoolsGold(2);
+        break;
+    }
+    this.turnParity++;
   }
 
   // ---------------------------------------------------------------------------
@@ -156,6 +226,67 @@ export class BossController {
   private dustyDanPhase3(_boss: Enemy): EnemyIntent {
     const damage = 15 + Math.floor(Math.random() * 6); // 15-20
     return { type: 'attack', value: damage, description: `ATK ${damage}` };
+  }
+
+  // ---------------------------------------------------------------------------
+  // Copperhead Cassidy phase-specific AI
+  // ---------------------------------------------------------------------------
+
+  private chooseCopperheadIntent(
+    _boss: Enemy,
+    hazardManager?: BoardHazardManager,
+  ): EnemyIntent {
+    switch (this.phase) {
+      case 1:
+        return this.copperheadPhase1(hazardManager);
+      case 2:
+        return this.copperheadPhase2(hazardManager);
+      default:
+        return this.copperheadPhase2(hazardManager);
+    }
+  }
+
+  /**
+   * Phase 1 (100-50%): alternates brew / strike. Occasional block (coil).
+   * Brew: poison 3 extra tiles (board-manipulation).
+   * Strike: 15-20 damage + 2 bonus per poison tile on board.
+   */
+  private copperheadPhase1(hazardManager?: BoardHazardManager): EnemyIntent {
+    const isBrew = this.turnParity % 2 === 0;
+
+    if (isBrew) {
+      // Brew turn -- mostly poison, small chance of coil (block)
+      const options: { intent: EnemyIntent; weight: number }[] = [
+        { intent: { type: 'board-manipulation', value: 3, description: 'POISON 3' }, weight: 4 },
+        { intent: { type: 'block', value: 8, description: 'COIL +8' }, weight: 1 },
+      ];
+      return weightedRandom(options);
+    }
+
+    // Strike turn -- attack with bonus from poison tiles
+    const poisonCount = hazardManager?.countHazards('poison') ?? 0;
+    const baseDamage = 15 + Math.floor(Math.random() * 6); // 15-20
+    const bonus = poisonCount * 2;
+    const damage = baseDamage + bonus;
+    return { type: 'attack', value: damage, description: `STRIKE ${damage}` };
+  }
+
+  /**
+   * Phase 2 (50-0%): 20-25 damage strikes. Heavier aggression.
+   * Board is flooded with poison + fool's gold from per-turn effects.
+   */
+  private copperheadPhase2(hazardManager?: BoardHazardManager): EnemyIntent {
+    const poisonCount = hazardManager?.countHazards('poison') ?? 0;
+    const baseDamage = 20 + Math.floor(Math.random() * 6); // 20-25
+    const bonus = poisonCount * 2;
+    const damage = baseDamage + bonus;
+
+    const options: { intent: EnemyIntent; weight: number }[] = [
+      { intent: { type: 'attack', value: damage, description: `STRIKE ${damage}` }, weight: 4 },
+      { intent: { type: 'board-manipulation', value: 2, description: 'POISON 2' }, weight: 1 },
+    ];
+
+    return weightedRandom(options);
   }
 
   /**

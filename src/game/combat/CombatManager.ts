@@ -293,6 +293,7 @@ export class CombatManager {
         enemy.state.intent = this.bossController.chooseBossIntent(
           enemy,
           this.aliveEnemies().length,
+          this.hazardManager,
         );
       } else if (this.isTimedEnemy(enemy)) {
         // Timed enemies show countdown instead of a real attack intent
