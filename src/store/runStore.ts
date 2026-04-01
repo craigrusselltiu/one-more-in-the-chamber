@@ -13,6 +13,7 @@ interface RunStore {
   addConsumable: (consumable: ConsumableInstance) => void;
   removeConsumable: (index: number) => void;
   addTileType: (type: TileType) => void;
+  swapTileType: (oldType: TileType, newType: TileType) => void;
   upgradeTile: (type: TileType) => void;
   setCurrentNode: (nodeId: string) => void;
   markNodeVisited: (nodeId: string) => void;
@@ -105,6 +106,17 @@ export const useRunStore = create<RunStore>((set) => ({
       if (!state.run) return state;
       if (state.run.activeTileTypes.includes(type)) return state;
       return { run: { ...state.run, activeTileTypes: [...state.run.activeTileTypes, type] } };
+    }),
+
+  swapTileType: (oldType, newType) =>
+    set((state) => {
+      if (!state.run) return state;
+      const idx = state.run.activeTileTypes.indexOf(oldType);
+      if (idx === -1) return state;
+      if (state.run.activeTileTypes.includes(newType)) return state;
+      const activeTileTypes = [...state.run.activeTileTypes];
+      activeTileTypes[idx] = newType;
+      return { run: { ...state.run, activeTileTypes } };
     }),
 
   upgradeTile: (type) =>
