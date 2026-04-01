@@ -111,11 +111,11 @@ Global mechanic. Every fight starts at 0% crit chance. Crit chance is gained fro
 
 Per-tile values x tile count x match bonus.
 
-| Match | Multiplier | Example (Bullet 3/tile) |
+| Match | Multiplier | Example (Bullet 2/tile) |
 |---|---|---|
-| 3-match | 1.0x | 9 damage |
-| 4-match | 1.5x | 18 damage |
-| 5-match | 2.0x | 30 damage |
+| 3-match | 1.0x | 6 damage |
+| 4-match | 1.5x | 12 damage |
+| 5-match | 2.0x | 20 damage |
 | Cross clear | 1.0x per tile | Varies |
 
 **Starting HP: 100 / 100.**
@@ -192,9 +192,9 @@ Two **separate pools**: the starter pool (run start) and the additional pool (be
 
 | Tile | Per-tile | Purpose |
 |---|---|---|
-| **Bullet** | 3 damage | Primary single-target offence. |
-| **Iron** | 4 block | Absorbs damage this turn. Expires at turn end. |
-| **Gold** | 3 gold | Currency for shops. Mid-fight greed play. |
+| **Bullet** | 2 damage | Primary single-target offence. |
+| **Iron** | 1 block | Absorbs damage this turn. Expires at turn end. |
+| **Gold** | 1 gold | Currency for shops. Mid-fight greed play. |
 
 ### Starter Pool (choose 1 of 3 offered, from pool of 4)
 
@@ -204,8 +204,8 @@ Exclusive to run start. Cannot be gained from shops or between-act rewards. 3 of
 |---|---|---|---|
 | **Ricochet** | 1 damage + destroys 1 random tile | Each tile cleared deals 1 damage AND destroys 1 random tile elsewhere on the board (which generates its own resource). A 3-match = 3 damage + 3 random tiles destroyed. Ricochet destruction resolves after each match step, before the next cascade step. | Bullets bounce. You never know what they'll hit. |
 | **Smoke** | +1% dodge (caps at 50%) | Each tile cleared adds +1% dodge for the rest of the fight. When an enemy attacks, each hit is independently rolled against dodge chance. Resets between fights. Slow build, huge late-fight payoff. | Disappear into the haze. They can't hit what they can't see. |
-| **Dynamite** | +1 ability charge | Each tile cleared adds +1 Deadeye charge (in addition to the +1/turn baseline). A 3-match = 3 charges. Gets Deadeye online fast and often. | Volatile but useful. Light the fuse on your special move. |
-| **Stampede** | 2 damage (all enemies) | Each tile cleared deals 2 damage to **every** enemy on the field. A 3-match = 6 damage to all. Less efficient than Bullet vs single targets, devastating against groups. | The ground shakes. So do they. |
+| **Dynamite** | +1 ability charge per match tile above 2 | Match-size-based charging: a 3-match = 1 charge, 4-match = 2 charges, 5-match = 3 charges. Upgrades add flat bonus charges per match. Gets Deadeye online fast and often. | Volatile but useful. Light the fuse on your special move. |
+| **Stampede** | 1 damage (all enemies) | Each tile cleared deals 1 damage to **every** enemy on the field. A 3-match = 3 damage to all. Less efficient than Bullet vs single targets, devastating against groups. | The ground shakes. So do they. |
 
 ### Additional Pool (gained between acts, swappable at shops)
 
@@ -213,12 +213,13 @@ After each act boss, choose **1 of 3**. **Already-chosen tiles cannot be offered
 
 | Tile | Per-tile | Mechanic | Sauce |
 |---|---|---|---|
-| **Whiskey** | 2 HP | Heals player. Basic sustain. | The cowboy's medicine. |
-| **Buckshot** | 5 damage | Raw single-target damage (vs Bullet's 3). Board dilution is the cost. | Spread shot. Hits harder, less precise. |
+| **Whiskey** | 1 HP | Heals player. Basic sustain. | The cowboy's medicine. |
+| **Buckshot** | 1 damage | Single-target damage. Upgrades scale it past Bullet. Board dilution is the cost. | Spread shot. Hits harder, less precise. |
 | **Ace** | +0.25x multiplier | Adds to a running multiplier (base 1.0x). 3-match = 1.75x. **Stacks across matches within a fight.** Consumed on next non-Ace match — the multiplier applies to that match's resources, then resets to 1.0x. **Resets between fights. No cap.** Not affected by match bonuses. Displayed as a player status effect. | An ace up your sleeve. |
 | **Venom** | 1 venom stack | Applies venom to the targeted enemy. Venom stacks deal damage at the start of the enemy's turn equal to the current stack count, then decrease by 1. Stacks from all sources combine. A 3-match applies 3 stacks (enemy takes 3, then 2, then 1 = 6 total). | Snake venom. Slow death, certain death. |
 | **Ember** | 4 damage | Each cleared Ember has 25% chance to convert one adjacent **non-Ember** tile into Ember. Conversion happens after cascade resolution — converted tiles can be matched on subsequent cascades. Fire eats your other tiles. | Playing with fire. Rewarding and dangerous. |
 | **Horseshoe** | +5% crit chance | Each tile adds +5% crit (stacking). When a crit triggers, that match generates 2x resources, then crit chance resets to 0%. Resets between fights. | Feeling lucky, partner? |
+| **Fifty Cal** | 5 damage | Raw single-target damage. High base value, no special mechanic — pure firepower at the cost of board dilution. | One round. One hole. |
 
 ### Tile Upgrades
 
@@ -226,19 +227,20 @@ Permanently upgraded at rest sites for the rest of the run.
 
 | Tile | Base | Per upgrade |
 |---|---|---|
-| Bullet | 3 damage | +1 damage |
-| Iron | 4 block | +1 block |
-| Gold | 3 gold | +1 gold |
+| Bullet | 2 damage | +1 damage |
+| Iron | 1 block | +1 block |
+| Gold | 1 gold | +1 gold |
 | Ricochet | 1 damage + 1 random clear | +1 damage |
 | Smoke | +1% dodge/tile | +0.5% dodge/tile |
-| Dynamite | +1 charge/tile | +1 bonus charge per Dynamite match |
-| Stampede | 2 damage/tile (all enemies) | +1 damage/tile |
-| Whiskey | 2 HP | +1 HP |
-| Buckshot | 5 damage | +2 damage |
-| Ace | +0.25x/tile | +0.1x/tile |
+| Dynamite | 1 charge per 3-match (+1 per extra tile) | +1 flat bonus charge per match |
+| Stampede | 1 damage/tile (all enemies) | +1 damage/tile |
+| Whiskey | 1 HP | +1 HP |
+| Buckshot | 1 damage | +1 damage |
+| Ace | +0.25x/tile | +0.25x/tile |
 | Venom | 1 stack/tile | +1 bonus damage per venom tick |
 | Ember | 4 damage | +1 damage |
-| Horseshoe | +5% crit/tile | +2% crit/tile |
+| Horseshoe | +5% crit/tile | +5% crit/tile |
+| Fifty Cal | 5 damage | +1 damage |
 
 ---
 
@@ -867,7 +869,7 @@ MVP uses **no image assets**. All visuals are Phaser graphics primitives (rectan
 
 | Element | Placeholder | Label |
 |---|---|---|
-| Board tiles | 30x30 colored rect, 1px dark border, 20% alpha fill | 1-2 letter abbreviation centered (Bu, Ir, Go, Ri, Sm, Dy, St) |
+| Board tiles | 30x30 colored rect, 1px dark border, 20% alpha fill | 1-2 letter abbreviation centered (Bu, Ir, Go, Ri, Sm, Dy, St, .50) |
 | Explosive tile | Same as tile but with pulsing border | "!" prefix |
 | Showdown tile | Same as tile but diamond-shaped | Star symbol |
 | Player character | 56x56 green rect, 30% alpha fill, 1px border | "P" |
@@ -899,6 +901,7 @@ MVP uses **no image assets**. All visuals are Phaser graphics primitives (rectan
 | Poison | Purple overlay | `#8030A0` 40% alpha |
 | Bomb | Flashing red border, countdown number | -- |
 | Sand/Buried | Tan, no label (hidden) | `#C8B080` |
+| Fifty Cal | Steel blue | `#7090B8` |
 | Barricade | Dark brown, cross-hatched | `#4A3020` |
 
 All placeholder rendering is behind a single abstraction layer per entity type (e.g., `TileRenderer`, `CharacterRenderer`) so swapping to sprite-based rendering later is a one-file change per type.
@@ -911,7 +914,7 @@ All placeholder rendering is behind a single abstraction layer per entity type (
 - [ ] Universal resource generation. Per-tile combat numbers.
 - [ ] 2 swaps/turn. End early. No-valid-moves = lost turn + reshuffle.
 - [ ] 4-match (explosive), 5-match (Showdown), cross clear.
-- [ ] Deadeye (3 tiles, 1 charge/turn + Dynamite tiles, 10 to activate, carry over, Showdown interaction).
+- [ ] Deadeye (3 tiles, 1 charge/turn + Dynamite matches, 10 to activate, carry over, Showdown interaction).
 - [ ] Crit system (baseline mechanic).
 - [ ] Multi-enemy combat (up to 3, targeting, AoE).
 - [ ] Placeholder character + enemy rendering with state indication (idle/attacking/blocking/hit/dead).
@@ -935,7 +938,7 @@ All placeholder rendering is behind a single abstraction layer per entity type (
 - [ ] Character + enemy sprite animations with priority state machine.
 - [ ] Acts 2-3 (tile count to 5, 6 via between-act choices).
 - [ ] Full artifact set (60-80).
-- [ ] All additional tiles (Whiskey, Buckshot, Ace, Venom, Ember, Horseshoe).
+- [ ] All additional tiles (Whiskey, Buckshot, Ace, Venom, Ember, Horseshoe, Fifty Cal).
 - [ ] Full event pool (~15-20).
 - [ ] Meta progression (Reputation shop with unlocks and pricing).
 - [ ] Ascension system.

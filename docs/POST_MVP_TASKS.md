@@ -35,32 +35,34 @@ Refined from the Post-MVP section of [SPEC.md](./SPEC.md). Each task includes sc
 
 ---
 
-### 1.2 Additional Tiles (Whiskey, Buckshot, Ace, Venom, Ember, Horseshoe)
+### 1.2 Additional Tiles (Whiskey, Buckshot, Ace, Venom, Ember, Horseshoe, Fifty Cal)
 
 **Priority: High** — Required for Acts 2-3 tile selection to have meaningful choices.
 
 **Scope:**
-Implement all 6 tiles from the additional pool. These are gained between acts or swapped at shops.
+Implement all 7 tiles from the additional pool. These are gained between acts or swapped at shops.
 
 | Tile | Per-tile | Key Mechanic |
 |---|---|---|
-| Whiskey | 2 HP | Heals player. |
-| Buckshot | 5 damage | Raw single-target damage. |
+| Whiskey | 1 HP | Heals player. |
+| Buckshot | 1 damage | Single-target damage. Scales via upgrades (+1/upgrade). |
 | Ace | +0.25x multiplier | Stacking multiplier consumed on next non-Ace match. Resets between fights. No cap. Not affected by match bonuses. |
 | Venom | 1 venom stack | Applied to targeted enemy. Ticks at enemy turn start (damage = stack count), then stacks -1. |
 | Ember | 4 damage | 25% chance per cleared tile to convert 1 adjacent non-Ember tile into Ember after cascade. |
 | Horseshoe | +5% crit chance | Feeds into global crit system. Resets between fights. |
+| Fifty Cal | 5 damage | Pure high-damage single-target. No special mechanic — raw firepower at the cost of board dilution. |
 
 - Implement tile upgrade values for each (see SPEC.md Tile Upgrades table).
 - Implement shop tile-swap mechanic: non-core, non-starter tiles can be swapped for a different additional pool tile (50-75 gold).
 
 **Acceptance Criteria:**
-- [ ] All 6 tiles generate resources correctly per spec.
+- [ ] All 7 tiles generate resources correctly per spec.
 - [ ] Ace multiplier displays as player status effect, stacks across matches, consumed correctly.
 - [ ] Venom stacks display on enemies, tick damage works, stacks decrease by 1 each turn.
 - [ ] Ember conversion triggers after cascade resolution with correct 25% probability.
 - [ ] Horseshoe integrates with existing crit system.
-- [ ] All 6 tiles can be upgraded at rest sites with correct per-upgrade values.
+- [ ] Fifty Cal deals 5 damage per tile with no special mechanics.
+- [ ] All 7 tiles can be upgraded at rest sites with correct per-upgrade values.
 - [ ] Shop tile-swap works (only non-core, non-starter tiles swappable).
 
 ---
