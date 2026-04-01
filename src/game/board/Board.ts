@@ -318,6 +318,11 @@ export class Board {
       }
     }
 
+    // Flash lines from showdown tile to each triggered tile
+    for (const pos of triggered) {
+      EventBus.emit(GameEvent.FLASH_LINE, showdownPos, pos, targetType);
+    }
+
     // Build a MatchResult so CombatManager.processMatches applies effects
     // (damage, block, gold, etc.) for every triggered tile at 1.0x per tile.
     const showdownMatch: MatchResult = {

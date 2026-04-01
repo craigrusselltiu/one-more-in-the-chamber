@@ -341,6 +341,8 @@ export class CombatManager {
     this.setPhase('resolving');
     EventBus.emit(GameEvent.SWAPS_CHANGE, this.swapsRemaining, this.swapsPerTurn);
 
+    console.log('swapped');
+
     const from = { row: fromRow, col: fromCol };
     const to = { row: toRow, col: toCol };
 
@@ -707,6 +709,19 @@ export class CombatManager {
         isAoE: output.isAoE,
       };
 
+      // Log match details
+      const prefix = match.isShowdown ? 'showdown' : `${match.length}-match`;
+      const parts: string[] = [`${prefix} ${match.tileType}`];
+      if (scaled.damage > 0) parts.push(`${scaled.damage} damage`);
+      if (scaled.block > 0) parts.push(`${scaled.block} block`);
+      if (scaled.gold > 0) parts.push(`${scaled.gold} gold`);
+      if (scaled.healing > 0) parts.push(`${scaled.healing} healing`);
+      if (scaled.venomStacks > 0) parts.push(`${scaled.venomStacks} venom`);
+      if (scaled.dodgePercent > 0) parts.push(`${scaled.dodgePercent}% dodge`);
+      if (scaled.abilityCharges > 0) parts.push(`${scaled.abilityCharges} charges`);
+      if (isCrit) parts.push('CRIT');
+      console.log(parts.join(' - '));
+
       this.applyResourceOutput(scaled);
 
       // Flash a line from match to targeted enemy on damage
@@ -745,6 +760,7 @@ export class CombatManager {
 
     const upgradeLevel = this.player.getUpgradeLevel(result.type);
     const output = this.resolver.resolveSingle(result.type, upgradeLevel);
+    console.log(`ricochet destroyed ${result.type} tile`);
     this.applyResourceOutput(output);
     this.ricochetTriggeredThisResolution = true;
 
