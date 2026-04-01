@@ -16,6 +16,11 @@ import type { BoardHazardManager } from '../board/BoardHazardManager';
  *   Dynamite Outlaw     -- tanky. Barricades + block, then attacks.
  *   Cave Bat            -- swarm unit. Aggressively buries tiles, low damage.
  *   Mine Cart           -- timed hazard. Always threatens crash damage.
+ *
+ * Act 3 enemies:
+ *   Corrupt Deputy  -- locks + type suppression. Blocks when wounded.
+ *   Saloon Brawler  -- pure damage. No board manipulation.
+ *   Train Guard     -- barricades + bombs. Board control focus.
  */
 
 interface IntentOption {
@@ -46,6 +51,13 @@ export function chooseEnemyIntent(enemy: Enemy, aliveCount: number): EnemyIntent
       return chooseCaveBatIntent(enemy, aliveCount);
     case 'mine_cart':
       return chooseMineCartIntent(enemy);
+    // Act 3
+    case 'corrupt_deputy':
+      return chooseCorruptDeputyIntent(enemy, hpRatio);
+    case 'saloon_brawler':
+      return chooseSaloonBrawlerIntent(enemy);
+    case 'train_guard':
+      return chooseTrainGuardIntent(enemy, hpRatio);
     default:
       return enemy.chooseIntent();
   }
@@ -231,6 +243,82 @@ function chooseMineCartIntent(enemy: Enemy): EnemyIntent {
 }
 
 // ---------------------------------------------------------------------------
+// Corrupt Deputy: locks + type suppression. Blocks when wounded.
+// Methodical -- locks tiles to restrict movement, suppresses a tile type
+// to reduce player output. Falls back to blocking when low HP.
+// ---------------------------------------------------------------------------
+
+function chooseCorruptDeputyIntent(enemy: Enemy, hpRatio: number): EnemyIntent {
+  const damage = rollDamage(enemy);
+  const options: IntentOption[] = [
+    { intent: { type: 'attack', value: damage, description: `ATK ${damage}` }, weight: 2 },
+    { intent: { type: 'board-manipulation', value: 2, description: 'LOCK 2' }, weight: 3 },
+    { intent: { type: 'board-manipulation', value: 1, description: 'SUPPRESS 1' }, weight: 2 },
+  ];
+
+  // Block more when wounded
+  if (hpRatio < 0.4) {
+    options.push({
+      intent: { type: 'block', value: 8, description: 'BLOCK +8' },
+      weight: 3,
+    });
+  } else {
+    options.push({
+      intent: { type: 'block', value: 8, description: 'BLOCK +8' },
+      weight: 1,
+    });
+  }
+
+  return weightedRandom(options);
+}
+
+// ---------------------------------------------------------------------------
+// Saloon Brawler: pure damage. No board manipulation.
+// All-in aggression -- hits hard every turn. Occasionally winds up for
+// a heavy strike that telegraphs extra damage.
+// ---------------------------------------------------------------------------
+
+function chooseSaloonBrawlerIntent(enemy: Enemy): EnemyIntent {
+  const damage = rollDamage(enemy);
+  const heavyDamage = damage + 8;
+  const options: IntentOption[] = [
+    { intent: { type: 'attack', value: damage, description: `PUNCH ${damage}` }, weight: 4 },
+    { intent: { type: 'attack', value: heavyDamage, description: `HAYMAKER ${heavyDamage}` }, weight: 2 },
+  ];
+
+  return weightedRandom(options);
+}
+
+// ---------------------------------------------------------------------------
+// Train Guard: barricades + bombs. Board control focus.
+// Fortifies with barricades, plants bombs, attacks opportunistically.
+// When wounded, shifts to more aggressive bombing.
+// ---------------------------------------------------------------------------
+
+function chooseTrainGuardIntent(enemy: Enemy, hpRatio: number): EnemyIntent {
+  const damage = rollDamage(enemy);
+  const options: IntentOption[] = [
+    { intent: { type: 'attack', value: damage, description: `ATK ${damage}` }, weight: 2 },
+    { intent: { type: 'board-manipulation', value: 1, description: 'BARRICADE' }, weight: 2 },
+  ];
+
+  // More bombs when wounded (desperate), fewer when healthy
+  if (hpRatio < 0.5) {
+    options.push({
+      intent: { type: 'board-manipulation', value: 2, description: 'BOMB 2' },
+      weight: 3,
+    });
+  } else {
+    options.push({
+      intent: { type: 'board-manipulation', value: 1, description: 'BOMB 1' },
+      weight: 2,
+    });
+  }
+
+  return weightedRandom(options);
+}
+
+// ---------------------------------------------------------------------------
 // Board manipulation execution
 // ---------------------------------------------------------------------------
 
@@ -273,6 +361,14 @@ export function executeBoardManipulation(
     const row = Math.floor(Math.random() * 8);
     hazardManager.placeBarricadeRow(row);
     return `${def.name} barricades row ${row}`;
+  }
+
+  if (desc.startsWith('SUPPRESS')) {
+    // Type suppression: lock tiles of a random type to deny that resource.
+    // Locks 3 tiles as a proxy for suppressing an entire type.
+    const count = 3;
+    hazardManager.placeRandomLocks(count);
+    return `${def.name} suppresses tiles (locks ${count})`;
   }
 
   return '';
