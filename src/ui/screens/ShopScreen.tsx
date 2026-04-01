@@ -3,7 +3,8 @@ import { EventBus, GameEvent } from '../../game/EventBus';
 import { useRunStore } from '../../store/runStore';
 import { ARTIFACTS } from '../../data/artifacts';
 import { CONSUMABLES } from '../../data/consumables';
-import { ADDITIONAL_POOL, TILE_DEFINITIONS } from '../../data/tiles';
+import { ADDITIONAL_POOL, CORE_TILES, STARTER_POOL, TILE_COLORS, TILE_DEFINITIONS } from '../../data/tiles';
+import type { TileType } from '../../types/game';
 import type { Screen } from '../../App';
 
 interface ShopItem {
@@ -23,7 +24,9 @@ export const ShopScreen = memo(function ShopScreen() {
   const updateGold = useRunStore((s) => s.updateGold);
   const addArtifact = useRunStore((s) => s.addArtifact);
   const addConsumable = useRunStore((s) => s.addConsumable);
+  const swapTileType = useRunStore((s) => s.swapTileType);
   const [purchased, setPurchased] = useState<Set<string>>(new Set());
+  const [swapPending, setSwapPending] = useState<ShopItem | null>(null);
 
   const stock = useMemo(() => {
     if (!run) return [];
@@ -59,7 +62,7 @@ export const ShopScreen = memo(function ShopScreen() {
 
     // 1 tile swap (50-75 gold, if player has swappable tiles)
     const swappableTiles = run.activeTileTypes.filter(
-      (t) => !['bullet', 'iron', 'gold'].includes(t) && !['ricochet', 'smoke', 'dynamite', 'stampede'].includes(t),
+      (t) => !(CORE_TILES as string[]).includes(t) && !(STARTER_POOL as string[]).includes(t),
     );
     if (swappableTiles.length > 0) {
       const available = ADDITIONAL_POOL.filter((t) => !run.activeTileTypes.includes(t));
@@ -80,8 +83,22 @@ export const ShopScreen = memo(function ShopScreen() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  /** Tiles the player can swap away (non-core, non-starter additional pool tiles). */
+  const swappableTiles = useMemo(() => {
+    if (!run) return [];
+    return run.activeTileTypes.filter(
+      (t) => !(CORE_TILES as string[]).includes(t) && !(STARTER_POOL as string[]).includes(t),
+    );
+  }, [run]);
+
   const handleBuy = (item: ShopItem) => {
     if (!run || run.gold < item.price || purchased.has(item.id)) return;
+
+    if (item.type === 'tile_swap') {
+      // Open the tile picker instead of buying immediately
+      setSwapPending(item);
+      return;
+    }
 
     updateGold(-item.price);
 
@@ -95,9 +112,17 @@ export const ShopScreen = memo(function ShopScreen() {
       const consumableId = item.id.replace('cons-', '');
       addConsumable({ id: consumableId });
     }
-    // Tile swap would need more complex UI (choose which tile to remove) -- simplified for MVP
 
     setPurchased((prev) => new Set([...prev, item.id]));
+  };
+
+  const handleSwapConfirm = (oldTile: TileType) => {
+    if (!swapPending || !run) return;
+    const newTile = swapPending.id.replace('swap-', '') as TileType;
+    updateGold(-swapPending.price);
+    swapTileType(oldTile, newTile);
+    setPurchased((prev) => new Set([...prev, swapPending.id]));
+    setSwapPending(null);
   };
 
   const handleLeave = () => {
@@ -163,6 +188,47 @@ export const ShopScreen = memo(function ShopScreen() {
       >
         Leave Shop
       </button>
+
+      {/* Tile swap picker overlay */}
+      {swapPending && (
+        <div className="absolute inset-0 flex items-center justify-center bg-black/70 z-10">
+          <div className="bg-[#1a1a2e] border border-stone-600 p-4 w-72">
+            <h3 className="text-sm text-amber-400 font-mono mb-1">Choose tile to swap away</h3>
+            <p className="text-xs text-stone-400 font-mono mb-3">
+              Replacing with{' '}
+              <span className="text-blue-300">
+                {TILE_DEFINITIONS[swapPending.id.replace('swap-', '') as TileType].label}
+              </span>{' '}
+              for <span className="text-yellow-400">{swapPending.price}g</span>
+            </p>
+            <div className="flex flex-col gap-2 mb-3">
+              {swappableTiles.map((tile) => {
+                const def = TILE_DEFINITIONS[tile];
+                return (
+                  <button
+                    key={tile}
+                    onClick={() => handleSwapConfirm(tile)}
+                    className="flex items-center gap-2 p-2 border border-stone-600 bg-stone-800/50 hover:border-amber-600 hover:bg-stone-700/50 text-left"
+                  >
+                    <span
+                      className="inline-block w-3 h-3 shrink-0"
+                      style={{ backgroundColor: TILE_COLORS[tile] }}
+                    />
+                    <span className="text-stone-200 font-mono text-sm">{def.label}</span>
+                    <span className="text-stone-500 font-mono text-xs ml-auto">{def.description}</span>
+                  </button>
+                );
+              })}
+            </div>
+            <button
+              onClick={() => setSwapPending(null)}
+              className="w-full px-4 py-1.5 bg-stone-700/50 text-stone-400 font-mono text-xs border border-stone-600 hover:bg-stone-600/50"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 });
