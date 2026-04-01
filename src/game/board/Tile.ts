@@ -160,7 +160,8 @@ export class Tile {
     const ix = Math.round(cx + 10);
     const iy = Math.round(cy + 10);
 
-    if (this._hazard === null) {
+    if (this._hazard === null || this._hazard.type === 'fools_gold') {
+      // Fool's gold: no visible indicator — the deception IS the mechanic
       this.destroyStatusIndicator();
       return;
     }
@@ -198,6 +199,7 @@ export class Tile {
       case 'bomb':      return { dotColor: 0xff4040, text: String(hazard.countdown) };
       case 'sand':      return { dotColor: 0xe8c170, text: '?' };
       case 'barricade': return { dotColor: 0x888888, text: 'B' };
+      case 'fools_gold': return { dotColor: 0xffd700, text: '' }; // never shown
     }
   }
 

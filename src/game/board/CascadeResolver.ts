@@ -127,17 +127,21 @@ export class CascadeResolver {
       }
     }
 
-    // Phase 3: Collect Tile references, then null grid cells
+    // Phase 3: Collect Tile references, then null grid cells.
+    // Also annotate matches with fool's gold count before tiles are destroyed.
     const tilesToAnimate: Tile[] = [];
 
     for (const match of matches) {
+      let fgCount = 0;
       for (const pos of match.tiles) {
         const tile = grid[pos.row]?.[pos.col];
         if (tile) {
+          if (tile.hazard?.type === 'fools_gold') fgCount++;
           tilesToAnimate.push(tile);
           grid[pos.row][pos.col] = null;
         }
       }
+      if (fgCount > 0) match.foolsGoldCount = fgCount;
     }
 
     for (const [key] of extraTiles) {

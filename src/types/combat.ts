@@ -76,6 +76,8 @@ export interface MatchResult {
   /** Intersection points for cross clears (L/T/+ patterns). */
   crossIntersections: GridPosition[];
   matchBonus: number;
+  /** Number of fool's gold tiles in this match (set by CascadeResolver before clearing). */
+  foolsGoldCount?: number;
 }
 
 export interface GridPosition {
@@ -85,7 +87,7 @@ export interface GridPosition {
 
 export interface BoardHazard {
   position: GridPosition;
-  type: 'lock' | 'poison' | 'bomb' | 'sand' | 'barricade';
+  type: 'lock' | 'poison' | 'bomb' | 'sand' | 'barricade' | 'fools_gold';
   countdown?: number;
 }
 

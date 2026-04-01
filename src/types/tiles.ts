@@ -27,4 +27,5 @@ export type TileHazardState =
   | { type: 'poison' }
   | { type: 'bomb'; countdown: number }
   | { type: 'sand' }
-  | { type: 'barricade' };
+  | { type: 'barricade' }
+  | { type: 'fools_gold' };

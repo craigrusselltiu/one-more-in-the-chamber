@@ -50,6 +50,29 @@ export class BoardHazardManager {
     return this.placeRandomHazard({ type: 'sand' }, count);
   }
 
+  /**
+   * Place fool's gold on N random non-gold, non-hazarded tiles.
+   * Converts the tile's type to 'gold' so it looks identical, then marks
+   * it with a hidden fools_gold hazard. When matched, gold output is zeroed.
+   */
+  placeRandomFoolsGold(count: number): HazardPlacement[] {
+    const candidates = this.getNonGoldFreeTiles();
+    const placements: HazardPlacement[] = [];
+
+    for (let i = 0; i < count && candidates.length > 0; i++) {
+      const idx = Math.floor(Math.random() * candidates.length);
+      const pos = candidates.splice(idx, 1)[0];
+      const tile = this.board.getGrid()[pos.row][pos.col];
+      if (tile) {
+        tile.setType('gold');
+        tile.hazard = { type: 'fools_gold' };
+        placements.push({ position: pos, hazard: { type: 'fools_gold' } });
+      }
+    }
+
+    return placements;
+  }
+
   /** Place barricades on an entire row. */
   placeBarricadeRow(row: number): HazardPlacement[] {
     const placements: HazardPlacement[] = [];
@@ -235,6 +258,21 @@ export class BoardHazardManager {
       for (let col = 0; col < BOARD_SIZE; col++) {
         const tile = grid[row][col];
         if (tile && !tile.hazard && !tile.isExplosive && !tile.isShowdown) {
+          free.push({ row, col });
+        }
+      }
+    }
+    return free;
+  }
+
+  /** Free tiles that are NOT already gold (used for fool's gold placement). */
+  private getNonGoldFreeTiles(): GridPosition[] {
+    const grid = this.board.getGrid();
+    const free: GridPosition[] = [];
+    for (let row = 0; row < BOARD_SIZE; row++) {
+      for (let col = 0; col < BOARD_SIZE; col++) {
+        const tile = grid[row][col];
+        if (tile && !tile.hazard && !tile.isExplosive && !tile.isShowdown && tile.type !== 'gold') {
           free.push({ row, col });
         }
       }
