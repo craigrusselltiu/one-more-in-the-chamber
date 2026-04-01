@@ -18,9 +18,11 @@ import type { CombatConfig, CombatResult } from './game/combat/CombatManager';
 import {
   rollAct1Encounter,
   rollAct1EliteEncounter,
+  rollAct2Encounter,
+  rollAct2EliteEncounter,
+  rollAct3Encounter,
+  rollAct3EliteEncounter,
   BOSSES,
-  ACT2_ENEMIES,
-  ACT3_ENEMIES,
 } from './data/enemies';
 import type { EnemyDefinition } from './types/combat';
 import type { MapNodeType, Act } from './types/game';
@@ -36,37 +38,22 @@ export type Screen =
   | 'score'
   | 'treasure';
 
+const ENCOUNTER_ROLLERS: Record<Act, { regular: () => EnemyDefinition[]; elite: () => EnemyDefinition[] }> = {
+  1: { regular: rollAct1Encounter, elite: rollAct1EliteEncounter },
+  2: { regular: rollAct2Encounter, elite: rollAct2EliteEncounter },
+  3: { regular: rollAct3Encounter, elite: rollAct3EliteEncounter },
+};
+
 /** Roll enemies for a given act and node type. */
 function rollEncounter(act: Act, nodeType: MapNodeType): { enemies: EnemyDefinition[]; isElite: boolean; isBoss: boolean } {
   if (nodeType === 'boss') {
     return { enemies: [BOSSES[act]], isElite: false, isBoss: true };
   }
+  const rollers = ENCOUNTER_ROLLERS[act];
   if (nodeType === 'elite') {
-    if (act === 1) return { enemies: rollAct1EliteEncounter(), isElite: true, isBoss: false };
-    // Acts 2/3 elite: tougher version of a random act enemy
-    const pool = act === 2 ? Object.values(ACT2_ENEMIES) : Object.values(ACT3_ENEMIES);
-    const base = pool[Math.floor(Math.random() * pool.length)];
-    return {
-      enemies: [{
-        ...base,
-        health: Math.round(base.health * 1.5),
-        minDamage: base.minDamage + 2,
-        maxDamage: base.maxDamage + 3,
-      }],
-      isElite: true,
-      isBoss: false,
-    };
+    return { enemies: rollers.elite(), isElite: true, isBoss: false };
   }
-  // Regular combat
-  if (act === 1) return { enemies: rollAct1Encounter(), isElite: false, isBoss: false };
-  const pool = act === 2 ? Object.values(ACT2_ENEMIES) : Object.values(ACT3_ENEMIES);
-  const base = pool[Math.floor(Math.random() * pool.length)];
-  const count = 1 + Math.floor(Math.random() * 2);
-  return {
-    enemies: Array.from({ length: count }, () => ({ ...base })),
-    isElite: false,
-    isBoss: false,
-  };
+  return { enemies: rollers.regular(), isElite: false, isBoss: false };
 }
 
 export default function App() {

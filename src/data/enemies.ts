@@ -156,7 +156,7 @@ export const BOSSES: Record<number, EnemyDefinition> = {
 };
 
 // ---------------------------------------------------------------------------
-// Act 1 encounter generation
+// Encounter generation
 // ---------------------------------------------------------------------------
 
 /** Spawn counts per enemy type (from SPEC). */
@@ -166,6 +166,8 @@ interface EncounterTemplate {
   maxCount: number;
 }
 
+// --- Act 1 templates ---
+
 const ACT1_ENCOUNTER_TEMPLATES: EncounterTemplate[] = [
   { type: 'coyote', minCount: 1, maxCount: 2 },
   { type: 'rattlesnake', minCount: 1, maxCount: 1 },
@@ -173,23 +175,46 @@ const ACT1_ENCOUNTER_TEMPLATES: EncounterTemplate[] = [
   { type: 'vulture', minCount: 1, maxCount: 2 },
 ];
 
-/** Roll a random Act 1 combat encounter. */
-export function rollAct1Encounter(): EnemyDefinition[] {
-  const template =
-    ACT1_ENCOUNTER_TEMPLATES[
-      Math.floor(Math.random() * ACT1_ENCOUNTER_TEMPLATES.length)
-    ];
+// --- Act 2 templates ---
+
+const ACT2_ENCOUNTER_TEMPLATES: EncounterTemplate[] = [
+  { type: 'prospector_gone_mad', minCount: 1, maxCount: 1 },
+  { type: 'dynamite_outlaw', minCount: 1, maxCount: 1 },
+  { type: 'cave_bat', minCount: 3, maxCount: 3 },
+  { type: 'mine_cart', minCount: 1, maxCount: 1 },
+];
+
+// --- Act 3 templates (Train Guard is elite-only, excluded from regular) ---
+
+const ACT3_ENCOUNTER_TEMPLATES: EncounterTemplate[] = [
+  { type: 'corrupt_deputy', minCount: 1, maxCount: 2 },
+  { type: 'saloon_brawler', minCount: 1, maxCount: 1 },
+];
+
+// ---------------------------------------------------------------------------
+// Generic helpers
+// ---------------------------------------------------------------------------
+
+function rollFromTemplates(
+  templates: EncounterTemplate[],
+  enemies: Record<string, EnemyDefinition>,
+): EnemyDefinition[] {
+  const template = templates[Math.floor(Math.random() * templates.length)];
   const count =
     template.minCount +
     Math.floor(Math.random() * (template.maxCount - template.minCount + 1));
-  const def = ACT1_ENEMIES[template.type];
+  const def = enemies[template.type];
   return Array.from({ length: count }, () => ({ ...def }));
 }
 
-/** Roll an Act 1 elite encounter (slightly tougher, always single enemy). */
-export function rollAct1EliteEncounter(): EnemyDefinition[] {
-  const types = Object.values(ACT1_ENEMIES).filter((e) => e.type !== 'vulture');
-  const base = types[Math.floor(Math.random() * types.length)];
+function rollEliteFrom(
+  enemies: Record<string, EnemyDefinition>,
+  excludeTypes: string[] = [],
+): EnemyDefinition[] {
+  const pool = Object.values(enemies).filter(
+    (e) => !excludeTypes.includes(e.type),
+  );
+  const base = pool[Math.floor(Math.random() * pool.length)];
   return [
     {
       ...base,
@@ -198,4 +223,46 @@ export function rollAct1EliteEncounter(): EnemyDefinition[] {
       maxDamage: base.maxDamage + 3,
     },
   ];
+}
+
+// ---------------------------------------------------------------------------
+// Act 1
+// ---------------------------------------------------------------------------
+
+/** Roll a random Act 1 combat encounter. */
+export function rollAct1Encounter(): EnemyDefinition[] {
+  return rollFromTemplates(ACT1_ENCOUNTER_TEMPLATES, ACT1_ENEMIES);
+}
+
+/** Roll an Act 1 elite encounter (slightly tougher, always single enemy). */
+export function rollAct1EliteEncounter(): EnemyDefinition[] {
+  return rollEliteFrom(ACT1_ENEMIES, ['vulture']);
+}
+
+// ---------------------------------------------------------------------------
+// Act 2
+// ---------------------------------------------------------------------------
+
+/** Roll a random Act 2 combat encounter. */
+export function rollAct2Encounter(): EnemyDefinition[] {
+  return rollFromTemplates(ACT2_ENCOUNTER_TEMPLATES, ACT2_ENEMIES);
+}
+
+/** Roll an Act 2 elite encounter. Excludes cave_bat and mine_cart. */
+export function rollAct2EliteEncounter(): EnemyDefinition[] {
+  return rollEliteFrom(ACT2_ENEMIES, ['cave_bat', 'mine_cart']);
+}
+
+// ---------------------------------------------------------------------------
+// Act 3
+// ---------------------------------------------------------------------------
+
+/** Roll a random Act 3 combat encounter. */
+export function rollAct3Encounter(): EnemyDefinition[] {
+  return rollFromTemplates(ACT3_ENCOUNTER_TEMPLATES, ACT3_ENEMIES);
+}
+
+/** Roll an Act 3 elite encounter. Train Guard is included for elites. */
+export function rollAct3EliteEncounter(): EnemyDefinition[] {
+  return rollEliteFrom(ACT3_ENEMIES);
 }
