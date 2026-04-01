@@ -1,9 +1,11 @@
-import { memo, useState } from 'react';
+import { memo, useState, useRef, useEffect } from 'react';
 import { useRunStore } from '../../store/runStore';
 import { getActName } from '../../game/map/MapGenerator';
+import { EventBus, GameEvent } from '../../game/EventBus';
 import { MapScreen } from '../screens/MapScreen';
 import { ConsumableSlots } from './ConsumableSlots';
 import type { Act } from '../../types/game';
+import type { Screen } from '../../App';
 
 /**
  * TopBar: act label + consumable slots (left), HP + gold (right), gear (far right).
@@ -17,6 +19,27 @@ export const TopBar = memo(function TopBar({ showMapButton, showConsumables }: {
   const maxHealth = run?.maxHealth ?? 100;
   const gold = run?.gold ?? 0;
   const [showMap, setShowMap] = useState(false);
+  const [showMenu, setShowMenu] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+  const endRun = useRunStore((s) => s.endRun);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    if (!showMenu) return;
+    const handler = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setShowMenu(false);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [showMenu]);
+
+  const handleGiveUp = () => {
+    setShowMenu(false);
+    endRun(false);
+    EventBus.emit(GameEvent.SCREEN_CHANGE, 'score' satisfies Screen);
+  };
 
   return (
     <>
@@ -39,12 +62,25 @@ export const TopBar = memo(function TopBar({ showMapButton, showConsumables }: {
               [M]
             </button>
           )}
-          <button
-            className="text-stone-500 hover:text-stone-300"
-            title="Settings"
-          >
-            [=]
-          </button>
+          <div className="relative" ref={menuRef}>
+            <button
+              onClick={() => setShowMenu((v) => !v)}
+              className="text-stone-500 hover:text-stone-300"
+              title="Settings"
+            >
+              [=]
+            </button>
+            {showMenu && (
+              <div className="absolute right-0 top-full mt-px bg-stone-900 border border-stone-600 z-50 min-w-[80px]">
+                <button
+                  onClick={handleGiveUp}
+                  className="w-full text-left px-2 py-1 text-red-400 hover:bg-stone-800 text-[8px]"
+                >
+                  Give Up
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       </div>
       {showMap && (
