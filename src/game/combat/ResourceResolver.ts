@@ -34,6 +34,12 @@ export class ResourceResolver {
       return this.computeOutput(match.tileType, baseTotal, 0, count);
     }
 
+    // Per-tile upgrade tiles NOT affected by match bonus (ace, horseshoe).
+    if (match.tileType === 'ace' || match.tileType === 'horseshoe') {
+      const perTileTotal = (def.baseValue + tileUpgradeLevel * def.upgradeValue) * count;
+      return this.computeOutput(match.tileType, perTileTotal, 0, count);
+    }
+
     const baseTotal = def.baseValue * count * match.matchBonus;
     const upgradeBonus = tileUpgradeLevel * def.upgradeValue;
 
@@ -45,7 +51,7 @@ export class ResourceResolver {
     if (!def) return this.emptyOutput();
 
     // Per-tile upgrade tiles: upgrade applies per tile, so include in base for a single tile.
-    if (type === 'buckshot' || type === 'fifty_cal') {
+    if (type === 'buckshot' || type === 'fifty_cal' || type === 'ace' || type === 'horseshoe') {
       return this.computeOutput(type, def.baseValue + upgradeLevel * def.upgradeValue, 0, 1);
     }
 
@@ -59,7 +65,7 @@ export class ResourceResolver {
     if (!def) return this.emptyOutput();
 
     // Per-tile upgrade tiles: upgrade adds per tile, not flat per match.
-    if (type === 'buckshot' || type === 'fifty_cal') {
+    if (type === 'buckshot' || type === 'fifty_cal' || type === 'ace' || type === 'horseshoe') {
       const baseTotal = (def.baseValue + upgradeLevel * def.upgradeValue) * count;
       return this.computeOutput(type, baseTotal, 0, count);
     }
@@ -109,13 +115,13 @@ export class ResourceResolver {
         output.isAoE = true;
         break;
       case 'ace':
-        output.aceMultiplier = count * 0.25 + upgradeBonus; // base per-tile + flat upgrade bonus
+        output.aceMultiplier = baseTotal; // (base + upgrade) * count, no match bonus
         break;
       case 'venom':
         output.venomStacks = count; // stacks, not affected by match bonus or upgrades
         break;
       case 'horseshoe':
-        output.critPercent = count * 5 + upgradeBonus; // base per-tile + flat upgrade bonus
+        output.critPercent = baseTotal; // (base + upgrade) * count, no match bonus
         break;
     }
 
