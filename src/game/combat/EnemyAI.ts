@@ -324,6 +324,7 @@ function chooseTrainGuardIntent(enemy: Enemy, hpRatio: number): EnemyIntent {
 
 /**
  * Execute a board-manipulation intent. Returns a description of what happened.
+ * Note: SUPPRESS intents are handled by CombatManager directly, not here.
  */
 export function executeBoardManipulation(
   enemy: Enemy,
@@ -361,14 +362,6 @@ export function executeBoardManipulation(
     const row = Math.floor(Math.random() * 8);
     hazardManager.placeBarricadeRow(row);
     return `${def.name} barricades row ${row}`;
-  }
-
-  if (desc.startsWith('SUPPRESS')) {
-    // Type suppression: lock tiles of a random type to deny that resource.
-    // Locks 3 tiles as a proxy for suppressing an entire type.
-    const count = 3;
-    hazardManager.placeRandomLocks(count);
-    return `${def.name} suppresses tiles (locks ${count})`;
   }
 
   return '';
