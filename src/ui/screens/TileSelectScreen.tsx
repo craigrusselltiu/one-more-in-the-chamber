@@ -16,6 +16,7 @@ export const TileSelectScreen = memo(function TileSelectScreen() {
   const run = useRunStore((s) => s.run);
   const startRun = useRunStore((s) => s.startRun);
   const addTileType = useRunStore((s) => s.addTileType);
+  const advanceAct = useRunStore((s) => s.advanceAct);
   const [selected, setSelected] = useState<TileType | null>(null);
 
   const isStarterSelection = !run;
@@ -38,6 +39,7 @@ export const TileSelectScreen = memo(function TileSelectScreen() {
       startRun(seed, selected);
     } else {
       addTileType(selected);
+      advanceAct();
     }
     EventBus.emit(GameEvent.SCREEN_CHANGE, 'map' satisfies Screen);
   };
