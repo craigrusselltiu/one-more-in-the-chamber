@@ -136,21 +136,25 @@ export class CascadeResolver {
       }
     }
 
-    // Phase 3: Collect Tile references, track ember positions, then null grid cells
+    // Phase 3: Collect Tile references, track ember positions and fool's gold count,
+    // then null grid cells.
     const tilesToAnimate: Tile[] = [];
     const emberPositions: GridPosition[] = [];
 
     for (const match of matches) {
+      let fgCount = 0;
       for (const pos of match.tiles) {
         const tile = grid[pos.row]?.[pos.col];
         if (tile) {
           if (tile.type === 'ember') {
             emberPositions.push({ row: pos.row, col: pos.col });
           }
+          if (tile.hazard?.type === 'fools_gold') fgCount++;
           tilesToAnimate.push(tile);
           grid[pos.row][pos.col] = null;
         }
       }
+      if (fgCount > 0) match.foolsGoldCount = fgCount;
     }
 
     for (const [key, type] of extraTiles) {

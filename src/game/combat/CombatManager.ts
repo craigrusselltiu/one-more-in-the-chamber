@@ -610,6 +610,15 @@ export class CombatManager {
     for (const match of matches) {
       const upgradeLevel = this.player.getUpgradeLevel(match.tileType);
       let output = this.resolver.resolve(match, upgradeLevel);
+
+      // Fool's gold: reduce gold proportionally to how many tiles were fake
+      if (match.foolsGoldCount && match.foolsGoldCount > 0) {
+        const realTiles = match.tiles.length - match.foolsGoldCount;
+        output.gold = realTiles > 0
+          ? Math.round(output.gold * (realTiles / match.tiles.length))
+          : 0;
+      }
+
       const targetEnemy = this.getTargetedAliveEnemy();
 
       // Trait modifications (Outlaw bonus damage, Sheriff iron block, Prospector gold, etc.)
