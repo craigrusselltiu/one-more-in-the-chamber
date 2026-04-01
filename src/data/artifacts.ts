@@ -206,4 +206,152 @@ export const ARTIFACTS: ArtifactDefinition[] = [
     tags: [],
     effect: 'Red panda only. Deadeye: 3 shots become 6.',
   },
+
+  // --- Batch 2: Outlaw / Sheriff / Prospector focus ---
+
+  // Outlaw artifacts
+  {
+    id: 'train_heist_map',
+    name: 'Train Heist Map',
+    description: 'X marks the express.',
+    tags: ['outlaw'],
+    effect: '4+ matches: +2 flat bonus damage per tile above 3.',
+  },
+  {
+    id: 'outlaws_spurs',
+    name: "Outlaw's Spurs",
+    description: 'Ride fast, ride reckless.',
+    tags: ['outlaw', 'mustang'],
+    effect: 'First 4+ match each turn: +50% damage.',
+  },
+  {
+    id: 'moonshine_still',
+    name: 'Moonshine Still',
+    description: 'Liquid courage. Burns both ways.',
+    tags: ['outlaw'],
+    effect: '+20% all damage dealt. Take 2 damage at turn start.',
+  },
+  {
+    id: 'marked_cards',
+    name: 'Marked Cards',
+    description: 'Nobody plays fair out here.',
+    tags: ['outlaw', 'gunslinger'],
+    effect: '4+ matches grant +10% crit chance.',
+  },
+  {
+    id: 'crooked_deal',
+    name: 'Crooked Deal',
+    description: 'Shake hands. Count your fingers.',
+    tags: ['outlaw', 'prospector'],
+    effect: '4+ gold matches: triple gold generated.',
+  },
+  {
+    id: 'rustlers_brand',
+    name: "Rustler's Brand",
+    description: "Took what wasn't yours. Made it yours.",
+    tags: ['outlaw'],
+    effect: 'Kill with a 4+ match: heal 5 HP.',
+  },
+  {
+    id: 'double_or_nothing',
+    name: 'Double or Nothing',
+    description: 'All in. Every time.',
+    tags: ['outlaw'],
+    effect: '4+ matches: 50% double resources, 50% half.',
+  },
+
+  // Sheriff artifacts
+  {
+    id: 'tin_star',
+    name: 'Tin Star',
+    description: 'Small badge. Heavy burden.',
+    tags: ['sheriff'],
+    effect: '+1 block/turn per enemy on the field.',
+  },
+  {
+    id: 'jail_cell_keys',
+    name: 'Jail Cell Keys',
+    description: 'Locked up and out of trouble.',
+    tags: ['sheriff'],
+    effect: 'Freeing a locked tile grants 3 block.',
+  },
+  {
+    id: 'reinforced_duster',
+    name: 'Reinforced Duster',
+    description: 'Tailored for trouble.',
+    tags: ['sheriff'],
+    effect: 'Start each fight with 8 block.',
+  },
+  {
+    id: 'lawmans_oath',
+    name: "Lawman's Oath",
+    description: 'Sworn duty. Steady hand.',
+    tags: ['sheriff', 'gunslinger'],
+    effect: 'While you have block, +10% crit chance.',
+  },
+  {
+    id: 'frontier_justice',
+    name: 'Frontier Justice',
+    description: 'The verdict is guilty.',
+    tags: ['sheriff'],
+    effect: 'Fully blocked attacks deal 5 damage back to attacker.',
+  },
+  {
+    id: 'patrol_route',
+    name: 'Patrol Route',
+    description: 'Walk the beat. Cover ground.',
+    tags: ['sheriff', 'mustang'],
+    effect: 'Unused swaps at turn end: +3 block each.',
+  },
+  {
+    id: 'iron_will',
+    name: 'Iron Will',
+    description: 'Bent but never broken.',
+    tags: ['sheriff'],
+    effect: 'Below 50% HP: +4 block per turn.',
+  },
+
+  // Prospector artifacts
+  {
+    id: 'gold_pan',
+    name: 'Gold Pan',
+    description: 'Patience finds the gleam.',
+    tags: ['prospector'],
+    effect: 'Non-gold matches: 20% to spawn 1 gold tile on board.',
+  },
+  {
+    id: 'assayers_lens',
+    name: "Assayer's Lens",
+    description: 'Every nugget appraised.',
+    tags: ['prospector'],
+    effect: 'Gold matches: +1 gold per tile matched.',
+  },
+  {
+    id: 'mining_canary',
+    name: 'Mining Canary',
+    description: 'If it stops singing, run.',
+    tags: ['prospector', 'rattlesnake'],
+    effect: 'Poison tiles adjacent to gold: auto-cleansed, yield 1 gold each.',
+  },
+  {
+    id: 'greeds_burden',
+    name: "Greed's Burden",
+    description: 'Heavy pockets. Heavier punches.',
+    tags: ['prospector'],
+    effect: '+1 damage per 15 gold held.',
+  },
+  {
+    id: 'claim_jumpers_pick',
+    name: "Claim Jumper's Pick",
+    description: 'Finders keepers.',
+    tags: ['prospector', 'outlaw'],
+    effect: 'First gold match each fight: deal bonus damage equal to gold earned.',
+  },
+  {
+    id: 'motherlode_map',
+    name: 'Motherlode Map',
+    description: 'X marks the fortune.',
+    tags: ['prospector'],
+    effect: 'Once/fight: 4+ gold match converts adjacent tiles into gold.',
+  },
 ];
