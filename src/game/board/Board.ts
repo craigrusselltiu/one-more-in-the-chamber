@@ -27,6 +27,8 @@ export class Board {
   private matchDetector: MatchDetector;
   private cascadeResolver: CascadeResolver;
   private activeTileTypes: TileType[] = ['bullet', 'iron', 'gold'];
+  /** Bag-based tile generation: one of each active type, shuffled. Refilled when empty. */
+  private tileTypeBag: TileType[] = [];
   private isResolving = false;
   private selectedTile: GridPosition | null = null;
   private inputEnabled = true;
@@ -621,9 +623,26 @@ export class Board {
     tile.setPosition(this.tileX(tile.col), this.tileY(tile.row));
   }
 
+  /**
+   * Draw the next tile type from a shuffled bag containing one of each
+   * active type. Guarantees even distribution across all active tile types
+   * (critical for 5-6 types in Acts 2-3 where pure random causes uneven boards).
+   */
   private randomTileType(): TileType {
-    const types = this.activeTileTypes;
-    return types[Math.floor(Math.random() * types.length)];
+    if (this.tileTypeBag.length === 0) {
+      this.refillBag();
+    }
+    return this.tileTypeBag.pop()!;
+  }
+
+  /** Fill the bag with one of each active tile type, then shuffle. */
+  private refillBag(): void {
+    this.tileTypeBag = [...this.activeTileTypes];
+    // Fisher-Yates shuffle
+    for (let i = this.tileTypeBag.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [this.tileTypeBag[i], this.tileTypeBag[j]] = [this.tileTypeBag[j], this.tileTypeBag[i]];
+    }
   }
 
   private randomTileTypeExcluding(exclude: TileType): TileType {
@@ -635,6 +654,7 @@ export class Board {
 
   setActiveTileTypes(types: TileType[]): void {
     this.activeTileTypes = types;
+    this.tileTypeBag = [];
   }
 
   getTileAt(pos: GridPosition): Tile | null {
