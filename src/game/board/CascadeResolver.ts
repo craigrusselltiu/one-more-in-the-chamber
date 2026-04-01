@@ -36,11 +36,13 @@ export class CascadeResolver {
     onStep?: (matches: MatchResult[]) => void,
   ): Promise<MatchResult[]> {
     const allMatches: MatchResult[] = [];
+    const clearedEmberPositions: GridPosition[] = [];
     let matches = board.findMatches();
 
     while (matches.length > 0) {
       // Step 1: Collect tiles to clear and extra results, animate clear
-      const { extraResults, tilesToAnimate } = this.prepareClear(board, matches);
+      const { extraResults, tilesToAnimate, emberPositions } = this.prepareClear(board, matches);
+      clearedEmberPositions.push(...emberPositions);
       await board.animateTileClear(tilesToAnimate);
 
       // Apply this step's effects immediately (damage, block, gold, etc.)
@@ -65,17 +67,24 @@ export class CascadeResolver {
       matches = board.findMatches();
     }
 
+    // Step 5: Ember spread — each cleared ember tile has 25% chance to
+    // convert 1 adjacent non-ember tile into an ember tile.
+    if (clearedEmberPositions.length > 0) {
+      this.applyEmberSpread(board, clearedEmberPositions);
+    }
+
     return allMatches;
   }
 
   /**
    * Collect all tiles that need clearing, null their grid cells,
-   * and return the Tile objects for animation plus any extra MatchResults.
+   * and return the Tile objects for animation, any extra MatchResults,
+   * and positions of cleared ember tiles (for ember spread).
    */
   private prepareClear(
     board: Board,
     matches: MatchResult[],
-  ): { extraResults: MatchResult[]; tilesToAnimate: Tile[] } {
+  ): { extraResults: MatchResult[]; tilesToAnimate: Tile[]; emberPositions: GridPosition[] } {
     const grid = board.getGrid();
     const size = board.getBoardSize();
     const posKey = (r: number, c: number) => `${r},${c}`;
@@ -127,25 +136,32 @@ export class CascadeResolver {
       }
     }
 
-    // Phase 3: Collect Tile references, then null grid cells
+    // Phase 3: Collect Tile references, track ember positions, then null grid cells
     const tilesToAnimate: Tile[] = [];
+    const emberPositions: GridPosition[] = [];
 
     for (const match of matches) {
       for (const pos of match.tiles) {
         const tile = grid[pos.row]?.[pos.col];
         if (tile) {
+          if (tile.type === 'ember') {
+            emberPositions.push({ row: pos.row, col: pos.col });
+          }
           tilesToAnimate.push(tile);
           grid[pos.row][pos.col] = null;
         }
       }
     }
 
-    for (const [key] of extraTiles) {
+    for (const [key, type] of extraTiles) {
       const parts = key.split(',');
       const r = Number(parts[0]);
       const c = Number(parts[1]);
       const tile = grid[r]?.[c];
       if (tile) {
+        if (type === 'ember') {
+          emberPositions.push({ row: r, col: c });
+        }
         tilesToAnimate.push(tile);
         grid[r][c] = null;
       }
@@ -175,7 +191,7 @@ export class CascadeResolver {
       });
     }
 
-    return { extraResults, tilesToAnimate };
+    return { extraResults, tilesToAnimate, emberPositions };
   }
 
   /**
@@ -192,6 +208,47 @@ export class CascadeResolver {
       } else if (match.isExplosive && match.tiles.length > 0) {
         const mid = match.tiles[Math.floor(match.tiles.length / 2)];
         board.spawnSpecialTile(mid.row, mid.col, match.tileType, 'explosive');
+      }
+    }
+  }
+
+  /**
+   * Ember spread: after cascade resolution, each cleared ember tile has a
+   * 25% chance to convert 1 random adjacent non-ember tile into an ember tile.
+   */
+  private applyEmberSpread(board: Board, emberPositions: GridPosition[]): void {
+    const grid = board.getGrid();
+    const size = board.getBoardSize();
+    const SPREAD_CHANCE = 0.25;
+    const directions = [
+      { dr: -1, dc: 0 },
+      { dr: 1, dc: 0 },
+      { dr: 0, dc: -1 },
+      { dr: 0, dc: 1 },
+    ];
+
+    for (const pos of emberPositions) {
+      if (Math.random() >= SPREAD_CHANCE) continue;
+
+      // Collect adjacent non-ember tiles
+      const candidates: GridPosition[] = [];
+      for (const { dr, dc } of directions) {
+        const r = pos.row + dr;
+        const c = pos.col + dc;
+        if (r < 0 || r >= size || c < 0 || c >= size) continue;
+        const tile = grid[r]?.[c];
+        if (tile && tile.type !== 'ember') {
+          candidates.push({ row: r, col: c });
+        }
+      }
+
+      if (candidates.length === 0) continue;
+
+      // Pick one random adjacent tile and convert it to ember
+      const target = candidates[Math.floor(Math.random() * candidates.length)];
+      const tile = grid[target.row][target.col];
+      if (tile) {
+        tile.setType('ember');
       }
     }
   }
