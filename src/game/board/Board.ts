@@ -364,9 +364,12 @@ export class Board {
       onCascadeStep([showdownMatch]);
     }
 
-    // Apply gravity and fill so cascades resolve from a stable board state
+    // Brief pause so the player sees the showdown clear effect
+    await new Promise(r => setTimeout(r, 300));
+
+    // Apply gravity and fill with animations
     this.cascadeResolver.applyGravity(this);
-    this.fillEmptyTiles();
+    await this.fillEmptyTilesAnimated();
 
     // Resolve any new matches that form after the board refills
     const cascadeMatches = await this.cascadeResolver.resolve(this, onCascadeStep);

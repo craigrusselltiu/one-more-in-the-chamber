@@ -302,7 +302,7 @@ export class BossController {
       // Brew turn -- mostly poison, small chance of coil (block)
       const options: { intent: EnemyIntent; weight: number }[] = [
         { intent: { type: 'board-manipulation', value: 3, description: 'POISON 3' }, weight: 4 },
-        { intent: { type: 'block', value: 8, description: 'COIL +8' }, weight: 1 },
+        { intent: { type: 'block', value: 8, description: 'DEF 8' }, weight: 1 },
       ];
       return weightedRandom(options);
     }

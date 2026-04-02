@@ -3,9 +3,13 @@ import { BootScene } from './scenes/BootScene';
 import { CombatScene } from './scenes/CombatScene';
 import { CutsceneScene } from './scenes/CutsceneScene';
 
-/** Internal resolution: 480x270 (landscape 16:9). Integer-scaled to display. */
-export const GAME_WIDTH = 480;
-export const GAME_HEIGHT = 270;
+/**
+ * Internal Phaser resolution (16:9).
+ * Larger than the React UI overlay (960x540 / 2 = 480x270) so the board
+ * (8x32 = 256px) takes proportionally less space while keeping 2x sprites.
+ */
+export const GAME_WIDTH = 560;
+export const GAME_HEIGHT = 315;
 
 export const gameConfig: Phaser.Types.Core.GameConfig = {
   type: Phaser.AUTO,
