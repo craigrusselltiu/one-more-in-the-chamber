@@ -768,6 +768,11 @@ export class CombatManager {
 
       this.applyResourceOutput(scaled);
 
+      // Screen shake on crit for extra punch
+      if (isCrit && scaled.damage > 0) {
+        EventBus.emit(GameEvent.SCREEN_SHAKE, 'medium');
+      }
+
       // Flash a line from match to targeted enemy on damage
       if (scaled.damage > 0 && !scaled.isAoE) {
         const mid = match.tiles[Math.floor(match.tiles.length / 2)];
@@ -977,7 +982,6 @@ export class CombatManager {
               this.player.health,
               this.player.maxHealth,
             );
-
             // Screen shake scales with damage
             if (action.value >= 25) {
               EventBus.emit(GameEvent.SCREEN_SHAKE, 'heavy');

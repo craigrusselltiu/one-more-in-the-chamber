@@ -6,6 +6,7 @@ import type { GravityDirection } from './CascadeResolver';
 import type { TileType } from '../../types/game';
 import type { GridPosition, MatchResult } from '../../types/combat';
 import { EventBus, GameEvent } from '../EventBus';
+import { TILE_COLORS } from '../../data/tiles';
 
 const BOARD_SIZE = 8;
 
@@ -463,7 +464,7 @@ export class Board {
             const startX = this.originX + BOARD_SIZE * TILE_SIZE + (emptyCount - spawnIndex) * TILE_SIZE;
             const tile = new Tile(this.scene, startX, this.tileY(row), type, row, col);
             this.grid[row][col] = tile;
-            tweens.push(tile.tweenToPosition(this.tileX(col), this.tileY(row), 150, globalIndex * 25));
+            tweens.push(tile.tweenToPosition(this.tileX(col), this.tileY(row), 200, globalIndex * 25, true));
             spawnIndex++;
             globalIndex++;
           }
@@ -484,7 +485,7 @@ export class Board {
             const startY = this.originY - (emptyCount - spawnIndex) * TILE_SIZE;
             const tile = new Tile(this.scene, this.tileX(col), startY, type, row, col);
             this.grid[row][col] = tile;
-            tweens.push(tile.tweenToPosition(this.tileX(col), this.tileY(row), 150, globalIndex * 25));
+            tweens.push(tile.tweenToPosition(this.tileX(col), this.tileY(row), 200, globalIndex * 25, true));
             spawnIndex++;
             globalIndex++;
           }
@@ -500,24 +501,41 @@ export class Board {
   // -- Animation helpers --
 
   /**
-   * Animate tiles that were cleared: fade out and destroy.
+   * Animate tiles that were cleared: pop + fade out + destroy.
+   * Also emits particle burst events at each cleared tile's position.
    * Grid cells should already be nulled before calling this.
    */
   async animateTileClear(tiles: Tile[]): Promise<void> {
     if (tiles.length === 0) return;
-    await Promise.all(tiles.map(t => t.animateClear(120)));
+
+    // Emit particle bursts at each tile's world position
+    for (const tile of tiles) {
+      const center = tile.getWorldCenter();
+      const colorHex = TILE_COLORS[tile.type] ?? '#ffffff';
+      EventBus.emit(GameEvent.TILE_PARTICLES, center.x, center.y, colorHex);
+    }
+
+    // Screen shake scales with the number of tiles cleared
+    if (tiles.length >= 8) {
+      EventBus.emit(GameEvent.SCREEN_SHAKE, 'heavy');
+    } else if (tiles.length >= 5) {
+      EventBus.emit(GameEvent.SCREEN_SHAKE, 'medium');
+    }
+
+    await Promise.all(tiles.map(t => t.animateClear(150)));
   }
 
   /**
    * Animate gravity drop for tiles that have moved.
    * Each entry: the tile and its new target position.
+   * Uses bounce easing for a satisfying landing feel.
    */
   async animateGravityDrop(
     moves: Array<{ tile: Tile; toX: number; toY: number }>,
   ): Promise<void> {
     if (moves.length === 0) return;
     await Promise.all(
-      moves.map(m => m.tile.tweenToPosition(m.toX, m.toY, 180)),
+      moves.map(m => m.tile.tweenToPosition(m.toX, m.toY, 250, 0, true)),
     );
   }
 
