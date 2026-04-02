@@ -2,6 +2,7 @@ import { memo, useState } from 'react';
 import { EventBus, GameEvent } from '../../game/EventBus';
 import { useRunStore } from '../../store/runStore';
 import { checkForCombatResume } from '../../services/combatResume';
+import { playClick } from '../../services/sfx';
 import type { Screen } from '../../App';
 
 const MENU_FONT = 'monospace';
@@ -70,6 +71,7 @@ export const MainMenu = memo(function MainMenu() {
   const [showConfirm, setShowConfirm] = useState(false);
 
   const handleNewGame = () => {
+    playClick();
     if (hasActiveRun) {
       setShowConfirm(true);
     } else {
@@ -78,6 +80,7 @@ export const MainMenu = memo(function MainMenu() {
   };
 
   const handleConfirmNewGame = async () => {
+    playClick();
     await clearRun();
     setShowConfirm(false);
     EventBus.emit(GameEvent.SCREEN_CHANGE, 'character-select' satisfies Screen);
@@ -88,20 +91,24 @@ export const MainMenu = memo(function MainMenu() {
   };
 
   const handleContinue = async () => {
+    playClick();
     // Check for mid-combat save first -- if found, resume combat
     const hasCombatSave = await checkForCombatResume();
     EventBus.emit(GameEvent.SCREEN_CHANGE, hasCombatSave ? 'combat' : 'map');
   };
 
   const handleReputationShop = () => {
+    playClick();
     EventBus.emit(GameEvent.SCREEN_CHANGE, 'reputation-shop' satisfies Screen);
   };
 
   const handleLeaderboard = () => {
+    playClick();
     EventBus.emit(GameEvent.SCREEN_CHANGE, 'leaderboard' satisfies Screen);
   };
 
   const handleSettings = () => {
+    playClick();
     EventBus.emit(GameEvent.SCREEN_CHANGE, 'settings' satisfies Screen);
   };
 

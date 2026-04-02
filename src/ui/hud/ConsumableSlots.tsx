@@ -4,7 +4,7 @@ import { useRunStore } from '../../store/runStore';
 import { useCombatStore } from '../../store/combatStore';
 import { CONSUMABLES } from '../../data/consumables';
 import { SpriteIcon } from '../components/SpriteIcon';
-import { CONSUMABLE_FRAMES } from '../../data/uiFrames';
+import { CONSUMABLE_FRAMES } from '../../data/spriteConfig';
 
 const CATEGORY_COLORS: Record<string, string> = {
   offensive: '#D04040',

@@ -3,6 +3,7 @@ import { EventBus, GameEvent } from '../../game/EventBus';
 import { useRunStore } from '../../store/runStore';
 import { useMetaStore } from '../../store/metaStore';
 import { getAscensionModifiers } from '../../data/ascension';
+import { playClick } from '../../services/sfx';
 import type { CharacterId } from '../../types/game';
 import type { Screen } from '../../App';
 
@@ -36,11 +37,13 @@ export const CharacterSelectScreen = memo(function CharacterSelectScreen() {
   const maxSelectable = Math.min(highestCleared + 1, MAX_ASCENSION);
 
   const handleConfirm = () => {
+    playClick();
     setPendingNewGame({ character: selectedCharacter, ascensionLevel });
     EventBus.emit(GameEvent.SCREEN_CHANGE, 'tile-select' satisfies Screen);
   };
 
   const handleBack = () => {
+    playClick();
     EventBus.emit(GameEvent.SCREEN_CHANGE, 'main-menu' satisfies Screen);
   };
 

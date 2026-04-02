@@ -26,6 +26,12 @@ export class BootScene extends Phaser.Scene {
   preload(): void {
     this.load.audio('combat_theme', 'assets/audio/combat_theme.mp3');
     this.load.audio('main_menu', 'assets/audio/main_menu.mp3');
+    this.load.audio('sfx_click', 'assets/audio/sfx/click.wav');
+    this.load.audio('sfx_swap', 'assets/audio/sfx/swap.wav');
+    this.load.audio('sfx_match1', 'assets/audio/sfx/match1.wav');
+    this.load.audio('sfx_match2', 'assets/audio/sfx/match2.wav');
+    this.load.audio('sfx_match3', 'assets/audio/sfx/match3.wav');
+    this.load.audio('sfx_match_pitch', 'assets/audio/sfx/match_pitch.wav');
     this.load.spritesheet('items_sheet', 'assets/sprites/items_sheet.png', {
       frameWidth: 16,
       frameHeight: 16,
