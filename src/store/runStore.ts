@@ -4,7 +4,7 @@ import { generateMap } from '../game/map/MapGenerator';
 
 interface RunStore {
   run: RunState | null;
-  startRun: (seed: string, starterTile: TileType) => void;
+  startRun: (seed: string, starterTile: TileType, ascensionLevel?: number) => void;
   updateHealth: (delta: number) => void;
   updateGold: (delta: number) => void;
   syncHealth: (current: number, max: number) => void;
@@ -25,14 +25,14 @@ interface RunStore {
 export const useRunStore = create<RunStore>((set) => ({
   run: null,
 
-  startRun: (seed, starterTile) => {
+  startRun: (seed, starterTile, ascensionLevel = 0) => {
     const mapState = generateMap(seed, 1);
     set({
       run: {
         id: crypto.randomUUID(),
         character: 'red_panda',
         seed,
-        ascensionLevel: 0,
+        ascensionLevel,
         currentAct: 1,
         currentNodeId: null,
         health: 100,

@@ -1,6 +1,7 @@
 import { memo, useMemo } from 'react';
 import { EventBus, GameEvent } from '../../game/EventBus';
 import { useRunStore } from '../../store/runStore';
+import { useMetaStore } from '../../store/metaStore';
 import type { Screen } from '../../App';
 
 /**
@@ -10,6 +11,7 @@ import type { Screen } from '../../App';
 export const ScoreScreen = memo(function ScoreScreen() {
   const run = useRunStore((s) => s.run);
   const endRun = useRunStore((s) => s.endRun);
+  const setHighestAscension = useMetaStore((s) => s.setHighestAscension);
 
   const score = useMemo(() => {
     if (!run) return null;
@@ -64,7 +66,11 @@ export const ScoreScreen = memo(function ScoreScreen() {
   }, [run]);
 
   const handleMainMenu = () => {
-    endRun(score?.completed ?? false);
+    const completed = score?.completed ?? false;
+    if (completed && run) {
+      setHighestAscension(run.ascensionLevel);
+    }
+    endRun(completed);
     EventBus.emit(GameEvent.SCREEN_CHANGE, 'main-menu' satisfies Screen);
   };
 
