@@ -568,6 +568,7 @@ export class CombatManager {
       }
       case 'skeleton_key':
         this.hazardManager.clearAllOfType('lock');
+        this.hazardManager.clearAllOfType('hardened_lock');
         break;
       case 'tumbleweed':
         this.board.reshuffle();

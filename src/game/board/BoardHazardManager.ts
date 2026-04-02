@@ -13,10 +13,11 @@ export interface HazardPlacement {
  * BoardHazardManager: places, ticks, and removes hazards on the board.
  *
  * Hazard types (from SPEC):
- *   Lock     -- can't swap. Match adjacent to free.
- *   Poison   -- hurts player or debuffs on match.
- *   Bomb     -- countdown timer. Detonates (damages player) if not matched. Matching defuses.
- *   Sand     -- hidden tile. Match adjacent to reveal.
+ *   Lock          -- can't swap. Match adjacent to free.
+ *   Hardened lock -- can't swap. Needs 2 adjacent matches to free (Iron Eye Isabella Phase 2).
+ *   Poison        -- hurts player or debuffs on match.
+ *   Bomb          -- countdown timer. Detonates (damages player) if not matched. Matching defuses.
+ *   Sand          -- hidden tile. Match adjacent to reveal.
  */
 export class BoardHazardManager {
   private board: Board;
@@ -32,6 +33,11 @@ export class BoardHazardManager {
   /** Lock N random non-hazarded tiles. */
   placeRandomLocks(count: number): HazardPlacement[] {
     return this.placeRandomHazard({ type: 'lock' }, count);
+  }
+
+  /** Place hardened locks on N random non-hazarded tiles. Requires `hits` adjacent matches to free. */
+  placeRandomHardenedLocks(count: number, hits = 2): HazardPlacement[] {
+    return this.placeRandomHazard({ type: 'hardened_lock', hits }, count);
   }
 
   /** Poison N random non-hazarded tiles. */
@@ -172,11 +178,20 @@ export class BoardHazardManager {
 
         const hazType = tile.hazard.type;
         // Lock: match adjacent to free
+        // Hardened lock: decrement hits; free when hits reach 0
         // Sand: match adjacent to reveal
         // Bomb: matching the bomb tile itself defuses; adjacent matches don't defuse
         if (hazType === 'lock' || hazType === 'sand') {
           tile.hazard = null;
           freed.push(n);
+        } else if (hazType === 'hardened_lock') {
+          tile.hazard.hits--;
+          if (tile.hazard.hits <= 0) {
+            tile.hazard = null;
+            freed.push(n);
+          } else {
+            tile.refreshStatusIndicator();
+          }
         }
       }
     }
