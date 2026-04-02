@@ -11,6 +11,7 @@ import { ScoreScreen } from './ui/screens/ScoreScreen';
 import { TreasureScreen } from './ui/screens/TreasureScreen';
 import { ReputationShopScreen } from './ui/screens/ReputationShopScreen';
 import { CombatHUD } from './ui/hud/CombatHUD';
+import { OfflineIndicator } from './ui/components/OfflineIndicator';
 import { EventBus, GameEvent } from './game/EventBus';
 import { useRunStore } from './store/runStore';
 import { useCombatStore } from './store/combatStore';
@@ -213,6 +214,7 @@ export default function App() {
   return (
     <div className="relative w-full h-full" onContextMenu={(e) => e.preventDefault()}>
       <div ref={gameContainerRef} className="absolute inset-0" />
+      <OfflineIndicator />
 
       {/* Scaled overlay: 960x540 virtual pixels, CSS-transformed to match Phaser canvas */}
       <div

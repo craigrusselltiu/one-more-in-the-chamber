@@ -37,7 +37,11 @@
     <script>
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
-          navigator.serviceWorker.register('/one-more-in-the-chamber/sw.js');
+          navigator.serviceWorker.register('/one-more-in-the-chamber/sw.js')
+            .then((reg) => {
+              // Check for updates periodically (every 30 min)
+              setInterval(() => reg.update(), 30 * 60 * 1000);
+            });
         });
       }
     </script>
