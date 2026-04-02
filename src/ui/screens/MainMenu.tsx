@@ -74,6 +74,10 @@ export const MainMenu = memo(function MainMenu() {
     EventBus.emit(GameEvent.SCREEN_CHANGE, 'map' satisfies Screen);
   };
 
+  const handleReputationShop = () => {
+    EventBus.emit(GameEvent.SCREEN_CHANGE, 'reputation-shop' satisfies Screen);
+  };
+
   return (
     <div
       className="relative"
@@ -91,7 +95,7 @@ export const MainMenu = memo(function MainMenu() {
           <MenuButton label="Continue" onClick={handleContinue} />
         )}
         <MenuButton label="New Game" onClick={handleNewGame} />
-        <MenuButton label="Reputation Shop" disabled />
+        <MenuButton label="Reputation Shop" onClick={handleReputationShop} />
         <MenuButton label="Settings" disabled />
       </div>
 
