@@ -91,7 +91,7 @@ export const RestSiteScreen = memo(function RestSiteScreen() {
         </p>
 
         <div className="flex flex-wrap justify-center gap-3 max-w-md">
-          {run.activeTileTypes.map((tileType) => {
+          {run.activeTileTypes.filter((t) => t !== 'tumbleweed' && t !== 'showdown').map((tileType) => {
             const def = TILE_DEFINITIONS[tileType];
             const currentLevel = run.tileUpgrades[tileType] ?? 0;
             const isSelected = selectedTile === tileType;

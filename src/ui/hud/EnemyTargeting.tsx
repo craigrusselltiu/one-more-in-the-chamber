@@ -7,63 +7,58 @@ import { StatusEffects } from './StatusEffects';
 import { EnemyIntent } from './EnemyIntent';
 import type { EnemyState } from '../../types/combat';
 
+/** Max enemy slots to always reserve space for. */
+const MAX_SLOTS = 3;
+
 /**
- * EnemyTargeting: shows up to 3 enemy panels on the right side.
- * Each panel has: sprite placeholder, name, intent, HP bar, status effects.
- * Click/tap an enemy to target it (free action).
+ * EnemyTargeting: shows up to 3 fixed enemy slots on the right side.
+ * Slots are always present so dead enemies don't shift others around.
  */
 export const EnemyTargeting = memo(function EnemyTargeting() {
   const enemies = useCombatStore((s) => s.enemies);
   const targetedIndex = useCombatStore((s) => s.targetedEnemyIndex);
 
-  if (enemies.length === 0) {
-    return (
-      <div className="text-[7px] text-stone-500 text-center">
-        No enemies
-      </div>
-    );
+  // Pad to MAX_SLOTS with nulls for empty slots
+  const slots: (EnemyState | null)[] = [];
+  for (let i = 0; i < MAX_SLOTS; i++) {
+    slots.push(enemies[i] ?? null);
   }
 
   return (
     <div className="flex flex-col gap-1 items-center">
-      {enemies.map((enemy, index) => (
-        <EnemyPanel
-          key={enemy.id}
+      {slots.map((enemy, index) => (
+        <EnemySlot
+          key={index}
           enemy={enemy}
           index={index}
-          isTargeted={index === targetedIndex}
+          isTargeted={enemy !== null && !enemy.isDead && index === targetedIndex}
         />
       ))}
     </div>
   );
 });
 
-interface EnemyPanelProps {
-  enemy: EnemyState;
+interface EnemySlotProps {
+  enemy: EnemyState | null;
   index: number;
   isTargeted: boolean;
 }
 
-const EnemyPanel = memo(function EnemyPanel({
+const EnemySlot = memo(function EnemySlot({
   enemy,
   index,
   isTargeted,
-}: EnemyPanelProps) {
+}: EnemySlotProps) {
   const handleClick = useCallback(() => {
-    if (!enemy.isDead) {
+    if (enemy && !enemy.isDead) {
       EventBus.emit(GameEvent.TARGET_ENEMY, index);
       useCombatStore.getState().setTargetedEnemy(index);
     }
-  }, [index, enemy.isDead]);
+  }, [index, enemy]);
 
-  if (enemy.isDead) {
-    return (
-      <div className="opacity-30 pointer-events-none px-1 py-0.5">
-        <div className="text-[7px] text-stone-500 line-through">
-          {enemy.enemyType}
-        </div>
-      </div>
-    );
+  // Empty or dead slot: reserve space but show nothing
+  if (!enemy || enemy.isDead) {
+    return <div style={{ width: 84, height: 120 }} />;
   }
 
   const effects = getEnemyStatusEffects(enemy);
@@ -75,6 +70,8 @@ const EnemyPanel = memo(function EnemyPanel({
       onClick={handleClick}
       className="flex flex-col items-center text-center px-1 py-0.5 pointer-events-auto"
       style={{
+        width: 84,
+        height: 120,
         border: `1px solid ${borderColor}`,
         backgroundColor: isTargeted ? 'rgba(255, 215, 0, 0.08)' : 'rgba(0,0,0,0.3)',
       }}
@@ -83,7 +80,7 @@ const EnemyPanel = memo(function EnemyPanel({
       {/* Enemy sprite placeholder */}
       <div
         className="border border-stone-600 border-dashed mb-0.5 flex items-center justify-center"
-        style={{ width: 80, height: 80 }}
+        style={{ width: 80, height: 60 }}
       >
         <span className="text-stone-600 capitalize" style={{ fontSize: '8px' }}>
           {enemy.enemyType.slice(0, 4)}
