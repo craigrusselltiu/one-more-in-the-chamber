@@ -651,6 +651,8 @@ export class CombatManager {
         grid[targetRow][col] = null;
       }
     }
+
+    EventBus.emit(GameEvent.SCREEN_SHAKE, 'heavy');
   }
 
   // ---------------------------------------------------------------------------
@@ -937,6 +939,7 @@ export class CombatManager {
     if (bombResult.totalDamage > 0) {
       if (this.player.takeDamage(bombResult.totalDamage).hpLost > 0) this.playerTookDamageThisFight = true;
       EventBus.emit(GameEvent.PLAYER_HP_CHANGE, this.player.health, this.player.maxHealth);
+      EventBus.emit(GameEvent.SCREEN_SHAKE, bombResult.detonations.length > 1 ? 'heavy' : 'medium');
       if (this.player.isDead()) return;
     }
 
@@ -944,7 +947,10 @@ export class CombatManager {
     if (this.bossController) {
       const boss = this.getBossEnemy();
       if (boss) {
-        this.bossController.checkPhaseTransition(boss, this.hazardManager, this.board);
+        const phaseChanged = this.bossController.checkPhaseTransition(boss, this.hazardManager, this.board);
+        if (phaseChanged) {
+          EventBus.emit(GameEvent.SCREEN_SHAKE, 'heavy');
+        }
         this.bossController.executePerTurnEffects(
           this.hazardManager,
           boss,
@@ -971,6 +977,15 @@ export class CombatManager {
               this.player.health,
               this.player.maxHealth,
             );
+
+            // Screen shake scales with damage
+            if (action.value >= 25) {
+              EventBus.emit(GameEvent.SCREEN_SHAKE, 'heavy');
+            } else if (action.value >= 15) {
+              EventBus.emit(GameEvent.SCREEN_SHAKE, 'medium');
+            } else {
+              EventBus.emit(GameEvent.SCREEN_SHAKE, 'light');
+            }
 
             // Thorns reflects damage back to the attacking enemy
             if (thornsDamage > 0) {
