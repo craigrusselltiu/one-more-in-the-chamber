@@ -640,16 +640,21 @@ export class CombatManager {
 
   private processMatches(matches: MatchResult[]): void {
     for (const match of matches) {
+      // Warrant (suppress): suppressed tile types produce zero output entirely.
+      // Skip all trait/artifact/crit/multiplier processing so nothing leaks through.
+      if (this.hazardManager.isSuppressed(match.tileType)) {
+        const zero: ResourceOutput = {
+          damage: 0, block: 0, gold: 0, healing: 0,
+          abilityCharges: 0, dodgePercent: 0, venomStacks: 0,
+          critPercent: 0, aceMultiplier: 0, isAoE: false,
+        };
+        console.log(`${match.length}-match ${match.tileType} - SUPPRESSED (warrant)`);
+        EventBus.emit(GameEvent.MATCH_RESOLVED, match, zero);
+        continue;
+      }
+
       const upgradeLevel = this.player.getUpgradeLevel(match.tileType);
       let output = this.resolver.resolve(match, upgradeLevel);
-
-      // Warrant (suppress): suppressed tile types produce no resource output
-      if (this.hazardManager.isSuppressed(match.tileType)) {
-        output.damage = 0;
-        output.block = 0;
-        output.gold = 0;
-        output.healing = 0;
-      }
 
       // Fool's gold: reduce gold proportionally to how many tiles were fake
       if (match.foolsGoldCount && match.foolsGoldCount > 0) {
@@ -777,8 +782,11 @@ export class CombatManager {
     if (result === null) return;
 
     const upgradeLevel = this.player.getUpgradeLevel(result.type);
-    const output = this.resolver.resolveSingle(result.type, upgradeLevel);
-    console.log(`ricochet destroyed ${result.type} tile`);
+    const isSuppressed = this.hazardManager.isSuppressed(result.type);
+    const output = isSuppressed
+      ? { damage: 0, block: 0, gold: 0, healing: 0, abilityCharges: 0, dodgePercent: 0, venomStacks: 0, critPercent: 0, aceMultiplier: 0, isAoE: false }
+      : this.resolver.resolveSingle(result.type, upgradeLevel);
+    console.log(`ricochet destroyed ${result.type} tile${isSuppressed ? ' (suppressed)' : ''}`);
     this.applyResourceOutput(output);
     this.ricochetTriggeredThisResolution = true;
 
