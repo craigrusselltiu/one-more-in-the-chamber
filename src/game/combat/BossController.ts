@@ -2,6 +2,7 @@ import type { EnemyIntent, EnemyDefinition } from '../../types/combat';
 import type { Enemy } from './Enemy';
 import type { Board } from '../board/Board';
 import type { BoardHazardManager } from '../board/BoardHazardManager';
+import type { TileType } from '../../types/game';
 import { ACT1_ENEMIES } from '../../data/enemies';
 
 export type BossPhase = 1 | 2 | 3;
@@ -151,8 +152,13 @@ export class BossController {
    * Execute boss-specific board manipulation after intent execution.
    * Called during the enemy turn for passive per-turn effects.
    * @param boss - optional, needed by Isabella for passive block.
+   * @param activeTileTypes - optional, needed by Isabella Phase 2 for warrant suppression.
    */
-  executePerTurnEffects(hazardManager: BoardHazardManager, boss?: Enemy): void {
+  executePerTurnEffects(
+    hazardManager: BoardHazardManager,
+    boss?: Enemy,
+    activeTileTypes?: TileType[],
+  ): void {
     switch (this.bossType) {
       case 'dusty_dan':
         this.dustyDanPerTurn(hazardManager);
@@ -161,7 +167,7 @@ export class BossController {
         this.copperheadPerTurn(hazardManager);
         break;
       case 'iron_eye_isabella':
-        this.isabellaPerTurn(hazardManager, boss);
+        this.isabellaPerTurn(hazardManager, boss, activeTileTypes);
         break;
     }
   }
@@ -323,11 +329,10 @@ export class BossController {
     switch (this.phase) {
       case 1:
         return this.isabellaPhase1();
+      case 2:
+        return this.isabellaPhase2();
       case 3:
         return this.isabellaPhase3();
-      default:
-        // Phase 2 not yet implemented; fall back to Phase 1
-        return this.isabellaPhase1();
     }
   }
 
@@ -341,6 +346,15 @@ export class BossController {
   }
 
   /**
+   * Phase 2 (65-30%): 25-30 damage strikes. Hardened locks + warrants (suppress)
+   * are handled via per-turn effects. Passive block continues.
+   */
+  private isabellaPhase2(): EnemyIntent {
+    const damage = 25 + Math.floor(Math.random() * 6); // 25-30
+    return { type: 'attack', value: damage, description: `ATK ${damage}` };
+  }
+
+  /**
    * Phase 3 (30-0%): 30-35 damage strikes. No blocking. Pure damage race.
    * Locks + poisons are handled via per-turn effects.
    */
@@ -349,7 +363,11 @@ export class BossController {
     return { type: 'attack', value: damage, description: `ATK ${damage}` };
   }
 
-  private isabellaPerTurn(hazardManager: BoardHazardManager, boss?: Enemy): void {
+  private isabellaPerTurn(
+    hazardManager: BoardHazardManager,
+    boss?: Enemy,
+    activeTileTypes?: TileType[],
+  ): void {
     switch (this.phase) {
       case 1: {
         // Lock a random row each turn
@@ -359,13 +377,20 @@ export class BossController {
         boss?.addBlock(10);
         break;
       }
+      case 2:
+        // Hardened locks (need 2 adjacent matches to free) instead of row locks
+        hazardManager.placeRandomHardenedLocks(2, 2);
+        // Warrants -- suppress 2 tile types (refreshes each turn to keep 2 suppressed)
+        if (activeTileTypes) {
+          hazardManager.suppressRandomTypes(2, activeTileTypes, 2);
+        }
+        // Passive block continues in Phase 2
+        boss?.addBlock(10);
+        break;
       case 3:
         // Lockdown -- 2 locks + 2 poisons per turn. No passive block.
         hazardManager.placeRandomLocks(2);
         hazardManager.placeRandomPoison(2);
-        break;
-      default:
-        // Phase 2 not yet implemented
         break;
     }
   }
