@@ -58,9 +58,9 @@ Remaining tasks not yet completed. See [SPEC.md](./SPEC.md) for full context.
 - Track highest_ascension_cleared (field exists in metaStore).
 
 **Acceptance Criteria:**
-- [ ] Ascension levels selectable on New Game screen (only unlocked levels available).
-- [ ] Each tier applies correct cumulative modifiers to enemies, rewards, and board.
-- [ ] Highest cleared ascension tracked and synced.
+- [x] Ascension levels selectable on New Game screen (only unlocked levels available).
+- [x] Each tier applies correct cumulative modifiers to enemies, rewards, and board.
+- [x] Highest cleared ascension tracked and synced.
 
 ---
 

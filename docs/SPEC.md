@@ -581,7 +581,13 @@ Daily / Weekly / All-Time. Top 10 each. Anti-cheat addressed at implementation.
 
 **Reputation** earned per run (based on score) > spent in the **Reputation Shop** (main menu). Unlocks: new artifacts added to the pool, starting loadouts, cosmetics, events, characters. NOT power creep — expands option space. Exact costs TBD via playtesting.
 
-**Ascension** — cumulative difficulty modifiers after first win. Levels 0-20. Players select ascension level during New Game tile selection. Only unlocked levels are available (clearing a run at level N unlocks level N+1). Score multiplier: 1.0 + 0.2 per level. Difficulty modifiers per tier TBD via playtesting.
+**Ascension** — cumulative difficulty modifiers after first win. Levels 0-20. Players select ascension level during New Game tile selection. Only unlocked levels are available (clearing a run at level N unlocks level N+1). Score multiplier: 1.0 + 0.2 per level.
+
+Difficulty modifiers per level (cumulative):
+- Enemy HP: +10% per level
+- Enemy damage: +5% per level
+- Gold earned (from tiles): -5% per level (floor 50%)
+- Shop prices: +5% per level
 
 ---
 
@@ -943,7 +949,7 @@ All placeholder rendering is behind a single abstraction layer per entity type (
 - [ ] All additional tiles (Whiskey, Buckshot, Ace, Venom, Ember, Horseshoe, Fifty Cal).
 - [ ] Full event pool (~15-20).
 - [ ] Meta progression (Reputation shop with unlocks and pricing).
-- [ ] Ascension system (selector implemented; difficulty modifiers TBD).
+- [ ] Ascension system (selector + difficulty modifiers implemented; values may need tuning).
 - [ ] Leaderboards + anti-cheat.
 - [ ] Additional characters.
 - [ ] Mid-combat saves.
@@ -957,6 +963,6 @@ All placeholder rendering is behind a single abstraction layer per entity type (
 ## Open Questions
 
 - Cascade speed tuning (target ~200-300ms per step, needs playtesting).
-- Ascension tier specifics (modifiers TBD via playtesting).
+- Ascension modifier values may need tuning via playtesting.
 - Reputation amounts per run and unlock costs (TBD via playtesting).
 - Shop price fine-tuning within established ranges.

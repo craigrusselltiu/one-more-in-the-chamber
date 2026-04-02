@@ -26,6 +26,7 @@ import {
 } from './data/enemies';
 import type { EnemyDefinition } from './types/combat';
 import type { MapNodeType, Act } from './types/game';
+import { applyAscensionToEnemies, getAscensionModifiers } from './data/ascension';
 
 export type Screen =
   | 'main-menu'
@@ -117,6 +118,8 @@ export default function App() {
         const currentNode = run.mapState?.nodes.find((n) => n.id === run.currentNodeId);
         const nodeType = currentNode?.type ?? 'combat';
         const encounter = rollEncounter(run.currentAct, nodeType);
+        applyAscensionToEnemies(encounter.enemies, run.ascensionLevel);
+        const ascMods = getAscensionModifiers(run.ascensionLevel);
 
         const combatConfig: CombatConfig = {
           enemies: encounter.enemies,
@@ -132,6 +135,7 @@ export default function App() {
           isBoss: encounter.isBoss,
           turnLimit: encounter.turnLimit,
           timedFailureDamage: encounter.timedFailureDamage,
+          goldMultiplier: ascMods.goldMultiplier,
         };
 
         // Reset combat store before starting
