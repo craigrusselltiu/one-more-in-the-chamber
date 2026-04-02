@@ -16,6 +16,7 @@ export interface RunState {
   traitCounts: Partial<Record<TraitId, number>>;
   consumables: ConsumableInstance[];
   abilityCharge: number;
+  totalDamageDealt: number;
   mapState: MapState | null;
   status: 'active' | 'completed' | 'abandoned';
 }

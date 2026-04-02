@@ -33,11 +33,12 @@ export const ScoreScreen = memo(function ScoreScreen() {
     const nodeBonus = otherNodes * 50;
     const baseScore = baseCombat + baseElite + baseBoss + baseComplete + actBonus + nodeBonus;
 
-    // Bonus: gold earned, artifacts, trait breakpoints
+    // Bonus: gold earned, artifacts, trait breakpoints, damage dealt
     const goldBonus = run.gold;
     const artifactBonus = run.artifacts.length * 50;
     const traitBonus = Object.values(run.traitCounts).reduce((sum, v) => sum + (v ?? 0), 0) * 25;
-    const bonusPoints = goldBonus + artifactBonus + traitBonus;
+    const damageBonus = Math.floor((run.totalDamageDealt ?? 0) / 10);
+    const bonusPoints = goldBonus + artifactBonus + traitBonus + damageBonus;
 
     // Multipliers
     const ascensionMultiplier = 1.0 + 0.2 * run.ascensionLevel;
@@ -62,6 +63,8 @@ export const ScoreScreen = memo(function ScoreScreen() {
       actBonus,
       otherNodes,
       nodeBonus,
+      damageBonus,
+      totalDamageDealt: run.totalDamageDealt ?? 0,
     };
   }, [run]);
 
@@ -107,7 +110,8 @@ export const ScoreScreen = memo(function ScoreScreen() {
 
           <ScoreLine label="Gold held" value={score.gold} />
           <ScoreLine label="Artifacts" value={score.artifacts * 50} detail={`${score.artifacts} collected`} />
-          <ScoreLine label="Traits" value={score.bonusPoints - score.gold - score.artifacts * 50} />
+          <ScoreLine label="Damage" value={score.damageBonus} detail={`${score.totalDamageDealt} dealt`} />
+          <ScoreLine label="Traits" value={score.bonusPoints - score.gold - score.artifacts * 50 - score.damageBonus} />
 
           <div className="border-t border-stone-600 my-1" />
 
