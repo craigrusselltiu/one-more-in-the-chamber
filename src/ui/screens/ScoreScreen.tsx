@@ -1,7 +1,9 @@
-import { memo, useMemo } from 'react';
+import { memo, useEffect, useMemo, useRef } from 'react';
 import { EventBus, GameEvent } from '../../game/EventBus';
 import { useRunStore } from '../../store/runStore';
 import { useMetaStore } from '../../store/metaStore';
+import { saveScore } from '../../services/localSave';
+import { pushScore } from '../../services/syncService';
 import type { Screen } from '../../App';
 
 /**
@@ -96,6 +98,33 @@ export const ScoreScreen = memo(function ScoreScreen() {
       flawlessFights: run.flawlessFights ?? 0,
     };
   }, [run]);
+
+  // Persist score to IndexedDB and push to Supabase (fire-and-forget)
+  const submittedRef = useRef(false);
+  useEffect(() => {
+    if (!run || !score || submittedRef.current) return;
+    submittedRef.current = true;
+
+    const record = {
+      id: crypto.randomUUID(),
+      runId: run.id,
+      character: run.character,
+      ascensionLevel: run.ascensionLevel,
+      baseScore: score.baseScore,
+      bonusPoints: score.bonusPoints,
+      ascensionMultiplier: score.ascensionMultiplier,
+      timeBonus: score.timeMultiplier,
+      finalScore: score.finalScore,
+      runDurationSeconds: score.runDurationSeconds,
+      nodesCleared: score.nodesVisited,
+      bossesDefeated: score.bossNodes,
+      runCompleted: score.completed,
+      createdAt: new Date().toISOString(),
+    };
+
+    saveScore(record).catch(console.error);
+    pushScore(record).catch(console.error);
+  }, [run, score]);
 
   const handleMainMenu = () => {
     const completed = score?.completed ?? false;
