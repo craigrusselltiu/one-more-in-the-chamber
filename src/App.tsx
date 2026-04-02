@@ -125,9 +125,11 @@ export default function App() {
       // Check if we have a pending snapshot to restore (mid-combat resume)
       const snapshot = consumePendingSnapshot();
       if (snapshot) {
+        const run = useRunStore.getState().run;
         useCombatStore.getState().reset();
         useCombatStore.getState().setPlayerHealth(snapshot.player.health, snapshot.player.maxHealth);
         useCombatStore.getState().setGold(snapshot.player.gold);
+        if (run) useCombatStore.getState().setAct(run.currentAct);
 
         game.scene.start('CombatScene', { snapshot });
       } else {

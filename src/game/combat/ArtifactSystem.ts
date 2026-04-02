@@ -38,6 +38,22 @@ export class ArtifactSystem {
     return this.artifactInstances;
   }
 
+  /** Whether the first-match bonus is still available this fight. */
+  isFirstMatchAvailable(): boolean {
+    return this.firstMatchThisFight;
+  }
+
+  /** Whether the lasso has been used this fight (raw state, ignores artifact ownership). */
+  isLassoUsedThisFight(): boolean {
+    return this.lassoUsedThisFight;
+  }
+
+  /** Restore internal state from a mid-combat snapshot. */
+  restoreState(firstMatch: boolean, lassoUsed: boolean): void {
+    this.firstMatchThisFight = firstMatch;
+    this.lassoUsedThisFight = lassoUsed;
+  }
+
   // ---------------------------------------------------------------------------
   // Fight Start
   // ---------------------------------------------------------------------------

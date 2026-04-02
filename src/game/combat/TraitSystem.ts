@@ -30,6 +30,12 @@ export class TraitSystem {
     return { ...this.counts };
   }
 
+  /** Restore internal state from a mid-combat snapshot. */
+  restoreState(matchCount: number, swapsUsed: number): void {
+    this.matchCountThisFight = matchCount;
+    this.swapsUsedThisTurn = swapsUsed;
+  }
+
   /** Check if a trait has reached a given breakpoint threshold. */
   isActive(trait: TraitId, threshold: number): boolean {
     return (this.counts[trait] ?? 0) >= threshold;
