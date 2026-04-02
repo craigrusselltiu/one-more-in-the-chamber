@@ -18,6 +18,8 @@ export interface RunState {
   abilityCharge: number;
   totalDamageDealt: number;
   runStartedAt: number;
+  longestCascade: number;
+  flawlessFights: number;
   mapState: MapState | null;
   status: 'active' | 'completed' | 'abandoned';
 }
