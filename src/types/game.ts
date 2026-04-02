@@ -17,6 +17,8 @@ export interface RunState {
   consumables: ConsumableInstance[];
   abilityCharge: number;
   totalDamageDealt: number;
+  longestCascade: number;
+  flawlessFights: number;
   mapState: MapState | null;
   status: 'active' | 'completed' | 'abandoned';
 }

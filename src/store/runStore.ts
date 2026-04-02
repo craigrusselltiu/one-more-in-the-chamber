@@ -16,6 +16,8 @@ interface RunStore {
   swapTileType: (oldType: TileType, newType: TileType) => void;
   upgradeTile: (type: TileType) => void;
   addDamageDealt: (amount: number) => void;
+  updateLongestCascade: (steps: number) => void;
+  addFlawlessFight: () => void;
   setCurrentNode: (nodeId: string) => void;
   markNodeVisited: (nodeId: string) => void;
   advanceAct: () => void;
@@ -46,6 +48,8 @@ export const useRunStore = create<RunStore>((set) => ({
         consumables: [],
         abilityCharge: 0,
         totalDamageDealt: 0,
+        longestCascade: 0,
+        flawlessFights: 0,
         mapState,
         status: 'active',
       },
@@ -133,6 +137,18 @@ export const useRunStore = create<RunStore>((set) => ({
     set((state) => {
       if (!state.run || amount <= 0) return state;
       return { run: { ...state.run, totalDamageDealt: state.run.totalDamageDealt + amount } };
+    }),
+
+  updateLongestCascade: (steps) =>
+    set((state) => {
+      if (!state.run || steps <= state.run.longestCascade) return state;
+      return { run: { ...state.run, longestCascade: steps } };
+    }),
+
+  addFlawlessFight: () =>
+    set((state) => {
+      if (!state.run) return state;
+      return { run: { ...state.run, flawlessFights: state.run.flawlessFights + 1 } };
     }),
 
   setCurrentNode: (nodeId) =>

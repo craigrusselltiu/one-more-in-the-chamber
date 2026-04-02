@@ -33,12 +33,14 @@ export const ScoreScreen = memo(function ScoreScreen() {
     const nodeBonus = otherNodes * 50;
     const baseScore = baseCombat + baseElite + baseBoss + baseComplete + actBonus + nodeBonus;
 
-    // Bonus: gold earned, artifacts, trait breakpoints, damage dealt
+    // Bonus: gold earned, artifacts, trait breakpoints, damage dealt, cascade, flawless
     const goldBonus = run.gold;
     const artifactBonus = run.artifacts.length * 50;
     const traitBonus = Object.values(run.traitCounts).reduce((sum, v) => sum + (v ?? 0), 0) * 25;
     const damageBonus = Math.floor((run.totalDamageDealt ?? 0) / 10);
-    const bonusPoints = goldBonus + artifactBonus + traitBonus + damageBonus;
+    const cascadeBonus = (run.longestCascade ?? 0) * 50;
+    const flawlessBonus = (run.flawlessFights ?? 0) * 150;
+    const bonusPoints = goldBonus + artifactBonus + traitBonus + damageBonus + cascadeBonus + flawlessBonus;
 
     // Multipliers
     const ascensionMultiplier = 1.0 + 0.2 * run.ascensionLevel;
@@ -65,6 +67,10 @@ export const ScoreScreen = memo(function ScoreScreen() {
       nodeBonus,
       damageBonus,
       totalDamageDealt: run.totalDamageDealt ?? 0,
+      cascadeBonus,
+      longestCascade: run.longestCascade ?? 0,
+      flawlessBonus,
+      flawlessFights: run.flawlessFights ?? 0,
     };
   }, [run]);
 
@@ -111,7 +117,9 @@ export const ScoreScreen = memo(function ScoreScreen() {
           <ScoreLine label="Gold held" value={score.gold} />
           <ScoreLine label="Artifacts" value={score.artifacts * 50} detail={`${score.artifacts} collected`} />
           <ScoreLine label="Damage" value={score.damageBonus} detail={`${score.totalDamageDealt} dealt`} />
-          <ScoreLine label="Traits" value={score.bonusPoints - score.gold - score.artifacts * 50 - score.damageBonus} />
+          {score.cascadeBonus > 0 && <ScoreLine label="Cascade" value={score.cascadeBonus} detail={`${score.longestCascade} chain`} />}
+          {score.flawlessBonus > 0 && <ScoreLine label="Flawless" value={score.flawlessBonus} detail={`${score.flawlessFights} fights`} />}
+          <ScoreLine label="Traits" value={score.bonusPoints - score.gold - score.artifacts * 50 - score.damageBonus - score.cascadeBonus - score.flawlessBonus} />
 
           <div className="border-t border-stone-600 my-1" />
 

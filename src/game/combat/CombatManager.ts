@@ -47,6 +47,8 @@ export interface CombatResult {
   goldEarned: number;
   abilityCharge: number;
   damageDealt: number;
+  longestCascade: number;
+  playerDamageTaken: boolean;
 }
 
 /**
@@ -100,6 +102,10 @@ export class CombatManager {
   private ricochetTriggeredThisResolution = false;
   /** Total damage dealt to enemies this fight (for scoring). */
   private damageDealtThisFight = 0;
+  /** Longest cascade chain (number of steps) across all swaps this fight. */
+  private longestCascadeThisFight = 0;
+  /** Whether the player took any HP damage this fight (for flawless tracking). */
+  private playerTookDamageThisFight = false;
 
   constructor(board: Board, config: CombatConfig) {
     this.board = board;
@@ -364,7 +370,9 @@ export class CombatManager {
     this.ricochetTriggeredThisResolution = false;
 
     // Process each cascade step's matches immediately (damage, block, etc.)
+    let cascadeSteps = 0;
     const onCascadeStep = (stepMatches: MatchResult[]) => {
+      cascadeSteps++;
       for (const match of stepMatches) {
         this.hazardManager.resolveAdjacentHazards(match.tiles);
       }
@@ -374,9 +382,15 @@ export class CombatManager {
       this.emitEnemyHpChanges();
       EventBus.emit(GameEvent.PLAYER_HP_CHANGE, this.player.health, this.player.maxHealth);
       EventBus.emit(GameEvent.GOLD_CHANGE, this.player.gold);
+      EventBus.emit(GameEvent.COMBO_UPDATE, cascadeSteps);
     };
 
     const result: SwapResult = await this.board.trySwap(from, to, onCascadeStep);
+
+    // Update longest cascade tracking
+    if (cascadeSteps > this.longestCascadeThisFight) {
+      this.longestCascadeThisFight = cascadeSteps;
+    }
 
     if (!result.valid) {
       // Invalid swap -- refund
@@ -556,7 +570,7 @@ export class CombatManager {
         break;
       case 'moonshine':
         this.nextMatchMultiplier = 2.0;
-        this.player.takeDamage(5);
+        if (this.player.takeDamage(5).hpLost > 0) this.playerTookDamageThisFight = true;
         break;
       case 'strong_coffee':
         this.nextMatchMultiplier = 1.5;
@@ -612,7 +626,7 @@ export class CombatManager {
       this.player.addGold(10);
     } else {
       // Poison: small self-damage
-      this.player.takeDamage(8);
+      if (this.player.takeDamage(8).hpLost > 0) this.playerTookDamageThisFight = true;
     }
   }
 
@@ -907,7 +921,7 @@ export class CombatManager {
     // 2. Tick bomb countdowns -- detonations damage the player
     const bombResult = this.hazardManager.tickBombs();
     if (bombResult.totalDamage > 0) {
-      this.player.takeDamage(bombResult.totalDamage);
+      if (this.player.takeDamage(bombResult.totalDamage).hpLost > 0) this.playerTookDamageThisFight = true;
       EventBus.emit(GameEvent.PLAYER_HP_CHANGE, this.player.health, this.player.maxHealth);
       if (this.player.isDead()) return;
     }
@@ -932,7 +946,8 @@ export class CombatManager {
       switch (action.type) {
         case 'attack': {
           if (action.value > 0) {
-            const { thornsDamage } = this.player.takeDamage(action.value);
+            const { hpLost, thornsDamage } = this.player.takeDamage(action.value);
+            if (hpLost > 0) this.playerTookDamageThisFight = true;
             EventBus.emit(
               GameEvent.PLAYER_HP_CHANGE,
               this.player.health,
@@ -1043,6 +1058,8 @@ export class CombatManager {
       goldEarned: this.player.goldThisFight,
       abilityCharge: this.player.abilityCharge,
       damageDealt: this.damageDealtThisFight,
+      longestCascade: this.longestCascadeThisFight,
+      playerDamageTaken: this.playerTookDamageThisFight,
     };
 
     EventBus.emit(GameEvent.COMBAT_END, result);
@@ -1073,7 +1090,7 @@ export class CombatManager {
   private resolveTimedEncounterFailure(): void {
     // Apply crash damage
     if (this.timedFailureDamage > 0) {
-      this.player.takeDamage(this.timedFailureDamage);
+      if (this.player.takeDamage(this.timedFailureDamage).hpLost > 0) this.playerTookDamageThisFight = true;
       EventBus.emit(GameEvent.PLAYER_HP_CHANGE, this.player.health, this.player.maxHealth);
     }
 

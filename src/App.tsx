@@ -158,8 +158,12 @@ export default function App() {
       const result = args[0] as CombatResult;
       const store = useRunStore.getState();
 
-      // Always track damage dealt (even on defeat)
+      // Always track stats (even on defeat)
       store.addDamageDealt(result.damageDealt);
+      store.updateLongestCascade(result.longestCascade);
+      if (result.victory && !result.playerDamageTaken) {
+        store.addFlawlessFight();
+      }
 
       if (result.victory) {
         // Sync combat results back to run (use absolute values from combat end)
