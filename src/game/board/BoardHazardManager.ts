@@ -188,6 +188,19 @@ export class BoardHazardManager {
     this.suppressedTypes.clear();
   }
 
+  /** Serialize suppressed types for mid-combat saves. */
+  serializeSuppressedTypes(): [TileType, number][] {
+    return Array.from(this.suppressedTypes.entries());
+  }
+
+  /** Restore suppressed types from a snapshot. */
+  restoreSuppressedTypes(data: [TileType, number][]): void {
+    this.suppressedTypes.clear();
+    for (const [type, turns] of data) {
+      this.suppressedTypes.set(type, turns);
+    }
+  }
+
   // ---------------------------------------------------------------------------
   // Bomb ticking
   // ---------------------------------------------------------------------------

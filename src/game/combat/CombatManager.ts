@@ -1,6 +1,8 @@
 import type { Board, SwapResult } from '../board/Board';
 import type { CombatState, CombatPhase, MatchResult, EnemyDefinition } from '../../types/combat';
 import type { TileType, ArtifactInstance, TraitId } from '../../types/game';
+import type { CombatSnapshot, SerializedEnemy } from '../../types/combatSnapshot';
+import { SNAPSHOT_VERSION } from '../../types/combatSnapshot';
 import { EventBus, GameEvent } from '../EventBus';
 import { Player } from './Player';
 import { Enemy } from './Enemy';
@@ -15,6 +17,7 @@ import {
   rollEliteModifier,
   applyEliteModifier,
   shouldSuppressCascadeDamage,
+  ELITE_MODIFIERS,
 } from './EliteModifiers';
 import type { EliteModifierId, EliteModifier } from './EliteModifiers';
 
@@ -271,6 +274,136 @@ export class CombatManager {
   }
 
   // ---------------------------------------------------------------------------
+  // Snapshot (mid-combat save/restore)
+  // ---------------------------------------------------------------------------
+
+  /**
+   * Create a full snapshot of the combat state for mid-combat saves.
+   * Call only when the board is stable (not mid-cascade or resolving).
+   */
+  createSnapshot(runId: string): CombatSnapshot {
+    const serializedEnemies: SerializedEnemy[] = this.enemies.map((e) => ({
+      state: { ...e.state, intent: { ...e.state.intent } },
+      definition: { ...e.getDefinition() },
+      skipNextAction: e.skipNextAction,
+    }));
+
+    return {
+      version: SNAPSHOT_VERSION,
+      runId,
+      timestamp: Date.now(),
+      board: this.board.serialize(),
+      turnNumber: this.turnNumber,
+      swapsRemaining: this.swapsRemaining,
+      swapsPerTurn: this.swapsPerTurn,
+      targetedEnemyIndex: this.targetedEnemyIndex,
+      phase: this.phase,
+      isDeadeyeActive: this.isDeadeyeActive,
+      deadeyeShotsRemaining: this.deadeyeShotsRemaining,
+      deadeyeMaxShots: this.deadeyeMaxShots,
+      isBoss: this.isBoss,
+      turnLimit: this.turnLimit,
+      timedFailureDamage: this.timedFailureDamage,
+      nextMatchMultiplier: this.nextMatchMultiplier,
+      damageDealtThisFight: this.damageDealtThisFight,
+      swapsUsedThisTurn: this.swapsUsedThisTurn,
+      player: {
+        health: this.player.health,
+        maxHealth: this.player.maxHealth,
+        block: this.player.block,
+        dodgeChance: this.player.dodgeChance,
+        aceMultiplier: this.player.aceMultiplier,
+        critChance: this.player.critChance,
+        thorns: this.player.thorns,
+        gold: this.player.gold,
+        goldThisFight: this.player.goldThisFight,
+        abilityCharge: this.player.abilityCharge,
+        activeTileTypes: [...this.player.activeTileTypes],
+        tileUpgrades: { ...this.player.tileUpgrades },
+      },
+      enemies: serializedEnemies,
+      bossController: this.bossController?.serialize() ?? null,
+      eliteModifierId: (this.eliteModifier?.id as EliteModifierId) ?? null,
+      suppressedTypes: this.hazardManager.serializeSuppressedTypes(),
+      artifacts: this.artifacts.getArtifacts(),
+      traitCounts: this.traits.getCounts(),
+    };
+  }
+
+  /**
+   * Restore combat state from a snapshot.
+   * Rebuilds the board, player, enemies, and all subsystems.
+   * Skips fight-start effects since they were already applied in the original fight.
+   */
+  restoreFromSnapshot(snapshot: CombatSnapshot): void {
+    // Restore board
+    this.board.restoreFromSnapshot(snapshot.board);
+
+    // Restore player
+    const sp = snapshot.player;
+    this.player = new Player(
+      sp.health,
+      sp.maxHealth,
+      sp.abilityCharge,
+      sp.activeTileTypes,
+      sp.tileUpgrades,
+      sp.gold,
+    );
+    this.player.block = sp.block;
+    this.player.dodgeChance = sp.dodgeChance;
+    this.player.aceMultiplier = sp.aceMultiplier;
+    this.player.critChance = sp.critChance;
+    this.player.thorns = sp.thorns;
+    this.player.goldThisFight = sp.goldThisFight;
+
+    // Restore enemies
+    this.enemies = snapshot.enemies.map((se) => {
+      const enemy = new Enemy(se.definition);
+      enemy.state = { ...se.state, intent: { ...se.state.intent } };
+      enemy.skipNextAction = se.skipNextAction;
+      return enemy;
+    });
+
+    // Restore combat manager internal state
+    this.turnNumber = snapshot.turnNumber;
+    this.swapsRemaining = snapshot.swapsRemaining;
+    this.swapsPerTurn = snapshot.swapsPerTurn;
+    this.targetedEnemyIndex = snapshot.targetedEnemyIndex;
+    this.phase = snapshot.phase;
+    this.isDeadeyeActive = snapshot.isDeadeyeActive;
+    this.deadeyeShotsRemaining = snapshot.deadeyeShotsRemaining;
+    this.deadeyeMaxShots = snapshot.deadeyeMaxShots;
+    this.isBoss = snapshot.isBoss;
+    this.turnLimit = snapshot.turnLimit;
+    this.timedFailureDamage = snapshot.timedFailureDamage;
+    this.nextMatchMultiplier = snapshot.nextMatchMultiplier;
+    this.damageDealtThisFight = snapshot.damageDealtThisFight;
+    this.swapsUsedThisTurn = snapshot.swapsUsedThisTurn;
+
+    // Restore boss controller
+    if (snapshot.bossController && this.bossController) {
+      this.bossController.restoreState(snapshot.bossController);
+    }
+
+    // Restore elite modifier
+    if (snapshot.eliteModifierId) {
+      this.eliteModifier = ELITE_MODIFIERS.find(
+        (m) => m.id === snapshot.eliteModifierId,
+      ) ?? null;
+    }
+
+    // Restore suppressed types
+    this.hazardManager.restoreSuppressedTypes(snapshot.suppressedTypes);
+
+    // Emit full state so React HUD syncs
+    this.emitFullState();
+    EventBus.emit(GameEvent.PLAYER_HP_CHANGE, this.player.health, this.player.maxHealth);
+    EventBus.emit(GameEvent.GOLD_CHANGE, this.player.gold);
+    EventBus.emit(GameEvent.SWAPS_CHANGE, this.swapsRemaining, this.swapsPerTurn);
+    EventBus.emit(GameEvent.ABILITY_CHARGE_CHANGE, this.player.abilityCharge, this.player.abilityThreshold);
+  }
+
+  // ---------------------------------------------------------------------------
   // Turn Flow
   // ---------------------------------------------------------------------------
 
@@ -434,6 +567,9 @@ export class CombatManager {
       this.endCombat();
       return;
     }
+
+    // Emit save event: board is stable, safe to snapshot
+    EventBus.emit(GameEvent.COMBAT_SAVE_REQUESTED);
 
     if (this.swapsRemaining <= 0) {
       this.endTurn();

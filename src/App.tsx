@@ -18,6 +18,9 @@ import { useRunStore } from './store/runStore';
 import { useCombatStore } from './store/combatStore';
 import { useGameScale, UI_WIDTH, UI_HEIGHT } from './ui/hooks/useGameScale';
 import type { CombatConfig, CombatResult } from './game/combat/CombatManager';
+import type { CombatSnapshot } from './types/combatSnapshot';
+import { saveCombatSnapshot, clearCombatSnapshot } from './services/localSave';
+import { consumePendingSnapshot } from './services/combatResume';
 import {
   rollAct1Encounter,
   rollAct1EliteEncounter,
@@ -117,39 +120,49 @@ export default function App() {
     if (!game) return;
 
     if (screen === 'combat' && prevScreenRef.current !== 'combat') {
-      // Entering combat: build config from run state and start CombatScene
-      const run = useRunStore.getState().run;
-      if (run) {
-        const currentNode = run.mapState?.nodes.find((n) => n.id === run.currentNodeId);
-        const nodeType = currentNode?.type ?? 'combat';
-        const encounter = rollEncounter(run.currentAct, nodeType);
-        applyAscensionToEnemies(encounter.enemies, run.ascensionLevel);
-        const ascMods = getAscensionModifiers(run.ascensionLevel);
-
-        const combatConfig: CombatConfig = {
-          enemies: encounter.enemies,
-          playerHealth: run.health,
-          playerMaxHealth: run.maxHealth,
-          playerGold: run.gold,
-          activeTileTypes: run.activeTileTypes,
-          tileUpgrades: run.tileUpgrades,
-          abilityCharge: run.abilityCharge,
-          artifacts: run.artifacts,
-          traitCounts: run.traitCounts,
-          isElite: encounter.isElite,
-          isBoss: encounter.isBoss,
-          turnLimit: encounter.turnLimit,
-          timedFailureDamage: encounter.timedFailureDamage,
-          goldMultiplier: ascMods.goldMultiplier,
-        };
-
-        // Reset combat store before starting
+      // Check if we have a pending snapshot to restore (mid-combat resume)
+      const snapshot = consumePendingSnapshot();
+      if (snapshot) {
         useCombatStore.getState().reset();
-        useCombatStore.getState().setPlayerHealth(run.health, run.maxHealth);
-        useCombatStore.getState().setGold(run.gold);
-        useCombatStore.getState().setAct(run.currentAct);
+        useCombatStore.getState().setPlayerHealth(snapshot.player.health, snapshot.player.maxHealth);
+        useCombatStore.getState().setGold(snapshot.player.gold);
 
-        game.scene.start('CombatScene', { config: combatConfig });
+        game.scene.start('CombatScene', { snapshot });
+      } else {
+        // Fresh combat: build config from run state and start CombatScene
+        const run = useRunStore.getState().run;
+        if (run) {
+          const currentNode = run.mapState?.nodes.find((n) => n.id === run.currentNodeId);
+          const nodeType = currentNode?.type ?? 'combat';
+          const encounter = rollEncounter(run.currentAct, nodeType);
+          applyAscensionToEnemies(encounter.enemies, run.ascensionLevel);
+          const ascMods = getAscensionModifiers(run.ascensionLevel);
+
+          const combatConfig: CombatConfig = {
+            enemies: encounter.enemies,
+            playerHealth: run.health,
+            playerMaxHealth: run.maxHealth,
+            playerGold: run.gold,
+            activeTileTypes: run.activeTileTypes,
+            tileUpgrades: run.tileUpgrades,
+            abilityCharge: run.abilityCharge,
+            artifacts: run.artifacts,
+            traitCounts: run.traitCounts,
+            isElite: encounter.isElite,
+            isBoss: encounter.isBoss,
+            turnLimit: encounter.turnLimit,
+            timedFailureDamage: encounter.timedFailureDamage,
+            goldMultiplier: ascMods.goldMultiplier,
+          };
+
+          // Reset combat store before starting
+          useCombatStore.getState().reset();
+          useCombatStore.getState().setPlayerHealth(run.health, run.maxHealth);
+          useCombatStore.getState().setGold(run.gold);
+          useCombatStore.getState().setAct(run.currentAct);
+
+          game.scene.start('CombatScene', { config: combatConfig });
+        }
       }
     } else if (screen !== 'combat' && prevScreenRef.current === 'combat') {
       // Leaving combat: stop CombatScene
@@ -170,6 +183,12 @@ export default function App() {
       store.updateLongestCascade(result.longestCascade);
       if (result.victory && !result.playerDamageTaken) {
         store.addFlawlessFight();
+      }
+
+      // Clear the mid-combat snapshot -- fight is over
+      const runId = store.run?.id;
+      if (runId) {
+        clearCombatSnapshot(runId).catch(() => {});
       }
 
       if (result.victory) {
@@ -209,6 +228,49 @@ export default function App() {
 
     EventBus.on(GameEvent.COMBAT_END, handleCombatEnd);
     return () => { EventBus.off(GameEvent.COMBAT_END, handleCombatEnd); };
+  }, []);
+
+  // Handle mid-combat save requests (emitted after each swap resolution)
+  useEffect(() => {
+    const handleSaveRequest = () => {
+      const game = gameRef.current;
+      const run = useRunStore.getState().run;
+      if (!game || !run) return;
+
+      const scene = game.scene.getScene('CombatScene') as
+        | (Phaser.Scene & { combatManager?: { createSnapshot: (runId: string) => CombatSnapshot } })
+        | null;
+      if (!scene?.combatManager) return;
+
+      const snapshot = scene.combatManager.createSnapshot(run.id);
+      saveCombatSnapshot(snapshot).catch((err) => {
+        console.error('[save] combat snapshot failed:', err);
+      });
+    };
+
+    EventBus.on(GameEvent.COMBAT_SAVE_REQUESTED, handleSaveRequest);
+    return () => { EventBus.off(GameEvent.COMBAT_SAVE_REQUESTED, handleSaveRequest); };
+  }, []);
+
+  // Save combat snapshot when the app is backgrounded or closed
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState !== 'hidden') return;
+      const game = gameRef.current;
+      const run = useRunStore.getState().run;
+      if (!game || !run) return;
+
+      const scene = game.scene.getScene('CombatScene') as
+        | (Phaser.Scene & { combatManager?: { createSnapshot: (runId: string) => CombatSnapshot } })
+        | null;
+      if (!scene?.combatManager) return;
+
+      const snapshot = scene.combatManager.createSnapshot(run.id);
+      saveCombatSnapshot(snapshot).catch(() => {});
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => { document.removeEventListener('visibilitychange', handleVisibilityChange); };
   }, []);
 
   const { scale, offsetX, offsetY } = useGameScale();

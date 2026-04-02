@@ -74,6 +74,9 @@ export const GameEvent = {
   NODE_SELECTED: 'map:node-selected',
   RUN_STARTED: 'run:started',
   RUN_ENDED: 'run:ended',
+
+  // Mid-combat save
+  COMBAT_SAVE_REQUESTED: 'combat:save-requested',
 } as const;
 
 /**

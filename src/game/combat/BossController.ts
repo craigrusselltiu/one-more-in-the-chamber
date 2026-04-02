@@ -1,4 +1,5 @@
 import type { EnemyIntent, EnemyDefinition } from '../../types/combat';
+import type { SerializedBossController } from '../../types/combatSnapshot';
 import type { Enemy } from './Enemy';
 import type { Board } from '../board/Board';
 import type { BoardHazardManager } from '../board/BoardHazardManager';
@@ -393,6 +394,23 @@ export class BossController {
         hazardManager.placeRandomPoison(2);
         break;
     }
+  }
+
+  /** Serialize boss controller state for mid-combat save. */
+  serialize(): SerializedBossController {
+    return {
+      bossType: this.bossType,
+      phase: this.phase,
+      transitionTriggered: this.transitionTriggered,
+      turnParity: this.turnParity,
+    };
+  }
+
+  /** Restore boss controller state from a snapshot. */
+  restoreState(data: SerializedBossController): void {
+    this.phase = data.phase;
+    this.transitionTriggered = data.transitionTriggered;
+    this.turnParity = data.turnParity;
   }
 
   /**

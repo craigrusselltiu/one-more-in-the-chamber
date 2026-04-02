@@ -1,6 +1,7 @@
 import { memo } from 'react';
 import { EventBus, GameEvent } from '../../game/EventBus';
 import { useRunStore } from '../../store/runStore';
+import { checkForCombatResume } from '../../services/combatResume';
 import type { Screen } from '../../App';
 
 const MENU_FONT = 'monospace';
@@ -70,8 +71,10 @@ export const MainMenu = memo(function MainMenu() {
     EventBus.emit(GameEvent.SCREEN_CHANGE, 'tile-select' satisfies Screen);
   };
 
-  const handleContinue = () => {
-    EventBus.emit(GameEvent.SCREEN_CHANGE, 'map' satisfies Screen);
+  const handleContinue = async () => {
+    // Check for mid-combat save first -- if found, resume combat
+    const hasCombatSave = await checkForCombatResume();
+    EventBus.emit(GameEvent.SCREEN_CHANGE, hasCombatSave ? 'combat' : 'map');
   };
 
   const handleReputationShop = () => {

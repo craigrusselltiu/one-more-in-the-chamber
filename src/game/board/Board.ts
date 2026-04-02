@@ -5,6 +5,7 @@ import { CascadeResolver } from './CascadeResolver';
 import type { GravityDirection } from './CascadeResolver';
 import type { TileType } from '../../types/game';
 import type { GridPosition, MatchResult } from '../../types/combat';
+import type { SerializedBoard, SerializedTile } from '../../types/combatSnapshot';
 import { EventBus, GameEvent } from '../EventBus';
 import { TILE_COLORS } from '../../data/tiles';
 
@@ -817,6 +818,73 @@ export class Board {
         const tile = this.grid[row][col];
         if (tile && tile.hazard?.type === hazardType) {
           tile.hazard = null;
+        }
+      }
+    }
+  }
+
+  // -- Serialization --
+
+  /**
+   * Serialize the full board state for mid-combat saves.
+   * Captures every tile's type, position, special flags, and hazard.
+   */
+  serialize(): SerializedBoard {
+    const tiles: (SerializedTile | null)[][] = [];
+    for (let row = 0; row < BOARD_SIZE; row++) {
+      tiles[row] = [];
+      for (let col = 0; col < BOARD_SIZE; col++) {
+        const tile = this.grid[row][col];
+        if (tile) {
+          tiles[row][col] = {
+            type: tile.type,
+            row: tile.row,
+            col: tile.col,
+            isExplosive: tile.isExplosive,
+            isShowdown: tile.isShowdown,
+            hazard: tile.hazard ? { ...tile.hazard } : null,
+          };
+        } else {
+          tiles[row][col] = null;
+        }
+      }
+    }
+    return {
+      tiles,
+      activeTileTypes: [...this.activeTileTypes],
+      gravityDirection: this.cascadeResolver.getGravityDirection(),
+    };
+  }
+
+  /**
+   * Restore board state from a snapshot. Destroys the current grid
+   * and rebuilds from serialized data.
+   */
+  restoreFromSnapshot(snapshot: SerializedBoard): void {
+    this.destroyAllTiles();
+    this.activeTileTypes = snapshot.activeTileTypes;
+    this.tileTypeBag = [];
+    this.cascadeResolver.setGravityDirection(snapshot.gravityDirection);
+
+    for (let row = 0; row < BOARD_SIZE; row++) {
+      this.grid[row] = [];
+      for (let col = 0; col < BOARD_SIZE; col++) {
+        const data = snapshot.tiles[row]?.[col];
+        if (data) {
+          const tile = new Tile(
+            this.scene,
+            this.tileX(col),
+            this.tileY(row),
+            data.type,
+            row,
+            col,
+          );
+          if (data.isExplosive) tile.setExplosive(true);
+          if (data.isShowdown) tile.setShowdown(true);
+          if (data.hazard) tile.hazard = { ...data.hazard };
+          this.grid[row][col] = tile;
+        } else {
+          this.grid[row][col] = null;
         }
       }
     }
