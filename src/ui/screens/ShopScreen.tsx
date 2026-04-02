@@ -6,6 +6,7 @@ import { CONSUMABLES } from '../../data/consumables';
 import { ADDITIONAL_POOL, CORE_TILES, STARTER_POOL, TILE_COLORS, TILE_DEFINITIONS } from '../../data/tiles';
 import type { TileType } from '../../types/game';
 import type { Screen } from '../../App';
+import { getAscensionModifiers } from '../../data/ascension';
 
 interface ShopItem {
   type: 'artifact' | 'consumable' | 'tile_swap';
@@ -31,8 +32,9 @@ export const ShopScreen = memo(function ShopScreen() {
   const stock = useMemo(() => {
     if (!run) return [];
     const items: ShopItem[] = [];
+    const priceMult = getAscensionModifiers(run.ascensionLevel).shopPriceMultiplier;
 
-    // 3 consumables (random, 15-30 gold)
+    // 3 consumables (random, 15-30 gold base, inflated by ascension)
     const shuffledConsumables = [...CONSUMABLES].sort(() => Math.random() - 0.5);
     for (let i = 0; i < 3; i++) {
       const c = shuffledConsumables[i];
@@ -41,11 +43,11 @@ export const ShopScreen = memo(function ShopScreen() {
         id: `cons-${c.id}`,
         name: c.name,
         description: c.effect,
-        price: 15 + Math.floor(Math.random() * 16),
+        price: Math.round((15 + Math.floor(Math.random() * 16)) * priceMult),
       });
     }
 
-    // 2 artifacts (random, not owned, 100-175 gold)
+    // 2 artifacts (random, not owned, 100-175 gold base, inflated by ascension)
     const ownedIds = new Set(run.artifacts.map((a) => a.id));
     const availableArtifacts = ARTIFACTS.filter((a) => !ownedIds.has(a.id));
     const shuffledArtifacts = [...availableArtifacts].sort(() => Math.random() - 0.5);
@@ -56,11 +58,11 @@ export const ShopScreen = memo(function ShopScreen() {
         id: `art-${a.id}`,
         name: a.name,
         description: a.effect,
-        price: 100 + Math.floor(Math.random() * 76),
+        price: Math.round((100 + Math.floor(Math.random() * 76)) * priceMult),
       });
     }
 
-    // 1 tile swap (50-75 gold, if player has swappable tiles)
+    // 1 tile swap (50-75 gold base, inflated by ascension, if player has swappable tiles)
     const swappableTiles = run.activeTileTypes.filter(
       (t) => !(CORE_TILES as string[]).includes(t) && !(STARTER_POOL as string[]).includes(t),
     );
@@ -74,7 +76,7 @@ export const ShopScreen = memo(function ShopScreen() {
           id: `swap-${swapTile}`,
           name: `Swap for ${def.label}`,
           description: def.description,
-          price: 50 + Math.floor(Math.random() * 26),
+          price: Math.round((50 + Math.floor(Math.random() * 26)) * priceMult),
         });
       }
     }

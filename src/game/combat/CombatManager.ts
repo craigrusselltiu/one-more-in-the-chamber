@@ -38,6 +38,8 @@ export interface CombatConfig {
   turnLimit?: number;
   /** Damage dealt to the player if a timed encounter expires. */
   timedFailureDamage?: number;
+  /** Gold multiplier from ascension (1.0 = normal, <1.0 = reduced). */
+  goldMultiplier?: number;
 }
 
 export interface CombatResult {
@@ -106,6 +108,8 @@ export class CombatManager {
   private longestCascadeThisFight = 0;
   /** Whether the player took any HP damage this fight (for flawless tracking). */
   private playerTookDamageThisFight = false;
+  /** Gold multiplier from ascension level (1.0 = normal, <1.0 = reduced). */
+  private goldMultiplier: number;
 
   constructor(board: Board, config: CombatConfig) {
     this.board = board;
@@ -114,6 +118,7 @@ export class CombatManager {
     this.isBoss = config.isBoss ?? false;
     this.turnLimit = config.turnLimit ?? 0;
     this.timedFailureDamage = config.timedFailureDamage ?? 0;
+    this.goldMultiplier = config.goldMultiplier ?? 1.0;
 
     // Initialize trait and artifact systems
     this.traits = new TraitSystem(config.traitCounts);
@@ -623,7 +628,7 @@ export class CombatManager {
       const target = this.getTargetedAliveEnemy();
       if (target) this.damageDealtThisFight += target.takeDamage(15);
     } else if (roll < 0.75) {
-      this.player.addGold(10);
+      this.player.addGold(Math.max(1, Math.round(10 * this.goldMultiplier)));
     } else {
       // Poison: small self-damage
       if (this.player.takeDamage(8).hpLost > 0) this.playerTookDamageThisFight = true;
@@ -828,9 +833,10 @@ export class CombatManager {
       this.player.addBlock(output.block);
     }
 
-    // Gold
+    // Gold (reduced by ascension modifier)
     if (output.gold > 0) {
-      this.player.addGold(output.gold);
+      const scaledGold = Math.max(1, Math.round(output.gold * this.goldMultiplier));
+      this.player.addGold(scaledGold);
       EventBus.emit(GameEvent.GOLD_CHANGE, this.player.gold);
     }
 

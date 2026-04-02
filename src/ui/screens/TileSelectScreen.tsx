@@ -5,6 +5,7 @@ import { useMetaStore } from '../../store/metaStore';
 import { STARTER_POOL, ADDITIONAL_POOL, TILE_DEFINITIONS } from '../../data/tiles';
 import type { TileType } from '../../types/game';
 import type { Screen } from '../../App';
+import { getAscensionModifiers } from '../../data/ascension';
 
 const MAX_ASCENSION = 20;
 
@@ -134,40 +135,51 @@ function AscensionSelector({
   maxLevel: number;
   onChange: (level: number) => void;
 }) {
-  const multiplier = (1.0 + 0.2 * level).toFixed(1);
+  const scoreMultiplier = (1.0 + 0.2 * level).toFixed(1);
+  const mods = getAscensionModifiers(level);
 
   return (
-    <div className="flex items-center gap-3 mt-4">
-      <span className="text-stone-400 font-mono text-xs">Ascension</span>
-      <button
-        onClick={() => onChange(Math.max(0, level - 1))}
-        disabled={level <= 0}
-        className={`w-5 h-5 flex items-center justify-center font-mono text-xs border ${
-          level > 0
-            ? 'text-amber-300 border-amber-700 bg-amber-900/40 hover:bg-amber-800/50'
-            : 'text-stone-600 border-stone-700 bg-stone-800/30 cursor-not-allowed'
-        }`}
-      >
-        -
-      </button>
-      <span className="text-amber-300 font-mono text-sm w-6 text-center font-bold">
-        {level}
-      </span>
-      <button
-        onClick={() => onChange(Math.min(maxLevel, level + 1))}
-        disabled={level >= maxLevel}
-        className={`w-5 h-5 flex items-center justify-center font-mono text-xs border ${
-          level < maxLevel
-            ? 'text-amber-300 border-amber-700 bg-amber-900/40 hover:bg-amber-800/50'
-            : 'text-stone-600 border-stone-700 bg-stone-800/30 cursor-not-allowed'
-        }`}
-      >
-        +
-      </button>
-      {level > 0 && (
-        <span className="text-stone-500 font-mono" style={{ fontSize: '10px' }}>
-          Score x{multiplier}
+    <div className="flex flex-col items-center mt-4 gap-1">
+      <div className="flex items-center gap-3">
+        <span className="text-stone-400 font-mono text-xs">Ascension</span>
+        <button
+          onClick={() => onChange(Math.max(0, level - 1))}
+          disabled={level <= 0}
+          className={`w-5 h-5 flex items-center justify-center font-mono text-xs border ${
+            level > 0
+              ? 'text-amber-300 border-amber-700 bg-amber-900/40 hover:bg-amber-800/50'
+              : 'text-stone-600 border-stone-700 bg-stone-800/30 cursor-not-allowed'
+          }`}
+        >
+          -
+        </button>
+        <span className="text-amber-300 font-mono text-sm w-6 text-center font-bold">
+          {level}
         </span>
+        <button
+          onClick={() => onChange(Math.min(maxLevel, level + 1))}
+          disabled={level >= maxLevel}
+          className={`w-5 h-5 flex items-center justify-center font-mono text-xs border ${
+            level < maxLevel
+              ? 'text-amber-300 border-amber-700 bg-amber-900/40 hover:bg-amber-800/50'
+              : 'text-stone-600 border-stone-700 bg-stone-800/30 cursor-not-allowed'
+          }`}
+        >
+          +
+        </button>
+        {level > 0 && (
+          <span className="text-stone-500 font-mono" style={{ fontSize: '10px' }}>
+            Score x{scoreMultiplier}
+          </span>
+        )}
+      </div>
+      {level > 0 && (
+        <div className="flex gap-3 text-stone-500 font-mono" style={{ fontSize: '9px' }}>
+          <span>HP +{Math.round((mods.enemyHpMultiplier - 1) * 100)}%</span>
+          <span>DMG +{Math.round((mods.enemyDamageMultiplier - 1) * 100)}%</span>
+          <span>Gold -{Math.round((1 - mods.goldMultiplier) * 100)}%</span>
+          <span>Prices +{Math.round((mods.shopPriceMultiplier - 1) * 100)}%</span>
+        </div>
       )}
     </div>
   );
