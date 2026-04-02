@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 import type { TileType } from '../../types/game';
 import type { TileHazardState } from '../../types/tiles';
 import { TILE_COLORS } from '../../data/tiles';
+import { useSettingsStore } from '../../store/settingsStore';
 
 export const TILE_SIZE = 28;
 const TILE_INNER = 26;
@@ -254,12 +255,19 @@ export class Tile {
    * Tween this tile to a new position over the given duration.
    * Status indicator objects are tweened to their offset position alongside.
    * When bounce is true, uses Bounce.easeOut for a landing feel.
+   * When juice animations are disabled, snaps to position instantly.
    */
   tweenToPosition(x: number, y: number, duration: number, delay = 0, bounce = false): Promise<void> {
     if (this.destroyed) return Promise.resolve();
 
     const targetX = Math.round(x + TILE_SIZE / 2);
     const targetY = Math.round(y + TILE_SIZE / 2);
+
+    if (!useSettingsStore.getState().juiceAnimationsEnabled) {
+      this.setPosition(x, y);
+      return Promise.resolve();
+    }
+
     const ease = bounce ? 'Bounce.easeOut' : 'Cubic.easeIn';
 
     return new Promise((resolve) => {
@@ -303,9 +311,15 @@ export class Tile {
   /**
    * Animate clearing: pop up briefly, then shrink + fade out, then destroy.
    * The pop gives match clears a satisfying punch.
+   * When juice animations are disabled, destroys immediately.
    */
   animateClear(duration: number): Promise<void> {
     if (this.destroyed) return Promise.resolve();
+
+    if (!useSettingsStore.getState().juiceAnimationsEnabled) {
+      this.destroy();
+      return Promise.resolve();
+    }
 
     return new Promise((resolve) => {
       const targets: Phaser.GameObjects.GameObject[] = [this.rect, this.label];
