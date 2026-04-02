@@ -24,6 +24,7 @@ interface MetaRow {
   player_id: string;
   reputation: number;
   unlocked_artifacts: string[];
+  unlocked_events: string[];
   unlocked_cosmetics: string[];
   unlocked_loadouts: string[];
   unlocked_characters: string[];
@@ -34,6 +35,7 @@ interface LocalMeta {
   key: string;
   reputation: number;
   unlockedArtifacts: string[];
+  unlockedEvents: string[];
   unlockedCosmetics: string[];
   unlockedLoadouts: string[];
   unlockedCharacters: string[];
@@ -169,6 +171,7 @@ async function syncMeta(sb: ReturnType<typeof getSupabase> & object, userId: str
     player_id: userId,
     reputation: merged.reputation,
     unlocked_artifacts: merged.unlockedArtifacts,
+    unlocked_events: merged.unlockedEvents,
     unlocked_cosmetics: merged.unlockedCosmetics,
     unlocked_loadouts: merged.unlockedLoadouts,
     unlocked_characters: merged.unlockedCharacters,
@@ -180,6 +183,7 @@ function mergeMeta(local: LocalMeta | null, remote: MetaRow | null): Omit<LocalM
   const l = local ?? {
     reputation: 0,
     unlockedArtifacts: [],
+    unlockedEvents: [],
     unlockedCosmetics: [],
     unlockedLoadouts: [],
     unlockedCharacters: ['red_panda'],
@@ -188,6 +192,7 @@ function mergeMeta(local: LocalMeta | null, remote: MetaRow | null): Omit<LocalM
   const r = remote ?? {
     reputation: 0,
     unlocked_artifacts: [] as string[],
+    unlocked_events: [] as string[],
     unlocked_cosmetics: [] as string[],
     unlocked_loadouts: [] as string[],
     unlocked_characters: ['red_panda'],
@@ -197,6 +202,7 @@ function mergeMeta(local: LocalMeta | null, remote: MetaRow | null): Omit<LocalM
   return {
     reputation: Math.max(l.reputation, r.reputation),
     unlockedArtifacts: union(l.unlockedArtifacts, r.unlocked_artifacts),
+    unlockedEvents: union(l.unlockedEvents, r.unlocked_events),
     unlockedCosmetics: union(l.unlockedCosmetics, r.unlocked_cosmetics),
     unlockedLoadouts: union(l.unlockedLoadouts, r.unlocked_loadouts),
     unlockedCharacters: union(l.unlockedCharacters, r.unlocked_characters),

@@ -35,6 +35,7 @@ export const ScoreScreen = memo(function ScoreScreen() {
   const run = useRunStore((s) => s.run);
   const endRun = useRunStore((s) => s.endRun);
   const setHighestAscension = useMetaStore((s) => s.setHighestAscension);
+  const addReputation = useMetaStore((s) => s.addReputation);
 
   const score = useMemo(() => {
     if (!run) return null;
@@ -131,6 +132,11 @@ export const ScoreScreen = memo(function ScoreScreen() {
     if (completed && run) {
       setHighestAscension(run.ascensionLevel);
     }
+    // Award reputation based on score (SPEC: "Reputation earned per run based on score")
+    if (score) {
+      const rep = Math.max(10, Math.floor(score.finalScore / 10));
+      addReputation(rep);
+    }
     endRun(completed);
     EventBus.emit(GameEvent.SCREEN_CHANGE, 'main-menu' satisfies Screen);
   };
@@ -192,13 +198,21 @@ export const ScoreScreen = memo(function ScoreScreen() {
       </div>
 
       {/* Final score */}
-      <div className="w-72 border-2 border-amber-700 bg-amber-900/20 p-3 mb-6">
+      <div className="w-72 border-2 border-amber-700 bg-amber-900/20 p-3 mb-4">
         <div className="flex items-center justify-between">
           <span className="text-amber-300 font-mono text-sm font-bold">FINAL SCORE</span>
           <span className="text-amber-400 font-mono text-xl font-bold">
             {score.finalScore.toLocaleString()}
           </span>
         </div>
+      </div>
+
+      {/* Reputation earned */}
+      <div className="w-72 flex items-center justify-between mb-6 px-1">
+        <span className="text-stone-400 font-mono text-xs">Reputation earned</span>
+        <span className="text-amber-300 font-mono text-xs font-bold">
+          +{Math.max(10, Math.floor(score.finalScore / 10)).toLocaleString()}
+        </span>
       </div>
 
       <button
