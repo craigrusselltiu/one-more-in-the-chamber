@@ -253,12 +253,14 @@ export class Tile {
   /**
    * Tween this tile to a new position over the given duration.
    * Status indicator objects are tweened to their offset position alongside.
+   * When bounce is true, uses Bounce.easeOut for a landing feel.
    */
-  tweenToPosition(x: number, y: number, duration: number, delay = 0): Promise<void> {
+  tweenToPosition(x: number, y: number, duration: number, delay = 0, bounce = false): Promise<void> {
     if (this.destroyed) return Promise.resolve();
 
     const targetX = Math.round(x + TILE_SIZE / 2);
     const targetY = Math.round(y + TILE_SIZE / 2);
+    const ease = bounce ? 'Bounce.easeOut' : 'Cubic.easeIn';
 
     return new Promise((resolve) => {
       const targets: Phaser.GameObjects.GameObject[] = [this.rect, this.label];
@@ -272,7 +274,7 @@ export class Tile {
           y: Math.round(targetY + 10),
           duration,
           delay,
-          ease: 'Cubic.easeIn',
+          ease,
         });
       }
       if (this.statusLabel) {
@@ -282,7 +284,7 @@ export class Tile {
           y: Math.round(targetY + 10),
           duration,
           delay,
-          ease: 'Cubic.easeIn',
+          ease,
         });
       }
 
@@ -292,14 +294,15 @@ export class Tile {
         y: targetY,
         duration,
         delay,
-        ease: 'Cubic.easeIn',
+        ease,
         onComplete: () => resolve(),
       });
     });
   }
 
   /**
-   * Animate clearing: scale down + fade out, then destroy.
+   * Animate clearing: pop up briefly, then shrink + fade out, then destroy.
+   * The pop gives match clears a satisfying punch.
    */
   animateClear(duration: number): Promise<void> {
     if (this.destroyed) return Promise.resolve();
@@ -310,16 +313,27 @@ export class Tile {
       if (this.statusDot) targets.push(this.statusDot);
       if (this.statusLabel) targets.push(this.statusLabel);
 
+      // Phase 1: quick pop-up scale
       this.scene.tweens.add({
         targets,
-        alpha: 0,
-        scaleX: 0.3,
-        scaleY: 0.3,
-        duration,
-        ease: 'Power2',
+        scaleX: 1.3,
+        scaleY: 1.3,
+        duration: Math.round(duration * 0.3),
+        ease: 'Quad.easeOut',
         onComplete: () => {
-          this.destroy();
-          resolve();
+          // Phase 2: shrink + fade
+          this.scene.tweens.add({
+            targets,
+            alpha: 0,
+            scaleX: 0,
+            scaleY: 0,
+            duration: Math.round(duration * 0.7),
+            ease: 'Power2',
+            onComplete: () => {
+              this.destroy();
+              resolve();
+            },
+          });
         },
       });
     });

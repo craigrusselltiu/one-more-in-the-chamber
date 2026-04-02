@@ -65,6 +65,7 @@ export const GameEvent = {
   FLASH_LINE: 'vfx:flash-line',
   FLASH_LINE_TO_ENEMY: 'vfx:flash-line-to-enemy',
   SCREEN_SHAKE: 'vfx:screen-shake',
+  TILE_PARTICLES: 'vfx:tile-particles',
 
   // Board input -> CombatManager
   SWAP_REQUESTED: 'board:swap-requested',

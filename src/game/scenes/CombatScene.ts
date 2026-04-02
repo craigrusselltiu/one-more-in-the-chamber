@@ -28,6 +28,7 @@ export class CombatScene extends Phaser.Scene {
   private boundOnFlashLine: (...args: unknown[]) => void;
   private boundOnFlashLineToEnemy: (...args: unknown[]) => void;
   private boundOnScreenShake: (...args: unknown[]) => void;
+  private boundOnTileParticles: (...args: unknown[]) => void;
 
   constructor() {
     super({ key: 'CombatScene' });
@@ -35,6 +36,7 @@ export class CombatScene extends Phaser.Scene {
     this.boundOnFlashLine = this.onFlashLine.bind(this);
     this.boundOnFlashLineToEnemy = this.onFlashLineToEnemy.bind(this);
     this.boundOnScreenShake = this.onScreenShake.bind(this);
+    this.boundOnTileParticles = this.onTileParticles.bind(this);
   }
 
   create(data?: { config?: CombatConfig }): void {
@@ -67,6 +69,7 @@ export class CombatScene extends Phaser.Scene {
     EventBus.on(GameEvent.FLASH_LINE, this.boundOnFlashLine);
     EventBus.on(GameEvent.FLASH_LINE_TO_ENEMY, this.boundOnFlashLineToEnemy);
     EventBus.on(GameEvent.SCREEN_SHAKE, this.boundOnScreenShake);
+    EventBus.on(GameEvent.TILE_PARTICLES, this.boundOnTileParticles);
 
     // Disable input during intro, then start combat
     this.board.setInputEnabled(false);
@@ -145,11 +148,48 @@ export class CombatScene extends Phaser.Scene {
     });
   }
 
+  /**
+   * Spawn a small burst of colored particles at the given world position.
+   * Uses simple rectangles as particles for pixel-art consistency.
+   */
+  private onTileParticles(...args: unknown[]): void {
+    const x = args[0] as number;
+    const y = args[1] as number;
+    const colorHex = args[2] as string;
+    const color = parseInt(colorHex.replace('#', ''), 16);
+
+    // Create 4-6 tiny rectangles that fly outward and fade
+    const count = 4 + Math.floor(Math.random() * 3);
+    for (let i = 0; i < count; i++) {
+      const size = Math.random() < 0.5 ? 2 : 1;
+      const particle = this.add
+        .rectangle(Math.round(x), Math.round(y), size, size, color, 1)
+        .setDepth(5);
+
+      // Random direction + distance
+      const angle = (Math.PI * 2 * i) / count + (Math.random() - 0.5) * 0.8;
+      const dist = 8 + Math.random() * 10;
+      const targetX = Math.round(x + Math.cos(angle) * dist);
+      const targetY = Math.round(y + Math.sin(angle) * dist);
+
+      this.tweens.add({
+        targets: particle,
+        x: targetX,
+        y: targetY,
+        alpha: 0,
+        duration: 200 + Math.random() * 150,
+        ease: 'Quad.easeOut',
+        onComplete: () => particle.destroy(),
+      });
+    }
+  }
+
   shutdown(): void {
     EventBus.off(GameEvent.COMBAT_END, this.boundOnCombatEnd);
     EventBus.off(GameEvent.FLASH_LINE, this.boundOnFlashLine);
     EventBus.off(GameEvent.FLASH_LINE_TO_ENEMY, this.boundOnFlashLineToEnemy);
     EventBus.off(GameEvent.SCREEN_SHAKE, this.boundOnScreenShake);
+    EventBus.off(GameEvent.TILE_PARTICLES, this.boundOnTileParticles);
     this.screenShake?.destroy();
     this.combatManager?.destroy();
     this.board?.destroy();
