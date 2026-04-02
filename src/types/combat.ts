@@ -20,6 +20,8 @@ export interface CombatState {
   deadeyeShotsRemaining: number;
   /** Turn limit for timed encounters (e.g. Mine Cart). 0 = no limit. */
   turnLimit: number;
+  /** Tile types currently suppressed by warrants (produce no output when matched). */
+  suppressedTileTypes: TileType[];
 }
 
 export type CombatPhase =

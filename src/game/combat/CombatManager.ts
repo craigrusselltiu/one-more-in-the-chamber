@@ -278,6 +278,12 @@ export class CombatManager {
     this.nextMatchMultiplier = 1.0;
     this.swapsUsedThisTurn = 0;
 
+    // Tick suppress (warrant) durations -- expires at start of player turn
+    const expired = this.hazardManager.tickSuppressions();
+    if (expired.length > 0) {
+      console.log(`Warrants expired: ${expired.join(', ')}`);
+    }
+
     // Per-turn: +1 ability charge
     this.player.abilityCharge++;
 
@@ -633,6 +639,14 @@ export class CombatManager {
       const upgradeLevel = this.player.getUpgradeLevel(match.tileType);
       let output = this.resolver.resolve(match, upgradeLevel);
 
+      // Warrant (suppress): suppressed tile types produce no resource output
+      if (this.hazardManager.isSuppressed(match.tileType)) {
+        output.damage = 0;
+        output.block = 0;
+        output.gold = 0;
+        output.healing = 0;
+      }
+
       // Fool's gold: reduce gold proportionally to how many tiles were fake
       if (match.foolsGoldCount && match.foolsGoldCount > 0) {
         const realTiles = match.tiles.length - match.foolsGoldCount;
@@ -936,7 +950,19 @@ export class CombatManager {
           this.trySummonEnemy(enemy);
           break;
         case 'board-manipulation':
-          executeBoardManipulation(enemy, enemy.state.intent, this.hazardManager);
+          if (enemy.state.intent.description.startsWith('SUPPRESS')) {
+            // Suppress (warrant): handled here because it needs player's active tile types
+            const count = enemy.state.intent.value ?? 1;
+            const suppressed = this.hazardManager.suppressRandomTypes(
+              count,
+              this.player.activeTileTypes,
+            );
+            if (suppressed.length > 0) {
+              console.log(`${enemy.getDefinition().name} suppresses: ${suppressed.join(', ')}`);
+            }
+          } else {
+            executeBoardManipulation(enemy, enemy.state.intent, this.hazardManager);
+          }
           break;
         case 'ability':
           break;
@@ -1091,6 +1117,7 @@ export class CombatManager {
       isDeadeyeActive: this.isDeadeyeActive,
       deadeyeShotsRemaining: this.deadeyeShotsRemaining,
       turnLimit: this.turnLimit,
+      suppressedTileTypes: this.hazardManager.getSuppressedTypes(),
     };
   }
 
