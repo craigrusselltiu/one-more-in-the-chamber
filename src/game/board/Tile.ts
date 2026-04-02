@@ -1,7 +1,7 @@
 import Phaser from 'phaser';
 import type { TileType } from '../../types/game';
 import type { TileHazardState } from '../../types/tiles';
-import { TILE_FRAMES } from '../../data/tiles';
+import { TILE_FRAMES } from '../../data/spriteConfig';
 import { useSettingsStore, getSpeedMultiplier } from '../../store/settingsStore';
 
 export const TILE_SIZE = 28;

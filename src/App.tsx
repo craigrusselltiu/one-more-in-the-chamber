@@ -23,6 +23,7 @@ import { useGameScale, UI_WIDTH, UI_HEIGHT } from './ui/hooks/useGameScale';
 import type { CombatConfig, CombatResult } from './game/combat/CombatManager';
 import type { CombatSnapshot } from './types/combatSnapshot';
 import { saveCombatSnapshot, clearCombatSnapshot } from './services/localSave';
+import { initSfx } from './services/sfx';
 import { consumePendingSnapshot } from './services/combatResume';
 import { loadPersistedRun, startRunPersistence } from './services/runPersistence';
 import {
@@ -116,6 +117,7 @@ export default function App() {
     };
 
     gameRef.current = new Phaser.Game(config);
+    initSfx(gameRef.current);
 
     const handleScreenChange = (...args: unknown[]) => {
       setScreen(args[0] as Screen);

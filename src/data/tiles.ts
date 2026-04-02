@@ -1,28 +1,8 @@
 import type { TileType } from '../types/game';
 import type { TileDefinition } from '../types/tiles';
 
-/**
- * Sprite sheet frame indices for each tile type (items_sheet.png, 16x16 grid).
- * Sheet is 36 columns x 35 rows = 1260 frames.
- * Use tools/sprite-picker.html to browse and identify frames.
- */
-export const TILE_FRAMES: Record<TileType, number> = {
-  bullet: 1244,
-  iron: 565,
-  gold: 1158,
-  ricochet: 907,
-  dynamite: 722,
-  stampede: 268,
-  whiskey: 499,
-  buckshot: 908,
-  ace: 792,
-  venom: 762,
-  ember: 720,
-  horseshoe: 689,
-  fifty_cal: 906,
-  showdown: 599,
-  tumbleweed: 996,
-};
+/** Re-export TILE_FRAMES from the unified sprite config for backward compatibility. */
+export { TILE_FRAMES } from './spriteConfig';
 
 /** Placeholder tile colors from SPEC (distinguishable at a glance). */
 export const TILE_COLORS: Record<TileType, string> = {

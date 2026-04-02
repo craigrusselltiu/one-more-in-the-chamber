@@ -20,6 +20,7 @@ import {
   ELITE_MODIFIERS,
 } from './EliteModifiers';
 import type { EliteModifierId, EliteModifier } from './EliteModifiers';
+import { playSwapFail, playMatch } from '../../services/sfx';
 
 export interface CombatConfig {
   enemies: EnemyDefinition[];
@@ -532,6 +533,7 @@ export class CombatManager {
     let cascadeSteps = 0;
     const onCascadeStep = (stepMatches: MatchResult[]) => {
       cascadeSteps++;
+      playMatch(cascadeSteps);
       for (const match of stepMatches) {
         this.hazardManager.resolveAdjacentHazards(match.tiles);
       }
@@ -553,6 +555,7 @@ export class CombatManager {
 
     if (!result.valid) {
       // Invalid swap -- refund
+      playSwapFail();
       this.swapsRemaining++;
       this.swapsUsedThisTurn--;
       EventBus.emit(GameEvent.SWAPS_CHANGE, this.swapsRemaining, this.swapsPerTurn);
