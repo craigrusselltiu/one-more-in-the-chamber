@@ -7,6 +7,15 @@ import { ConsumableSlots } from './ConsumableSlots';
 import type { Act } from '../../types/game';
 import type { Screen } from '../../App';
 
+/** Format seconds into MM:SS or H:MM:SS. */
+function formatTimer(totalSeconds: number): string {
+  const h = Math.floor(totalSeconds / 3600);
+  const m = Math.floor((totalSeconds % 3600) / 60);
+  const s = totalSeconds % 60;
+  if (h > 0) return `${h}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+  return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+}
+
 /**
  * TopBar: act label + consumable slots (left), HP + gold (right), gear (far right).
  * Shared between map and combat screens for visual consistency.
@@ -18,10 +27,22 @@ export const TopBar = memo(function TopBar({ showMapButton, showConsumables }: {
   const health = run?.health ?? 100;
   const maxHealth = run?.maxHealth ?? 100;
   const gold = run?.gold ?? 0;
+  const runStartedAt = run?.runStartedAt ?? 0;
   const [showMap, setShowMap] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
+  const [elapsed, setElapsed] = useState(0);
   const menuRef = useRef<HTMLDivElement>(null);
   const endRun = useRunStore((s) => s.endRun);
+
+  // Update elapsed timer every second
+  useEffect(() => {
+    if (!runStartedAt) return;
+    setElapsed(Math.floor((Date.now() - runStartedAt) / 1000));
+    const id = setInterval(() => {
+      setElapsed(Math.floor((Date.now() - runStartedAt) / 1000));
+    }, 1000);
+    return () => clearInterval(id);
+  }, [runStartedAt]);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -51,6 +72,7 @@ export const TopBar = memo(function TopBar({ showMapButton, showConsumables }: {
           {showConsumables && <ConsumableSlots />}
         </div>
         <div className="flex items-center gap-3">
+          <span className="text-stone-500">{formatTimer(elapsed)}</span>
           <span className="text-red-400">HP {health}/{maxHealth}</span>
           <span className="text-yellow-300">{gold} gold</span>
           {showMapButton && (

@@ -17,6 +17,7 @@ export interface RunState {
   consumables: ConsumableInstance[];
   abilityCharge: number;
   totalDamageDealt: number;
+  runStartedAt: number;
   mapState: MapState | null;
   status: 'active' | 'completed' | 'abandoned';
 }
