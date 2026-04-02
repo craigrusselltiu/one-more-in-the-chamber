@@ -15,6 +15,7 @@ interface RunStore {
   addTileType: (type: TileType) => void;
   swapTileType: (oldType: TileType, newType: TileType) => void;
   upgradeTile: (type: TileType) => void;
+  addDamageDealt: (amount: number) => void;
   setCurrentNode: (nodeId: string) => void;
   markNodeVisited: (nodeId: string) => void;
   advanceAct: () => void;
@@ -44,6 +45,7 @@ export const useRunStore = create<RunStore>((set) => ({
         traitCounts: {},
         consumables: [],
         abilityCharge: 0,
+        totalDamageDealt: 0,
         mapState,
         status: 'active',
       },
@@ -125,6 +127,12 @@ export const useRunStore = create<RunStore>((set) => ({
       const tileUpgrades = { ...state.run.tileUpgrades };
       tileUpgrades[type] = (tileUpgrades[type] ?? 0) + 1;
       return { run: { ...state.run, tileUpgrades } };
+    }),
+
+  addDamageDealt: (amount) =>
+    set((state) => {
+      if (!state.run || amount <= 0) return state;
+      return { run: { ...state.run, totalDamageDealt: state.run.totalDamageDealt + amount } };
     }),
 
   setCurrentNode: (nodeId) =>

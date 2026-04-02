@@ -46,6 +46,7 @@ export interface CombatResult {
   playerGold: number;
   goldEarned: number;
   abilityCharge: number;
+  damageDealt: number;
 }
 
 /**
@@ -97,6 +98,8 @@ export class CombatManager {
   private currentSwapIsLasso = false;
   /** Whether a ricochet triggered a random tile removal that needs gravity+cascade resolution. */
   private ricochetTriggeredThisResolution = false;
+  /** Total damage dealt to enemies this fight (for scoring). */
+  private damageDealtThisFight = 0;
 
   constructor(board: Board, config: CombatConfig) {
     this.board = board;
@@ -597,7 +600,7 @@ export class CombatManager {
       this.player.heal(15);
     } else if (roll < 0.5) {
       const target = this.getTargetedAliveEnemy();
-      if (target) target.takeDamage(15);
+      if (target) this.damageDealtThisFight += target.takeDamage(15);
     } else if (roll < 0.75) {
       this.player.addGold(10);
     } else {
@@ -774,11 +777,11 @@ export class CombatManager {
     if (output.damage > 0) {
       if (output.isAoE) {
         for (const enemy of this.aliveEnemies()) {
-          enemy.takeDamage(output.damage);
+          this.damageDealtThisFight += enemy.takeDamage(output.damage);
         }
       } else {
         const target = this.getTargetedAliveEnemy();
-        if (target) target.takeDamage(output.damage);
+        if (target) this.damageDealtThisFight += target.takeDamage(output.damage);
       }
       this.emitEnemyHpChanges();
     }
@@ -837,8 +840,11 @@ export class CombatManager {
   private endTurn(): void {
     // Trait turn-end effects (Prospector gold damage)
     const targetEnemy = this.getTargetedAliveEnemy();
+    const hpBefore = targetEnemy ? targetEnemy.state.health : 0;
     const bonusDamage = this.traits.onTurnEnd(this.player, targetEnemy);
     if (bonusDamage > 0) {
+      const hpAfter = targetEnemy ? targetEnemy.state.health : 0;
+      this.damageDealtThisFight += Math.max(0, hpBefore - hpAfter);
       this.emitEnemyHpChanges();
       EventBus.emit(GameEvent.GOLD_CHANGE, this.player.gold);
     }
@@ -875,6 +881,7 @@ export class CombatManager {
     for (const enemy of this.aliveEnemies()) {
       const venomDamage = enemy.tickVenom(venomUpgrade);
       if (venomDamage > 0) {
+        this.damageDealtThisFight += venomDamage;
         EventBus.emit(GameEvent.ENEMY_HP_CHANGE, { ...enemy.state });
       }
     }
@@ -919,7 +926,7 @@ export class CombatManager {
 
             // Thorns reflects damage back to the attacking enemy
             if (thornsDamage > 0) {
-              enemy.takeDamage(thornsDamage);
+              this.damageDealtThisFight += enemy.takeDamage(thornsDamage);
               EventBus.emit(GameEvent.ENEMY_HP_CHANGE, { ...enemy.state });
             }
 
@@ -976,7 +983,9 @@ export class CombatManager {
     const minion = new Enemy(minionDef);
 
     // Coyote Pelt: summoned enemies take 5 damage immediately
+    const hpBeforeSummon = minion.state.health;
     this.artifacts.onEnemySummoned(minion);
+    this.damageDealtThisFight += Math.max(0, hpBeforeSummon - minion.state.health);
 
     this.enemies.push(minion);
     this.emitFullState();
@@ -1006,6 +1015,7 @@ export class CombatManager {
       playerGold: this.player.gold,
       goldEarned: this.player.goldThisFight,
       abilityCharge: this.player.abilityCharge,
+      damageDealt: this.damageDealtThisFight,
     };
 
     EventBus.emit(GameEvent.COMBAT_END, result);
