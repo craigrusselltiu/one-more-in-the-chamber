@@ -5,6 +5,27 @@ import { useMetaStore } from '../../store/metaStore';
 import type { Screen } from '../../App';
 
 /**
+ * Compute the time multiplier for scoring.
+ * <=45 min: 1.5x, linear to 1.0x at 90 min, no penalty past 90 min.
+ */
+function computeTimeMultiplier(durationSeconds: number): number {
+  const MIN_45 = 45 * 60;
+  const MIN_90 = 90 * 60;
+  if (durationSeconds <= MIN_45) return 1.5;
+  if (durationSeconds >= MIN_90) return 1.0;
+  return 1.5 - 0.5 * (durationSeconds - MIN_45) / (MIN_90 - MIN_45);
+}
+
+/** Format seconds into MM:SS or H:MM:SS. */
+function formatDuration(totalSeconds: number): string {
+  const h = Math.floor(totalSeconds / 3600);
+  const m = Math.floor((totalSeconds % 3600) / 60);
+  const s = totalSeconds % 60;
+  if (h > 0) return `${h}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+  return `${m}:${String(s).padStart(2, '0')}`;
+}
+
+/**
  * ScoreScreen: end-of-run scoring breakdown.
  * Formula: (Base + Bonus) x Ascension x Time
  */
@@ -42,16 +63,18 @@ export const ScoreScreen = memo(function ScoreScreen() {
 
     // Multipliers
     const ascensionMultiplier = 1.0 + 0.2 * run.ascensionLevel;
-    const timeBonus = 1.0; // No timer tracking yet
+    const runDurationSeconds = Math.floor((Date.now() - run.runStartedAt) / 1000);
+    const timeMultiplier = computeTimeMultiplier(runDurationSeconds);
 
-    const finalScore = Math.round((baseScore + bonusPoints) * ascensionMultiplier * timeBonus);
+    const finalScore = Math.round((baseScore + bonusPoints) * ascensionMultiplier * timeMultiplier);
 
     return {
       baseScore,
       bonusPoints,
       ascensionMultiplier,
-      timeBonus,
+      timeMultiplier,
       finalScore,
+      runDurationSeconds,
       nodesVisited,
       bossNodes,
       combatNodes,
@@ -122,6 +145,12 @@ export const ScoreScreen = memo(function ScoreScreen() {
               isMultiplier
             />
           )}
+          <ScoreLine
+            label="Time"
+            value={`x${score.timeMultiplier.toFixed(2)}`}
+            detail={formatDuration(score.runDurationSeconds)}
+            isMultiplier
+          />
         </div>
       </div>
 

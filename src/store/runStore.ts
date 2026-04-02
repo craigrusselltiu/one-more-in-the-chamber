@@ -46,6 +46,7 @@ export const useRunStore = create<RunStore>((set) => ({
         consumables: [],
         abilityCharge: 0,
         totalDamageDealt: 0,
+        runStartedAt: Date.now(),
         mapState,
         status: 'active',
       },
