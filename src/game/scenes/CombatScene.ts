@@ -88,7 +88,9 @@ export class CombatScene extends Phaser.Scene {
 
     const boardSize = 8 * TILE_SIZE;
     const boardX = Math.round((GAME_WIDTH - boardSize) / 2);
-    const boardY = Math.round((GAME_HEIGHT - boardSize) / 2);
+    // Offset board below the top bar area (~10px in Phaser coords)
+    const topOffset = 10;
+    const boardY = Math.round(topOffset + (GAME_HEIGHT - topOffset - boardSize) / 2);
 
     // Checkered grid background behind the board
     this.drawCheckerboard(boardX, boardY, boardSize);
@@ -112,7 +114,9 @@ export class CombatScene extends Phaser.Scene {
   private restoreFromSnapshot(snapshot: CombatSnapshot): void {
     const boardSize = 8 * TILE_SIZE;
     const boardX = Math.round((GAME_WIDTH - boardSize) / 2);
-    const boardY = Math.round((GAME_HEIGHT - boardSize) / 2);
+    // Offset board below the top bar area (~10px in Phaser coords)
+    const topOffset = 10;
+    const boardY = Math.round(topOffset + (GAME_HEIGHT - topOffset - boardSize) / 2);
 
     this.drawCheckerboard(boardX, boardY, boardSize);
 
