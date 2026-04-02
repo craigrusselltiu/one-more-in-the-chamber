@@ -25,6 +25,11 @@ export class TraitSystem {
     this.counts = { ...traitCounts };
   }
 
+  /** Return the raw trait counts for snapshot serialization. */
+  getCounts(): Partial<Record<TraitId, number>> {
+    return { ...this.counts };
+  }
+
   /** Check if a trait has reached a given breakpoint threshold. */
   isActive(trait: TraitId, threshold: number): boolean {
     return (this.counts[trait] ?? 0) >= threshold;

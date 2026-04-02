@@ -13,6 +13,7 @@ import type { Enemy } from './Enemy';
  */
 export class ArtifactSystem {
   private artifactIds: Set<string>;
+  private artifactInstances: ArtifactInstance[];
 
   /** Horseshoe Charm: first match of each fight gets 2x resources. */
   private firstMatchThisFight = true;
@@ -25,10 +26,16 @@ export class ArtifactSystem {
 
   constructor(artifacts: ArtifactInstance[]) {
     this.artifactIds = new Set(artifacts.map((a) => a.id));
+    this.artifactInstances = artifacts;
   }
 
   has(artifactId: string): boolean {
     return this.artifactIds.has(artifactId);
+  }
+
+  /** Return the full artifact instance list. */
+  getArtifacts(): ArtifactInstance[] {
+    return this.artifactInstances;
   }
 
   // ---------------------------------------------------------------------------

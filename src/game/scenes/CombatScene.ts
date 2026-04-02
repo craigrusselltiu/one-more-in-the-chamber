@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 import { Board } from '../board/Board';
 import { CombatManager } from '../combat/CombatManager';
 import type { CombatConfig, CombatResult } from '../combat/CombatManager';
+import type { CombatSnapshot } from '../../types/combatSnapshot';
 import { EventBus, GameEvent } from '../EventBus';
 import { GAME_WIDTH, GAME_HEIGHT } from '../GameConfig';
 import { TILE_SIZE } from '../board/Tile';
@@ -19,6 +20,10 @@ import type { TileType } from '../../types/game';
  *
  * Started on demand when navigating to a combat node.
  * Stopped when combat ends and the player returns to the map.
+ *
+ * Supports two modes:
+ *   - Fresh start: `data.config` provided, board and combat init from scratch.
+ *   - Restore: `data.snapshot` provided, combat state rebuilt from mid-combat save.
  */
 export class CombatScene extends Phaser.Scene {
   board!: Board;
@@ -39,13 +44,28 @@ export class CombatScene extends Phaser.Scene {
     this.boundOnTileParticles = this.onTileParticles.bind(this);
   }
 
-  create(data?: { config?: CombatConfig }): void {
+  create(data?: { config?: CombatConfig; snapshot?: CombatSnapshot }): void {
     this.cameras.main.setRoundPixels(true);
     this.cameras.main.setBackgroundColor('#2a1a0e');
     this.screenShake = new ScreenShake(this);
 
-    // Build combat config from passed data or defaults
-    const config: CombatConfig = data?.config ?? {
+    // Listen for events
+    EventBus.on(GameEvent.COMBAT_END, this.boundOnCombatEnd);
+    EventBus.on(GameEvent.FLASH_LINE, this.boundOnFlashLine);
+    EventBus.on(GameEvent.FLASH_LINE_TO_ENEMY, this.boundOnFlashLineToEnemy);
+    EventBus.on(GameEvent.SCREEN_SHAKE, this.boundOnScreenShake);
+    EventBus.on(GameEvent.TILE_PARTICLES, this.boundOnTileParticles);
+
+    if (data?.snapshot) {
+      this.restoreFromSnapshot(data.snapshot);
+    } else {
+      this.startFresh(data?.config);
+    }
+  }
+
+  /** Normal combat start: init board, run intro animation, start turn 1. */
+  private startFresh(config?: CombatConfig): void {
+    const combatConfig: CombatConfig = config ?? {
       enemies: [ACT1_ENEMIES.coyote],
       playerHealth: 100,
       playerMaxHealth: 100,
@@ -60,16 +80,9 @@ export class CombatScene extends Phaser.Scene {
     // Board: 8x8 of 28x28 tiles = 224x224, centered
     const boardX = Math.round((GAME_WIDTH - 224) / 2);
     const boardY = Math.round((GAME_HEIGHT - 224) / 2);
-    this.board = new Board(this, boardX, boardY, config.activeTileTypes);
+    this.board = new Board(this, boardX, boardY, combatConfig.activeTileTypes);
 
-    this.combatManager = new CombatManager(this.board, config);
-
-    // Listen for events
-    EventBus.on(GameEvent.COMBAT_END, this.boundOnCombatEnd);
-    EventBus.on(GameEvent.FLASH_LINE, this.boundOnFlashLine);
-    EventBus.on(GameEvent.FLASH_LINE_TO_ENEMY, this.boundOnFlashLineToEnemy);
-    EventBus.on(GameEvent.SCREEN_SHAKE, this.boundOnScreenShake);
-    EventBus.on(GameEvent.TILE_PARTICLES, this.boundOnTileParticles);
+    this.combatManager = new CombatManager(this.board, combatConfig);
 
     // Disable input during intro, then start combat
     this.board.setInputEnabled(false);
@@ -77,6 +90,40 @@ export class CombatScene extends Phaser.Scene {
       this.board.setInputEnabled(true);
       this.combatManager.startTurn();
     });
+  }
+
+  /**
+   * Restore combat from a mid-combat save snapshot.
+   * Rebuilds board and combat manager from serialized state.
+   */
+  private restoreFromSnapshot(snapshot: CombatSnapshot): void {
+    // Create board with the snapshot's tile types (will be overwritten by restore)
+    const boardX = Math.round((GAME_WIDTH - 224) / 2);
+    const boardY = Math.round((GAME_HEIGHT - 224) / 2);
+    this.board = new Board(this, boardX, boardY, snapshot.board.activeTileTypes);
+
+    // Create combat manager with a minimal config (state will be overwritten)
+    const config: CombatConfig = {
+      enemies: snapshot.enemies.map((e) => e.definition),
+      playerHealth: snapshot.player.health,
+      playerMaxHealth: snapshot.player.maxHealth,
+      playerGold: snapshot.player.gold,
+      activeTileTypes: snapshot.player.activeTileTypes,
+      tileUpgrades: snapshot.player.tileUpgrades,
+      abilityCharge: snapshot.player.abilityCharge,
+      artifacts: snapshot.artifacts,
+      traitCounts: snapshot.traitCounts,
+      isBoss: snapshot.isBoss,
+      turnLimit: snapshot.turnLimit,
+      timedFailureDamage: snapshot.timedFailureDamage,
+    };
+    this.combatManager = new CombatManager(this.board, config);
+
+    // Restore the full combat state from snapshot
+    this.combatManager.restoreFromSnapshot(snapshot);
+
+    // Board is ready immediately (no intro animation on restore)
+    this.board.setInputEnabled(true);
   }
 
   private onCombatEnd(...args: unknown[]): void {

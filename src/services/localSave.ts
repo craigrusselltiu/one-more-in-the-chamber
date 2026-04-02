@@ -4,10 +4,11 @@
  */
 
 const DB_NAME = 'one-more-in-the-chamber';
-const DB_VERSION = 2;
+const DB_VERSION = 3;
 const STORE_RUN = 'runs';
 const STORE_META = 'meta';
 const STORE_SCORES = 'scores';
+const STORE_COMBAT = 'combat_snapshots';
 
 function openDB(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
@@ -22,6 +23,9 @@ function openDB(): Promise<IDBDatabase> {
       }
       if (!db.objectStoreNames.contains(STORE_SCORES)) {
         db.createObjectStore(STORE_SCORES, { keyPath: 'id' });
+      }
+      if (!db.objectStoreNames.contains(STORE_COMBAT)) {
+        db.createObjectStore(STORE_COMBAT, { keyPath: 'runId' });
       }
     };
     request.onsuccess = () => resolve(request.result);
@@ -125,5 +129,37 @@ export async function loadAllScores(): Promise<unknown[]> {
   return new Promise((resolve, reject) => {
     request.onsuccess = () => resolve(request.result ?? []);
     request.onerror = () => reject(request.error);
+  });
+}
+
+// --- Combat snapshots (mid-combat saves) ---
+
+export async function saveCombatSnapshot(data: unknown): Promise<void> {
+  const db = await openDB();
+  const tx = db.transaction(STORE_COMBAT, 'readwrite');
+  tx.objectStore(STORE_COMBAT).put(data);
+  return new Promise((resolve, reject) => {
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error);
+  });
+}
+
+export async function loadCombatSnapshot(runId: string): Promise<unknown> {
+  const db = await openDB();
+  const tx = db.transaction(STORE_COMBAT, 'readonly');
+  const request = tx.objectStore(STORE_COMBAT).get(runId);
+  return new Promise((resolve, reject) => {
+    request.onsuccess = () => resolve(request.result ?? null);
+    request.onerror = () => reject(request.error);
+  });
+}
+
+export async function clearCombatSnapshot(runId: string): Promise<void> {
+  const db = await openDB();
+  const tx = db.transaction(STORE_COMBAT, 'readwrite');
+  tx.objectStore(STORE_COMBAT).delete(runId);
+  return new Promise((resolve, reject) => {
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error);
   });
 }
