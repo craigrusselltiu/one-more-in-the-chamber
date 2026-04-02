@@ -51,6 +51,8 @@ export class BossController {
         return this.checkDustyDanTransition(boss, hazardManager, board);
       case 'copperhead_cassidy':
         return this.checkCopperheadTransition(boss, hazardManager);
+      case 'iron_eye_isabella':
+        return this.checkIsabellaTransition(boss);
       default:
         return false;
     }
@@ -106,6 +108,24 @@ export class BossController {
     return false;
   }
 
+  private checkIsabellaTransition(boss: Enemy): boolean {
+    const hpRatio = boss.state.health / boss.state.maxHealth;
+
+    // Phase 2 at 65%
+    if (hpRatio <= 0.65 && this.phase < 2) {
+      this.phase = 2;
+      return true;
+    }
+
+    // Phase 3 at 30%
+    if (hpRatio <= 0.3 && this.phase < 3) {
+      this.phase = 3;
+      return true;
+    }
+
+    return false;
+  }
+
   /**
    * Choose intent for the boss based on current phase.
    * @param hazardManager - needed by Copperhead to count poison tiles for bonus damage.
@@ -120,6 +140,8 @@ export class BossController {
         return this.chooseDustyDanIntent(boss, aliveEnemyCount);
       case 'copperhead_cassidy':
         return this.chooseCopperheadIntent(boss, hazardManager);
+      case 'iron_eye_isabella':
+        return this.chooseIsabellaIntent(boss);
       default:
         return boss.chooseIntent();
     }
@@ -128,14 +150,18 @@ export class BossController {
   /**
    * Execute boss-specific board manipulation after intent execution.
    * Called during the enemy turn for passive per-turn effects.
+   * @param boss - optional, needed by Isabella for passive block.
    */
-  executePerTurnEffects(hazardManager: BoardHazardManager): void {
+  executePerTurnEffects(hazardManager: BoardHazardManager, boss?: Enemy): void {
     switch (this.bossType) {
       case 'dusty_dan':
         this.dustyDanPerTurn(hazardManager);
         break;
       case 'copperhead_cassidy':
         this.copperheadPerTurn(hazardManager);
+        break;
+      case 'iron_eye_isabella':
+        this.isabellaPerTurn(hazardManager, boss);
         break;
     }
   }
@@ -287,6 +313,45 @@ export class BossController {
     ];
 
     return weightedRandom(options);
+  }
+
+  // ---------------------------------------------------------------------------
+  // Iron Eye Isabella phase-specific AI
+  // ---------------------------------------------------------------------------
+
+  private chooseIsabellaIntent(_boss: Enemy): EnemyIntent {
+    switch (this.phase) {
+      case 1:
+        return this.isabellaPhase1();
+      default:
+        // Phases 2-3 not yet implemented; fall back to Phase 1
+        return this.isabellaPhase1();
+    }
+  }
+
+  /**
+   * Phase 1 (100-65%): 20-25 damage strikes. Row locks + 10 passive block
+   * are handled via per-turn effects, not intents.
+   */
+  private isabellaPhase1(): EnemyIntent {
+    const damage = 20 + Math.floor(Math.random() * 6); // 20-25
+    return { type: 'attack', value: damage, description: `ATK ${damage}` };
+  }
+
+  private isabellaPerTurn(hazardManager: BoardHazardManager, boss?: Enemy): void {
+    switch (this.phase) {
+      case 1: {
+        // Lock a random row each turn
+        const row = Math.floor(Math.random() * 8);
+        hazardManager.lockRow(row);
+        // 10 passive block per turn
+        boss?.addBlock(10);
+        break;
+      }
+      default:
+        // Phases 2-3 not yet implemented
+        break;
+    }
   }
 
   /**
