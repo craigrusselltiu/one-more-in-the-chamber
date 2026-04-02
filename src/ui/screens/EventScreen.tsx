@@ -3,6 +3,7 @@ import { EventBus, GameEvent } from '../../game/EventBus';
 import { useRunStore } from '../../store/runStore';
 import { EVENTS, type EventDefinition, type EventChoice } from '../../data/events';
 import { ARTIFACTS, type ArtifactDefinition } from '../../data/artifacts';
+import { TopBar } from '../hud/TopBar';
 import type { TraitId } from '../../types/game';
 import type { Screen } from '../../App';
 
@@ -287,7 +288,9 @@ export const EventScreen = memo(function EventScreen() {
   const showContinue = choiceMade && (!rewardArtifact || artifactHandled);
 
   return (
-    <div className="flex flex-col items-center justify-center h-full bg-[#1a1a2e]/95">
+    <div className="flex flex-col h-full bg-[#1a1a2e]/95">
+      <TopBar />
+      <div className="flex-1 flex flex-col items-center justify-center">
       <div className="max-w-md w-full px-4">
         {/* Event title */}
         <h2 className="text-xl text-amber-400 font-mono mb-3 text-center">{event.title}</h2>
@@ -369,6 +372,7 @@ export const EventScreen = memo(function EventScreen() {
             </button>
           </div>
         )}
+      </div>
       </div>
     </div>
   );

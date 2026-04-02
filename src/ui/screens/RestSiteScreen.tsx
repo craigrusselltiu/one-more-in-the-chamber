@@ -2,6 +2,7 @@ import { memo, useState } from 'react';
 import { EventBus, GameEvent } from '../../game/EventBus';
 import { useRunStore } from '../../store/runStore';
 import { TILE_DEFINITIONS } from '../../data/tiles';
+import { TopBar } from '../hud/TopBar';
 import type { TileType } from '../../types/game';
 import type { Screen } from '../../App';
 
@@ -42,7 +43,7 @@ export const RestSiteScreen = memo(function RestSiteScreen() {
   // Rested
   if (choice === 'rest') {
     return (
-      <div className="flex flex-col items-center justify-center h-full bg-[#1a1a2e]/95">
+      <div className="flex flex-col h-full bg-[#1a1a2e]/95"><TopBar /><div className="flex-1 flex flex-col items-center justify-center">
         <div className="text-3xl mb-4">{'\u2618'}</div>
         <h2 className="text-xl text-amber-400 font-mono mb-2">Rested</h2>
         <p className="text-stone-300 font-mono text-sm mb-4">
@@ -57,7 +58,7 @@ export const RestSiteScreen = memo(function RestSiteScreen() {
         >
           Continue
         </button>
-      </div>
+      </div></div>
     );
   }
 
@@ -65,7 +66,7 @@ export const RestSiteScreen = memo(function RestSiteScreen() {
   if (choice === 'upgraded') {
     const tileDef = selectedTile ? TILE_DEFINITIONS[selectedTile] : null;
     return (
-      <div className="flex flex-col items-center justify-center h-full bg-[#1a1a2e]/95">
+      <div className="flex flex-col h-full bg-[#1a1a2e]/95"><TopBar /><div className="flex-1 flex flex-col items-center justify-center">
         <div className="text-3xl mb-4">{'\u2B06'}</div>
         <h2 className="text-xl text-amber-400 font-mono mb-2">Upgraded</h2>
         <p className="text-stone-300 font-mono text-sm mb-4">
@@ -77,14 +78,14 @@ export const RestSiteScreen = memo(function RestSiteScreen() {
         >
           Continue
         </button>
-      </div>
+      </div></div>
     );
   }
 
   // Upgrade tile selection
   if (choice === 'upgrade') {
     return (
-      <div className="flex flex-col items-center justify-center h-full bg-[#1a1a2e]/95">
+      <div className="flex flex-col h-full bg-[#1a1a2e]/95"><TopBar /><div className="flex-1 flex flex-col items-center justify-center">
         <h2 className="text-xl text-amber-400 font-mono mb-2">Upgrade a Tile</h2>
         <p className="text-stone-400 font-mono text-xs mb-4">
           Permanent +1 tier for the rest of the run
@@ -141,13 +142,13 @@ export const RestSiteScreen = memo(function RestSiteScreen() {
             Upgrade
           </button>
         </div>
-      </div>
+      </div></div>
     );
   }
 
   // Initial choice
   return (
-    <div className="flex flex-col items-center justify-center h-full bg-[#1a1a2e]/95">
+    <div className="flex flex-col h-full bg-[#1a1a2e]/95"><TopBar /><div className="flex-1 flex flex-col items-center justify-center">
       <div className="text-3xl mb-4">
         {'\u2618'}
       </div>
@@ -187,6 +188,6 @@ export const RestSiteScreen = memo(function RestSiteScreen() {
           </span>
         </button>
       </div>
-    </div>
+    </div></div>
   );
 });
