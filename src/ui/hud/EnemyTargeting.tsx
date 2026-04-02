@@ -93,7 +93,7 @@ const EnemySlot = memo(function EnemySlot({
       {/* Enemy sprite placeholder */}
       <div
         className="border border-stone-600 border-dashed mb-0.5 flex items-center justify-center"
-        style={{ width: 80, height: 60 }}
+        style={{ width: 64, height: 64 }}
       >
         <span className="text-stone-600 capitalize" style={{ fontSize: '8px' }}>
           {enemy.enemyType.slice(0, 4)}

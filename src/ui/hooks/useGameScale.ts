@@ -1,13 +1,11 @@
 import { useState, useEffect } from 'react';
-import { GAME_WIDTH, GAME_HEIGHT } from '../../game/GameConfig';
 
 /**
  * Virtual resolution for the React UI overlay.
- * Exactly 2x Phaser's internal resolution (480x270).
- * This gives finer layout control while scaling to the same screen area.
+ * Fixed at 960x540 regardless of Phaser's internal resolution.
  */
-export const UI_WIDTH = GAME_WIDTH * 2;  // 960
-export const UI_HEIGHT = GAME_HEIGHT * 2; // 540
+export const UI_WIDTH = 960;
+export const UI_HEIGHT = 540;
 
 /**
  * Returns the scale factor and offset so the React overlay covers
