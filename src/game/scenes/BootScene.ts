@@ -14,8 +14,10 @@ import { useSettingsStore } from '../../store/settingsStore';
  */
 export class BootScene extends Phaser.Scene {
   private menuMusic: Phaser.Sound.BaseSound | null = null;
+  private combatMusic: Phaser.Sound.BaseSound | null = null;
   private fadeOutTween: Phaser.Tweens.Tween | null = null;
   private fadeInTween: Phaser.Tweens.Tween | null = null;
+  private combatFadeTween: Phaser.Tweens.Tween | null = null;
 
   constructor() {
     super({ key: 'BootScene' });
@@ -46,9 +48,19 @@ export class BootScene extends Phaser.Scene {
       const screen = args[0] as string;
       if (screen === 'main-menu') {
         document.removeEventListener('pointerdown', startOnGesture);
+        this.stopCombatMusic();
         this.playMenuMusic();
-      } else if (this.menuMusic) {
+      } else if (screen === 'combat') {
         this.fadeOutMenuMusic();
+        this.playCombatMusic();
+      } else {
+        // Non-combat, non-menu screens (map, shop, etc.): stop combat music if playing
+        if (this.combatMusic) {
+          this.stopCombatMusic();
+        }
+        if (this.menuMusic) {
+          this.fadeOutMenuMusic();
+        }
       }
     });
   }
@@ -106,6 +118,51 @@ export class BootScene extends Phaser.Scene {
       onUpdate: () => this.safeSetVolume(music, proxy.vol),
       onComplete: () => {
         this.fadeOutTween = null;
+        try { music.stop(); } catch { /* ignore */ }
+        try { music.destroy(); } catch { /* ignore */ }
+      },
+    });
+  }
+
+  // ---------------------------------------------------------------------------
+  // Combat Music
+  // ---------------------------------------------------------------------------
+
+  private playCombatMusic(): void {
+    if (this.combatMusic) return;
+
+    const music = this.sound.add('combat_theme', { loop: true, volume: 0 });
+    try { music.play(); } catch { /* ignore */ }
+    this.combatMusic = music;
+
+    const proxy = { vol: 0 };
+    this.combatFadeTween = this.tweens.add({
+      targets: proxy,
+      vol: 0.4,
+      duration: 2000,
+      onUpdate: () => this.safeSetVolume(music, proxy.vol),
+      onComplete: () => { this.combatFadeTween = null; },
+    });
+  }
+
+  private stopCombatMusic(): void {
+    const music = this.combatMusic;
+    if (!music) return;
+    this.combatMusic = null;
+
+    if (this.combatFadeTween) {
+      this.combatFadeTween.stop();
+      this.combatFadeTween = null;
+    }
+
+    const currentVol = (music as Phaser.Sound.WebAudioSound).volume ?? 0.4;
+    const proxy = { vol: currentVol };
+    this.tweens.add({
+      targets: proxy,
+      vol: 0,
+      duration: 1000,
+      onUpdate: () => this.safeSetVolume(music, proxy.vol),
+      onComplete: () => {
         try { music.stop(); } catch { /* ignore */ }
         try { music.destroy(); } catch { /* ignore */ }
       },

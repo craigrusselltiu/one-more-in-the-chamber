@@ -86,10 +86,13 @@ export class CombatScene extends Phaser.Scene {
       traitCounts: {},
     };
 
-    // Board: 8x8 of 32x32 tiles = 256x256, centered
     const boardSize = 8 * TILE_SIZE;
     const boardX = Math.round((GAME_WIDTH - boardSize) / 2);
     const boardY = Math.round((GAME_HEIGHT - boardSize) / 2);
+
+    // Checkered grid background behind the board
+    this.drawCheckerboard(boardX, boardY, boardSize);
+
     this.board = new Board(this, boardX, boardY, combatConfig.activeTileTypes);
 
     this.combatManager = new CombatManager(this.board, combatConfig);
@@ -107,10 +110,12 @@ export class CombatScene extends Phaser.Scene {
    * Rebuilds board and combat manager from serialized state.
    */
   private restoreFromSnapshot(snapshot: CombatSnapshot): void {
-    // Create board with the snapshot's tile types (will be overwritten by restore)
     const boardSize = 8 * TILE_SIZE;
     const boardX = Math.round((GAME_WIDTH - boardSize) / 2);
     const boardY = Math.round((GAME_HEIGHT - boardSize) / 2);
+
+    this.drawCheckerboard(boardX, boardY, boardSize);
+
     this.board = new Board(this, boardX, boardY, snapshot.board.activeTileTypes);
 
     // Create combat manager with a minimal config (state will be overwritten)
@@ -144,6 +149,28 @@ export class CombatScene extends Phaser.Scene {
       this.board.setInputEnabled(false);
     }
     // Scene transition handled by App.tsx
+  }
+
+  /** Draw an 8x8 checkered grid behind the board for visual clarity. */
+  private drawCheckerboard(x: number, y: number, size: number): void {
+    const cellSize = size / 8;
+    const lightColor = 0xd2b48c; // tan
+    const darkColor = 0xb8956a;  // slightly darker tan
+    for (let row = 0; row < 8; row++) {
+      for (let col = 0; col < 8; col++) {
+        const color = (row + col) % 2 === 0 ? lightColor : darkColor;
+        this.add
+          .rectangle(
+            Math.round(x + col * cellSize + cellSize / 2),
+            Math.round(y + row * cellSize + cellSize / 2),
+            cellSize,
+            cellSize,
+            color,
+            0.3,
+          )
+          .setDepth(-1);
+      }
+    }
   }
 
   private onScreenShake(...args: unknown[]): void {

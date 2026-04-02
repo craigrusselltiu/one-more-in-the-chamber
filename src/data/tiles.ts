@@ -7,21 +7,21 @@ import type { TileDefinition } from '../types/tiles';
  * Use tools/sprite-picker.html to browse and identify frames.
  */
 export const TILE_FRAMES: Record<TileType, number> = {
-  bullet: 0,
-  iron: 0,
-  gold: 0,
-  ricochet: 0,
-  dynamite: 0,
-  stampede: 0,
-  whiskey: 0,
-  buckshot: 0,
-  ace: 0,
-  venom: 0,
-  ember: 0,
-  horseshoe: 0,
-  fifty_cal: 0,
-  showdown: 0,
-  tumbleweed: 0,
+  bullet: 1244,
+  iron: 565,
+  gold: 1158,
+  ricochet: 907,
+  dynamite: 722,
+  stampede: 268,
+  whiskey: 499,
+  buckshot: 908,
+  ace: 792,
+  venom: 762,
+  ember: 720,
+  horseshoe: 689,
+  fifty_cal: 906,
+  showdown: 599,
+  tumbleweed: 996,
 };
 
 /** Placeholder tile colors from SPEC (distinguishable at a glance). */
