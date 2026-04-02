@@ -11,6 +11,7 @@ import { ScreenShake } from '../effects/ScreenShake';
 import type { ShakeIntensity } from '../effects/ScreenShake';
 import type { GridPosition } from '../../types/combat';
 import type { TileType } from '../../types/game';
+import { useSettingsStore } from '../../store/settingsStore';
 
 /**
  * CombatScene: the main combat loop.
@@ -89,6 +90,7 @@ export class CombatScene extends Phaser.Scene {
   }
 
   private onScreenShake(...args: unknown[]): void {
+    if (!useSettingsStore.getState().screenShakeEnabled) return;
     const intensity = args[0] as ShakeIntensity;
     this.screenShake.shake(intensity);
   }
@@ -99,6 +101,7 @@ export class CombatScene extends Phaser.Scene {
 
   /** Flash a line between two board positions, colored by tile type. */
   private onFlashLine(...args: unknown[]): void {
+    if (!useSettingsStore.getState().juiceAnimationsEnabled) return;
     const from = args[0] as GridPosition;
     const to = args[1] as GridPosition;
     const tileType = args[2] as TileType;
@@ -112,6 +115,7 @@ export class CombatScene extends Phaser.Scene {
 
   /** Flash a line from a board position to the targeted enemy's center. */
   private onFlashLineToEnemy(...args: unknown[]): void {
+    if (!useSettingsStore.getState().juiceAnimationsEnabled) return;
     const from = args[0] as GridPosition;
     const tileType = args[1] as TileType;
     const enemyIndex = (args[2] as number) ?? 0;
@@ -153,6 +157,7 @@ export class CombatScene extends Phaser.Scene {
    * Uses simple rectangles as particles for pixel-art consistency.
    */
   private onTileParticles(...args: unknown[]): void {
+    if (!useSettingsStore.getState().juiceAnimationsEnabled) return;
     const x = args[0] as number;
     const y = args[1] as number;
     const colorHex = args[2] as string;

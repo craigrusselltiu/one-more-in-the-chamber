@@ -82,6 +82,10 @@ export const MainMenu = memo(function MainMenu() {
     EventBus.emit(GameEvent.SCREEN_CHANGE, 'leaderboard' satisfies Screen);
   };
 
+  const handleSettings = () => {
+    EventBus.emit(GameEvent.SCREEN_CHANGE, 'settings' satisfies Screen);
+  };
+
   return (
     <div
       className="relative"
@@ -101,7 +105,7 @@ export const MainMenu = memo(function MainMenu() {
         <MenuButton label="New Game" onClick={handleNewGame} />
         <MenuButton label="Reputation Shop" onClick={handleReputationShop} />
         <MenuButton label="Leaderboard" onClick={handleLeaderboard} />
-        <MenuButton label="Settings" disabled />
+        <MenuButton label="Settings" onClick={handleSettings} />
       </div>
 
       {/* Version -- bottom right */}
