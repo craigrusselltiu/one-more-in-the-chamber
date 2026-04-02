@@ -1,6 +1,8 @@
 import { create } from 'zustand';
 import type { RunState, TileType, ArtifactInstance, ConsumableInstance, Act, MapState } from '../types/game';
 import { generateMap } from '../game/map/MapGenerator';
+import { useMetaStore } from './metaStore';
+import { ARTIFACTS } from '../data/artifacts';
 
 interface RunStore {
   run: RunState | null;
@@ -34,6 +36,30 @@ export const useRunStore = create<RunStore>((set) => ({
 
   startRun: (seed, starterTile, ascensionLevel = 0) => {
     const mapState = generateMap(seed, 1);
+    const loadouts = useMetaStore.getState().meta.unlockedLoadouts;
+
+    // Apply loadout bonuses
+    let gold = 0;
+    const consumables: ConsumableInstance[] = [];
+    const artifacts: ArtifactInstance[] = [];
+    const traitCounts: Partial<Record<string, number>> = {};
+
+    if (loadouts.includes('outlaws_stash')) gold += 15;
+    if (loadouts.includes('healers_kit')) consumables.push({ id: 'tonic' });
+    if (loadouts.includes('demolitions_kit')) {
+      consumables.push({ id: 'stick_of_tnt' }, { id: 'stick_of_tnt' });
+    }
+    if (loadouts.includes('lucky_start')) {
+      const def = ARTIFACTS.find((a) => a.id === 'horseshoe_charm');
+      if (def) {
+        artifacts.push({ id: def.id, tags: def.tags });
+        for (const tag of def.tags) traitCounts[tag] = (traitCounts[tag] ?? 0) + 1;
+      }
+    }
+    if (loadouts.includes('scouts_pack')) {
+      consumables.push({ id: 'smoke_bomb' }, { id: 'signal_flare' });
+    }
+
     set({
       run: {
         id: crypto.randomUUID(),
@@ -44,12 +70,12 @@ export const useRunStore = create<RunStore>((set) => ({
         currentNodeId: null,
         health: 100,
         maxHealth: 100,
-        gold: 0,
+        gold,
         activeTileTypes: ['bullet', 'iron', 'gold', starterTile],
         tileUpgrades: {},
-        artifacts: [],
-        traitCounts: {},
-        consumables: [],
+        artifacts,
+        traitCounts,
+        consumables,
         abilityCharge: 0,
         totalDamageDealt: 0,
         runStartedAt: Date.now(),
