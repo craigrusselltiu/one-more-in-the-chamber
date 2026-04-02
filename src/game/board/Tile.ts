@@ -4,7 +4,7 @@ import type { TileHazardState } from '../../types/tiles';
 import { TILE_FRAMES } from '../../data/tiles';
 import { useSettingsStore, getSpeedMultiplier } from '../../store/settingsStore';
 
-export const TILE_SIZE = 32;
+export const TILE_SIZE = 28;
 const STATUS_OFFSET = 12;
 
 /**
@@ -54,7 +54,7 @@ export class Tile {
 
     this.sprite = scene.add
       .image(cx, cy, 'items_sheet', TILE_FRAMES[type])
-      .setScale(2);
+      .setScale(TILE_SIZE / 16);
   }
 
   setType(newType: TileType): void {
@@ -271,12 +271,15 @@ export class Tile {
       if (this.statusDot) targets.push(this.statusDot);
       if (this.statusLabel) targets.push(this.statusLabel);
 
+      const popDuration = Math.round(duration * 0.3);
+      const fadeDuration = Math.round(duration * 0.7);
+
       // Phase 1: quick pop-up scale
       this.scene.tweens.add({
         targets,
-        scaleX: '*=1.3',
-        scaleY: '*=1.3',
-        duration: Math.round(duration * 0.3),
+        scaleX: '+=0.6',
+        scaleY: '+=0.6',
+        duration: popDuration,
         ease: 'Quad.easeOut',
         onComplete: () => {
           // Phase 2: shrink + fade
@@ -285,7 +288,7 @@ export class Tile {
             alpha: 0,
             scaleX: 0,
             scaleY: 0,
-            duration: Math.round(duration * 0.7),
+            duration: fadeDuration,
             ease: 'Power2',
             onComplete: () => {
               this.destroy();

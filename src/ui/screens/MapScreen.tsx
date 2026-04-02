@@ -1,4 +1,4 @@
-import { memo, useCallback, useRef, useEffect, useState } from 'react';
+import { memo, useCallback, useRef, useEffect } from 'react';
 import { EventBus, GameEvent } from '../../game/EventBus';
 import { useRunStore } from '../../store/runStore';
 import { getReachableNodes } from '../../game/map/MapGenerator';
@@ -38,7 +38,6 @@ export const MapScreen = memo(function MapScreen({ readonly, onClose }: { readon
   const markNodeVisited = useRunStore((s) => s.markNodeVisited);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
-  const [hoveredNode, setHoveredNode] = useState<MapNode | null>(null);
 
   const mapState = run?.mapState;
   const nodes = mapState?.nodes ?? [];
@@ -184,33 +183,6 @@ export const MapScreen = memo(function MapScreen({ readonly, onClose }: { readon
     [mapState, nodes, reachable, markNodeVisited],
   );
 
-  const handleCanvasMove = useCallback(
-    (e: React.MouseEvent<HTMLCanvasElement>) => {
-      if (!mapState) return;
-      const canvas = canvasRef.current;
-      if (!canvas) return;
-
-      const rect = canvas.getBoundingClientRect();
-      const scaleX = canvas.width / rect.width;
-      const scaleY = canvas.height / rect.height;
-      const mx = (e.clientX - rect.left) * scaleX;
-      const my = (e.clientY - rect.top) * scaleY;
-
-      let found: MapNode | null = null;
-      for (const node of nodes) {
-        const pos = getNodePos(node);
-        const dx = mx - pos.x;
-        const dy = my - pos.y;
-        if (dx * dx + dy * dy <= NODE_RADIUS * NODE_RADIUS * 1.5) {
-          found = node;
-          break;
-        }
-      }
-      setHoveredNode(found);
-    },
-    [mapState, nodes],
-  );
-
   if (!run || !mapState) {
     return (
       <div className="flex flex-col items-center justify-center bg-[#1a1a2e]" style={{ width: 960, height: 540 }}>
@@ -232,7 +204,6 @@ export const MapScreen = memo(function MapScreen({ readonly, onClose }: { readon
           width={canvasWidth}
           height={canvasHeight}
           onClick={readonly ? undefined : handleCanvasClick}
-          onMouseMove={handleCanvasMove}
           className={readonly ? 'shrink-0' : 'cursor-pointer shrink-0'}
         />
       </div>
@@ -249,22 +220,6 @@ export const MapScreen = memo(function MapScreen({ readonly, onClose }: { readon
         </div>
       )}
 
-      {/* Tooltip / node info */}
-      {hoveredNode && (
-        <div className="h-8 flex items-center justify-center border-t border-stone-700 px-4">
-          <div className="flex items-center gap-3">
-            <span
-              className="w-4 h-4 rounded-full"
-              style={{ backgroundColor: NODE_STYLES[hoveredNode.type].color }}
-            />
-            <span className="text-stone-300 font-mono text-sm">
-              {NODE_STYLES[hoveredNode.type].label}
-              {hoveredNode.visited && ' (visited)'}
-              {reachable.includes(hoveredNode.id) && !hoveredNode.visited && ' -- click to travel'}
-            </span>
-          </div>
-        </div>
-      )}
     </div>
   );
 });
