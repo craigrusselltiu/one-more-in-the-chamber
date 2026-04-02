@@ -13,6 +13,8 @@ export class Enemy {
   private definition: EnemyDefinition;
   /** If true, this enemy skips its next action (from Smoke Bomb). */
   skipNextAction = false;
+  /** If true, this enemy was summoned mid-combat (not an original enemy). */
+  summoned = false;
 
   constructor(definition: EnemyDefinition) {
     this.definition = definition;

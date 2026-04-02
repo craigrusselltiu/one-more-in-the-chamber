@@ -94,19 +94,19 @@ function chooseCoyoteIntent(enemy: Enemy, aliveCount: number): EnemyIntent {
 function chooseRattlesnakeIntent(enemy: Enemy, hpRatio: number): EnemyIntent {
   const damage = rollDamage(enemy);
   const options: IntentOption[] = [
-    { intent: { type: 'attack', value: damage, description: `BITE ${damage}` }, weight: 3 },
+    { intent: { type: 'attack', value: damage, description: `ATK ${damage}` }, weight: 3 },
     { intent: { type: 'board-manipulation', value: 2, description: 'POISON 2' }, weight: 2 },
   ];
 
   // Block more when wounded
   if (hpRatio < 0.5) {
     options.push({
-      intent: { type: 'block', value: 5, description: 'COIL +5' },
+      intent: { type: 'block', value: 5, description: 'DEF 5' },
       weight: 2,
     });
   } else {
     options.push({
-      intent: { type: 'block', value: 5, description: 'COIL +5' },
+      intent: { type: 'block', value: 5, description: 'DEF 5' },
       weight: 1,
     });
   }
@@ -151,7 +151,7 @@ function chooseBanditIntent(enemy: Enemy, hpRatio: number): EnemyIntent {
 function chooseVultureIntent(enemy: Enemy): EnemyIntent {
   const damage = rollDamage(enemy);
   const options: IntentOption[] = [
-    { intent: { type: 'attack', value: damage, description: `PECK ${damage}` }, weight: 2 },
+    { intent: { type: 'attack', value: damage, description: `ATK ${damage}` }, weight: 2 },
     { intent: { type: 'board-manipulation', value: 3, description: 'BURY 3' }, weight: 3 },
   ];
 
@@ -167,7 +167,7 @@ function chooseProspectorIntent(enemy: Enemy, hpRatio: number): EnemyIntent {
   const damage = rollDamage(enemy);
   const bombWeight = hpRatio < 0.4 ? 5 : 3;
   const options: IntentOption[] = [
-    { intent: { type: 'attack', value: damage, description: `PICKAXE ${damage}` }, weight: 2 },
+    { intent: { type: 'attack', value: damage, description: `ATK ${damage}` }, weight: 2 },
     { intent: { type: 'board-manipulation', value: 1, description: 'BOMB' }, weight: bombWeight },
   ];
 
@@ -221,7 +221,7 @@ function chooseCaveBatIntent(enemy: Enemy, aliveCount: number): EnemyIntent {
   // More bats alive = more coordinated burying
   const buryWeight = aliveCount >= 3 ? 4 : 3;
   const options: IntentOption[] = [
-    { intent: { type: 'attack', value: damage, description: `SCREECH ${damage}` }, weight: 2 },
+    { intent: { type: 'attack', value: damage, description: `ATK ${damage}` }, weight: 2 },
     { intent: { type: 'board-manipulation', value: 2, description: 'BURY 2' }, weight: buryWeight },
   ];
 
@@ -295,8 +295,8 @@ function chooseSaloonBrawlerIntent(enemy: Enemy): EnemyIntent {
   const damage = rollDamage(enemy);
   const heavyDamage = damage + 8;
   const options: IntentOption[] = [
-    { intent: { type: 'attack', value: damage, description: `PUNCH ${damage}` }, weight: 4 },
-    { intent: { type: 'attack', value: heavyDamage, description: `HAYMAKER ${heavyDamage}` }, weight: 2 },
+    { intent: { type: 'attack', value: damage, description: `ATK ${damage}` }, weight: 4 },
+    { intent: { type: 'attack', value: heavyDamage, description: `ATK ${heavyDamage}` }, weight: 2 },
   ];
 
   return weightedRandom(options);

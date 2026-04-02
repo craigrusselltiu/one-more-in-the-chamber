@@ -1,18 +1,11 @@
 import { memo } from 'react';
 import type { PlayerStatusEffect, EnemyStatusEffect } from '../../types/combat';
+import { SpriteIcon } from '../components/SpriteIcon';
+import { STATUS_FRAMES } from '../../data/uiFrames';
 
 interface StatusEffectsProps {
   effects: (PlayerStatusEffect | EnemyStatusEffect)[];
 }
-
-const STATUS_COLORS: Record<string, string> = {
-  block: '#6888A0',
-  ace: '#E0C880',
-  crit: '#D06080',
-  thorns: '#8B6030',
-  venom: '#60A040',
-  vulnerable: '#D04040',
-};
 
 const STATUS_LABELS: Record<string, string> = {
   block: 'BLK',
@@ -30,8 +23,7 @@ function formatValue(type: string, value: number): string {
 }
 
 /**
- * StatusEffects: horizontal row of small icons with value labels.
- * Spaced out under health bar per SPEC.
+ * StatusEffects: horizontal row of sprite icons with value labels.
  */
 export const StatusEffects = memo(function StatusEffects({ effects }: StatusEffectsProps) {
   if (effects.length === 0) return null;
@@ -41,19 +33,14 @@ export const StatusEffects = memo(function StatusEffects({ effects }: StatusEffe
       {effects.map((effect, i) => (
         <div
           key={`${effect.type}-${i}`}
-          className="flex flex-col items-center justify-center border"
-          style={{
-            minWidth: 24,
-            height: 18,
-            backgroundColor: STATUS_COLORS[effect.type] ?? '#808080',
-            borderColor: STATUS_COLORS[effect.type] ?? '#808080',
-            padding: '0 2px',
-          }}
+          className="flex flex-col items-center justify-center"
+          style={{ minWidth: 24, height: 22 }}
           title={`${STATUS_LABELS[effect.type]}: ${formatValue(effect.type, effect.value)}`}
         >
-          <span className="text-[6px] text-white/80 leading-none">
-            {STATUS_LABELS[effect.type] ?? '?'}
-          </span>
+          <SpriteIcon
+            frame={STATUS_FRAMES[effect.type] ?? 0}
+            scale={1}
+          />
           <span className="text-[7px] text-white font-bold leading-none">
             {formatValue(effect.type, effect.value)}
           </span>

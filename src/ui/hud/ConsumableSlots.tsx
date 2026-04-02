@@ -3,12 +3,8 @@ import { EventBus, GameEvent } from '../../game/EventBus';
 import { useRunStore } from '../../store/runStore';
 import { useCombatStore } from '../../store/combatStore';
 import { CONSUMABLES } from '../../data/consumables';
-
-const CATEGORY_COLORS: Record<string, string> = {
-  offensive: '#D04040',
-  defensive: '#6888A0',
-  utility: '#D4A030',
-};
+import { SpriteIcon } from '../components/SpriteIcon';
+import { CONSUMABLE_FRAMES } from '../../data/uiFrames';
 
 /**
  * ConsumableSlots: 3 fixed square slots (4 with Saddlebag) near the player.

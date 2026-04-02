@@ -24,10 +24,12 @@ interface RunStore {
   updateGold: (delta: number) => void;
   syncHealth: (current: number, max: number) => void;
   syncGold: (amount: number) => void;
+  syncAbilityCharge: (charge: number) => void;
   addArtifact: (artifact: ArtifactInstance) => void;
   addConsumable: (consumable: ConsumableInstance) => void;
   removeConsumable: (index: number) => void;
   addTileType: (type: TileType) => void;
+  removeTileType: (type: TileType) => void;
   swapTileType: (oldType: TileType, newType: TileType) => void;
   upgradeTile: (type: TileType) => void;
   addDamageDealt: (amount: number) => void;
@@ -136,6 +138,12 @@ export const useRunStore = create<RunStore>((set, get) => ({
       return { run: { ...state.run, gold: amount } };
     }),
 
+  syncAbilityCharge: (charge) =>
+    set((state) => {
+      if (!state.run) return state;
+      return { run: { ...state.run, abilityCharge: charge } };
+    }),
+
   addArtifact: (artifact) =>
     set((state) => {
       if (!state.run) return state;
@@ -167,6 +175,13 @@ export const useRunStore = create<RunStore>((set, get) => ({
       if (!state.run) return state;
       if (state.run.activeTileTypes.includes(type)) return state;
       return { run: { ...state.run, activeTileTypes: [...state.run.activeTileTypes, type] } };
+    }),
+
+  removeTileType: (type) =>
+    set((state) => {
+      if (!state.run) return state;
+      const activeTileTypes = state.run.activeTileTypes.filter((t) => t !== type);
+      return { run: { ...state.run, activeTileTypes } };
     }),
 
   swapTileType: (oldType, newType) =>

@@ -86,9 +86,10 @@ export class CombatScene extends Phaser.Scene {
       traitCounts: {},
     };
 
-    // Board: 8x8 of 28x28 tiles = 224x224, centered
-    const boardX = Math.round((GAME_WIDTH - 224) / 2);
-    const boardY = Math.round((GAME_HEIGHT - 224) / 2);
+    // Board: 8x8 of 32x32 tiles = 256x256, centered
+    const boardSize = 8 * TILE_SIZE;
+    const boardX = Math.round((GAME_WIDTH - boardSize) / 2);
+    const boardY = Math.round((GAME_HEIGHT - boardSize) / 2);
     this.board = new Board(this, boardX, boardY, combatConfig.activeTileTypes);
 
     this.combatManager = new CombatManager(this.board, combatConfig);
@@ -107,8 +108,9 @@ export class CombatScene extends Phaser.Scene {
    */
   private restoreFromSnapshot(snapshot: CombatSnapshot): void {
     // Create board with the snapshot's tile types (will be overwritten by restore)
-    const boardX = Math.round((GAME_WIDTH - 224) / 2);
-    const boardY = Math.round((GAME_HEIGHT - 224) / 2);
+    const boardSize = 8 * TILE_SIZE;
+    const boardX = Math.round((GAME_WIDTH - boardSize) / 2);
+    const boardY = Math.round((GAME_HEIGHT - boardSize) / 2);
     this.board = new Board(this, boardX, boardY, snapshot.board.activeTileTypes);
 
     // Create combat manager with a minimal config (state will be overwritten)

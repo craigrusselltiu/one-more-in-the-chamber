@@ -1,6 +1,29 @@
 import type { TileType } from '../types/game';
 import type { TileDefinition } from '../types/tiles';
 
+/**
+ * Sprite sheet frame indices for each tile type (items_sheet.png, 16x16 grid).
+ * Sheet is 36 columns x 35 rows = 1260 frames.
+ * Use tools/sprite-picker.html to browse and identify frames.
+ */
+export const TILE_FRAMES: Record<TileType, number> = {
+  bullet: 0,
+  iron: 0,
+  gold: 0,
+  ricochet: 0,
+  dynamite: 0,
+  stampede: 0,
+  whiskey: 0,
+  buckshot: 0,
+  ace: 0,
+  venom: 0,
+  ember: 0,
+  horseshoe: 0,
+  fifty_cal: 0,
+  showdown: 0,
+  tumbleweed: 0,
+};
+
 /** Placeholder tile colors from SPEC (distinguishable at a glance). */
 export const TILE_COLORS: Record<TileType, string> = {
   bullet: '#D4A030',
@@ -16,6 +39,8 @@ export const TILE_COLORS: Record<TileType, string> = {
   ember: '#E07020',
   horseshoe: '#C8A040',
   fifty_cal: '#7090B8',
+  showdown: '#FF00FF',
+  tumbleweed: '#8B7355',
 };
 
 /** Tile definitions with base values from SPEC. */
@@ -149,6 +174,26 @@ export const TILE_DEFINITIONS: Record<TileType, TileDefinition> = {
     upgradeValue: 1,
     pool: 'additional',
     description: '5 damage per tile; upgrades add 1 damage per tile.',
+  },
+  showdown: {
+    type: 'showdown',
+    label: 'Showdown',
+    abbreviation: 'SD',
+    color: TILE_COLORS.showdown,
+    baseValue: 0,
+    upgradeValue: 0,
+    pool: 'special',
+    description: 'Swap with any tile to destroy all tiles of that type.',
+  },
+  tumbleweed: {
+    type: 'tumbleweed',
+    label: 'Tumbleweed',
+    abbreviation: 'Tw',
+    color: TILE_COLORS.tumbleweed,
+    baseValue: 0,
+    upgradeValue: 0,
+    pool: 'special',
+    description: 'Does nothing when matched.',
   },
 };
 

@@ -41,7 +41,7 @@ function MenuButton({
         fontFamily: MENU_FONT,
         fontSize: '18px',
         letterSpacing: '1px',
-        color: '#e88888',
+        color: '#e8e8e8',
         textShadow:
           '-1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000, 0 0 4px rgba(0,0,0,0.5)',
         cursor: 'pointer',
@@ -52,7 +52,7 @@ function MenuButton({
         className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none rounded"
         style={{
           background:
-            'linear-gradient(90deg, rgba(232,136,136,0.25) 0%, rgba(232,136,136,0.05) 70%, transparent 100%)',
+            'linear-gradient(90deg, rgba(232,232,232,0.15) 0%, rgba(232,232,232,0.03) 70%, transparent 100%)',
         }}
       />
       {/* Text with shift animation */}

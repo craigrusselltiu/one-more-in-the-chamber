@@ -4,7 +4,7 @@ import type { Tile } from './Tile';
 import type { MatchResult, GridPosition } from '../../types/combat';
 import { getSpeedMultiplier } from '../../store/settingsStore';
 
-export type GravityDirection = 'down' | 'left';
+export type GravityDirection = 'down' | 'left' | 'up' | 'right';
 
 /**
  * CascadeResolver: gravity + chain resolution with animations.
@@ -111,7 +111,7 @@ export class CascadeResolver {
         const tile = grid[pos.row]?.[pos.col];
         if (!tile) continue;
         if (tile.isExplosive) explosiveQueue.push(pos);
-        if (tile.isShowdown) {
+        if (tile.type === 'showdown') {
           // Showdown tile matched in cascade: clear all tiles of a random active type
           const types = board.getActiveTileTypes();
           const randomType = types[Math.floor(Math.random() * types.length)];
@@ -253,7 +253,8 @@ export class CascadeResolver {
 
       if (match.isShowdown && match.tiles.length > 0) {
         const mid = match.tiles[Math.floor(match.tiles.length / 2)];
-        board.spawnSpecialTile(mid.row, mid.col, match.tileType, 'showdown');
+        // Showdown is now its own tile type, not a modifier
+        board.spawnSpecialTile(mid.row, mid.col, 'showdown', 'none');
       } else if (match.isExplosive && match.tiles.length > 0) {
         const mid = match.tiles[Math.floor(match.tiles.length / 2)];
         board.spawnSpecialTile(mid.row, mid.col, match.tileType, 'explosive');
@@ -305,10 +306,12 @@ export class CascadeResolver {
   private applyGravityTracked(
     board: Board,
   ): Array<{ tile: Tile; toX: number; toY: number }> {
-    if (this.gravityDirection === 'left') {
-      return this.applyGravityLeftTracked(board);
+    switch (this.gravityDirection) {
+      case 'left': return this.applyGravityLeftTracked(board);
+      case 'up': return this.applyGravityUpTracked(board);
+      case 'right': return this.applyGravityRightTracked(board);
+      default: return this.applyGravityDownTracked(board);
     }
-    return this.applyGravityDownTracked(board);
   }
 
   private applyGravityDownTracked(
@@ -367,10 +370,11 @@ export class CascadeResolver {
 
   /** Non-animated gravity for use in non-cascade contexts (showdown, etc.) */
   applyGravity(board: Board): void {
-    if (this.gravityDirection === 'left') {
-      this.applyGravityLeft(board);
-    } else {
-      this.applyGravityDown(board);
+    switch (this.gravityDirection) {
+      case 'left': this.applyGravityLeft(board); break;
+      case 'up': this.applyGravityUp(board); break;
+      case 'right': this.applyGravityRight(board); break;
+      default: this.applyGravityDown(board); break;
     }
   }
 
@@ -413,6 +417,104 @@ export class CascadeResolver {
             board.updateTilePosition(tile);
           }
           writeCol++;
+        }
+      }
+    }
+  }
+
+  private applyGravityUpTracked(
+    board: Board,
+  ): Array<{ tile: Tile; toX: number; toY: number }> {
+    const grid = board.getGrid();
+    const size = board.getBoardSize();
+    const moves: Array<{ tile: Tile; toX: number; toY: number }> = [];
+
+    for (let col = 0; col < size; col++) {
+      let writeRow = 0;
+      for (let row = 0; row < size; row++) {
+        if (grid[row][col] !== null) {
+          if (row !== writeRow) {
+            const tile = grid[row][col]!;
+            grid[writeRow][col] = tile;
+            grid[row][col] = null;
+            tile.row = writeRow;
+            tile.col = col;
+            moves.push({ tile, toX: board.tileX(col), toY: board.tileY(writeRow) });
+          }
+          writeRow++;
+        }
+      }
+    }
+
+    return moves;
+  }
+
+  private applyGravityUp(board: Board): void {
+    const grid = board.getGrid();
+    const size = board.getBoardSize();
+
+    for (let col = 0; col < size; col++) {
+      let writeRow = 0;
+      for (let row = 0; row < size; row++) {
+        if (grid[row][col] !== null) {
+          if (row !== writeRow) {
+            grid[writeRow][col] = grid[row][col];
+            grid[row][col] = null;
+            const tile = grid[writeRow][col]!;
+            tile.row = writeRow;
+            tile.col = col;
+            board.updateTilePosition(tile);
+          }
+          writeRow++;
+        }
+      }
+    }
+  }
+
+  private applyGravityRightTracked(
+    board: Board,
+  ): Array<{ tile: Tile; toX: number; toY: number }> {
+    const grid = board.getGrid();
+    const size = board.getBoardSize();
+    const moves: Array<{ tile: Tile; toX: number; toY: number }> = [];
+
+    for (let row = 0; row < size; row++) {
+      let writeCol = size - 1;
+      for (let col = size - 1; col >= 0; col--) {
+        if (grid[row][col] !== null) {
+          if (col !== writeCol) {
+            const tile = grid[row][col]!;
+            grid[row][writeCol] = tile;
+            grid[row][col] = null;
+            tile.row = row;
+            tile.col = writeCol;
+            moves.push({ tile, toX: board.tileX(writeCol), toY: board.tileY(row) });
+          }
+          writeCol--;
+        }
+      }
+    }
+
+    return moves;
+  }
+
+  private applyGravityRight(board: Board): void {
+    const grid = board.getGrid();
+    const size = board.getBoardSize();
+
+    for (let row = 0; row < size; row++) {
+      let writeCol = size - 1;
+      for (let col = size - 1; col >= 0; col--) {
+        if (grid[row][col] !== null) {
+          if (col !== writeCol) {
+            grid[row][writeCol] = grid[row][col];
+            grid[row][col] = null;
+            const tile = grid[row][writeCol]!;
+            tile.row = row;
+            tile.col = writeCol;
+            board.updateTilePosition(tile);
+          }
+          writeCol--;
         }
       }
     }

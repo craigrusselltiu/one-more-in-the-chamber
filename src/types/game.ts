@@ -41,7 +41,9 @@ export type TileType =
   | 'venom'
   | 'ember'
   | 'horseshoe'
-  | 'fifty_cal';
+  | 'fifty_cal'
+  | 'showdown'
+  | 'tumbleweed';
 
 export type TraitId =
   | 'outlaw'

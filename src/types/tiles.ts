@@ -9,7 +9,7 @@ export interface TileDefinition {
   color: string;
   baseValue: number;
   upgradeValue: number;
-  pool: 'core' | 'starter' | 'additional';
+  pool: 'core' | 'starter' | 'additional' | 'special';
   description: string;
 }
 
