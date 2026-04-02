@@ -10,6 +10,7 @@ import { EventScreen } from './ui/screens/EventScreen';
 import { ScoreScreen } from './ui/screens/ScoreScreen';
 import { TreasureScreen } from './ui/screens/TreasureScreen';
 import { ReputationShopScreen } from './ui/screens/ReputationShopScreen';
+import { LeaderboardScreen } from './ui/screens/LeaderboardScreen';
 import { CombatHUD } from './ui/hud/CombatHUD';
 import { EventBus, GameEvent } from './game/EventBus';
 import { useRunStore } from './store/runStore';
@@ -38,7 +39,8 @@ export type Screen =
   | 'event'
   | 'score'
   | 'treasure'
-  | 'reputation-shop';
+  | 'reputation-shop'
+  | 'leaderboard';
 
 const ENCOUNTER_ROLLERS: Record<Act, { regular: () => EnemyDefinition[]; elite: () => EnemyDefinition[] }> = {
   1: { regular: rollAct1Encounter, elite: rollAct1EliteEncounter },
@@ -237,6 +239,7 @@ export default function App() {
         {screen === 'score' && <ScoreScreen />}
         {screen === 'treasure' && <TreasureScreen />}
         {screen === 'reputation-shop' && <ReputationShopScreen />}
+        {screen === 'leaderboard' && <LeaderboardScreen />}
       </div>
     </div>
   );
