@@ -14,6 +14,12 @@ export const gameConfig: Phaser.Types.Core.GameConfig = {
   scale: {
     mode: Phaser.Scale.FIT,
     autoCenter: Phaser.Scale.CENTER_BOTH,
+    expandParent: true,
+  },
+  input: {
+    touch: {
+      capture: true,
+    },
   },
   backgroundColor: '#1a1a2e',
   scene: [BootScene, CombatScene, CutsceneScene],

@@ -37,14 +37,18 @@ export class BootScene extends Phaser.Scene {
   private playMenuMusic(): void {
     if (this.menuMusic) return;
 
-    const music = this.sound.add('main_menu', { loop: true, volume: 0 });
-    music.play();
-    this.tweens.add({
-      targets: music,
-      volume: 0.5,
-      duration: 2000,
-    });
-    this.menuMusic = music;
+    try {
+      const music = this.sound.add('main_menu', { loop: true, volume: 0 });
+      music.play();
+      this.tweens.add({
+        targets: music,
+        volume: 0.5,
+        duration: 2000,
+      });
+      this.menuMusic = music;
+    } catch {
+      // Audio autoplay blocked on mobile — music will remain silent
+    }
   }
 
   private fadeOutMenuMusic(): void {
