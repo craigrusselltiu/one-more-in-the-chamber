@@ -895,7 +895,7 @@ export class CombatManager {
       const boss = this.getBossEnemy();
       if (boss) {
         this.bossController.checkPhaseTransition(boss, this.hazardManager, this.board);
-        this.bossController.executePerTurnEffects(this.hazardManager);
+        this.bossController.executePerTurnEffects(this.hazardManager, boss);
       }
     }
 
