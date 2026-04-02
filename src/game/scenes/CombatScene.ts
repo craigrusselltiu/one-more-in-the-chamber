@@ -48,10 +48,6 @@ export class CombatScene extends Phaser.Scene {
   create(data?: { config?: CombatConfig; snapshot?: CombatSnapshot }): void {
     this.cameras.main.setRoundPixels(true);
     this.cameras.main.setBackgroundColor('#2a1a0e');
-    // Zoom the Phaser camera to make the board smaller without affecting
-    // sprite scaling (still integer 2x) or the React UI overlay.
-    this.cameras.main.setZoom(0.88);
-    this.cameras.main.centerOn(GAME_WIDTH / 2, GAME_HEIGHT / 2);
     this.screenShake = new ScreenShake(this);
 
     // Clean up EventBus listeners when scene is stopped/restarted

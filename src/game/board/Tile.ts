@@ -4,8 +4,14 @@ import type { TileHazardState } from '../../types/tiles';
 import { TILE_FRAMES } from '../../data/spriteConfig';
 import { useSettingsStore, getSpeedMultiplier } from '../../store/settingsStore';
 
-/** Tile size in pixels. Must be a multiple of 16 for crisp pixel-art scaling. */
-export const TILE_SIZE = 32;
+/**
+ * Grid spacing between tile centers (controls board density).
+ * Sprite renders at 2x (32px) but tiles are spaced 28px apart,
+ * creating slight overlap for a tighter board feel.
+ */
+export const TILE_SIZE = 28;
+/** Actual rendered sprite size (16px source * 2x scale). */
+export const SPRITE_SIZE = 32;
 const STATUS_OFFSET = 12;
 
 /**

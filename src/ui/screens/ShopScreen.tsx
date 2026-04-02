@@ -64,7 +64,7 @@ export const ShopScreen = memo(function ShopScreen() {
 
     // 1 tile swap (50-75 gold base, inflated by ascension, if player has swappable tiles)
     const swappableTiles = run.activeTileTypes.filter(
-      (t) => !(CORE_TILES as string[]).includes(t) && !(STARTER_POOL as string[]).includes(t),
+      (t) => !(CORE_TILES as string[]).includes(t) && !(STARTER_POOL as string[]).includes(t) && t !== 'tumbleweed' && t !== 'showdown',
     );
     if (swappableTiles.length > 0) {
       const available = ADDITIONAL_POOL.filter((t) => !run.activeTileTypes.includes(t));
@@ -89,7 +89,7 @@ export const ShopScreen = memo(function ShopScreen() {
   const swappableTiles = useMemo(() => {
     if (!run) return [];
     return run.activeTileTypes.filter(
-      (t) => !(CORE_TILES as string[]).includes(t) && !(STARTER_POOL as string[]).includes(t),
+      (t) => !(CORE_TILES as string[]).includes(t) && !(STARTER_POOL as string[]).includes(t) && t !== 'tumbleweed' && t !== 'showdown',
     );
   }, [run]);
 
