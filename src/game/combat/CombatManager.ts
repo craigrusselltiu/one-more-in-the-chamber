@@ -581,6 +581,14 @@ export class CombatManager {
       EventBus.emit(GameEvent.SWAPS_CHANGE, this.swapsRemaining, this.swapsPerTurn);
     }
 
+    // Tick bomb countdowns per swap (not per turn)
+    const bombResult = this.hazardManager.tickBombs();
+    if (bombResult.totalDamage > 0) {
+      if (this.player.takeDamage(bombResult.totalDamage).hpLost > 0) this.playerTookDamageThisFight = true;
+      EventBus.emit(GameEvent.PLAYER_HP_CHANGE, this.player.health, this.player.maxHealth);
+      EventBus.emit(GameEvent.SCREEN_SHAKE, bombResult.detonations.length > 1 ? 'heavy' : 'medium');
+    }
+
     // Auto-retarget if targeted enemy died during cascade
     const alive = this.aliveEnemies();
     if (alive.length > 0 && this.targetedEnemyIndex >= alive.length) {
@@ -637,6 +645,7 @@ export class CombatManager {
 
     this.isDeadeyeActive = true;
     this.deadeyeShotsRemaining = this.deadeyeMaxShots;
+    document.body.classList.add('cursor-crosshair');
     this.emitFullState();
     EventBus.emit(GameEvent.ABILITY_CHARGE_CHANGE, this.player.abilityCharge, this.player.abilityThreshold);
     return true;
@@ -697,6 +706,7 @@ export class CombatManager {
   private async endDeadeye(): Promise<void> {
     this.isDeadeyeActive = false;
     this.deadeyeShotsRemaining = 0;
+    document.body.classList.remove('cursor-crosshair');
 
     // Apply gravity + fill after all shots, then resolve cascades
     this.board.applyGravityAndFill();
@@ -1080,14 +1090,7 @@ export class CombatManager {
     // Check for deaths from venom
     if (this.isCombatOver()) return;
 
-    // 2. Tick bomb countdowns -- detonations damage the player
-    const bombResult = this.hazardManager.tickBombs();
-    if (bombResult.totalDamage > 0) {
-      if (this.player.takeDamage(bombResult.totalDamage).hpLost > 0) this.playerTookDamageThisFight = true;
-      EventBus.emit(GameEvent.PLAYER_HP_CHANGE, this.player.health, this.player.maxHealth);
-      EventBus.emit(GameEvent.SCREEN_SHAKE, bombResult.detonations.length > 1 ? 'heavy' : 'medium');
-      if (this.player.isDead()) return;
-    }
+    // 2. (Bombs now tick per swap, not per turn)
 
     // 3. Boss per-turn effects (passive locks, bombs, etc.)
     if (this.bossController) {

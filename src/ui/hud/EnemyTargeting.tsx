@@ -18,22 +18,35 @@ export const EnemyTargeting = memo(function EnemyTargeting() {
   const enemies = useCombatStore((s) => s.enemies);
   const targetedIndex = useCombatStore((s) => s.targetedEnemyIndex);
 
-  // Pad to MAX_SLOTS with nulls for empty slots
-  const slots: (EnemyState | null)[] = [];
-  for (let i = 0; i < MAX_SLOTS; i++) {
-    slots.push(enemies[i] ?? null);
+  // Build fixed 3-slot layout. If only 1 enemy, place it in the middle slot.
+  const slots: (EnemyState | null)[] = [null, null, null];
+  if (enemies.length === 1) {
+    slots[1] = enemies[0];
+  } else {
+    for (let i = 0; i < Math.min(enemies.length, MAX_SLOTS); i++) {
+      slots[i] = enemies[i];
+    }
   }
+
+  // Map slot index to actual enemy index for targeting
+  const slotToEnemyIndex = (slotIdx: number): number => {
+    if (enemies.length === 1) return 0;
+    return slotIdx;
+  };
 
   return (
     <div className="flex flex-col gap-1 items-center">
-      {slots.map((enemy, index) => (
-        <EnemySlot
-          key={index}
-          enemy={enemy}
-          index={index}
-          isTargeted={enemy !== null && !enemy.isDead && index === targetedIndex}
-        />
-      ))}
+      {slots.map((enemy, slotIdx) => {
+        const enemyIdx = slotToEnemyIndex(slotIdx);
+        return (
+          <EnemySlot
+            key={slotIdx}
+            enemy={enemy}
+            index={enemyIdx}
+            isTargeted={enemy !== null && !enemy.isDead && enemyIdx === targetedIndex}
+          />
+        );
+      })}
     </div>
   );
 });
