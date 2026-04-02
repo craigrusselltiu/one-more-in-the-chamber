@@ -8,7 +8,6 @@ export interface ResourceOutput {
   gold: number;
   healing: number;
   abilityCharges: number;
-  dodgePercent: number;
   venomStacks: number;
   critPercent: number;
   aceMultiplier: number;
@@ -103,9 +102,6 @@ export class ResourceResolver {
       case 'ricochet':
         output.damage = total;
         break;
-      case 'smoke':
-        output.dodgePercent = count; // +1%/tile, not affected by match bonus or upgrades
-        break;
       case 'dynamite':
         // Match-size-based: 1 for 3-match, 2 for 4-match, 3 for 5-match + flat upgrade bonus
         output.abilityCharges = Math.max(0, count - 2) + Math.round(upgradeBonus);
@@ -135,7 +131,6 @@ export class ResourceResolver {
       gold: 0,
       healing: 0,
       abilityCharges: 0,
-      dodgePercent: 0,
       venomStacks: 0,
       critPercent: 0,
       aceMultiplier: 0,

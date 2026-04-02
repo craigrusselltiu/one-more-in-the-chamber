@@ -311,7 +311,6 @@ export class CombatManager {
         health: this.player.health,
         maxHealth: this.player.maxHealth,
         block: this.player.block,
-        dodgeChance: this.player.dodgeChance,
         aceMultiplier: this.player.aceMultiplier,
         critChance: this.player.critChance,
         thorns: this.player.thorns,
@@ -355,7 +354,6 @@ export class CombatManager {
       sp.gold,
     );
     this.player.block = sp.block;
-    this.player.dodgeChance = sp.dodgeChance;
     this.player.aceMultiplier = sp.aceMultiplier;
     this.player.critChance = sp.critChance;
     this.player.thorns = sp.thorns;
@@ -449,10 +447,7 @@ export class CombatManager {
     this.swapsUsedThisTurn = 0;
 
     // Tick suppress (warrant) durations -- expires at start of player turn
-    const expired = this.hazardManager.tickSuppressions();
-    if (expired.length > 0) {
-      console.log(`Warrants expired: ${expired.join(', ')}`);
-    }
+    this.hazardManager.tickSuppressions();
 
     // Per-turn: +1 ability charge
     this.player.abilityCharge++;
@@ -521,7 +516,6 @@ export class CombatManager {
     this.setPhase('resolving');
     EventBus.emit(GameEvent.SWAPS_CHANGE, this.swapsRemaining, this.swapsPerTurn);
 
-    console.log('swapped');
 
     const from = { row: fromRow, col: fromCol };
     const to = { row: toRow, col: toCol };
@@ -828,10 +822,9 @@ export class CombatManager {
       if (this.hazardManager.isSuppressed(match.tileType)) {
         const zero: ResourceOutput = {
           damage: 0, block: 0, gold: 0, healing: 0,
-          abilityCharges: 0, dodgePercent: 0, venomStacks: 0,
+          abilityCharges: 0, venomStacks: 0,
           critPercent: 0, aceMultiplier: 0, isAoE: false,
         };
-        console.log(`${match.length}-match ${match.tileType} - SUPPRESSED (warrant)`);
         EventBus.emit(GameEvent.MATCH_RESOLVED, match, zero);
         continue;
       }
@@ -908,25 +901,11 @@ export class CombatManager {
         healing: Math.round(output.healing * multiplier),
         // These are NOT scaled by match bonus or multipliers:
         abilityCharges: output.abilityCharges,
-        dodgePercent: output.dodgePercent,
         venomStacks: output.venomStacks,
         critPercent: output.critPercent,
         aceMultiplier: output.aceMultiplier,
         isAoE: output.isAoE,
       };
-
-      // Log match details
-      const prefix = match.isShowdown ? 'showdown' : `${match.length}-match`;
-      const parts: string[] = [`${prefix} ${match.tileType}`];
-      if (scaled.damage > 0) parts.push(`${scaled.damage} damage`);
-      if (scaled.block > 0) parts.push(`${scaled.block} block`);
-      if (scaled.gold > 0) parts.push(`${scaled.gold} gold`);
-      if (scaled.healing > 0) parts.push(`${scaled.healing} healing`);
-      if (scaled.venomStacks > 0) parts.push(`${scaled.venomStacks} venom`);
-      if (scaled.dodgePercent > 0) parts.push(`${scaled.dodgePercent}% dodge`);
-      if (scaled.abilityCharges > 0) parts.push(`${scaled.abilityCharges} charges`);
-      if (isCrit) parts.push('CRIT');
-      console.log(parts.join(' - '));
 
       this.applyResourceOutput(scaled);
 
@@ -972,9 +951,8 @@ export class CombatManager {
     const upgradeLevel = this.player.getUpgradeLevel(result.type);
     const isSuppressed = this.hazardManager.isSuppressed(result.type);
     const output = isSuppressed
-      ? { damage: 0, block: 0, gold: 0, healing: 0, abilityCharges: 0, dodgePercent: 0, venomStacks: 0, critPercent: 0, aceMultiplier: 0, isAoE: false }
+      ? { damage: 0, block: 0, gold: 0, healing: 0, abilityCharges: 0, venomStacks: 0, critPercent: 0, aceMultiplier: 0, isAoE: false }
       : this.resolver.resolveSingle(result.type, upgradeLevel);
-    console.log(`ricochet destroyed ${result.type} tile${isSuppressed ? ' (suppressed)' : ''}`);
     this.applyResourceOutput(output);
     this.ricochetTriggeredThisResolution = true;
 
@@ -1019,11 +997,6 @@ export class CombatManager {
     if (output.abilityCharges > 0) {
       this.player.abilityCharge += output.abilityCharges;
       EventBus.emit(GameEvent.ABILITY_CHARGE_CHANGE, this.player.abilityCharge, this.player.abilityThreshold);
-    }
-
-    // Dodge
-    if (output.dodgePercent > 0) {
-      this.player.dodgeChance = Math.min(50, this.player.dodgeChance + output.dodgePercent);
     }
 
     // Venom (applied to targeted enemy)
@@ -1122,6 +1095,7 @@ export class CombatManager {
           this.hazardManager,
           boss,
           this.player.activeTileTypes,
+          this.board,
         );
       }
     }
@@ -1180,7 +1154,6 @@ export class CombatManager {
               this.player.activeTileTypes,
             );
             if (suppressed.length > 0) {
-              console.log(`${enemy.getDefinition().name} suppresses: ${suppressed.join(', ')}`);
             }
           } else {
             executeBoardManipulation(enemy, enemy.state.intent, this.hazardManager);
@@ -1332,7 +1305,6 @@ export class CombatManager {
       swapsRemaining: this.swapsRemaining,
       swapsPerTurn: this.swapsPerTurn,
       playerBlock: this.player.block,
-      dodgeChance: this.player.dodgeChance,
       aceMultiplier: this.player.aceMultiplier,
       critChance: this.player.critChance,
       thorns: this.player.thorns,

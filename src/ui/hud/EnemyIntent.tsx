@@ -1,41 +1,44 @@
 import { memo } from 'react';
-import type { EnemyIntent as EnemyIntentType, EnemyIntentType as IntentKind } from '../../types/combat';
+import type { EnemyIntent as EnemyIntentType } from '../../types/combat';
 
 interface EnemyIntentProps {
   intent: EnemyIntentType;
 }
 
-const INTENT_COLORS: Record<IntentKind, string> = {
-  attack: '#D04040',
-  block: '#6888A0',
-  ability: '#C070D0',
-  summon: '#E0C880',
-  'board-manipulation': '#D4A030',
+const KEYWORD_COLORS: Record<string, string> = {
+  ATK: '#D04040',
+  DEF: '#6888A0',
+  BLOCK: '#6888A0',
+  BUFF: '#C070D0',
+  CALL: '#E0C880',
+  HOWL: '#E0C880',
+  LOCK: '#D4A030',
+  BOMB: '#D04040',
+  POISON: '#60A040',
+  STRIKE: '#D04040',
+  COIL: '#6888A0',
 };
 
-const INTENT_ICONS: Record<IntentKind, string> = {
-  attack: 'ATK',
-  block: 'DEF',
-  ability: 'BUFF',
-  summon: 'CALL',
-  'board-manipulation': 'HEX',
-};
+/** Get the primary color from the last action keyword (the main threat). */
+function getIntentColor(description: string): string {
+  const parts = description.split(',');
+  const last = parts[parts.length - 1].trim().split(' ')[0].toUpperCase();
+  return KEYWORD_COLORS[last] ?? '#808080';
+}
 
 /**
- * EnemyIntent: small text label showing what the enemy will do next.
- * Displayed above each enemy in the targeting panel.
+ * EnemyIntent: shows what the enemy will do next.
+ * Displays the full description which may include multiple actions.
  */
 export const EnemyIntent = memo(function EnemyIntent({ intent }: EnemyIntentProps) {
-  const color = INTENT_COLORS[intent.type] ?? '#808080';
-  const icon = INTENT_ICONS[intent.type] ?? '???';
+  const color = getIntentColor(intent.description);
 
   return (
     <div
       className="text-[8px] font-bold text-center leading-none px-1 py-px"
       style={{ color }}
     >
-      {icon}
-      {intent.value != null && ` ${intent.value}`}
+      {intent.description}
     </div>
   );
 });

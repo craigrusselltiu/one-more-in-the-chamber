@@ -2,6 +2,7 @@ import type { TileType } from '../../types/game';
 import type { Board } from './Board';
 import type { Tile } from './Tile';
 import type { MatchResult, GridPosition } from '../../types/combat';
+import { getSpeedMultiplier } from '../../store/settingsStore';
 
 export type GravityDirection = 'down' | 'left';
 
@@ -51,7 +52,7 @@ export class CascadeResolver {
       if (onStep) {
         onStep(stepMatches);
         // Brief pause so the player can see the effect applied
-        await new Promise(r => setTimeout(r, 250));
+        await new Promise(r => setTimeout(r, Math.round(250 / getSpeedMultiplier())));
       }
 
       // Step 2: Spawn special tiles at cleared positions

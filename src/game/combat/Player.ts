@@ -8,7 +8,6 @@ export class Player {
   health: number;
   maxHealth: number;
   block = 0;
-  dodgeChance = 0;
   aceMultiplier = 1.0;
   critChance = 0;
   thorns = 0;
@@ -37,15 +36,10 @@ export class Player {
   }
 
   /**
-   * Apply incoming damage. Returns actual HP lost (after dodge/block/thorns).
+   * Apply incoming damage. Returns actual HP lost (after block/thorns).
    * Thorns damage is returned as the second element if triggered.
    */
   takeDamage(amount: number): { hpLost: number; thornsDamage: number } {
-    // Dodge check -- each hit rolled independently
-    if (Math.random() * 100 < this.dodgeChance) {
-      return { hpLost: 0, thornsDamage: 0 };
-    }
-
     let remaining = amount;
     let absorbedByBlock = 0;
 
@@ -101,7 +95,6 @@ export class Player {
 
   /** Reset per-fight effects between fights. */
   resetFightEffects(): void {
-    this.dodgeChance = 0;
     this.aceMultiplier = 1.0;
     this.critChance = 0;
     this.thorns = 0;

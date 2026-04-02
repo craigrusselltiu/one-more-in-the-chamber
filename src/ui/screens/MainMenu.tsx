@@ -1,4 +1,4 @@
-import { memo } from 'react';
+import { memo, useState } from 'react';
 import { EventBus, GameEvent } from '../../game/EventBus';
 import { useRunStore } from '../../store/runStore';
 import { checkForCombatResume } from '../../services/combatResume';
@@ -65,10 +65,26 @@ function MenuButton({
 
 export const MainMenu = memo(function MainMenu() {
   const run = useRunStore((s) => s.run);
+  const clearRun = useRunStore((s) => s.clearRun);
   const hasActiveRun = run && run.status === 'active';
+  const [showConfirm, setShowConfirm] = useState(false);
 
   const handleNewGame = () => {
-    EventBus.emit(GameEvent.SCREEN_CHANGE, 'tile-select' satisfies Screen);
+    if (hasActiveRun) {
+      setShowConfirm(true);
+    } else {
+      EventBus.emit(GameEvent.SCREEN_CHANGE, 'character-select' satisfies Screen);
+    }
+  };
+
+  const handleConfirmNewGame = async () => {
+    await clearRun();
+    setShowConfirm(false);
+    EventBus.emit(GameEvent.SCREEN_CHANGE, 'character-select' satisfies Screen);
+  };
+
+  const handleCancelNewGame = () => {
+    setShowConfirm(false);
   };
 
   const handleContinue = async () => {
@@ -95,7 +111,7 @@ export const MainMenu = memo(function MainMenu() {
       style={{
         width: 960,
         height: 540,
-        backgroundImage: 'url(/assets/main_menu_bg.png)',
+        backgroundImage: `url(${import.meta.env.BASE_URL}assets/main_menu_bg.png)`,
         backgroundSize: 'cover',
         backgroundPosition: 'center',
       }}
@@ -110,6 +126,31 @@ export const MainMenu = memo(function MainMenu() {
         <MenuButton label="Leaderboard" onClick={handleLeaderboard} />
         <MenuButton label="Settings" onClick={handleSettings} />
       </div>
+
+      {/* Confirmation dialog */}
+      {showConfirm && (
+        <div className="absolute inset-0 flex items-center justify-center bg-black/70 z-10">
+          <div className="border border-stone-600 bg-stone-900 p-6 max-w-xs text-center">
+            <p className="text-stone-300 font-mono text-sm mb-4">
+              Starting a new game will delete your current saved run. Continue?
+            </p>
+            <div className="flex gap-3 justify-center">
+              <button
+                onClick={handleConfirmNewGame}
+                className="px-4 py-1.5 font-mono text-xs bg-red-900/60 text-red-300 border border-red-700 hover:bg-red-800/60"
+              >
+                Delete & Start New
+              </button>
+              <button
+                onClick={handleCancelNewGame}
+                className="px-4 py-1.5 font-mono text-xs bg-stone-800/60 text-stone-300 border border-stone-600 hover:bg-stone-700/60"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Version -- bottom right */}
       <div className="absolute right-4 bottom-3">

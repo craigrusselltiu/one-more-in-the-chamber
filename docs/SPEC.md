@@ -53,7 +53,7 @@ Comedic but cool. Spaghetti Western filtered through a Saturday morning cartoon.
 ## Main Menu
 
 - **Continue** — resume active run (greyed out if none).
-- **New Game** — select character (MVP: red panda only), ascension level.
+- **New Game** — if a saved run exists, prompts to confirm deletion. Leads to character selection screen (MVP: red panda only) with ascension level, then tile selection.
 - **Reputation Shop** — spend Reputation to unlock artifacts in pool, starting loadouts, cosmetics, events, characters.
 - **Settings** — audio, controls, account, display.
 
@@ -473,7 +473,7 @@ Slay the Spire-style branching node map. ~12-15 nodes per act with branching pat
 | **Shop** | Buy artifacts, consumables, or **swap** a non-core/non-starter tile. |
 | **Rest Site** | Choose: **rest** (heal 30% max HP) or **upgrade a tile** (permanent +1 tier for the run). |
 | **Event** | Narrative encounter with choices. See Events. |
-| **Treasure** | Free artifact (pick 1 of 3). Guaranteed once per act, mid-act. |
+| **Treasure** | Free artifact (pick 1 of 3). Can be skipped. Guaranteed once per act, mid-act. |
 
 ### Shop Pricing
 
@@ -581,7 +581,7 @@ Daily / Weekly / All-Time. Top 10 each. Anti-cheat addressed at implementation.
 
 **Reputation** earned per run (based on score) > spent in the **Reputation Shop** (main menu). Unlocks: new artifacts added to the pool, starting loadouts, cosmetics, events, characters. NOT power creep — expands option space. Exact costs TBD via playtesting.
 
-**Ascension** — cumulative difficulty modifiers after first win. Levels 0-20. Players select ascension level during New Game tile selection. Only unlocked levels are available (clearing a run at level N unlocks level N+1). Score multiplier: 1.0 + 0.2 per level.
+**Ascension** — cumulative difficulty modifiers after first win. Levels 0-20. Players select ascension level during character selection (before tile selection). No ascension is available until the game is beaten once. Clearing a run at level N unlocks level N+1. Score multiplier: 1.0 + 0.2 per level.
 
 Difficulty modifiers per level (cumulative):
 - Enemy HP: +10% per level

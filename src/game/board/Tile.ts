@@ -2,7 +2,7 @@ import Phaser from 'phaser';
 import type { TileType } from '../../types/game';
 import type { TileHazardState } from '../../types/tiles';
 import { TILE_COLORS } from '../../data/tiles';
-import { useSettingsStore } from '../../store/settingsStore';
+import { useSettingsStore, getSpeedMultiplier } from '../../store/settingsStore';
 
 export const TILE_SIZE = 28;
 const TILE_INNER = 26;
@@ -84,7 +84,6 @@ export class Tile {
       iron: 'Ir',
       gold: 'Go',
       ricochet: 'Ri',
-      smoke: 'Sm',
       dynamite: 'Dy',
       stampede: 'St',
       whiskey: 'Wh',
@@ -262,11 +261,16 @@ export class Tile {
 
     const targetX = Math.round(x + TILE_SIZE / 2);
     const targetY = Math.round(y + TILE_SIZE / 2);
+    const speed = getSpeedMultiplier();
 
     if (!useSettingsStore.getState().juiceAnimationsEnabled) {
       this.setPosition(x, y);
       return Promise.resolve();
     }
+
+    // Apply speed multiplier to duration and delay
+    duration = Math.round(duration / speed);
+    delay = Math.round(delay / speed);
 
     const ease = bounce ? 'Bounce.easeOut' : 'Cubic.easeIn';
 
@@ -315,6 +319,7 @@ export class Tile {
    */
   animateClear(duration: number): Promise<void> {
     if (this.destroyed) return Promise.resolve();
+    duration = Math.round(duration / getSpeedMultiplier());
 
     if (!useSettingsStore.getState().juiceAnimationsEnabled) {
       this.destroy();

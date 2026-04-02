@@ -2,7 +2,21 @@ import { memo, useMemo, useState } from 'react';
 import { EventBus, GameEvent } from '../../game/EventBus';
 import { useRunStore } from '../../store/runStore';
 import { EVENTS, type EventDefinition, type EventChoice } from '../../data/events';
+import { ARTIFACTS, type ArtifactDefinition } from '../../data/artifacts';
+import type { TraitId } from '../../types/game';
 import type { Screen } from '../../App';
+
+/** Pick a random unowned artifact, optionally filtered by tag. */
+function pickArtifact(ownedIds: Set<string>, tag?: TraitId): ArtifactDefinition {
+  let pool = ARTIFACTS.filter((a) => !ownedIds.has(a.id));
+  if (tag) {
+    const tagged = pool.filter((a) => a.tags.includes(tag));
+    if (tagged.length > 0) pool = tagged;
+  }
+  if (pool.length === 0) pool = tag ? ARTIFACTS.filter((a) => a.tags.includes(tag)) : ARTIFACTS;
+  if (pool.length === 0) pool = ARTIFACTS;
+  return pool[Math.floor(Math.random() * pool.length)];
+}
 
 /**
  * EventScreen: narrative encounter with choices.
@@ -12,71 +26,255 @@ export const EventScreen = memo(function EventScreen() {
   const run = useRunStore((s) => s.run);
   const updateHealth = useRunStore((s) => s.updateHealth);
   const updateGold = useRunStore((s) => s.updateGold);
-  const [choiceMade, setChoiceMade] = useState<EventChoice | null>(null);
-  const [resultText, setResultText] = useState('');
+  const addArtifact = useRunStore((s) => s.addArtifact);
+  const addConsumable = useRunStore((s) => s.addConsumable);
+  const [choiceMade, setChoiceMade] = useState(false);
+  const [displayText, setDisplayText] = useState('');
+  const [rewardArtifact, setRewardArtifact] = useState<ArtifactDefinition | null>(null);
+  const [artifactHandled, setArtifactHandled] = useState(false);
 
   const event: EventDefinition = useMemo(() => {
     return EVENTS[Math.floor(Math.random() * EVENTS.length)];
   }, []);
 
+  const ownedIds = useMemo(() => {
+    return new Set((run?.artifacts ?? []).map((a) => a.id));
+  }, [run?.artifacts]);
+
   const handleChoice = (choice: EventChoice) => {
     if (choiceMade || !run) return;
+    setChoiceMade(true);
 
-    setChoiceMade(choice);
+    let artifact: ArtifactDefinition | null = null;
 
-    // Apply effects based on effect string
     switch (choice.effect) {
+      case 'gold_5':
+        updateGold(5);
+        setDisplayText('You found 5 gold.');
+        break;
       case 'gold_10':
         updateGold(10);
-        setResultText('You received 10 gold.');
+        setDisplayText('You received 10 gold.');
         break;
       case 'gold_15':
         updateGold(15);
-        setResultText('You pulled up 15 gold.');
+        setDisplayText('You pulled up 15 gold.');
         break;
       case 'gold_30_elite_buff':
         updateGold(30);
-        setResultText('You gained 30 gold. The next elite will be tougher.');
+        setDisplayText('You gained 30 gold. The next elite will be tougher.');
         break;
       case 'shop_normalize':
-        setResultText('Shop prices return to normal.');
+        setDisplayText('Shop prices return to normal.');
         break;
       case 'lose_hp_gain_artifact':
         updateHealth(-10);
-        setResultText('The bite burns. You gained a mysterious artifact. (-10 HP)');
+        artifact = pickArtifact(ownedIds, 'rattlesnake');
+        setDisplayText('The bite burns, but something powerful courses through you.');
         break;
+      case 'lose_hp_gain_gunslinger_artifact':
+        updateHealth(-15);
+        artifact = pickArtifact(ownedIds, 'gunslinger');
+        setDisplayText('You drew and fired. The preacher nods, impressed. He leaves you a gift.');
+        break;
+      case 'lose_hp_gain_artifact_consumable':
+        updateHealth(-20);
+        artifact = pickArtifact(ownedIds);
+        addConsumable({ id: 'tonic' });
+        setDisplayText('You reached in and pulled out something valuable, along with a tonic.');
+        break;
+      case 'search_saloon': {
+        const roll = Math.random();
+        if (roll < 0.5) {
+          artifact = pickArtifact(ownedIds);
+          setDisplayText('You found something hidden behind the bar.');
+        } else {
+          updateHealth(-15);
+          setDisplayText('An ambush in the back room. You barely escape.');
+        }
+        break;
+      }
+      case 'search_engine_artifact':
+        updateHealth(-10);
+        artifact = pickArtifact(ownedIds);
+        setDisplayText('You dug through the wreckage and found something worth keeping.');
+        break;
+      case 'gain_artifact_buff_elite':
+        artifact = pickArtifact(ownedIds);
+        setDisplayText('You took the dead hunter\'s gear. Something about it feels... watched.');
+        break;
+      case 'lose_artifact_full_heal': {
+        if (run.artifacts.length > 0) {
+          updateHealth(run.maxHealth - run.health);
+          setDisplayText('You feel cleansed. Fully healed, but lighter.');
+        } else {
+          updateHealth(run.maxHealth - run.health);
+          setDisplayText('Nothing to confess. You feel healed anyway.');
+        }
+        break;
+      }
       case 'mine_delve': {
         const roll = Math.random();
         if (roll < 0.25) {
           updateHealth(-3);
-          setResultText('You explored the first level. Found nothing useful. (-3 HP)');
+          setDisplayText('You explored the first level. Found nothing useful.');
         } else if (roll < 0.5) {
           updateHealth(-8);
-          setResultText('You went deeper and found some gold. (-8 HP, +20 gold)');
           updateGold(20);
+          setDisplayText('You went deeper and found some gold.');
         } else {
           updateHealth(-15);
           updateGold(40);
-          setResultText('Deep in the mine, you struck gold. (-15 HP, +40 gold)');
+          setDisplayText('Deep in the mine, you struck gold.');
         }
         break;
       }
       case 'help_merchant':
-        setResultText('The merchant thanks you. Shops will have more stock.');
+        setDisplayText('The merchant thanks you. Shops will have more stock.');
         break;
       case 'rob_merchant':
         updateGold(15);
-        setResultText('You took what you needed. +15 gold. Next shop costs more.');
+        setDisplayText('You took what you needed. Next shop costs more.');
         break;
       case 'climb_well':
         updateHealth(-10);
         updateGold(30);
-        setResultText('The climb was rough, but the payoff was worth it. (-10 HP, +30 gold)');
+        setDisplayText('The climb was rough, but the payoff was worth it.');
+        break;
+      case 'gain_tnt':
+        addConsumable({ id: 'stick_of_tnt' });
+        addConsumable({ id: 'stick_of_tnt' });
+        setDisplayText('You carefully packed away two sticks of dynamite.');
+        break;
+      case 'skip_node_lose_hp':
+        updateHealth(-15);
+        setDisplayText('The explosion clears the way, but the blast catches you.');
+        break;
+      case 'block_5_next_fight':
+        setDisplayText('You walk away unscathed. Your guard is up.');
+        break;
+      case 'lose_hp_shuffle_board':
+        updateHealth(-10);
+        setDisplayText('The sand stings your eyes. Your board starts shuffled next fight.');
+        break;
+      case 'heal_20_lose_swap':
+        updateHealth(20);
+        setDisplayText('The whiskey warms you up. Your reflexes are a bit sluggish.');
+        break;
+      case 'lose_hp_gold_upgrade_tile':
+        updateHealth(-5);
+        updateGold(25);
+        setDisplayText('You dug him out. He hands you gold and shares a trick of the trade.');
+        break;
+      case 'gain_consumables_shop_penalty':
+        addConsumable({ id: 'tonic' });
+        addConsumable({ id: 'smoke_bomb' });
+        setDisplayText('You took his gear. Shops will charge you more this act.');
+        break;
+      case 'heal_and_intel':
+        updateHealth(15);
+        setDisplayText('A restful night. You feel healed and informed about what lies ahead.');
+        break;
+      case 'trade_consumables':
+        addConsumable({ id: 'tonic' });
+        addConsumable({ id: 'smoke_bomb' });
+        setDisplayText('A fair trade. You got some useful supplies.');
+        break;
+      case 'bonus_swap_next_fight':
+        setDisplayText('You kept walking. Your focus sharpens.');
+        break;
+      case 'loot_train':
+        updateGold(20);
+        addConsumable({ id: 'tonic' });
+        setDisplayText('You scavenged gold and a tonic from the wreckage.');
+        break;
+      case 'shop_discount':
+        setDisplayText('The survivors are grateful. Next shop will offer better prices.');
+        break;
+      case 'bury_heal_gold':
+        updateHealth(10);
+        updateGold(10);
+        setDisplayText('You gave him a proper burial and found some gold in his pockets.');
+        break;
+      case 'defuse_bridge': {
+        const roll = Math.random();
+        if (roll < 0.5) {
+          addConsumable({ id: 'stick_of_tnt' });
+          addConsumable({ id: 'stick_of_tnt' });
+          setDisplayText('Steady hands. You defused the charges and kept the dynamite.');
+        } else {
+          updateHealth(-10);
+          setDisplayText('The wires were tricky. You got singed, but made it across.');
+        }
+        break;
+      }
+      case 'blow_bridge_skip':
+        updateHealth(-20);
+        setDisplayText('The bridge is gone. You climbed down the hard way.');
+        break;
+      case 'buy_tonic':
+        if (run.gold >= 15) {
+          updateGold(-15);
+          updateHealth(30);
+          setDisplayText('The tonic tastes terrible but heals you well.');
+        } else {
+          setDisplayText('You can\'t afford it.');
+        }
+        break;
+      case 'buy_mystery_vial': {
+        if (run.gold >= 10) {
+          updateGold(-10);
+          const roll = Math.random();
+          if (roll < 0.33) {
+            updateHealth(20);
+            setDisplayText('The vial glows faintly. You feel much better.');
+          } else if (roll < 0.66) {
+            addConsumable({ id: 'moonshine' });
+            setDisplayText('Strong stuff. You pocket the moonshine for later.');
+          } else {
+            updateHealth(-10);
+            setDisplayText('Poison. You feel terrible.');
+          }
+        } else {
+          setDisplayText('You can\'t afford it.');
+        }
+        break;
+      }
+      case 'threaten_merchant':
+        addConsumable({ id: 'tonic' });
+        addConsumable({ id: 'bandage' });
+        setDisplayText('He hands over the goods. Shops will charge more this act.');
+        break;
+      case 'smoke_out_den':
+        updateGold(20);
+        setDisplayText('The coyotes scatter. You find cached loot inside.');
+        break;
+      case 'gain_smoke_bomb':
+        addConsumable({ id: 'smoke_bomb' });
+        setDisplayText('You crept past without a sound and found a smoke bomb.');
+        break;
+      case 'none':
+        setDisplayText('You move on.');
         break;
       default:
-        setResultText(choice.description);
+        setDisplayText(choice.description);
         break;
     }
+
+    if (artifact) {
+      setRewardArtifact(artifact);
+    }
+  };
+
+  const handleTakeArtifact = () => {
+    if (rewardArtifact) {
+      addArtifact({ id: rewardArtifact.id, tags: rewardArtifact.tags });
+    }
+    setArtifactHandled(true);
+  };
+
+  const handleSkipArtifact = () => {
+    setArtifactHandled(true);
   };
 
   const handleContinue = () => {
@@ -85,38 +283,24 @@ export const EventScreen = memo(function EventScreen() {
 
   if (!run) return null;
 
+  const showArtifactPopup = rewardArtifact && !artifactHandled;
+  const showContinue = choiceMade && (!rewardArtifact || artifactHandled);
+
   return (
     <div className="flex flex-col items-center justify-center h-full bg-[#1a1a2e]/95">
       <div className="max-w-md w-full px-4">
         {/* Event title */}
         <h2 className="text-xl text-amber-400 font-mono mb-3 text-center">{event.title}</h2>
 
-        {/* Flavour text */}
+        {/* Flavour text / result text */}
         <div className="border border-stone-600 bg-stone-800/50 p-4 mb-4">
           <p className="text-stone-300 font-mono text-sm italic leading-relaxed">
-            "{event.flavourText}"
+            "{choiceMade ? displayText : event.flavourText}"
           </p>
         </div>
 
-        {/* Choices or result */}
-        {choiceMade ? (
-          <div className="flex flex-col items-center">
-            <div className="border border-amber-700/50 bg-amber-900/20 p-4 mb-4 w-full">
-              <p className="text-stone-300 font-mono text-sm text-center">{resultText}</p>
-            </div>
-            <div className="text-xs text-stone-400 font-mono mb-4">
-              HP: <span className="text-red-400">{run.health}/{run.maxHealth}</span>
-              {' | '}
-              Gold: <span className="text-yellow-400">{run.gold}</span>
-            </div>
-            <button
-              onClick={handleContinue}
-              className="px-6 py-2 bg-amber-900/60 text-amber-300 font-mono text-sm border border-amber-700 hover:bg-amber-800/60"
-            >
-              Continue
-            </button>
-          </div>
-        ) : (
+        {/* Choices (before selection) */}
+        {!choiceMade && (
           <div className="flex flex-col gap-2">
             {event.choices.map((choice, i) => (
               <button
@@ -132,6 +316,57 @@ export const EventScreen = memo(function EventScreen() {
                 </span>
               </button>
             ))}
+          </div>
+        )}
+
+        {/* Artifact reward popup */}
+        {showArtifactPopup && rewardArtifact && (
+          <div className="flex flex-col items-center">
+            <div
+              className="flex flex-col items-center w-48 mb-4"
+              style={{
+                border: '2px solid #b45309',
+                backgroundColor: 'rgba(120, 53, 15, 0.3)',
+                padding: '16px 12px',
+              }}
+            >
+              <div className="w-10 h-10 rounded-sm mb-3 bg-amber-700/60 border border-amber-600" />
+              <span className="text-amber-300 font-mono text-sm font-bold text-center">
+                {rewardArtifact.name}
+              </span>
+              <span className="text-stone-400 font-mono text-center mt-2 leading-tight" style={{ fontSize: '9px' }}>
+                {rewardArtifact.description}
+              </span>
+              <span className="text-amber-600 font-mono text-center mt-2 leading-tight" style={{ fontSize: '9px' }}>
+                {rewardArtifact.effect}
+              </span>
+            </div>
+            <div className="flex gap-3">
+              <button
+                onClick={handleTakeArtifact}
+                className="px-6 py-1.5 font-mono text-xs bg-amber-900/60 text-amber-300 border border-amber-700 hover:bg-amber-800/60"
+              >
+                Take It
+              </button>
+              <button
+                onClick={handleSkipArtifact}
+                className="px-6 py-1.5 font-mono text-xs bg-stone-800/50 text-stone-400 border border-stone-700 hover:bg-stone-700/50"
+              >
+                Skip
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Continue button (after artifact handled or non-artifact choice) */}
+        {showContinue && (
+          <div className="flex flex-col items-center">
+            <button
+              onClick={handleContinue}
+              className="px-6 py-2 bg-amber-900/60 text-amber-300 font-mono text-sm border border-amber-700 hover:bg-amber-800/60"
+            >
+              Continue
+            </button>
           </div>
         )}
       </div>

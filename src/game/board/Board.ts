@@ -210,9 +210,14 @@ export class Board {
     return (dr === 1 && dc === 0) || (dr === 0 && dc === 1);
   }
 
+  /** Duration for the swap animation in ms (before speed multiplier). */
+  private static readonly SWAP_DURATION = 180;
+
   /**
    * Attempt to swap two tiles. Validates adjacency and match production.
    * Returns the result including all matches from the full cascade chain.
+   * Plays a visible swap animation. If the swap is invalid, animates the
+   * tiles swapping and then swapping back (bounce-back).
    */
   async trySwap(
     from: GridPosition,
@@ -225,7 +230,7 @@ export class Board {
     const tileB = this.grid[to.row]?.[to.col];
     if (!tileA || !tileB) return { valid: false, matches: [] };
 
-    // Don't allow swapping locked tiles (regular or hardened)
+    // Don't allow swapping locked tiles (no animation either)
     const aLock = tileA.hazard?.type === 'lock' || tileA.hazard?.type === 'hardened_lock';
     const bLock = tileB.hazard?.type === 'lock' || tileB.hazard?.type === 'hardened_lock';
     if (aLock || bLock) {
@@ -237,19 +242,33 @@ export class Board {
       return this.resolveShowdownSwap(from, to, onCascadeStep);
     }
 
-    // Perform the swap
+    // Block input during swap animation
+    this.isResolving = true;
+
+    // Animate the swap visually
+    const dur = Board.SWAP_DURATION;
+    await Promise.all([
+      tileA.tweenToPosition(this.tileX(to.col), this.tileY(to.row), dur),
+      tileB.tweenToPosition(this.tileX(from.col), this.tileY(from.row), dur),
+    ]);
+
+    // Update grid positions
     this.swapTilesInGrid(from, to);
 
     // Check if swap produces matches
     const matches = this.findMatches();
     if (matches.length === 0) {
-      // No match: revert
+      // No match: animate swap back (bounce-back)
       this.swapTilesInGrid(from, to);
+      await Promise.all([
+        tileA.tweenToPosition(this.tileX(from.col), this.tileY(from.row), dur),
+        tileB.tweenToPosition(this.tileX(to.col), this.tileY(to.row), dur),
+      ]);
+      this.isResolving = false;
       return { valid: false, matches: [] };
     }
 
     // Valid swap: resolve all cascades
-    this.isResolving = true;
     EventBus.emit(GameEvent.SWAPS_CHANGE);
     const allMatches = await this.cascadeResolver.resolve(this, onCascadeStep);
 
@@ -262,6 +281,7 @@ export class Board {
     return { valid: true, matches: allMatches };
   }
 
+  /** Swap grid positions of two tiles. Does NOT update visual positions. */
   private swapTilesInGrid(a: GridPosition, b: GridPosition): void {
     const tileA = this.grid[a.row][a.col];
     const tileB = this.grid[b.row][b.col];
@@ -272,12 +292,10 @@ export class Board {
     if (tileA) {
       tileA.row = b.row;
       tileA.col = b.col;
-      this.updateTilePosition(tileA);
     }
     if (tileB) {
       tileB.row = a.row;
       tileB.col = a.col;
-      this.updateTilePosition(tileB);
     }
   }
 

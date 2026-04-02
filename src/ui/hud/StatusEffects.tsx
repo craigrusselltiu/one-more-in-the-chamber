@@ -7,7 +7,6 @@ interface StatusEffectsProps {
 
 const STATUS_COLORS: Record<string, string> = {
   block: '#6888A0',
-  dodge: '#909090',
   ace: '#E0C880',
   crit: '#D06080',
   thorns: '#8B6030',
@@ -17,7 +16,6 @@ const STATUS_COLORS: Record<string, string> = {
 
 const STATUS_LABELS: Record<string, string> = {
   block: 'BLK',
-  dodge: 'DDG',
   ace: 'ACE',
   crit: 'CRT',
   thorns: 'THN',
@@ -26,7 +24,7 @@ const STATUS_LABELS: Record<string, string> = {
 };
 
 function formatValue(type: string, value: number): string {
-  if (type === 'dodge' || type === 'crit') return `${value}%`;
+  if (type === 'crit') return `${value}%`;
   if (type === 'ace') return `${value.toFixed(1)}x`;
   return String(value);
 }

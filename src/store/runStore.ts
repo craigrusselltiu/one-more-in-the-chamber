@@ -1,13 +1,24 @@
 import { create } from 'zustand';
-import type { RunState, TileType, ArtifactInstance, ConsumableInstance, Act, MapState } from '../types/game';
+import type { RunState, TileType, ArtifactInstance, ConsumableInstance, Act, MapState, CharacterId } from '../types/game';
 import { generateMap } from '../game/map/MapGenerator';
 import { useMetaStore } from './metaStore';
 import { ARTIFACTS } from '../data/artifacts';
+import { deleteRun as deleteRunFromDB, clearCombatSnapshot } from '../services/localSave';
+
+interface PendingNewGame {
+  character: CharacterId;
+  ascensionLevel: number;
+}
 
 interface RunStore {
   run: RunState | null;
+  pendingNewGame: PendingNewGame | null;
   /** Restore a run loaded from IndexedDB (app resume). */
   restoreRun: (run: RunState) => void;
+  /** Clear the active run from store and IndexedDB. */
+  clearRun: () => Promise<void>;
+  /** Set pending new game config (character + ascension) before tile select. */
+  setPendingNewGame: (config: PendingNewGame) => void;
   startRun: (seed: string, starterTile: TileType, ascensionLevel?: number) => void;
   updateHealth: (delta: number) => void;
   updateGold: (delta: number) => void;
@@ -29,10 +40,22 @@ interface RunStore {
   endRun: (completed: boolean) => void;
 }
 
-export const useRunStore = create<RunStore>((set) => ({
+export const useRunStore = create<RunStore>((set, get) => ({
   run: null,
+  pendingNewGame: null,
 
   restoreRun: (run) => set({ run }),
+
+  clearRun: async () => {
+    const run = get().run;
+    if (run) {
+      await deleteRunFromDB(run.id).catch(() => {});
+      await clearCombatSnapshot(run.id).catch(() => {});
+    }
+    set({ run: null });
+  },
+
+  setPendingNewGame: (config) => set({ pendingNewGame: config }),
 
   startRun: (seed, starterTile, ascensionLevel = 0) => {
     const mapState = generateMap(seed, 1);
@@ -61,6 +84,7 @@ export const useRunStore = create<RunStore>((set) => ({
     }
 
     set({
+      pendingNewGame: null,
       run: {
         id: crypto.randomUUID(),
         character: 'red_panda',

@@ -10,7 +10,6 @@ interface CombatStore {
   playerHealth: number;
   playerMaxHealth: number;
   playerBlock: number;
-  dodgeChance: number;
   aceMultiplier: number;
   critChance: number;
   thorns: number;
@@ -53,7 +52,6 @@ const initialState = {
   playerHealth: 100,
   playerMaxHealth: 100,
   playerBlock: 0,
-  dodgeChance: 0,
   aceMultiplier: 1.0,
   critChance: 0,
   thorns: 0,
@@ -79,7 +77,6 @@ export const useCombatStore = create<CombatStore>((set) => ({
   syncFromCombatState: (state: CombatState) =>
     set({
       playerBlock: state.playerBlock,
-      dodgeChance: state.dodgeChance,
       aceMultiplier: state.aceMultiplier,
       critChance: state.critChance,
       thorns: state.thorns,
@@ -120,7 +117,6 @@ export const useCombatStore = create<CombatStore>((set) => ({
 export function getPlayerStatusEffects(store: CombatStore): PlayerStatusEffect[] {
   const effects: PlayerStatusEffect[] = [];
   if (store.playerBlock > 0) effects.push({ type: 'block', value: store.playerBlock });
-  if (store.dodgeChance > 0) effects.push({ type: 'dodge', value: store.dodgeChance });
   if (store.aceMultiplier > 1.0) effects.push({ type: 'ace', value: store.aceMultiplier });
   if (store.critChance > 0) effects.push({ type: 'crit', value: store.critChance });
   if (store.thorns > 0) effects.push({ type: 'thorns', value: store.thorns });
