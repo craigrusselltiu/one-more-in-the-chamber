@@ -8,14 +8,16 @@ import type { Screen } from '../../App';
 
 /**
  * Compute the time multiplier for scoring.
- * <=45 min: 1.5x, linear to 1.0x at 90 min, no penalty past 90 min.
+ * <=45 min: 1.5x, linear to 1.0x at 90 min, continues decreasing to 0.5x at 180 min.
  */
 function computeTimeMultiplier(durationSeconds: number): number {
   const MIN_45 = 45 * 60;
   const MIN_90 = 90 * 60;
+  const MIN_180 = 180 * 60;
   if (durationSeconds <= MIN_45) return 1.5;
-  if (durationSeconds >= MIN_90) return 1.0;
-  return 1.5 - 0.5 * (durationSeconds - MIN_45) / (MIN_90 - MIN_45);
+  if (durationSeconds <= MIN_90) return 1.5 - 0.5 * (durationSeconds - MIN_45) / (MIN_90 - MIN_45);
+  if (durationSeconds >= MIN_180) return 0.5;
+  return 1.0 - 0.5 * (durationSeconds - MIN_90) / (MIN_180 - MIN_90);
 }
 
 /** Format seconds into MM:SS or H:MM:SS. */
@@ -150,18 +152,18 @@ export const ScoreScreen = memo(function ScoreScreen() {
   }
 
   return (
-    <div className="flex flex-col items-center justify-center h-full bg-[#1a1a2e]/95">
-      <h2 className="text-2xl text-amber-400 font-mono mb-1">
+    <div className="flex flex-col items-center justify-center h-full bg-[#1a1a2e]/95 px-8">
+      <h2 className="text-xl text-amber-400 font-mono mb-0.5">
         {score.completed ? 'Victory' : 'Defeat'}
       </h2>
-      <p className="text-stone-400 font-mono text-xs mb-6">
+      <p className="text-stone-400 font-mono mb-4" style={{ fontSize: '10px' }}>
         {score.completed
           ? 'The West remembers your name.'
           : 'The trail claims another soul.'}
       </p>
 
       {/* Score breakdown */}
-      <div className="w-72 border border-stone-600 bg-stone-800/50 p-4 mb-4">
+      <div className="w-64 border border-stone-600 bg-stone-800/50 p-3 mb-3">
         <div className="flex flex-col gap-1.5">
           <ScoreLine label="Combat" value={score.combatNodes * 100} detail={`${score.combatNodes} fights`} />
           <ScoreLine label="Elites" value={score.eliteNodes * 200} detail={`${score.eliteNodes} elites`} />
@@ -198,17 +200,17 @@ export const ScoreScreen = memo(function ScoreScreen() {
       </div>
 
       {/* Final score */}
-      <div className="w-72 border-2 border-amber-700 bg-amber-900/20 p-3 mb-4">
+      <div className="w-64 border-2 border-amber-700 bg-amber-900/20 p-2 mb-3">
         <div className="flex items-center justify-between">
-          <span className="text-amber-300 font-mono text-sm font-bold">FINAL SCORE</span>
-          <span className="text-amber-400 font-mono text-xl font-bold">
+          <span className="text-amber-300 font-mono text-xs font-bold">FINAL SCORE</span>
+          <span className="text-amber-400 font-mono text-lg font-bold">
             {score.finalScore.toLocaleString()}
           </span>
         </div>
       </div>
 
       {/* Reputation earned */}
-      <div className="w-72 flex items-center justify-between mb-6 px-1">
+      <div className="w-64 flex items-center justify-between mb-4 px-1">
         <span className="text-stone-400 font-mono text-xs">Reputation earned</span>
         <span className="text-amber-300 font-mono text-xs font-bold">
           +{Math.max(10, Math.floor(score.finalScore / 10)).toLocaleString()}

@@ -238,7 +238,7 @@ export class Board {
     }
 
     // Handle showdown tile swap: destroy all tiles of the adjacent type
-    if (tileA.isShowdown || tileB.isShowdown) {
+    if (tileA.type === 'showdown' || tileB.type === 'showdown') {
       return this.resolveShowdownSwap(from, to, onCascadeStep);
     }
 
@@ -316,10 +316,11 @@ export class Board {
     const tileA = this.grid[from.row][from.col]!;
     const tileB = this.grid[to.row][to.col]!;
 
-    const showdownTile = tileA.isShowdown ? tileA : tileB;
-    const targetTile = tileA.isShowdown ? tileB : tileA;
+    const isAShowdown = tileA.type === 'showdown';
+    const showdownTile = isAShowdown ? tileA : tileB;
+    const targetTile = isAShowdown ? tileB : tileA;
     const targetType = targetTile.type;
-    const showdownPos = tileA.isShowdown ? from : to;
+    const showdownPos = isAShowdown ? from : to;
 
     this.isResolving = true;
 
@@ -415,7 +416,7 @@ export class Board {
     row: number,
     col: number,
     type: TileType,
-    kind: 'explosive' | 'showdown',
+    kind: 'explosive' | 'showdown' | 'none',
   ): void {
     // Destroy existing tile if present
     const existing = this.grid[row][col];
@@ -432,8 +433,6 @@ export class Board {
 
     if (kind === 'explosive') {
       tile.setExplosive(true);
-    } else {
-      tile.setShowdown(true);
     }
 
     this.grid[row][col] = tile;
@@ -468,20 +467,60 @@ export class Board {
     const tweens: Promise<void>[] = [];
     let globalIndex = 0;
 
-    if (this.cascadeResolver.getGravityDirection() === 'left') {
+    const gravDir = this.cascadeResolver.getGravityDirection();
+    if (gravDir === 'left') {
       // Gravity left: new tiles enter from the right edge
       for (let row = 0; row < BOARD_SIZE; row++) {
         let emptyCount = 0;
         for (let col = 0; col < BOARD_SIZE; col++) {
           if (this.grid[row][col] === null) emptyCount++;
         }
-
         let spawnIndex = 0;
         for (let col = BOARD_SIZE - 1; col >= 0; col--) {
           if (this.grid[row][col] === null) {
             const type = this.randomTileType();
             const startX = this.originX + BOARD_SIZE * TILE_SIZE + (emptyCount - spawnIndex) * TILE_SIZE;
             const tile = new Tile(this.scene, startX, this.tileY(row), type, row, col);
+            this.grid[row][col] = tile;
+            tweens.push(tile.tweenToPosition(this.tileX(col), this.tileY(row), 200, globalIndex * 25, true));
+            spawnIndex++;
+            globalIndex++;
+          }
+        }
+      }
+    } else if (gravDir === 'right') {
+      // Gravity right: new tiles enter from the left edge
+      for (let row = 0; row < BOARD_SIZE; row++) {
+        let emptyCount = 0;
+        for (let col = 0; col < BOARD_SIZE; col++) {
+          if (this.grid[row][col] === null) emptyCount++;
+        }
+        let spawnIndex = 0;
+        for (let col = 0; col < BOARD_SIZE; col++) {
+          if (this.grid[row][col] === null) {
+            const type = this.randomTileType();
+            const startX = this.originX - (emptyCount - spawnIndex) * TILE_SIZE;
+            const tile = new Tile(this.scene, startX, this.tileY(row), type, row, col);
+            this.grid[row][col] = tile;
+            tweens.push(tile.tweenToPosition(this.tileX(col), this.tileY(row), 200, globalIndex * 25, true));
+            spawnIndex++;
+            globalIndex++;
+          }
+        }
+      }
+    } else if (gravDir === 'up') {
+      // Gravity up: new tiles enter from the bottom edge
+      for (let col = 0; col < BOARD_SIZE; col++) {
+        let emptyCount = 0;
+        for (let row = 0; row < BOARD_SIZE; row++) {
+          if (this.grid[row][col] === null) emptyCount++;
+        }
+        let spawnIndex = 0;
+        for (let row = BOARD_SIZE - 1; row >= 0; row--) {
+          if (this.grid[row][col] === null) {
+            const type = this.randomTileType();
+            const startY = this.originY + BOARD_SIZE * TILE_SIZE + (emptyCount - spawnIndex) * TILE_SIZE;
+            const tile = new Tile(this.scene, this.tileX(col), startY, type, row, col);
             this.grid[row][col] = tile;
             tweens.push(tile.tweenToPosition(this.tileX(col), this.tileY(row), 200, globalIndex * 25, true));
             spawnIndex++;

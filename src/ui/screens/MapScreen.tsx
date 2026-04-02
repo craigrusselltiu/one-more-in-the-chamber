@@ -48,80 +48,102 @@ export const MapScreen = memo(function MapScreen({ readonly, onClose }: { readon
   const canvasWidth = PADDING_LEFT + 12 * FLOOR_SPACING + 40;
   const canvasHeight = PADDING_TOP + 6 * PATH_SPACING + 24;
 
-  // Draw map
+  // Draw map with breathing animation for reachable nodes
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas || !mapState) return;
 
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
+    const ctxInit = canvas.getContext('2d');
+    if (!ctxInit) return;
 
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    let animId: number;
+    const hasReachable = reachable.length > 0;
 
-    // Draw connections
-    for (const node of nodes) {
-      const from = getNodePos(node);
-      for (const connId of node.connections) {
-        const target = nodes.find((n) => n.id === connId);
-        if (!target) continue;
-        const to = getNodePos(target);
+    function draw() {
+      const ctx = ctxInit!;
+      ctx.clearRect(0, 0, canvas!.width, canvas!.height);
 
-        ctx.strokeStyle = node.visited ? '#6b7280' : '#374151';
-        ctx.lineWidth = 2;
+      // Breathing scale: oscillate between 1.0 and 1.08 over ~1.5s
+      const breathScale = hasReachable
+        ? 1.0 + 0.08 * (0.5 + 0.5 * Math.sin((performance.now() / 750) * Math.PI))
+        : 1.0;
+
+      // Draw connections
+      for (const node of nodes) {
+        const from = getNodePos(node);
+        for (const connId of node.connections) {
+          const target = nodes.find((n) => n.id === connId);
+          if (!target) continue;
+          const to = getNodePos(target);
+
+          ctx.strokeStyle = node.visited ? '#6b7280' : '#374151';
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.moveTo(from.x, from.y);
+          const midX = (from.x + to.x) / 2;
+          ctx.bezierCurveTo(midX, from.y, midX, to.y, to.x, to.y);
+          ctx.stroke();
+        }
+      }
+
+      // Draw nodes
+      for (const node of nodes) {
+        const pos = getNodePos(node);
+        const style = NODE_STYLES[node.type];
+        const isReachable = reachable.includes(node.id);
+        const isCurrent = node.id === mapState!.currentNodeId;
+
+        // Apply breathing scale to reachable nodes
+        const radius = isReachable && !isCurrent ? NODE_RADIUS * breathScale : NODE_RADIUS;
+
         ctx.beginPath();
-        ctx.moveTo(from.x, from.y);
-        // Curved line for visual interest
-        const midX = (from.x + to.x) / 2;
-        ctx.bezierCurveTo(midX, from.y, midX, to.y, to.x, to.y);
-        ctx.stroke();
+        ctx.arc(pos.x, pos.y, radius, 0, Math.PI * 2);
+
+        if (isCurrent) {
+          ctx.fillStyle = '#fbbf24';
+          ctx.fill();
+          ctx.strokeStyle = '#f59e0b';
+          ctx.lineWidth = 3;
+          ctx.stroke();
+        } else if (node.visited) {
+          ctx.fillStyle = '#374151';
+          ctx.fill();
+          ctx.strokeStyle = '#4b5563';
+          ctx.lineWidth = 2;
+          ctx.stroke();
+        } else if (isReachable) {
+          ctx.fillStyle = style.color;
+          ctx.fill();
+          ctx.strokeStyle = '#fbbf24';
+          ctx.lineWidth = 2;
+          ctx.stroke();
+        } else {
+          ctx.fillStyle = style.color + '60';
+          ctx.fill();
+          ctx.strokeStyle = style.color + '80';
+          ctx.lineWidth = 1;
+          ctx.stroke();
+        }
+
+        // Node symbol - scale font for reachable breathing
+        const fontSize = isReachable && !isCurrent ? Math.round(14 * breathScale) : 14;
+        ctx.fillStyle = isCurrent ? '#1a1a2e' : node.visited ? '#6b7280' : '#fff';
+        ctx.font = `bold ${fontSize}px monospace`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(style.symbol, pos.x, pos.y + 1);
+      }
+
+      if (hasReachable) {
+        animId = requestAnimationFrame(draw);
       }
     }
 
-    // Draw nodes
-    for (const node of nodes) {
-      const pos = getNodePos(node);
-      const style = NODE_STYLES[node.type];
-      const isReachable = reachable.includes(node.id);
-      const isCurrent = node.id === mapState.currentNodeId;
+    draw();
 
-      // Node circle
-      ctx.beginPath();
-      ctx.arc(pos.x, pos.y, NODE_RADIUS, 0, Math.PI * 2);
-
-      if (isCurrent) {
-        ctx.fillStyle = '#fbbf24';
-        ctx.fill();
-        ctx.strokeStyle = '#f59e0b';
-        ctx.lineWidth = 3;
-        ctx.stroke();
-      } else if (node.visited) {
-        ctx.fillStyle = '#374151';
-        ctx.fill();
-        ctx.strokeStyle = '#4b5563';
-        ctx.lineWidth = 2;
-        ctx.stroke();
-      } else if (isReachable) {
-        ctx.fillStyle = style.color;
-        ctx.fill();
-        // Pulsing border for reachable
-        ctx.strokeStyle = '#fbbf24';
-        ctx.lineWidth = 2;
-        ctx.stroke();
-      } else {
-        ctx.fillStyle = style.color + '60';
-        ctx.fill();
-        ctx.strokeStyle = style.color + '80';
-        ctx.lineWidth = 1;
-        ctx.stroke();
-      }
-
-      // Node symbol
-      ctx.fillStyle = isCurrent ? '#1a1a2e' : node.visited ? '#6b7280' : '#fff';
-      ctx.font = 'bold 14px monospace';
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillText(style.symbol, pos.x, pos.y + 1);
-    }
+    return () => {
+      if (animId) cancelAnimationFrame(animId);
+    };
   }, [nodes, mapState, reachable]);
 
   // Scroll to current node on mount
@@ -228,8 +250,8 @@ export const MapScreen = memo(function MapScreen({ readonly, onClose }: { readon
       )}
 
       {/* Tooltip / node info */}
-      <div className="h-8 flex items-center justify-center border-t border-stone-700 px-4">
-        {hoveredNode ? (
+      {hoveredNode && (
+        <div className="h-8 flex items-center justify-center border-t border-stone-700 px-4">
           <div className="flex items-center gap-3">
             <span
               className="w-4 h-4 rounded-full"
@@ -241,27 +263,8 @@ export const MapScreen = memo(function MapScreen({ readonly, onClose }: { readon
               {reachable.includes(hoveredNode.id) && !hoveredNode.visited && ' -- click to travel'}
             </span>
           </div>
-        ) : (
-          <span className="text-stone-500 font-mono text-xs">
-            Choose your path. Hover over nodes for details.
-          </span>
-        )}
-      </div>
-
-      {/* Legend */}
-      <div className="flex justify-center gap-4 py-1.5 border-t border-stone-700/50">
-        {(['combat', 'elite', 'shop', 'rest', 'event', 'treasure', 'boss'] as const).map((type) => (
-          <div key={type} className="flex items-center gap-1">
-            <span
-              className="w-2.5 h-2.5 rounded-full inline-block"
-              style={{ backgroundColor: NODE_STYLES[type].color }}
-            />
-            <span className="text-stone-500 font-mono" style={{ fontSize: '10px' }}>
-              {NODE_STYLES[type].label}
-            </span>
-          </div>
-        ))}
-      </div>
+        </div>
+      )}
     </div>
   );
 });

@@ -909,6 +909,9 @@ export class CombatManager {
 
       this.applyResourceOutput(scaled);
 
+      // Motherlode Map: 4+ gold match converts adjacent tiles to gold
+      this.artifacts.tryMotherlodeConvert(match, this.board);
+
       // Screen shake on crit for extra punch
       if (isCrit && scaled.damage > 0) {
         EventBus.emit(GameEvent.SCREEN_SHAKE, 'medium');
@@ -1178,7 +1181,9 @@ export class CombatManager {
     if (this.bossController && this.isBossEnemy(summoner)) {
       const minionDef = BossController.createBossMinion(summoner.getDefinition().type);
       if (minionDef) {
-        this.enemies.push(new Enemy(minionDef));
+        const bossMinion = new Enemy(minionDef);
+        bossMinion.summoned = true;
+        this.enemies.push(bossMinion);
         this.emitFullState();
         return;
       }
@@ -1195,6 +1200,7 @@ export class CombatManager {
       abilities: [],
     };
     const minion = new Enemy(minionDef);
+    minion.summoned = true;
 
     // Coyote Pelt: summoned enemies take 5 damage immediately
     const hpBeforeSummon = minion.state.health;
@@ -1211,7 +1217,14 @@ export class CombatManager {
 
   private isCombatOver(): boolean {
     if (this.player.isDead()) return true;
-    if (this.aliveEnemies().length === 0) return true;
+    const alive = this.aliveEnemies();
+    if (alive.length === 0) return true;
+    // If only summoned enemies remain, the fight is won
+    if (alive.every((e) => e.summoned)) {
+      // Kill remaining summoned enemies
+      for (const e of alive) e.state.isDead = true;
+      return true;
+    }
     return false;
   }
 

@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Sprite Picker</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #1a1a2e; color: #eee; font-family: monospace; }
+  #controls { padding: 8px 16px; background: #16213e; display: flex; gap: 16px; align-items: center; position: sticky; top: 0; z-index: 10; }
+  #controls label { font-size: 13px; }
+  #controls input, #controls select { background: #0f3460; color: #eee; border: 1px solid #555; padding: 4px 8px; font-family: monospace; }
+  #preview-bar { position: fixed; bottom: 0; left: 0; right: 0; background: #16213e; padding: 8px 16px; display: flex; align-items: center; gap: 16px; z-index: 10; border-top: 1px solid #333; }
+  #preview-canvas { image-rendering: pixelated; border: 1px solid #FFD700; }
+  #preview-info { font-size: 14px; }
+  #copied { color: #40D840; font-size: 13px; opacity: 0; transition: opacity 0.2s; }
+  #grid { padding: 16px; padding-bottom: 80px; display: flex; flex-wrap: wrap; gap: 2px; }
+  .frame { position: relative; cursor: pointer; image-rendering: pixelated; border: 1px solid #333; }
+  .frame:hover { border-color: #FFD700; z-index: 5; }
+  .frame-label { position: absolute; bottom: 0; right: 0; background: rgba(0,0,0,0.7); color: #ccc; font-size: 8px; padding: 0 2px; pointer-events: none; }
+  #search { display: flex; gap: 8px; align-items: center; }
+  #filter { width: 80px; }
+</style>
+</head>
+<body>
+<div id="controls">
+  <label>Scale: <select id="scale"><option value="2">2x</option><option value="3" selected>3x</option><option value="4">4x</option></select></label>
+  <label>Sheet: <input type="file" id="file-input" accept="image/png"></label>
+  <div id="search">
+    <label>Filter index: <input type="text" id="filter" placeholder="e.g. 42"></label>
+  </div>
+  <span id="total-frames"></span>
+</div>
+<div id="grid"></div>
+<div id="preview-bar">
+  <canvas id="preview-canvas" width="128" height="128"></canvas>
+  <div id="preview-info">Hover a sprite to preview</div>
+  <span id="copied">Copied!</span>
+</div>
+
+<script>
+const FRAME_SIZE = 16;
+let sheetImage = null;
+let cols = 0;
+let rows = 0;
+let totalFrames = 0;
+
+const grid = document.getElementById('grid');
+const scaleSelect = document.getElementById('scale');
+const fileInput = document.getElementById('file-input');
+const filterInput = document.getElementById('filter');
+const previewCanvas = document.getElementById('preview-canvas');
+const previewCtx = previewCanvas.getContext('2d');
+const previewInfo = document.getElementById('preview-info');
+const copiedEl = document.getElementById('copied');
+const totalEl = document.getElementById('total-frames');
+
+previewCtx.imageSmoothingEnabled = false;
+
+function loadSheet(src) {
+  const img = new Image();
+  img.onload = () => {
+    sheetImage = img;
+    cols = Math.floor(img.width / FRAME_SIZE);
+    rows = Math.floor(img.height / FRAME_SIZE);
+    totalFrames = cols * rows;
+    totalEl.textContent = `${totalFrames} frames (${cols}x${rows})`;
+    renderGrid();
+  };
+  if (src instanceof Blob) {
+    img.src = URL.createObjectURL(src);
+  } else {
+    img.src = src;
+  }
+}
+
+function renderGrid() {
+  grid.innerHTML = '';
+  const scale = parseInt(scaleSelect.value);
+  const size = FRAME_SIZE * scale;
+  const filterVal = filterInput.value.trim();
+
+  for (let i = 0; i < totalFrames; i++) {
+    if (filterVal && !String(i).includes(filterVal)) continue;
+
+    const col = i % cols;
+    const row = Math.floor(i / cols);
+
+    const canvas = document.createElement('canvas');
+    canvas.width = size;
+    canvas.height = size;
+    canvas.className = 'frame';
+    canvas.dataset.index = i;
+    const ctx = canvas.getContext('2d');
+    ctx.imageSmoothingEnabled = false;
+    ctx.drawImage(sheetImage, col * FRAME_SIZE, row * FRAME_SIZE, FRAME_SIZE, FRAME_SIZE, 0, 0, size, size);
+
+    const label = document.createElement('span');
+    label.className = 'frame-label';
+    label.textContent = i;
+
+    const wrapper = document.createElement('div');
+    wrapper.style.position = 'relative';
+    wrapper.style.width = size + 'px';
+    wrapper.style.height = size + 'px';
+    wrapper.appendChild(canvas);
+    wrapper.appendChild(label);
+
+    wrapper.addEventListener('mouseenter', () => showPreview(i));
+    wrapper.addEventListener('click', () => copyIndex(i));
+
+    grid.appendChild(wrapper);
+  }
+}
+
+function showPreview(index) {
+  const col = index % cols;
+  const row = Math.floor(index / cols);
+  previewCtx.clearRect(0, 0, 128, 128);
+  previewCtx.drawImage(sheetImage, col * FRAME_SIZE, row * FRAME_SIZE, FRAME_SIZE, FRAME_SIZE, 0, 0, 128, 128);
+  previewInfo.textContent = `Frame #${index}  |  Row ${row}, Col ${col}  |  Sheet pos: (${col * FRAME_SIZE}, ${row * FRAME_SIZE})`;
+}
+
+function copyIndex(index) {
+  navigator.clipboard.writeText(String(index));
+  copiedEl.textContent = `Copied: ${index}`;
+  copiedEl.style.opacity = '1';
+  setTimeout(() => { copiedEl.style.opacity = '0'; }, 1200);
+}
+
+scaleSelect.addEventListener('change', renderGrid);
+filterInput.addEventListener('input', renderGrid);
+fileInput.addEventListener('change', (e) => {
+  if (e.target.files[0]) loadSheet(e.target.files[0]);
+});
+
+// Try loading from the project's public assets path
+loadSheet('../public/assets/sprites/items_sheet.png');
+</script>
+</body>
+</html>

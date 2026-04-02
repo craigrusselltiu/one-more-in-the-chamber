@@ -23,6 +23,8 @@ export class ArtifactSystem {
   private swapCritBonus = 0;
   /** Worn Lasso: once/fight non-adjacent swap used. */
   private lassoUsedThisFight = false;
+  /** Motherlode Map: once/fight 4+ gold match converts adjacent tiles. */
+  private motherlodeUsedThisFight = false;
 
   constructor(artifacts: ArtifactInstance[]) {
     this.artifactIds = new Set(artifacts.map((a) => a.id));
@@ -49,9 +51,45 @@ export class ArtifactSystem {
   }
 
   /** Restore internal state from a mid-combat snapshot. */
-  restoreState(firstMatch: boolean, lassoUsed: boolean): void {
+  restoreState(firstMatch: boolean, lassoUsed: boolean, motherlodeUsed = false): void {
     this.firstMatchThisFight = firstMatch;
     this.lassoUsedThisFight = lassoUsed;
+    this.motherlodeUsedThisFight = motherlodeUsed;
+  }
+
+  /** Whether the motherlode map has been triggered this fight. */
+  isMotherlodeUsedThisFight(): boolean {
+    return this.motherlodeUsedThisFight;
+  }
+
+  /**
+   * Motherlode Map: once/fight, a 4+ gold match converts adjacent non-gold tiles to gold.
+   * Returns the positions that were converted (for the board to update visuals).
+   */
+  tryMotherlodeConvert(match: MatchResult, board: { getGrid: () => (unknown | null)[][]; getBoardSize: () => number }): boolean {
+    if (!this.has('motherlode_map')) return false;
+    if (this.motherlodeUsedThisFight) return false;
+    if (match.tileType !== 'gold' || match.length < 4) return false;
+
+    this.motherlodeUsedThisFight = true;
+
+    const grid = board.getGrid() as ({ type: string; setType: (t: string) => void } | null)[][];
+    const size = board.getBoardSize();
+    const directions = [[-1, 0], [1, 0], [0, -1], [0, 1]];
+
+    for (const pos of match.tiles) {
+      for (const [dr, dc] of directions) {
+        const r = pos.row + dr;
+        const c = pos.col + dc;
+        if (r < 0 || r >= size || c < 0 || c >= size) continue;
+        const tile = grid[r]?.[c];
+        if (tile && tile.type !== 'gold') {
+          tile.setType('gold');
+        }
+      }
+    }
+
+    return true;
   }
 
   // ---------------------------------------------------------------------------
@@ -61,6 +99,7 @@ export class ArtifactSystem {
   onFightStart(player: Player): void {
     this.firstMatchThisFight = true;
     this.lassoUsedThisFight = false;
+    this.motherlodeUsedThisFight = false;
     this.swapCritBonus = 0;
 
     // Horseshoe Charm: +5 max HP (applied once when acquired, but we

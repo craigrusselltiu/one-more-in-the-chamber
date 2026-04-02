@@ -15,6 +15,7 @@ import { LeaderboardScreen } from './ui/screens/LeaderboardScreen';
 import { SettingsScreen } from './ui/screens/SettingsScreen';
 import { CombatHUD } from './ui/hud/CombatHUD';
 import { OfflineIndicator } from './ui/components/OfflineIndicator';
+import { GameNotification } from './ui/components/GameNotification';
 import { EventBus, GameEvent } from './game/EventBus';
 import { useRunStore } from './store/runStore';
 import { useCombatStore } from './store/combatStore';
@@ -208,6 +209,9 @@ export default function App() {
         clearCombatSnapshot(runId).catch(() => {});
       }
 
+      // Always sync ability charge (persists between combats)
+      store.syncAbilityCharge(result.abilityCharge);
+
       if (result.victory) {
         // Sync combat results back to run (use absolute values from combat end)
         const run = store.run;
@@ -228,7 +232,28 @@ export default function App() {
         // Check if the just-completed fight was a boss
         const currentRun = store.run;
         const currentNode = currentRun?.mapState?.nodes.find((n) => n.id === currentRun?.currentNodeId);
+
+        // Tumbleweed: add after 3 visited nodes in Act 1 (dust storm)
+        if (currentRun?.currentAct === 1) {
+          const visited = currentRun.mapState?.nodes.filter((n) => n.visited).length ?? 0;
+          const hasTumbleweed = currentRun.activeTileTypes.includes('tumbleweed');
+          if (visited >= 3 && !hasTumbleweed) {
+            store.addTileType('tumbleweed');
+            setTimeout(() => {
+              EventBus.emit('game:notification', { text: 'A dust storm has rolled in...' });
+            }, 500);
+          }
+        }
+
         if (currentNode?.type === 'boss') {
+          // Remove tumbleweed after Act 1 boss
+          if (currentRun!.currentAct === 1) {
+            store.removeTileType('tumbleweed');
+            setTimeout(() => {
+              EventBus.emit('game:notification', { text: 'The dust storm has settled.' });
+            }, 500);
+          }
+
           if (currentRun!.currentAct >= 3) {
             // Final boss: run complete
             store.endRun(true);
@@ -317,6 +342,7 @@ export default function App() {
           pointerEvents: pointerMode,
         }}
       >
+        <GameNotification />
         {screen === 'main-menu' && <MainMenu />}
         {screen === 'character-select' && <CharacterSelectScreen />}
         {screen === 'tile-select' && <TileSelectScreen />}

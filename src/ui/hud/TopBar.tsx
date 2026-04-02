@@ -5,8 +5,30 @@ import { EventBus, GameEvent } from '../../game/EventBus';
 import { MapScreen } from '../screens/MapScreen';
 import { CombatSettingsPopup } from '../screens/SettingsScreen';
 import { ConsumableSlots } from './ConsumableSlots';
-import type { Act } from '../../types/game';
+import { TILE_DEFINITIONS } from '../../data/tiles';
+import type { Act, MapNodeType } from '../../types/game';
 import type { Screen } from '../../App';
+
+/** Color class per map node type for the top-bar indicator. */
+const NODE_TYPE_COLORS: Record<MapNodeType, string> = {
+  combat: 'text-red-400',
+  elite: 'text-amber-400',
+  shop: 'text-blue-400',
+  rest: 'text-green-400',
+  event: 'text-purple-400',
+  treasure: 'text-yellow-400',
+  boss: 'text-red-500',
+};
+
+const NODE_TYPE_LABELS: Record<MapNodeType, string> = {
+  combat: 'Combat',
+  elite: 'Elite',
+  shop: 'Shop',
+  rest: 'Rest',
+  event: 'Event',
+  treasure: 'Treasure',
+  boss: 'Boss',
+};
 
 /** Format seconds into MM:SS or H:MM:SS. */
 function formatTimer(totalSeconds: number): string {
@@ -31,8 +53,16 @@ export const TopBar = memo(function TopBar({ showMapButton, showConsumables }: {
   const runStartedAt = run?.runStartedAt ?? 0;
   const [showMap, setShowMap] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [showTiles, setShowTiles] = useState(false);
   const [elapsed, setElapsed] = useState(0);
   const endRun = useRunStore((s) => s.endRun);
+
+  // Derive current node type
+  const currentNodeType: MapNodeType | null = (() => {
+    if (!run?.mapState?.currentNodeId) return null;
+    const node = run.mapState.nodes.find((n) => n.id === run.mapState!.currentNodeId);
+    return node?.type ?? null;
+  })();
 
   // Update elapsed timer every second
   useEffect(() => {
@@ -58,11 +88,23 @@ export const TopBar = memo(function TopBar({ showMapButton, showConsumables }: {
             Act {act} - {getActName(act)}
           </span>
           {showConsumables && <ConsumableSlots />}
+          {currentNodeType && (
+            <span className={`${NODE_TYPE_COLORS[currentNodeType]} font-bold`}>
+              {NODE_TYPE_LABELS[currentNodeType]}
+            </span>
+          )}
         </div>
         <div className="flex items-center gap-3">
           <span className="text-stone-500">{formatTimer(elapsed)}</span>
           <span className="text-red-400">HP {health}/{maxHealth}</span>
           <span className="text-yellow-300">{gold} gold</span>
+          <button
+            onClick={() => setShowTiles((v) => !v)}
+            className="text-stone-400 hover:text-stone-200"
+            title="Tiles"
+          >
+            [T]
+          </button>
           {showMapButton && (
             <button
               onClick={() => setShowMap((v) => !v)}
@@ -81,6 +123,12 @@ export const TopBar = memo(function TopBar({ showMapButton, showConsumables }: {
           </button>
         </div>
       </div>
+      {showTiles && run && (
+        <TilesPopup
+          activeTileTypes={run.activeTileTypes}
+          onClose={() => setShowTiles(false)}
+        />
+      )}
       {showSettings && (
         <CombatSettingsPopup
           onClose={() => setShowSettings(false)}
@@ -98,3 +146,57 @@ export const TopBar = memo(function TopBar({ showMapButton, showConsumables }: {
     </>
   );
 });
+
+/** Popup overlay showing the player's active tile types. */
+function TilesPopup({
+  activeTileTypes,
+  onClose,
+}: {
+  activeTileTypes: import('../../types/game').TileType[];
+  onClose: () => void;
+}) {
+  return (
+    <div
+      className="absolute inset-0 z-50 flex items-center justify-center pointer-events-auto"
+      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+    >
+      <div className="bg-stone-900 border border-stone-600 p-4 max-w-xs w-full" onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-center justify-between mb-3">
+          <span className="text-stone-200 font-mono text-sm font-bold">Active Tiles</span>
+          <button
+            onClick={onClose}
+            className="text-stone-500 hover:text-stone-300 font-mono text-xs"
+          >
+            [X]
+          </button>
+        </div>
+        <div className="flex flex-col gap-1.5">
+          {activeTileTypes.map((tileType) => {
+            const def = TILE_DEFINITIONS[tileType];
+            if (!def) return null;
+            return (
+              <div key={tileType} className="flex items-center gap-2">
+                <span
+                  className="shrink-0"
+                  style={{
+                    width: 12,
+                    height: 12,
+                    backgroundColor: def.color,
+                    display: 'inline-block',
+                  }}
+                />
+                <span className="text-stone-200 font-mono text-xs font-bold">{def.label}</span>
+                <span className="text-stone-500 font-mono" style={{ fontSize: '10px' }}>
+                  {def.description}
+                </span>
+              </div>
+            );
+          })}
+          {activeTileTypes.length === 0 && (
+            <span className="text-stone-500 font-mono text-xs">No active tiles</span>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}

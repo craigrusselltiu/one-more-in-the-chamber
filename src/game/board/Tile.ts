@@ -1,15 +1,15 @@
 import Phaser from 'phaser';
 import type { TileType } from '../../types/game';
 import type { TileHazardState } from '../../types/tiles';
-import { TILE_COLORS } from '../../data/tiles';
+import { TILE_FRAMES } from '../../data/tiles';
 import { useSettingsStore, getSpeedMultiplier } from '../../store/settingsStore';
 
-export const TILE_SIZE = 28;
-const TILE_INNER = 26;
+export const TILE_SIZE = 32;
+const STATUS_OFFSET = 12;
 
 /**
  * Tile: sprite + state for a single board cell.
- * MVP: rendered as colored rectangle with text label.
+ * Renders a 16x16 frame from the sprite sheet at 2x scale (32x32).
  */
 export class Tile {
   readonly scene: Phaser.Scene;
@@ -20,8 +20,8 @@ export class Tile {
   isShowdown = false;
 
   private _hazard: TileHazardState | null = null;
-  private rect: Phaser.GameObjects.Rectangle;
-  private label: Phaser.GameObjects.Text;
+  private sprite: Phaser.GameObjects.Image;
+  private border: Phaser.GameObjects.Rectangle | null = null;
   private highlight: Phaser.GameObjects.Rectangle | null = null;
   private statusDot: Phaser.GameObjects.Rectangle | null = null;
   private statusLabel: Phaser.GameObjects.Text | null = null;
@@ -49,53 +49,12 @@ export class Tile {
     this.row = row;
     this.col = col;
 
-    const color = Phaser.Display.Color.HexStringToColor(
-      TILE_COLORS[type] ?? '#808080',
-    ).color;
+    const cx = Math.round(x + TILE_SIZE / 2);
+    const cy = Math.round(y + TILE_SIZE / 2);
 
-    this.rect = scene.add
-      .rectangle(
-        Math.round(x + TILE_SIZE / 2),
-        Math.round(y + TILE_SIZE / 2),
-        TILE_INNER,
-        TILE_INNER,
-        color,
-        0.2,
-      )
-      .setStrokeStyle(1, color);
-
-    this.label = scene.add
-      .text(
-        Math.round(x + TILE_SIZE / 2),
-        Math.round(y + TILE_SIZE / 2),
-        this.abbreviation(),
-        {
-          fontSize: '10px',
-          color: '#ffffff',
-          fontFamily: 'monospace',
-        },
-      )
-      .setOrigin(0.5);
-  }
-
-  private abbreviation(): string {
-    const abbrevs: Record<TileType, string> = {
-      bullet: 'Bu',
-      iron: 'Ir',
-      gold: 'Go',
-      ricochet: 'Ri',
-      dynamite: 'Dy',
-      stampede: 'St',
-      whiskey: 'Wh',
-      buckshot: 'Bk',
-      ace: 'Ac',
-      venom: 'Ve',
-      ember: 'Em',
-      horseshoe: 'Hs',
-      fifty_cal: '.50',
-    };
-    const prefix = this.isExplosive ? '!' : this.isShowdown ? '*' : '';
-    return prefix + abbrevs[this.type];
+    this.sprite = scene.add
+      .image(cx, cy, 'items_sheet', TILE_FRAMES[type])
+      .setScale(2);
   }
 
   setType(newType: TileType): void {
@@ -115,53 +74,44 @@ export class Tile {
     this.updateVisuals();
   }
 
-  /**
-   * Refresh the hazard status indicator after in-place mutation of the
-   * hazard object (e.g. bomb countdown tick that doesn't reach zero).
-   */
   refreshStatusIndicator(): void {
     if (!this.destroyed) this.updateStatusIndicator();
   }
 
   private updateVisuals(): void {
-    const color = Phaser.Display.Color.HexStringToColor(
-      TILE_COLORS[this.type] ?? '#808080',
-    ).color;
+    this.sprite.setFrame(TILE_FRAMES[this.type]);
 
     if (this.isExplosive) {
-      this.rect.setFillStyle(color, 0.5);
-      this.rect.setStrokeStyle(2, 0xffff00);
+      if (!this.border) {
+        this.border = this.scene.add
+          .rectangle(this.sprite.x, this.sprite.y, TILE_SIZE, TILE_SIZE)
+          .setStrokeStyle(2, 0xffff00)
+          .setFillStyle(0xffff00, 0.1);
+      } else {
+        this.border.setStrokeStyle(2, 0xffff00).setFillStyle(0xffff00, 0.1);
+      }
     } else if (this.isShowdown) {
-      this.rect.setFillStyle(color, 0.6);
-      this.rect.setStrokeStyle(2, 0xff00ff);
-    } else {
-      this.rect.setFillStyle(color, 0.2);
-      this.rect.setStrokeStyle(1, color);
+      if (!this.border) {
+        this.border = this.scene.add
+          .rectangle(this.sprite.x, this.sprite.y, TILE_SIZE, TILE_SIZE)
+          .setStrokeStyle(2, 0xff00ff)
+          .setFillStyle(0xff00ff, 0.1);
+      } else {
+        this.border.setStrokeStyle(2, 0xff00ff).setFillStyle(0xff00ff, 0.1);
+      }
+    } else if (this.border) {
+      this.border.destroy();
+      this.border = null;
     }
-
-    this.label.setText(this.abbreviation());
   }
 
-  /**
-   * Create or update the small status indicator shown in the bottom-right
-   * corner of the tile when a hazard is active. Destroys it when cleared.
-   *
-   * Visual mapping:
-   *   lock           → gray dot + "L"
-   *   hardened_lock  → dark gray dot + remaining hits number
-   *   poison         → green dot + "P"
-   *   bomb           → red dot + countdown number
-   *   sand           → sandy dot + "?"
-   */
   private updateStatusIndicator(): void {
-    const cx = this.rect.x;
-    const cy = this.rect.y;
-    // Bottom-right corner: offset +10, +10 from tile center (within 30x30 inner area)
-    const ix = Math.round(cx + 10);
-    const iy = Math.round(cy + 10);
+    const cx = this.sprite.x;
+    const cy = this.sprite.y;
+    const ix = Math.round(cx + STATUS_OFFSET);
+    const iy = Math.round(cy + STATUS_OFFSET);
 
     if (this._hazard === null || this._hazard.type === 'fools_gold') {
-      // Fool's gold: no visible indicator — the deception IS the mechanic
       this.destroyStatusIndicator();
       return;
     }
@@ -199,7 +149,7 @@ export class Tile {
       case 'poison':         return { dotColor: 0x40d840, text: 'P' };
       case 'bomb':           return { dotColor: 0xff4040, text: String(hazard.countdown) };
       case 'sand':           return { dotColor: 0xe8c170, text: '?' };
-      case 'fools_gold':     return { dotColor: 0xffd700, text: '' }; // never shown
+      case 'fools_gold':     return { dotColor: 0xffd700, text: '' };
     }
   }
 
@@ -217,24 +167,25 @@ export class Tile {
   setPosition(x: number, y: number): void {
     const cx = Math.round(x + TILE_SIZE / 2);
     const cy = Math.round(y + TILE_SIZE / 2);
-    this.rect.setPosition(cx, cy);
-    this.label.setPosition(cx, cy);
+    this.sprite.setPosition(cx, cy);
+    if (this.border) {
+      this.border.setPosition(cx, cy);
+    }
     if (this.highlight) {
       this.highlight.setPosition(cx, cy);
     }
     if (this.statusDot) {
-      this.statusDot.setPosition(Math.round(cx + 10), Math.round(cy + 10));
+      this.statusDot.setPosition(Math.round(cx + STATUS_OFFSET), Math.round(cy + STATUS_OFFSET));
     }
     if (this.statusLabel) {
-      this.statusLabel.setPosition(Math.round(cx + 10), Math.round(cy + 10));
+      this.statusLabel.setPosition(Math.round(cx + STATUS_OFFSET), Math.round(cy + STATUS_OFFSET));
     }
   }
 
   setSelected(selected: boolean): void {
     if (selected && !this.highlight) {
-      const pos = this.rect.getCenter();
       this.highlight = this.scene.add
-        .rectangle(Math.round(pos.x), Math.round(pos.y), TILE_SIZE, TILE_SIZE)
+        .rectangle(Math.round(this.sprite.x), Math.round(this.sprite.y), TILE_SIZE, TILE_SIZE)
         .setStrokeStyle(2, 0xffffff)
         .setFillStyle(0xffffff, 0.15);
     } else if (!selected && this.highlight) {
@@ -244,18 +195,11 @@ export class Tile {
   }
 
   getWorldCenter(): { x: number; y: number } {
-    const pos = this.rect.getCenter();
-    return { x: Math.round(pos.x), y: Math.round(pos.y) };
+    return { x: Math.round(this.sprite.x), y: Math.round(this.sprite.y) };
   }
 
   // -- Animation methods --
 
-  /**
-   * Tween this tile to a new position over the given duration.
-   * Status indicator objects are tweened to their offset position alongside.
-   * When bounce is true, uses Bounce.easeOut for a landing feel.
-   * When juice animations are disabled, snaps to position instantly.
-   */
   tweenToPosition(x: number, y: number, duration: number, delay = 0, bounce = false): Promise<void> {
     if (this.destroyed) return Promise.resolve();
 
@@ -268,22 +212,21 @@ export class Tile {
       return Promise.resolve();
     }
 
-    // Apply speed multiplier to duration and delay
     duration = Math.round(duration / speed);
     delay = Math.round(delay / speed);
 
     const ease = bounce ? 'Bounce.easeOut' : 'Cubic.easeIn';
 
     return new Promise((resolve) => {
-      const targets: Phaser.GameObjects.GameObject[] = [this.rect, this.label];
+      const targets: Phaser.GameObjects.GameObject[] = [this.sprite];
+      if (this.border) targets.push(this.border);
       if (this.highlight) targets.push(this.highlight);
 
-      // Tween status indicator separately to its offset position
       if (this.statusDot) {
         this.scene.tweens.add({
           targets: this.statusDot,
-          x: Math.round(targetX + 10),
-          y: Math.round(targetY + 10),
+          x: Math.round(targetX + STATUS_OFFSET),
+          y: Math.round(targetY + STATUS_OFFSET),
           duration,
           delay,
           ease,
@@ -292,8 +235,8 @@ export class Tile {
       if (this.statusLabel) {
         this.scene.tweens.add({
           targets: this.statusLabel,
-          x: Math.round(targetX + 10),
-          y: Math.round(targetY + 10),
+          x: Math.round(targetX + STATUS_OFFSET),
+          y: Math.round(targetY + STATUS_OFFSET),
           duration,
           delay,
           ease,
@@ -312,11 +255,6 @@ export class Tile {
     });
   }
 
-  /**
-   * Animate clearing: pop up briefly, then shrink + fade out, then destroy.
-   * The pop gives match clears a satisfying punch.
-   * When juice animations are disabled, destroys immediately.
-   */
   animateClear(duration: number): Promise<void> {
     if (this.destroyed) return Promise.resolve();
     duration = Math.round(duration / getSpeedMultiplier());
@@ -327,7 +265,8 @@ export class Tile {
     }
 
     return new Promise((resolve) => {
-      const targets: Phaser.GameObjects.GameObject[] = [this.rect, this.label];
+      const targets: Phaser.GameObjects.GameObject[] = [this.sprite];
+      if (this.border) targets.push(this.border);
       if (this.highlight) targets.push(this.highlight);
       if (this.statusDot) targets.push(this.statusDot);
       if (this.statusLabel) targets.push(this.statusLabel);
@@ -335,8 +274,8 @@ export class Tile {
       // Phase 1: quick pop-up scale
       this.scene.tweens.add({
         targets,
-        scaleX: 1.3,
-        scaleY: 1.3,
+        scaleX: '*=1.3',
+        scaleY: '*=1.3',
         duration: Math.round(duration * 0.3),
         ease: 'Quad.easeOut',
         onComplete: () => {
@@ -361,8 +300,11 @@ export class Tile {
   destroy(): void {
     if (this.destroyed) return;
     this.destroyed = true;
-    this.rect.destroy();
-    this.label.destroy();
+    this.sprite.destroy();
+    if (this.border) {
+      this.border.destroy();
+      this.border = null;
+    }
     if (this.highlight) {
       this.highlight.destroy();
       this.highlight = null;
