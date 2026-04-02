@@ -323,8 +323,10 @@ export class BossController {
     switch (this.phase) {
       case 1:
         return this.isabellaPhase1();
+      case 3:
+        return this.isabellaPhase3();
       default:
-        // Phases 2-3 not yet implemented; fall back to Phase 1
+        // Phase 2 not yet implemented; fall back to Phase 1
         return this.isabellaPhase1();
     }
   }
@@ -338,6 +340,15 @@ export class BossController {
     return { type: 'attack', value: damage, description: `ATK ${damage}` };
   }
 
+  /**
+   * Phase 3 (30-0%): 30-35 damage strikes. No blocking. Pure damage race.
+   * Locks + poisons are handled via per-turn effects.
+   */
+  private isabellaPhase3(): EnemyIntent {
+    const damage = 30 + Math.floor(Math.random() * 6); // 30-35
+    return { type: 'attack', value: damage, description: `ATK ${damage}` };
+  }
+
   private isabellaPerTurn(hazardManager: BoardHazardManager, boss?: Enemy): void {
     switch (this.phase) {
       case 1: {
@@ -348,8 +359,13 @@ export class BossController {
         boss?.addBlock(10);
         break;
       }
+      case 3:
+        // Lockdown -- 2 locks + 2 poisons per turn. No passive block.
+        hazardManager.placeRandomLocks(2);
+        hazardManager.placeRandomPoison(2);
+        break;
       default:
-        // Phases 2-3 not yet implemented
+        // Phase 2 not yet implemented
         break;
     }
   }
