@@ -22,6 +22,7 @@ import type { CombatConfig, CombatResult } from './game/combat/CombatManager';
 import type { CombatSnapshot } from './types/combatSnapshot';
 import { saveCombatSnapshot, clearCombatSnapshot } from './services/localSave';
 import { consumePendingSnapshot } from './services/combatResume';
+import { loadPersistedRun, startRunPersistence } from './services/runPersistence';
 import {
   rollAct1Encounter,
   rollAct1EliteEncounter,
@@ -91,9 +92,19 @@ export default function App() {
   const gameContainerRef = useRef<HTMLDivElement>(null);
   const gameRef = useRef<Phaser.Game | null>(null);
   const [screen, setScreen] = useState<Screen>('main-menu');
+  const [ready, setReady] = useState(false);
   const prevScreenRef = useRef<Screen>('main-menu');
 
+  // Restore persisted run from IndexedDB and start auto-save subscription
   useEffect(() => {
+    loadPersistedRun().finally(() => {
+      startRunPersistence();
+      setReady(true);
+    });
+  }, []);
+
+  useEffect(() => {
+    if (!ready) return;
     if (!gameContainerRef.current || gameRef.current) return;
 
     const config: Phaser.Types.Core.GameConfig = {
@@ -114,7 +125,7 @@ export default function App() {
       gameRef.current?.destroy(true);
       gameRef.current = null;
     };
-  }, []);
+  }, [ready]);
 
   // Start/stop CombatScene based on screen transitions
   useEffect(() => {
@@ -278,6 +289,9 @@ export default function App() {
   }, []);
 
   const { scale, offsetX, offsetY } = useGameScale();
+
+  // Don't render until persisted run is loaded from IndexedDB
+  if (!ready) return null;
 
   // Combat uses pointer-events-none so Phaser board receives clicks;
   // all other screens are pointer-events-auto (opaque overlays).

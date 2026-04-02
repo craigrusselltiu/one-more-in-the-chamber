@@ -4,6 +4,8 @@ import { generateMap } from '../game/map/MapGenerator';
 
 interface RunStore {
   run: RunState | null;
+  /** Restore a run loaded from IndexedDB (app resume). */
+  restoreRun: (run: RunState) => void;
   startRun: (seed: string, starterTile: TileType, ascensionLevel?: number) => void;
   updateHealth: (delta: number) => void;
   updateGold: (delta: number) => void;
@@ -27,6 +29,8 @@ interface RunStore {
 
 export const useRunStore = create<RunStore>((set) => ({
   run: null,
+
+  restoreRun: (run) => set({ run }),
 
   startRun: (seed, starterTile, ascensionLevel = 0) => {
     const mapState = generateMap(seed, 1);
