@@ -7,7 +7,6 @@ export const TILE_COLORS: Record<TileType, string> = {
   iron: '#6888A0',
   gold: '#FFD700',
   ricochet: '#D06080',
-  smoke: '#909090',
   dynamite: '#D04040',
   stampede: '#8B6030',
   whiskey: '#70A060',
@@ -60,16 +59,6 @@ export const TILE_DEFINITIONS: Record<TileType, TileDefinition> = {
     upgradeValue: 1,
     pool: 'starter',
     description: '1 damage + destroys 1 random tile.',
-  },
-  smoke: {
-    type: 'smoke',
-    label: 'Smoke',
-    abbreviation: 'Sm',
-    color: TILE_COLORS.smoke,
-    baseValue: 1,
-    upgradeValue: 0.5,
-    pool: 'starter',
-    description: '+1% dodge per tile (caps at 50%).',
   },
   dynamite: {
     type: 'dynamite',
@@ -165,7 +154,7 @@ export const TILE_DEFINITIONS: Record<TileType, TileDefinition> = {
 
 export const CORE_TILES: TileType[] = ['bullet', 'iron', 'gold'];
 
-export const STARTER_POOL: TileType[] = ['ricochet', 'smoke', 'dynamite', 'stampede'];
+export const STARTER_POOL: TileType[] = ['ricochet', 'dynamite', 'stampede'];
 
 export const ADDITIONAL_POOL: TileType[] = [
   'whiskey',

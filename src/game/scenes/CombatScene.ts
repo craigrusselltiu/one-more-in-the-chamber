@@ -50,12 +50,20 @@ export class CombatScene extends Phaser.Scene {
     this.cameras.main.setBackgroundColor('#2a1a0e');
     this.screenShake = new ScreenShake(this);
 
+    // Clean up EventBus listeners when scene is stopped/restarted
+    this.events.on('shutdown', this.shutdown, this);
+
     // Listen for events
     EventBus.on(GameEvent.COMBAT_END, this.boundOnCombatEnd);
     EventBus.on(GameEvent.FLASH_LINE, this.boundOnFlashLine);
     EventBus.on(GameEvent.FLASH_LINE_TO_ENEMY, this.boundOnFlashLineToEnemy);
     EventBus.on(GameEvent.SCREEN_SHAKE, this.boundOnScreenShake);
     EventBus.on(GameEvent.TILE_PARTICLES, this.boundOnTileParticles);
+
+    // Spacebar activates deadeye ability
+    this.input.keyboard?.on('keydown-SPACE', () => {
+      EventBus.emit(GameEvent.ACTIVATE_ABILITY);
+    });
 
     if (data?.snapshot) {
       this.restoreFromSnapshot(data.snapshot);

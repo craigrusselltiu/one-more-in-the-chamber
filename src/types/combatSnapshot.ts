@@ -39,7 +39,6 @@ export interface SerializedPlayer {
   health: number;
   maxHealth: number;
   block: number;
-  dodgeChance: number;
   aceMultiplier: number;
   critChance: number;
   thorns: number;

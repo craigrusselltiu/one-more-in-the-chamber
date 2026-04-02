@@ -129,13 +129,13 @@ function chooseBanditIntent(enemy: Enemy, hpRatio: number): EnemyIntent {
   // Block more when healthy (preparing for big hits)
   if (hpRatio > 0.6) {
     options.push({
-      intent: { type: 'block', value: 5, description: 'BLOCK +5' },
+      intent: { type: 'block', value: 5, description: 'DEF 5' },
       weight: 2,
     });
   } else {
     // Desperate: attack more
     options.push({
-      intent: { type: 'block', value: 5, description: 'BLOCK +5' },
+      intent: { type: 'block', value: 5, description: 'DEF 5' },
       weight: 1,
     });
   }
@@ -197,13 +197,13 @@ function chooseDynamiteOutlawIntent(enemy: Enemy, hpRatio: number): EnemyIntent 
   // Block more when healthy (hunkering down)
   if (hpRatio > 0.5) {
     options.push({
-      intent: { type: 'block', value: 8, description: 'BLOCK +8' },
+      intent: { type: 'block', value: 8, description: 'DEF 8' },
       weight: 2,
     });
   } else {
     // Wounded: attacks become more desperate, less blocking
     options.push({
-      intent: { type: 'block', value: 8, description: 'BLOCK +8' },
+      intent: { type: 'block', value: 8, description: 'DEF 8' },
       weight: 1,
     });
   }
@@ -272,12 +272,12 @@ function chooseCorruptDeputyIntent(enemy: Enemy, hpRatio: number): EnemyIntent {
   // Block more when wounded
   if (hpRatio < 0.4) {
     options.push({
-      intent: { type: 'block', value: 8, description: 'BLOCK +8' },
+      intent: { type: 'block', value: 8, description: 'DEF 8' },
       weight: 3,
     });
   } else {
     options.push({
-      intent: { type: 'block', value: 8, description: 'BLOCK +8' },
+      intent: { type: 'block', value: 8, description: 'DEF 8' },
       weight: 1,
     });
   }

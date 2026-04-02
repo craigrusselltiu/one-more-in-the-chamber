@@ -1,6 +1,7 @@
 import { memo } from 'react';
 import { EventBus, GameEvent } from '../../game/EventBus';
 import { useSettingsStore } from '../../store/settingsStore';
+import type { GameSpeed } from '../../store/settingsStore';
 import type { Screen } from '../../App';
 
 const MENU_FONT = 'monospace';
@@ -44,11 +45,75 @@ function Toggle({
   );
 }
 
+function SpeedSelector({
+  value,
+  onChange,
+}: {
+  value: GameSpeed;
+  onChange: (speed: GameSpeed) => void;
+}) {
+  const speeds: GameSpeed[] = [1, 2, 3];
+  return (
+    <div className="flex items-center justify-between w-full py-3 px-4" style={{ fontFamily: MENU_FONT }}>
+      <div className="flex flex-col gap-0.5">
+        <span className="text-sm text-stone-200">Game Speed</span>
+        <span className="text-xs text-stone-500">Animation speed multiplier</span>
+      </div>
+      <div className="flex gap-1">
+        {speeds.map((s) => (
+          <button
+            key={s}
+            onClick={() => onChange(s)}
+            className="w-8 h-6 flex items-center justify-center font-mono text-xs border"
+            style={{
+              backgroundColor: value === s ? 'rgba(180, 83, 9, 0.6)' : 'rgba(28, 25, 23, 0.6)',
+              borderColor: value === s ? '#b45309' : '#44403c',
+              color: value === s ? '#fbbf24' : '#78716c',
+              cursor: 'pointer',
+            }}
+          >
+            {s}x
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function VolumeSlider({
+  value,
+  onChange,
+}: {
+  value: number;
+  onChange: (volume: number) => void;
+}) {
+  return (
+    <div className="flex items-center justify-between w-full py-3 px-4" style={{ fontFamily: MENU_FONT }}>
+      <div className="flex flex-col gap-0.5">
+        <span className="text-sm text-stone-200">Master Volume</span>
+        <span className="text-xs text-stone-500">{Math.round(value * 100)}%</span>
+      </div>
+      <input
+        type="range"
+        min="0"
+        max="100"
+        value={Math.round(value * 100)}
+        onChange={(e) => onChange(Number(e.target.value) / 100)}
+        className="w-24 h-1 accent-amber-600 cursor-pointer"
+      />
+    </div>
+  );
+}
+
 export const SettingsScreen = memo(function SettingsScreen() {
   const screenShakeEnabled = useSettingsStore((s) => s.screenShakeEnabled);
   const juiceAnimationsEnabled = useSettingsStore((s) => s.juiceAnimationsEnabled);
+  const gameSpeed = useSettingsStore((s) => s.gameSpeed);
+  const masterVolume = useSettingsStore((s) => s.masterVolume);
   const setScreenShake = useSettingsStore((s) => s.setScreenShake);
   const setJuiceAnimations = useSettingsStore((s) => s.setJuiceAnimations);
+  const setGameSpeed = useSettingsStore((s) => s.setGameSpeed);
+  const setMasterVolume = useSettingsStore((s) => s.setMasterVolume);
 
   const handleBack = () => {
     EventBus.emit(GameEvent.SCREEN_CHANGE, 'main-menu' satisfies Screen);
@@ -69,6 +134,8 @@ export const SettingsScreen = memo(function SettingsScreen() {
       {/* Settings list */}
       <div className="w-full max-w-[400px] px-4">
         <div className="border border-stone-700 bg-stone-800/30 divide-y divide-stone-700/50">
+          <VolumeSlider value={masterVolume} onChange={setMasterVolume} />
+          <SpeedSelector value={gameSpeed} onChange={setGameSpeed} />
           <Toggle
             label="Screen Shake"
             description="Camera shake on big hits and cascades"
@@ -96,6 +163,128 @@ export const SettingsScreen = memo(function SettingsScreen() {
         >
           Back
         </button>
+      </div>
+    </div>
+  );
+});
+
+/**
+ * In-combat settings popup. Shown when clicking [=] in the top bar.
+ * Contains game speed, volume, and give up button.
+ */
+export const CombatSettingsPopup = memo(function CombatSettingsPopup({
+  onClose,
+  onGiveUp,
+}: {
+  onClose: () => void;
+  onGiveUp: () => void;
+}) {
+  const gameSpeed = useSettingsStore((s) => s.gameSpeed);
+  const masterVolume = useSettingsStore((s) => s.masterVolume);
+  const screenShakeEnabled = useSettingsStore((s) => s.screenShakeEnabled);
+  const juiceAnimationsEnabled = useSettingsStore((s) => s.juiceAnimationsEnabled);
+  const setGameSpeed = useSettingsStore((s) => s.setGameSpeed);
+  const setMasterVolume = useSettingsStore((s) => s.setMasterVolume);
+  const setScreenShake = useSettingsStore((s) => s.setScreenShake);
+  const setJuiceAnimations = useSettingsStore((s) => s.setJuiceAnimations);
+
+  return (
+    <div
+      className="absolute inset-0 flex items-center justify-center bg-black/60 z-50 pointer-events-auto"
+      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+    >
+      <div className="w-64 border border-stone-600 bg-stone-900 p-4" style={{ fontFamily: MENU_FONT }}>
+        <h3 className="text-amber-400 text-sm font-bold text-center mb-3">Settings</h3>
+
+        <div className="flex flex-col gap-2 text-[9px]">
+          {/* Volume */}
+          <div className="flex items-center justify-between">
+            <span className="text-stone-300">Volume</span>
+            <input
+              type="range"
+              min="0"
+              max="100"
+              value={Math.round(masterVolume * 100)}
+              onChange={(e) => setMasterVolume(Number(e.target.value) / 100)}
+              className="w-20 h-1 accent-amber-600 cursor-pointer"
+            />
+            <span className="text-stone-500 w-8 text-right">{Math.round(masterVolume * 100)}%</span>
+          </div>
+
+          {/* Game Speed */}
+          <div className="flex items-center justify-between">
+            <span className="text-stone-300">Speed</span>
+            <div className="flex gap-1">
+              {([1, 2, 3] as GameSpeed[]).map((s) => (
+                <button
+                  key={s}
+                  onClick={() => setGameSpeed(s)}
+                  className="w-7 h-5 flex items-center justify-center border"
+                  style={{
+                    backgroundColor: gameSpeed === s ? 'rgba(180, 83, 9, 0.6)' : 'rgba(28, 25, 23, 0.6)',
+                    borderColor: gameSpeed === s ? '#b45309' : '#44403c',
+                    color: gameSpeed === s ? '#fbbf24' : '#78716c',
+                    fontSize: '9px',
+                    cursor: 'pointer',
+                  }}
+                >
+                  {s}x
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Toggles */}
+          <div className="flex items-center justify-between">
+            <span className="text-stone-300">Screen Shake</span>
+            <button
+              onClick={() => setScreenShake(!screenShakeEnabled)}
+              className="text-[9px] px-2 py-0.5 border"
+              style={{
+                backgroundColor: screenShakeEnabled ? 'rgba(180, 83, 9, 0.4)' : 'rgba(28, 25, 23, 0.4)',
+                borderColor: screenShakeEnabled ? '#b45309' : '#44403c',
+                color: screenShakeEnabled ? '#fbbf24' : '#78716c',
+                cursor: 'pointer',
+              }}
+            >
+              {screenShakeEnabled ? 'ON' : 'OFF'}
+            </button>
+          </div>
+
+          <div className="flex items-center justify-between">
+            <span className="text-stone-300">Animations</span>
+            <button
+              onClick={() => setJuiceAnimations(!juiceAnimationsEnabled)}
+              className="text-[9px] px-2 py-0.5 border"
+              style={{
+                backgroundColor: juiceAnimationsEnabled ? 'rgba(180, 83, 9, 0.4)' : 'rgba(28, 25, 23, 0.4)',
+                borderColor: juiceAnimationsEnabled ? '#b45309' : '#44403c',
+                color: juiceAnimationsEnabled ? '#fbbf24' : '#78716c',
+                cursor: 'pointer',
+              }}
+            >
+              {juiceAnimationsEnabled ? 'ON' : 'OFF'}
+            </button>
+          </div>
+        </div>
+
+        {/* Divider + Give Up */}
+        <div className="border-t border-stone-700 mt-3 pt-3 flex flex-col gap-2">
+          <button
+            onClick={onGiveUp}
+            className="w-full py-1.5 text-red-400 hover:bg-red-900/30 border border-red-900/50 text-[10px]"
+            style={{ cursor: 'pointer' }}
+          >
+            Give Up
+          </button>
+          <button
+            onClick={onClose}
+            className="w-full py-1.5 text-stone-400 hover:bg-stone-800 border border-stone-700 text-[10px]"
+            style={{ cursor: 'pointer' }}
+          >
+            Close
+          </button>
+        </div>
       </div>
     </div>
   );

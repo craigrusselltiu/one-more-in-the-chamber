@@ -20,6 +20,10 @@ export const TreasureScreen = memo(function TreasureScreen() {
     EventBus.emit(GameEvent.SCREEN_CHANGE, 'map' satisfies Screen);
   };
 
+  const handleSkip = () => {
+    EventBus.emit(GameEvent.SCREEN_CHANGE, 'map' satisfies Screen);
+  };
+
   return (
     <div className="flex flex-col items-center justify-center bg-[#1a1a2e]" style={{ width: 960, height: 540 }}>
       <div className="text-center mb-8">
@@ -45,12 +49,20 @@ export const TreasureScreen = memo(function TreasureScreen() {
         </span>
       </div>
 
-      <button
-        onClick={handleTake}
-        className="px-6 py-1.5 font-mono text-xs bg-amber-900/60 text-amber-300 border border-amber-700 hover:bg-amber-800/60"
-      >
-        Take It
-      </button>
+      <div className="flex gap-3">
+        <button
+          onClick={handleTake}
+          className="px-6 py-1.5 font-mono text-xs bg-amber-900/60 text-amber-300 border border-amber-700 hover:bg-amber-800/60"
+        >
+          Take It
+        </button>
+        <button
+          onClick={handleSkip}
+          className="px-6 py-1.5 font-mono text-xs bg-stone-800/50 text-stone-400 border border-stone-700 hover:bg-stone-700/50"
+        >
+          Skip
+        </button>
+      </div>
     </div>
   );
 });

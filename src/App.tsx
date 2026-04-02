@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import Phaser from 'phaser';
 import { gameConfig } from './game/GameConfig';
 import { MainMenu } from './ui/screens/MainMenu';
+import { CharacterSelectScreen } from './ui/screens/CharacterSelectScreen';
 import { TileSelectScreen } from './ui/screens/TileSelectScreen';
 import { MapScreen } from './ui/screens/MapScreen';
 import { ShopScreen } from './ui/screens/ShopScreen';
@@ -38,6 +39,7 @@ import { applyAscensionToEnemies, getAscensionModifiers } from './data/ascension
 
 export type Screen =
   | 'main-menu'
+  | 'character-select'
   | 'tile-select'
   | 'combat'
   | 'map'
@@ -316,6 +318,7 @@ export default function App() {
         }}
       >
         {screen === 'main-menu' && <MainMenu />}
+        {screen === 'character-select' && <CharacterSelectScreen />}
         {screen === 'tile-select' && <TileSelectScreen />}
         {screen === 'combat' && <CombatHUD />}
         {screen === 'map' && <MapScreen />}

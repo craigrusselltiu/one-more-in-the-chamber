@@ -33,7 +33,6 @@ export type TileType =
   | 'iron'
   | 'gold'
   | 'ricochet'
-  | 'smoke'
   | 'dynamite'
   | 'stampede'
   | 'whiskey'

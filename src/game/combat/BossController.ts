@@ -159,10 +159,11 @@ export class BossController {
     hazardManager: BoardHazardManager,
     boss?: Enemy,
     activeTileTypes?: TileType[],
+    board?: Board,
   ): void {
     switch (this.bossType) {
       case 'dusty_dan':
-        this.dustyDanPerTurn(hazardManager);
+        this.dustyDanPerTurn(hazardManager, board);
         break;
       case 'copperhead_cassidy':
         this.copperheadPerTurn(hazardManager);
@@ -173,7 +174,13 @@ export class BossController {
     }
   }
 
-  private dustyDanPerTurn(hazardManager: BoardHazardManager): void {
+  private dustyDanPerTurn(hazardManager: BoardHazardManager, board?: Board): void {
+    // Gravity shift on first turn always
+    if (this.turnParity === 0 && board) {
+      board.setGravityDirection('left');
+    }
+    this.turnParity++;
+
     switch (this.phase) {
       case 1:
         hazardManager.placeRandomLocks(1);
@@ -220,18 +227,19 @@ export class BossController {
 
   /**
    * Phase 1 (100-50%): 10-15 damage. Can summon a coyote minion (10 HP).
+   * Per-turn: HEX 1 (lock).
    */
   private dustyDanPhase1(_boss: Enemy, aliveEnemyCount: number): EnemyIntent {
     const damage = 10 + Math.floor(Math.random() * 6); // 10-15
 
     const options: { intent: EnemyIntent; weight: number }[] = [
-      { intent: { type: 'attack', value: damage, description: `ATK ${damage}` }, weight: 3 },
+      { intent: { type: 'attack', value: damage, description: `LOCK 1, ATK ${damage}` }, weight: 3 },
     ];
 
     // Can summon a coyote minion if slots available
     if (aliveEnemyCount < 3) {
       options.push({
-        intent: { type: 'summon', value: 1, description: 'HOWL (summon)' },
+        intent: { type: 'summon', value: 1, description: 'LOCK 1, CALL 1' },
         weight: 2,
       });
     }
@@ -240,25 +248,25 @@ export class BossController {
   }
 
   /**
-   * Phase 2 (50-25%): 15-20 damage. Periodic blocks.
+   * Phase 2 (50-25%): 15-20 damage. Periodic blocks. Per-turn: HEX 3 (locks).
    */
   private dustyDanPhase2(_boss: Enemy): EnemyIntent {
     const damage = 15 + Math.floor(Math.random() * 6); // 15-20
 
     const options: { intent: EnemyIntent; weight: number }[] = [
-      { intent: { type: 'attack', value: damage, description: `ATK ${damage}` }, weight: 3 },
-      { intent: { type: 'block', value: 5, description: 'BLOCK +5' }, weight: 1 },
+      { intent: { type: 'attack', value: damage, description: `LOCK 3, ATK ${damage}` }, weight: 3 },
+      { intent: { type: 'block', value: 5, description: 'LOCK 3, DEF 5' }, weight: 1 },
     ];
 
     return weightedRandom(options);
   }
 
   /**
-   * Phase 3 (25-0%): 15-20 damage. No blocking. Frantic race.
+   * Phase 3 (25-0%): 15-20 damage. Per-turn: bomb + HEX 1. No blocking.
    */
   private dustyDanPhase3(_boss: Enemy): EnemyIntent {
     const damage = 15 + Math.floor(Math.random() * 6); // 15-20
-    return { type: 'attack', value: damage, description: `ATK ${damage}` };
+    return { type: 'attack', value: damage, description: `BOMB 1, LOCK 1, ATK ${damage}` };
   }
 
   // ---------------------------------------------------------------------------

@@ -42,7 +42,7 @@ export const useMetaStore = create<MetaStore>((set, get) => ({
     unlockedCosmetics: [],
     unlockedLoadouts: [],
     unlockedCharacters: ['red_panda'],
-    highestAscensionCleared: 0,
+    highestAscensionCleared: -1,
   },
 
   addReputation: (amount) =>
