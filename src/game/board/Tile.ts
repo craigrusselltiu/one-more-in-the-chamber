@@ -147,10 +147,11 @@ export class Tile {
    * corner of the tile when a hazard is active. Destroys it when cleared.
    *
    * Visual mapping:
-   *   lock      → gray dot + "L"
-   *   poison    → green dot + "P"
-   *   bomb      → red dot + countdown number
-   *   sand      → sandy dot + "?"
+   *   lock           → gray dot + "L"
+   *   hardened_lock  → dark gray dot + remaining hits number
+   *   poison         → green dot + "P"
+   *   bomb           → red dot + countdown number
+   *   sand           → sandy dot + "?"
    */
   private updateStatusIndicator(): void {
     const cx = this.rect.x;
@@ -193,11 +194,12 @@ export class Tile {
 
   private hazardStyle(hazard: TileHazardState): { dotColor: number; text: string } {
     switch (hazard.type) {
-      case 'lock':      return { dotColor: 0xaaaaaa, text: 'L' };
-      case 'poison':    return { dotColor: 0x40d840, text: 'P' };
-      case 'bomb':      return { dotColor: 0xff4040, text: String(hazard.countdown) };
-      case 'sand':      return { dotColor: 0xe8c170, text: '?' };
-      case 'fools_gold': return { dotColor: 0xffd700, text: '' }; // never shown
+      case 'lock':           return { dotColor: 0xaaaaaa, text: 'L' };
+      case 'hardened_lock':  return { dotColor: 0x666666, text: String(hazard.hits) };
+      case 'poison':         return { dotColor: 0x40d840, text: 'P' };
+      case 'bomb':           return { dotColor: 0xff4040, text: String(hazard.countdown) };
+      case 'sand':           return { dotColor: 0xe8c170, text: '?' };
+      case 'fools_gold':     return { dotColor: 0xffd700, text: '' }; // never shown
     }
   }
 

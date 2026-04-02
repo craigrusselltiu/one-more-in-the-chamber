@@ -185,8 +185,8 @@ export class Board {
     const tile = this.grid[pos.row]?.[pos.col];
     if (!tile) return;
 
-    // Don't allow selecting locked tiles
-    if (tile.hazard?.type === 'lock') return;
+    // Don't allow selecting locked tiles (regular or hardened)
+    if (tile.hazard?.type === 'lock' || tile.hazard?.type === 'hardened_lock') return;
 
     this.selectedTile = pos;
     tile.setSelected(true);
@@ -223,8 +223,10 @@ export class Board {
     const tileB = this.grid[to.row]?.[to.col];
     if (!tileA || !tileB) return { valid: false, matches: [] };
 
-    // Don't allow swapping locked tiles
-    if (tileA.hazard?.type === 'lock' || tileB.hazard?.type === 'lock') {
+    // Don't allow swapping locked tiles (regular or hardened)
+    const aLock = tileA.hazard?.type === 'lock' || tileA.hazard?.type === 'hardened_lock';
+    const bLock = tileB.hazard?.type === 'lock' || tileB.hazard?.type === 'hardened_lock';
+    if (aLock || bLock) {
       return { valid: false, matches: [] };
     }
 
@@ -791,7 +793,7 @@ export class Board {
    * Clear all hazards of a given type from the board.
    * Used by consumables (Skeleton Key, Bandage, Signal Flare).
    */
-  clearHazardsByType(hazardType: 'lock' | 'poison' | 'bomb' | 'sand'): void {
+  clearHazardsByType(hazardType: 'lock' | 'hardened_lock' | 'poison' | 'bomb' | 'sand'): void {
     for (let row = 0; row < BOARD_SIZE; row++) {
       for (let col = 0; col < BOARD_SIZE; col++) {
         const tile = this.grid[row][col];

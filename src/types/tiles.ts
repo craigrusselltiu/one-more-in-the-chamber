@@ -24,6 +24,7 @@ export interface TileState {
 
 export type TileHazardState =
   | { type: 'lock' }
+  | { type: 'hardened_lock'; hits: number }
   | { type: 'poison' }
   | { type: 'bomb'; countdown: number }
   | { type: 'sand' }
