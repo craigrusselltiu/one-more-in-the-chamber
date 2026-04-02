@@ -106,6 +106,15 @@ export interface CombatSnapshot {
   // Board-level suppressed types: [tileType, turnsRemaining]
   suppressedTypes: [TileType, number][];
 
+  // Scoring / tracking state
+  longestCascadeThisFight: number;
+  playerTookDamageThisFight: boolean;
+
+  // Subsystem state for exploit-free restore
+  matchCountThisFight: number;
+  firstMatchThisFight: boolean;
+  lassoUsedThisFight: boolean;
+
   // Original config for reconstruction (artifacts, traits, etc.)
   artifacts: ArtifactInstance[];
   traitCounts: Partial<Record<TraitId, number>>;

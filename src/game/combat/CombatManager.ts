@@ -325,6 +325,11 @@ export class CombatManager {
       bossController: this.bossController?.serialize() ?? null,
       eliteModifierId: (this.eliteModifier?.id as EliteModifierId) ?? null,
       suppressedTypes: this.hazardManager.serializeSuppressedTypes(),
+      longestCascadeThisFight: this.longestCascadeThisFight,
+      playerTookDamageThisFight: this.playerTookDamageThisFight,
+      matchCountThisFight: this.traits.getMatchCountThisFight(),
+      firstMatchThisFight: this.artifacts.isFirstMatchAvailable(),
+      lassoUsedThisFight: this.artifacts.isLassoUsedThisFight(),
       artifacts: this.artifacts.getArtifacts(),
       traitCounts: this.traits.getCounts(),
     };
@@ -379,6 +384,8 @@ export class CombatManager {
     this.nextMatchMultiplier = snapshot.nextMatchMultiplier;
     this.damageDealtThisFight = snapshot.damageDealtThisFight;
     this.swapsUsedThisTurn = snapshot.swapsUsedThisTurn;
+    this.longestCascadeThisFight = snapshot.longestCascadeThisFight ?? 0;
+    this.playerTookDamageThisFight = snapshot.playerTookDamageThisFight ?? false;
 
     // Restore boss controller
     if (snapshot.bossController && this.bossController) {
@@ -394,6 +401,22 @@ export class CombatManager {
 
     // Restore suppressed types
     this.hazardManager.restoreSuppressedTypes(snapshot.suppressedTypes);
+
+    // Restore subsystem state to prevent save/reload exploits
+    this.traits.restoreState(
+      snapshot.matchCountThisFight ?? 0,
+      snapshot.swapsUsedThisTurn,
+    );
+    this.artifacts.restoreState(
+      snapshot.firstMatchThisFight ?? false,
+      snapshot.lassoUsedThisFight ?? false,
+    );
+
+    // If the snapshot was taken mid-resolution (e.g. app backgrounded during
+    // cascade), transition to the next interactive phase so input works.
+    if (this.phase === 'resolving') {
+      this.phase = this.swapsRemaining > 0 ? 'swap-phase' : 'consumable-window';
+    }
 
     // Emit full state so React HUD syncs
     this.emitFullState();
@@ -461,6 +484,10 @@ export class CombatManager {
     EventBus.emit(GameEvent.TURN_START, this.buildState());
     EventBus.emit(GameEvent.SWAPS_CHANGE, this.swapsRemaining, this.swapsPerTurn);
     EventBus.emit(GameEvent.ABILITY_CHARGE_CHANGE, this.player.abilityCharge, this.player.abilityThreshold);
+
+    // Save at turn start: captures state after enemy turn resolved, preventing
+    // save/reload exploits that would let players re-roll enemy actions.
+    EventBus.emit(GameEvent.COMBAT_SAVE_REQUESTED);
   }
 
   /**
@@ -568,13 +595,12 @@ export class CombatManager {
       return;
     }
 
-    // Emit save event: board is stable, safe to snapshot
-    EventBus.emit(GameEvent.COMBAT_SAVE_REQUESTED);
-
     if (this.swapsRemaining <= 0) {
       this.endTurn();
     } else {
       this.setPhase('swap-phase');
+      // Save after phase transition: board is stable, phase is interactive
+      EventBus.emit(GameEvent.COMBAT_SAVE_REQUESTED);
     }
   }
 
