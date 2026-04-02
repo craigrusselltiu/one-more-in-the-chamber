@@ -17,8 +17,7 @@ function loadSheet(): Promise<HTMLImageElement> {
       resolve(img);
     };
     img.onerror = reject;
-    // Vite serves files from public/ at the base path
-    img.src = new URL('/assets/sprites/items_sheet.png', import.meta.url).href;
+    img.src = import.meta.env.BASE_URL + 'assets/sprites/items_sheet.png';
   });
   return sheetLoadPromise;
 }

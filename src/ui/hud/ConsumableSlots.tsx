@@ -6,6 +6,12 @@ import { CONSUMABLES } from '../../data/consumables';
 import { SpriteIcon } from '../components/SpriteIcon';
 import { CONSUMABLE_FRAMES } from '../../data/uiFrames';
 
+const CATEGORY_COLORS: Record<string, string> = {
+  offensive: '#D04040',
+  defensive: '#6888A0',
+  utility: '#D4A030',
+};
+
 /**
  * ConsumableSlots: 3 fixed square slots (4 with Saddlebag) near the player.
  * Empty slots show as visible outlines. Click to use during consumable window.
@@ -91,11 +97,13 @@ const ConsumableSlot = memo(function ConsumableSlot({
       }}
       title={filled ? `${name}: ${effect}` : 'Empty slot'}
     >
-      {filled && name && (
+      {filled && consumableId && CONSUMABLE_FRAMES[consumableId] != null ? (
+        <SpriteIcon frame={CONSUMABLE_FRAMES[consumableId]} scale={1} />
+      ) : filled && name ? (
         <span className="text-[6px] text-white font-bold leading-none">
           {name.charAt(0)}
         </span>
-      )}
+      ) : null}
     </button>
   );
 });
