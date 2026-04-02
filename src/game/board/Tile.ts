@@ -4,7 +4,8 @@ import type { TileHazardState } from '../../types/tiles';
 import { TILE_FRAMES } from '../../data/spriteConfig';
 import { useSettingsStore, getSpeedMultiplier } from '../../store/settingsStore';
 
-export const TILE_SIZE = 28;
+/** Tile size in pixels. Must be a multiple of 16 for crisp pixel-art scaling. */
+export const TILE_SIZE = 32;
 const STATUS_OFFSET = 12;
 
 /**
@@ -54,7 +55,7 @@ export class Tile {
 
     this.sprite = scene.add
       .image(cx, cy, 'items_sheet', TILE_FRAMES[type])
-      .setScale(TILE_SIZE / 16);
+      .setScale(2);
   }
 
   setType(newType: TileType): void {
