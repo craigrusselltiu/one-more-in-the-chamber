@@ -7,9 +7,6 @@ import { StatusEffects } from './StatusEffects';
 import { EnemyIntent } from './EnemyIntent';
 import type { EnemyState } from '../../types/combat';
 
-/** Max enemy slots to always reserve space for. */
-const MAX_SLOTS = 3;
-
 /**
  * EnemyTargeting: shows up to 3 fixed enemy slots on the right side.
  * Slots are always present so dead enemies don't shift others around.
@@ -19,22 +16,17 @@ export const EnemyTargeting = memo(function EnemyTargeting() {
   const targetedIndex = useCombatStore((s) => s.targetedEnemyIndex);
 
   // Build fixed 3-slot layout.
-  // Single enemy goes to the middle slot. Multiple enemies fill top-down
-  // and keep their array index so summoned enemies don't shift the original.
+  // First enemy (index 0) always stays in the center slot (slot 1).
+  // Additional enemies fill top (slot 0) then bottom (slot 2).
+  // This prevents the main enemy from shifting when minions are summoned.
   const slots: (EnemyState | null)[] = [null, null, null];
-  if (enemies.length === 1) {
-    slots[1] = enemies[0];
-  } else {
-    for (let i = 0; i < Math.min(enemies.length, MAX_SLOTS); i++) {
-      slots[i] = enemies[i];
-    }
-  }
+  if (enemies.length >= 1) slots[1] = enemies[0];
+  if (enemies.length >= 2) slots[0] = enemies[1];
+  if (enemies.length >= 3) slots[2] = enemies[2];
 
-  // Map slot index to actual enemy index for targeting
-  const slotToEnemyIndex = (slotIdx: number): number => {
-    if (enemies.length === 1) return 0;
-    return slotIdx;
-  };
+  // Map visual slot index back to enemy array index
+  const SLOT_TO_ENEMY: Record<number, number> = { 0: 1, 1: 0, 2: 2 };
+  const slotToEnemyIndex = (slotIdx: number): number => SLOT_TO_ENEMY[slotIdx] ?? slotIdx;
 
   return (
     <div className="flex flex-col gap-1 items-center">

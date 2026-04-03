@@ -684,8 +684,9 @@ export class CombatManager {
 
     this.board.setIsResolving(true);
 
-    // Handle showdown tile: clears all tiles of a random type on the board
+    // Handle special tiles
     if (tile.isShowdown) {
+      // Showdown: clear all tiles of a random type on the board
       const grid = this.board.getGrid();
       grid[row][col]?.destroy();
       grid[row][col] = null;
@@ -699,7 +700,34 @@ export class CombatManager {
         const output = this.resolver.resolveCount(randomType, count, upgradeLevel);
         this.applyResourceOutput(output);
       }
+    } else if (tile.isExplosive) {
+      // Explosive: detonate 3x3 area, generate resources for each cleared tile
+      const grid = this.board.getGrid();
+      const boardSize = this.board.getBoardSize();
+      const tilesToClear: { type: TileType; r: number; c: number }[] = [];
+      for (let dr = -1; dr <= 1; dr++) {
+        for (let dc = -1; dc <= 1; dc++) {
+          const r = row + dr;
+          const c = col + dc;
+          if (r < 0 || r >= boardSize || c < 0 || c >= boardSize) continue;
+          const t = grid[r]?.[c];
+          if (t) tilesToClear.push({ type: t.type, r, c });
+        }
+      }
+      // Now destroy them
+      for (const { r, c } of tilesToClear) {
+        grid[r][c]?.destroy();
+        grid[r][c] = null;
+      }
+      // Generate resources for each cleared tile
+      for (const { type: tileType } of tilesToClear) {
+        const upgradeLevel = this.player.getUpgradeLevel(tileType);
+        const output = this.resolver.resolveSingle(tileType, upgradeLevel);
+        this.applyResourceOutput(output);
+      }
+      EventBus.emit(GameEvent.SCREEN_SHAKE, 'medium');
     } else {
+      // Normal tile: generate resource and destroy
       const upgradeLevel = this.player.getUpgradeLevel(type);
       const output = this.resolver.resolveSingle(type, upgradeLevel);
       this.applyResourceOutput(output);
