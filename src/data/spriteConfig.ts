@@ -56,6 +56,28 @@ export const NODE_FRAMES: Record<string, number> = {
   boss: 206,
 };
 
+/** Trait icons (by trait ID). */
+export const TRAIT_FRAMES: Record<string, number> = {
+  outlaw: 1244,
+  sheriff: 565,
+  rattlesnake: 762,
+  prospector: 1158,
+  sapper: 722,
+  mustang: 268,
+  gunslinger: 906,
+};
+
+/** Trait breakpoint thresholds (in order). */
+export const TRAIT_BREAKPOINTS: Record<string, number[]> = {
+  outlaw: [2, 4, 6],
+  sheriff: [2, 5],
+  rattlesnake: [1, 3],
+  prospector: [2, 4, 6],
+  sapper: [1, 2, 3],
+  mustang: [4],
+  gunslinger: [2, 4],
+};
+
 /** UI button icons for the top bar. */
 export const UI_FRAMES: Record<string, number> = {
   tiles: 625,
