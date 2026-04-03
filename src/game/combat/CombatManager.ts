@@ -679,7 +679,7 @@ export class CombatManager {
     this.board.setIsResolving(true);
 
     // Handle special tiles
-    if (tile.isShowdown) {
+    if (tile.isShowdown || tile.type === 'showdown') {
       // Showdown: animate the showdown tile clear, then clear all tiles of a random type
       const grid = this.board.getGrid();
       const showdownTile = grid[row][col]!;
