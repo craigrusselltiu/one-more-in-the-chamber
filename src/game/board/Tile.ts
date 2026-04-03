@@ -28,8 +28,8 @@ export class Tile {
   private _hazard: TileHazardState | null = null;
   private sprite: Phaser.GameObjects.Image;
   private highlight: Phaser.GameObjects.Rectangle | null = null;
-  /** Animated color overlay for special tiles and bomb hazards. */
-  private overlay: Phaser.GameObjects.Rectangle | null = null;
+  /** Tinted sprite copy that only covers non-transparent pixels. */
+  private overlay: Phaser.GameObjects.Image | null = null;
   /** Countdown label for bomb hazards (centered on tile). */
   private bombLabel: Phaser.GameObjects.Text | null = null;
   /** Status indicators for non-bomb hazards. */
@@ -73,6 +73,7 @@ export class Tile {
   setType(newType: TileType): void {
     this.type = newType;
     this.sprite.setFrame(TILE_FRAMES[this.type]);
+    if (this.overlay) this.overlay.setFrame(TILE_FRAMES[this.type]);
     this.updateOverlay();
   }
 
@@ -109,13 +110,16 @@ export class Tile {
       // Rainbow: cycle hue over time
       const hue = (time / 20) % 360;
       const color = Phaser.Display.Color.HSLToColor(hue / 360, 0.8, 0.5);
-      this.overlay.setFillStyle(color.color, 0.15 + breath * 0.2);
+      this.overlay.setTintFill(color.color);
+      this.overlay.setAlpha(0.2 + breath * 0.25);
     } else if (this.isExplosive) {
       // Yellow breathing
-      this.overlay.setFillStyle(0xffff00, 0.1 + breath * 0.15);
+      this.overlay.setTintFill(0xffff00);
+      this.overlay.setAlpha(0.15 + breath * 0.2);
     } else if (this._hazard?.type === 'bomb') {
       // Red breathing
-      this.overlay.setFillStyle(0xff0000, 0.1 + breath * 0.2);
+      this.overlay.setTintFill(0xff2020);
+      this.overlay.setAlpha(0.15 + breath * 0.25);
     }
   }
 
@@ -126,12 +130,15 @@ export class Tile {
 
     if (needsOverlay) {
       if (!this.overlay) {
-        // Overlay sized to match the sprite (slightly inset from tile grid)
+        // Duplicate the sprite as a tinted overlay - only covers non-transparent pixels
         this.overlay = this.scene.add
-          .rectangle(cx, cy, TILE_SIZE - 4, TILE_SIZE - 4, 0x000000, 0)
-          .setDepth(1);
+          .image(cx, cy, 'items_sheet', TILE_FRAMES[this.type])
+          .setScale(2)
+          .setDepth(1)
+          .setAlpha(0);
       } else {
         this.overlay.setPosition(cx, cy);
+        this.overlay.setFrame(TILE_FRAMES[this.type]);
       }
     } else {
       this.destroyOverlay();
