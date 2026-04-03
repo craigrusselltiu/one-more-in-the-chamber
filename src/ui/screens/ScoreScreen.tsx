@@ -44,18 +44,18 @@ export const ScoreScreen = memo(function ScoreScreen() {
 
     const completed = run.status === 'completed';
 
-    // Base scoring
-    const nodesVisited = run.mapState?.nodes.filter((n) => n.visited).length ?? 0;
-    const combatNodes = run.mapState?.nodes.filter((n) => n.visited && n.type === 'combat').length ?? 0;
-    const eliteNodes = run.mapState?.nodes.filter((n) => n.visited && n.type === 'elite').length ?? 0;
-    const bossNodes = run.mapState?.nodes.filter((n) => n.visited && n.type === 'boss').length ?? 0;
+    // Base scoring (only count completed nodes, not just visited)
+    const nodesCompleted = run.mapState?.nodes.filter((n) => n.completed).length ?? 0;
+    const combatNodes = run.mapState?.nodes.filter((n) => n.completed && n.type === 'combat').length ?? 0;
+    const eliteNodes = run.mapState?.nodes.filter((n) => n.completed && n.type === 'elite').length ?? 0;
+    const bossNodes = run.mapState?.nodes.filter((n) => n.completed && n.type === 'boss').length ?? 0;
 
     const baseCombat = combatNodes * 100;
     const baseElite = eliteNodes * 200;
     const baseBoss = bossNodes * 500;
     const baseComplete = completed ? 1000 : 0;
     const actBonus = (run.currentAct - 1) * 200;
-    const otherNodes = nodesVisited - combatNodes - eliteNodes - bossNodes;
+    const otherNodes = nodesCompleted - combatNodes - eliteNodes - bossNodes;
     const nodeBonus = otherNodes * 50;
     const baseScore = baseCombat + baseElite + baseBoss + baseComplete + actBonus + nodeBonus;
 
@@ -82,7 +82,7 @@ export const ScoreScreen = memo(function ScoreScreen() {
       timeMultiplier,
       finalScore,
       runDurationSeconds,
-      nodesVisited,
+      nodesVisited: nodesCompleted,
       bossNodes,
       combatNodes,
       eliteNodes,

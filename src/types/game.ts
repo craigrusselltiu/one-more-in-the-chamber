@@ -79,6 +79,8 @@ export interface MapNode {
   col: number;
   connections: string[];
   visited: boolean;
+  /** Whether the node was completed (combat won, event resolved, etc). */
+  completed?: boolean;
 }
 
 export interface MapState {

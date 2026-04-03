@@ -121,8 +121,19 @@ export default function App() {
     gameRef.current = new Phaser.Game(config);
     initSfx(gameRef.current);
 
+    const NON_COMBAT_NODE_SCREENS: Set<Screen> = new Set(['shop', 'rest-site', 'event', 'treasure']);
+
     const handleScreenChange = (...args: unknown[]) => {
       const next = args[0] as Screen;
+      const prev = prevScreenRef.current;
+
+      // Mark non-combat nodes completed when returning to map
+      if (next === 'map' && NON_COMBAT_NODE_SCREENS.has(prev)) {
+        const store = useRunStore.getState();
+        const nodeId = store.run?.currentNodeId;
+        if (nodeId) store.markNodeCompleted(nodeId);
+      }
+
       setScreen(next);
 
       // Show dust storm notification at the start of Act 2 map
@@ -232,6 +243,10 @@ export default function App() {
       store.syncAbilityCharge(result.abilityCharge);
 
       if (result.victory) {
+        // Mark the current node as completed
+        const currentNodeId = store.run?.currentNodeId;
+        if (currentNodeId) store.markNodeCompleted(currentNodeId);
+
         // Sync combat results back to run (use absolute values from combat end)
         const run = store.run;
         if (run) {

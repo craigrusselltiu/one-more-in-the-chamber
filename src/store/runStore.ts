@@ -37,6 +37,7 @@ interface RunStore {
   addFlawlessFight: () => void;
   setCurrentNode: (nodeId: string) => void;
   markNodeVisited: (nodeId: string) => void;
+  markNodeCompleted: (nodeId: string) => void;
   advanceAct: () => void;
   setMapState: (map: MapState) => void;
   endRun: (completed: boolean) => void;
@@ -238,6 +239,20 @@ export const useRunStore = create<RunStore>((set, get) => ({
           ...state.run,
           currentNodeId: nodeId,
           mapState: { ...state.run.mapState, nodes, currentNodeId: nodeId },
+        },
+      };
+    }),
+
+  markNodeCompleted: (nodeId) =>
+    set((state) => {
+      if (!state.run?.mapState) return state;
+      const nodes = state.run.mapState.nodes.map((n) =>
+        n.id === nodeId ? { ...n, completed: true } : n,
+      );
+      return {
+        run: {
+          ...state.run,
+          mapState: { ...state.run.mapState, nodes },
         },
       };
     }),
