@@ -45,6 +45,7 @@ interface CombatStore {
   setTargetedEnemy: (index: number) => void;
   setCombo: (combo: number) => void;
   setAct: (act: number) => void;
+  syncEnemy: (enemy: EnemyState) => void;
   reset: () => void;
 }
 
@@ -109,6 +110,13 @@ export const useCombatStore = create<CombatStore>((set) => ({
   setCombo: (combo) => set({ comboCount: combo }),
 
   setAct: (act) => set({ currentAct: act }),
+
+  syncEnemy: (enemy) =>
+    set((state) => ({
+      enemies: state.enemies.map((e) =>
+        e.id === enemy.id ? enemy : e,
+      ),
+    })),
 
   reset: () => set(initialState),
 }));
