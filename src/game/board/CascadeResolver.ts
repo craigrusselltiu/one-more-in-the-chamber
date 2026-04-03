@@ -267,14 +267,18 @@ export class CascadeResolver {
   private spawnSpecials(board: Board, matches: MatchResult[], swapTarget?: GridPosition): void {
     for (const match of matches) {
       if (match.isCross) {
-        // Cross matches (L/T/+) spawn an explosive tile at the intersection point
         if (match.crossIntersections.length > 0) {
           const inter = swapTarget
             ? (match.crossIntersections.find(
                 i => i.row === swapTarget.row && i.col === swapTarget.col,
               ) ?? match.crossIntersections[0])
             : match.crossIntersections[0];
-          board.spawnSpecialTile(inter.row, inter.col, match.tileType, 'explosive');
+          // 5+ in the cross group -> showdown tile; otherwise -> explosive
+          if (match.isShowdown) {
+            board.spawnSpecialTile(inter.row, inter.col, 'showdown', 'none');
+          } else {
+            board.spawnSpecialTile(inter.row, inter.col, match.tileType, 'explosive');
+          }
         }
         continue;
       }

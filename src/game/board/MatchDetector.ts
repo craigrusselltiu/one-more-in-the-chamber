@@ -206,15 +206,24 @@ export class MatchDetector {
           }
         }
 
+        // If any constituent match is 5+, prioritize showdown over cross bomb
+        let hasShowdownMatch = false;
+        for (const idx of group) {
+          if (matches[idx].length >= 5) {
+            hasShowdownMatch = true;
+            break;
+          }
+        }
+
         result.push({
           tiles: mergedTiles,
           tileType: matches[i].tileType,
           length: totalLength,
           isExplosive: false,
-          isShowdown: false,
+          isShowdown: hasShowdownMatch,
           isCross: true,
           crossIntersections: intersections,
-          matchBonus: 1.0, // Cross clear: 1.0x per tile
+          matchBonus: 1.0,
         });
       }
     }

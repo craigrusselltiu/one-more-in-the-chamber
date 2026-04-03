@@ -1,23 +1,26 @@
 import Phaser from 'phaser';
 import { EventBus, GameEvent } from '../EventBus';
 import { useSettingsStore } from '../../store/settingsStore';
+import { useRunStore } from '../../store/runStore';
 
 /**
- * BootScene: asset loading and initialization.
- * MVP loads no image assets -- all visuals are drawn at runtime.
+ * BootScene: asset loading and music management.
  *
- * IMPORTANT: All sound volume tweens use proxy objects instead of tweening
- * Phaser sounds directly. Phaser's WebAudioSound can have its audio node
- * nullified (e.g. on context suspend), and a crash in any scene's
- * TweenManager blocks ALL subsequent scenes from updating (Phaser's
- * SceneManager.update has no try-catch isolation between scenes).
+ * Music flow:
+ *   main_menu  -> plays on main menu until character select
+ *   map_theme  -> plays while traversing the map (not in-combat map overlay)
+ *   act1/2/3_theme -> plays during combat encounters in that act
+ *   shop_theme -> plays in shop and event screens
+ *   boss themes -> dustys/copperheads/ironeyes_theme during boss fights
+ *
+ * All transitions use fade in/out. Volume tweens use proxy objects to
+ * avoid crashes from Phaser's WebAudioSound node being nullified.
  */
 export class BootScene extends Phaser.Scene {
-  private menuMusic: Phaser.Sound.BaseSound | null = null;
-  private combatMusic: Phaser.Sound.BaseSound | null = null;
-  private fadeOutTween: Phaser.Tweens.Tween | null = null;
-  private fadeInTween: Phaser.Tweens.Tween | null = null;
-  private combatFadeTween: Phaser.Tweens.Tween | null = null;
+  private currentMusic: Phaser.Sound.BaseSound | null = null;
+  private currentKey = '';
+  private targetVolume = 0.5;
+  private fadeTween: Phaser.Tweens.Tween | null = null;
 
   constructor() {
     super({ key: 'BootScene' });
@@ -25,169 +28,177 @@ export class BootScene extends Phaser.Scene {
 
   preload(): void {
     const base = import.meta.env.BASE_URL;
-    this.load.audio('combat_theme', `${base}assets/audio/combat_theme.mp3`);
+    // Music
     this.load.audio('main_menu', `${base}assets/audio/main_menu.mp3`);
+    this.load.audio('map_theme', `${base}assets/audio/map_theme.mp3`);
+    this.load.audio('act1_theme', `${base}assets/audio/act1_theme.mp3`);
+    this.load.audio('act2_theme', `${base}assets/audio/act2_theme.mp3`);
+    this.load.audio('act3_theme', `${base}assets/audio/act3_theme.mp3`);
+    this.load.audio('shop_theme', `${base}assets/audio/shop_theme.mp3`);
+    this.load.audio('dustys_theme', `${base}assets/audio/dustys_theme.mp3`);
+    this.load.audio('copperheads_theme', `${base}assets/audio/copperheads_theme.mp3`);
+    this.load.audio('ironeyes_theme', `${base}assets/audio/ironeyes_theme.mp3`);
+    // SFX
     this.load.audio('sfx_click', `${base}assets/audio/sfx/click.wav`);
     this.load.audio('sfx_swap', `${base}assets/audio/sfx/swap.wav`);
     this.load.audio('sfx_match1', `${base}assets/audio/sfx/match1.wav`);
     this.load.audio('sfx_match2', `${base}assets/audio/sfx/match2.wav`);
     this.load.audio('sfx_match3', `${base}assets/audio/sfx/match3.wav`);
     this.load.audio('sfx_match_pitch', `${base}assets/audio/sfx/match_pitch.wav`);
+    // Sprites
     this.load.spritesheet('items_sheet', `${base}assets/sprites/items_sheet.png`, {
       frameWidth: 16,
       frameHeight: 16,
     });
   }
 
-  /** Target volume for currently playing music (before master scaling). */
-  private menuMusicTarget = 0.5;
-  private combatMusicTarget = 0.4;
-
   create(): void {
     this.cameras.main.setRoundPixels(true);
 
-    // Live volume: subscribe to musicVolume changes and apply to active music
+    // Live volume: apply musicVolume changes to currently playing music
     useSettingsStore.subscribe((state, prev) => {
-      if (state.musicVolume !== prev.musicVolume) {
-        if (this.menuMusic) this.safeSetVolume(this.menuMusic, this.menuMusicTarget);
-        if (this.combatMusic) this.safeSetVolume(this.combatMusic, this.combatMusicTarget);
+      if (state.musicVolume !== prev.musicVolume && this.currentMusic) {
+        this.safeSetVolume(this.currentMusic, this.targetVolume);
       }
     });
 
-    // Defer music until first user interaction to avoid AudioContext warning.
-    // The browser blocks audio before a gesture; listen for the first click.
+    // Defer music until first user interaction (browser AudioContext requirement)
     const startOnGesture = () => {
       document.removeEventListener('pointerdown', startOnGesture);
-      this.playMenuMusic();
+      this.playTrack('main_menu');
     };
     document.addEventListener('pointerdown', startOnGesture);
 
-    // Manage music on screen transitions
+    // Music transitions on screen changes
     EventBus.on(GameEvent.SCREEN_CHANGE, (...args: unknown[]) => {
       const screen = args[0] as string;
-      if (screen === 'main-menu') {
-        document.removeEventListener('pointerdown', startOnGesture);
-        this.stopCombatMusic();
-        this.playMenuMusic();
-      } else if (screen === 'settings') {
-        // Settings screen: don't change music at all
-      } else if (screen === 'combat') {
-        this.fadeOutMenuMusic();
-        this.playCombatMusic();
-      } else {
-        // Non-combat, non-menu screens (map, shop, etc.): stop combat music if playing
-        if (this.combatMusic) {
-          this.stopCombatMusic();
+      document.removeEventListener('pointerdown', startOnGesture);
+
+      switch (screen) {
+        case 'main-menu':
+          this.playTrack('main_menu');
+          break;
+        case 'settings':
+          // Don't change music
+          break;
+        case 'character-select':
+        case 'tile-select':
+          // Keep current music (menu -> character select keeps menu music,
+          // post-boss tile select keeps map music)
+          break;
+        case 'map':
+          this.playTrack('map_theme');
+          break;
+        case 'combat': {
+          const run = useRunStore.getState().run;
+          if (!run) break;
+          const currentNode = run.mapState?.nodes.find((n) => n.id === run.currentNodeId);
+          if (currentNode?.type === 'boss') {
+            // Boss-specific themes
+            const bossThemes: Record<number, string> = {
+              1: 'dustys_theme',
+              2: 'copperheads_theme',
+              3: 'ironeyes_theme',
+            };
+            this.playTrack(bossThemes[run.currentAct] ?? `act${run.currentAct}_theme`);
+          } else {
+            this.playTrack(`act${run.currentAct}_theme`);
+          }
+          break;
         }
-        if (this.menuMusic) {
-          this.fadeOutMenuMusic();
-        }
+        case 'shop':
+        case 'event':
+          this.playTrack('shop_theme');
+          break;
+        case 'rest-site':
+        case 'treasure':
+          // Keep map music for rest/treasure (short stops)
+          break;
+        case 'score':
+        case 'leaderboard':
+        case 'reputation-shop':
+          this.fadeOut();
+          break;
       }
     });
   }
 
+  // ---------------------------------------------------------------------------
+  // Unified music player
+  // ---------------------------------------------------------------------------
+
   private safeSetVolume(sound: Phaser.Sound.BaseSound, vol: number): void {
-    try { (sound as Phaser.Sound.WebAudioSound).setVolume(vol * useSettingsStore.getState().musicVolume); } catch { /* audio node may be null */ }
+    try {
+      (sound as Phaser.Sound.WebAudioSound).setVolume(vol * useSettingsStore.getState().musicVolume);
+    } catch { /* audio node may be null */ }
   }
 
-  private playMenuMusic(): void {
-    if (this.menuMusic) return;
+  /** Play a music track with fade-in. If already playing, do nothing. */
+  private playTrack(key: string, volume = 0.5): void {
+    if (this.currentKey === key && this.currentMusic) return;
 
-    // Cancel any running fade-out on the old music
-    if (this.fadeOutTween) {
-      this.fadeOutTween.stop();
-      this.fadeOutTween = null;
-    }
+    // Fade out current music first
+    this.fadeOut(() => {
+      // Start new track
+      try {
+        const music = this.sound.add(key, { loop: true, volume: 0 });
+        music.play();
+        this.currentMusic = music;
+        this.currentKey = key;
+        this.targetVolume = volume;
 
-    const music = this.sound.add('main_menu', { loop: true, volume: 0 });
-    try { music.play(); } catch { /* ignore */ }
-    this.menuMusic = music;
-
-    // Fade in via proxy to avoid direct volume tween crash
-    this.menuMusicTarget = 0.5;
-    const proxy = { vol: 0 };
-    this.fadeInTween = this.tweens.add({
-      targets: proxy,
-      vol: 0.5,
-      duration: 2000,
-      onUpdate: () => { this.menuMusicTarget = proxy.vol; this.safeSetVolume(music, proxy.vol); },
-      onComplete: () => { this.fadeInTween = null; },
+        // Fade in
+        const proxy = { vol: 0 };
+        this.fadeTween = this.tweens.add({
+          targets: proxy,
+          vol: volume,
+          duration: 2000,
+          onUpdate: () => {
+            this.targetVolume = proxy.vol;
+            this.safeSetVolume(music, proxy.vol);
+          },
+          onComplete: () => { this.fadeTween = null; },
+        });
+      } catch { /* ignore audio errors */ }
     });
   }
 
-  private fadeOutMenuMusic(): void {
-    const music = this.menuMusic;
-    if (!music) return;
-    this.menuMusic = null;
-
-    // Cancel any running fade-in
-    if (this.fadeInTween) {
-      this.fadeInTween.stop();
-      this.fadeInTween = null;
-    }
-    // Cancel any previous fade-out
-    if (this.fadeOutTween) {
-      this.fadeOutTween.stop();
-      this.fadeOutTween = null;
+  /** Fade out current music. Calls onComplete when done. */
+  private fadeOut(onComplete?: () => void): void {
+    // Cancel any running fade
+    if (this.fadeTween) {
+      this.fadeTween.stop();
+      this.fadeTween = null;
     }
 
-    const currentVol = (music as Phaser.Sound.WebAudioSound).volume ?? 0.5;
+    const music = this.currentMusic;
+    if (!music) {
+      this.currentKey = '';
+      onComplete?.();
+      return;
+    }
+
+    this.currentMusic = null;
+    this.currentKey = '';
+
+    let currentVol: number;
+    try {
+      currentVol = (music as Phaser.Sound.WebAudioSound).volume ?? 0.5;
+    } catch {
+      currentVol = 0.5;
+    }
+
     const proxy = { vol: currentVol };
-    this.fadeOutTween = this.tweens.add({
+    this.fadeTween = this.tweens.add({
       targets: proxy,
       vol: 0,
       duration: 1000,
       onUpdate: () => this.safeSetVolume(music, proxy.vol),
       onComplete: () => {
-        this.fadeOutTween = null;
+        this.fadeTween = null;
         try { music.stop(); } catch { /* ignore */ }
         try { music.destroy(); } catch { /* ignore */ }
-      },
-    });
-  }
-
-  // ---------------------------------------------------------------------------
-  // Combat Music
-  // ---------------------------------------------------------------------------
-
-  private playCombatMusic(): void {
-    if (this.combatMusic) return;
-
-    const music = this.sound.add('combat_theme', { loop: true, volume: 0 });
-    try { music.play(); } catch { /* ignore */ }
-    this.combatMusic = music;
-
-    this.combatMusicTarget = 0.4;
-    const proxy = { vol: 0 };
-    this.combatFadeTween = this.tweens.add({
-      targets: proxy,
-      vol: 0.4,
-      duration: 2000,
-      onUpdate: () => { this.combatMusicTarget = proxy.vol; this.safeSetVolume(music, proxy.vol); },
-      onComplete: () => { this.combatFadeTween = null; },
-    });
-  }
-
-  private stopCombatMusic(): void {
-    const music = this.combatMusic;
-    if (!music) return;
-    this.combatMusic = null;
-
-    if (this.combatFadeTween) {
-      this.combatFadeTween.stop();
-      this.combatFadeTween = null;
-    }
-
-    const currentVol = (music as Phaser.Sound.WebAudioSound).volume ?? 0.4;
-    const proxy = { vol: currentVol };
-    this.tweens.add({
-      targets: proxy,
-      vol: 0,
-      duration: 1000,
-      onUpdate: () => this.safeSetVolume(music, proxy.vol),
-      onComplete: () => {
-        try { music.stop(); } catch { /* ignore */ }
-        try { music.destroy(); } catch { /* ignore */ }
+        onComplete?.();
       },
     });
   }
