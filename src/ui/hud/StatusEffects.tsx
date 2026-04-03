@@ -14,6 +14,14 @@ function formatValue(type: string, value: number): string {
   return String(value);
 }
 
+const STATUS_DESCRIPTIONS: Record<string, string> = {
+  ace: 'Ace: next match multiplier',
+  crit: 'Crit: chance to deal double damage',
+  thorns: 'Thorns: reflect damage to attackers',
+  venom: 'Venom: poison damage per turn',
+  vulnerable: 'Vulnerable: takes 25% more damage',
+};
+
 const OUTLINE = '-1px 0 0 #000, 1px 0 0 #000, 0 -1px 0 #000, 0 1px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000, -2px 0 0 #000, 2px 0 0 #000, 0 -2px 0 #000, 0 2px 0 #000';
 
 /**
@@ -26,7 +34,7 @@ export const StatusEffects = memo(function StatusEffects({ effects }: StatusEffe
   return (
     <div className="flex gap-0.5 mt-0.5">
       {effects.map((effect, i) => (
-        <Tooltip key={`${effect.type}-${i}`} text={`${effect.type}: ${formatValue(effect.type, effect.value)}`}>
+        <Tooltip key={`${effect.type}-${i}`} text={`${STATUS_DESCRIPTIONS[effect.type] ?? effect.type} (${formatValue(effect.type, effect.value)})`}>
         <div
           className="relative"
           style={{ width: 16, height: 16 }}

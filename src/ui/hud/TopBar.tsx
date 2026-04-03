@@ -129,6 +129,7 @@ export const TopBar = memo(function TopBar({ showMapButton }: { showMapButton?: 
       {showTiles && run && (
         <TilesPopup
           activeTileTypes={run.activeTileTypes}
+          tileUpgrades={run.tileUpgrades}
           onClose={() => setShowTiles(false)}
         />
       )}
@@ -153,9 +154,11 @@ export const TopBar = memo(function TopBar({ showMapButton }: { showMapButton?: 
 /** Popup overlay showing the player's active tile types. */
 function TilesPopup({
   activeTileTypes,
+  tileUpgrades,
   onClose,
 }: {
   activeTileTypes: import('../../types/game').TileType[];
+  tileUpgrades: Partial<Record<import('../../types/game').TileType, number>>;
   onClose: () => void;
 }) {
   return (
@@ -163,7 +166,7 @@ function TilesPopup({
       className="absolute inset-0 z-50 flex items-center justify-center pointer-events-auto"
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
-      <div className="bg-stone-900 border border-stone-600 p-4 max-w-xs w-full" onClick={(e) => e.stopPropagation()}>
+      <div className="bg-stone-900 border border-stone-600 p-3" style={{ minWidth: 140 }} onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between mb-3">
           <span className="text-stone-200 font-mono text-sm font-bold">Active Tiles</span>
           <button
@@ -177,12 +180,13 @@ function TilesPopup({
           {activeTileTypes.map((tileType) => {
             const def = TILE_DEFINITIONS[tileType];
             if (!def) return null;
+            const level = tileUpgrades[tileType] ?? 0;
             return (
               <div key={tileType} className="flex items-center gap-2">
                 <SpriteIcon frame={TILE_FRAMES[tileType]} scale={1} />
                 <span className="text-stone-200 font-mono text-xs font-bold">{def.label}</span>
-                <span className="text-stone-500 font-mono" style={{ fontSize: '10px' }}>
-                  {def.description}
+                <span className="text-amber-400 font-mono" style={{ fontSize: '10px' }}>
+                  Lv {level}
                 </span>
               </div>
             );

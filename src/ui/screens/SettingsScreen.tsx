@@ -91,9 +91,9 @@ function VolumeSlider({
 }) {
   return (
     <div className="flex items-center justify-between w-full py-3 px-4" style={{ fontFamily: MENU_FONT }}>
-      <div className="flex flex-col gap-0.5">
+      <div className="flex flex-col gap-0.5" style={{ minWidth: 120 }}>
         <span className="text-sm text-stone-200">{label}</span>
-        <span className="text-xs text-stone-500">{Math.round(value * 100)}%</span>
+        <span className="text-xs text-stone-500" style={{ minWidth: 32 }}>{Math.round(value * 100)}%</span>
       </div>
       <input
         type="range"
