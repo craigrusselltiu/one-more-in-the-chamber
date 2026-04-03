@@ -105,7 +105,7 @@ export class Tile {
 
     const breath = 0.5 + 0.5 * Math.sin(time / 400);
 
-    if (this.isShowdown) {
+    if (this.isShowdownEffect) {
       // Rainbow: cycle hue over time
       const hue = (time / 20) % 360;
       const color = Phaser.Display.Color.HSLToColor(hue / 360, 0.8, 0.5);
@@ -119,8 +119,13 @@ export class Tile {
     }
   }
 
+  /** Whether this tile should show a showdown effect (either by flag or type). */
+  private get isShowdownEffect(): boolean {
+    return this.isShowdown || this.type === 'showdown';
+  }
+
   private updateOverlay(): void {
-    const needsOverlay = this.isShowdown || this.isExplosive || this._hazard?.type === 'bomb';
+    const needsOverlay = this.isShowdownEffect || this.isExplosive || this._hazard?.type === 'bomb';
     const cx = this.sprite.x;
     const cy = this.sprite.y;
 
