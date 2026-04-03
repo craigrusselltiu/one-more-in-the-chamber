@@ -38,14 +38,12 @@ export class CascadeResolver {
     swapTarget?: GridPosition,
   ): Promise<MatchResult[]> {
     const allMatches: MatchResult[] = [];
-    const clearedFirePositions: GridPosition[] = [];
     let matches = board.findMatches();
     let isFirstStep = true;
 
     while (matches.length > 0) {
       // Step 1: Collect tiles to clear and extra results, animate clear
       const { extraResults, tilesToAnimate, firePositions } = this.prepareClear(board, matches);
-      clearedFirePositions.push(...firePositions);
       await board.animateTileClear(tilesToAnimate);
 
       // Apply this step's effects immediately (damage, block, gold, etc.)
@@ -58,9 +56,14 @@ export class CascadeResolver {
       }
 
       // Step 2: Spawn special tiles at cleared positions
-      // For the first step of a player swap, spawn at the swap target position
       this.spawnSpecials(board, matches, isFirstStep ? swapTarget : undefined);
       isFirstStep = false;
+
+      // Step 2.5: Prairie Fire spread — happens per match step, not at end.
+      // Spawned fire tiles can trigger new matches in the next iteration.
+      if (firePositions.length > 0) {
+        this.applyFireSpread(board, firePositions);
+      }
 
       // Step 3: Apply gravity with animation
       const moves = this.applyGravityTracked(board);
@@ -70,12 +73,6 @@ export class CascadeResolver {
       await board.fillEmptyTilesAnimated();
 
       matches = board.findMatches();
-    }
-
-    // Step 5: Prairie Fire spread — each cleared ember tile has 25% chance to
-    // convert 1 adjacent non-prairie_fire tile into an ember tile.
-    if (clearedFirePositions.length > 0) {
-      this.applyEmberSpread(board, clearedFirePositions);
     }
 
     return allMatches;
@@ -297,7 +294,7 @@ export class CascadeResolver {
    * Prairie Fire spread: after cascade resolution, each cleared ember tile has a
    * 25% chance to convert 1 random adjacent non-prairie_fire tile into an ember tile.
    */
-  private applyEmberSpread(board: Board, firePositions: GridPosition[]): void {
+  private applyFireSpread(board: Board, firePositions: GridPosition[]): void {
     const grid = board.getGrid();
     const size = board.getBoardSize();
     const SPREAD_CHANCE = 0.50;
