@@ -701,26 +701,29 @@ export class CombatManager {
         this.applyResourceOutput(output);
       }
     } else if (tile.isExplosive) {
-      // Explosive: detonate 3x3 area, generate resources for each cleared tile
+      // Explosive: detonate 3x3 area with the same animation as cascade explosions.
+      // Collect tile refs and types before nulling grid, then animate clear.
       const grid = this.board.getGrid();
       const boardSize = this.board.getBoardSize();
-      const tilesToClear: { type: TileType; r: number; c: number }[] = [];
+      const tileRefs: import('../board/Tile').Tile[] = [];
+      const tileTypes: TileType[] = [];
       for (let dr = -1; dr <= 1; dr++) {
         for (let dc = -1; dc <= 1; dc++) {
           const r = row + dr;
           const c = col + dc;
           if (r < 0 || r >= boardSize || c < 0 || c >= boardSize) continue;
           const t = grid[r]?.[c];
-          if (t) tilesToClear.push({ type: t.type, r, c });
+          if (t) {
+            tileRefs.push(t);
+            tileTypes.push(t.type);
+            grid[r][c] = null;
+          }
         }
       }
-      // Now destroy them
-      for (const { r, c } of tilesToClear) {
-        grid[r][c]?.destroy();
-        grid[r][c] = null;
-      }
+      // Animate clear (particles + pop + fade + destroy) — same as cascade
+      await this.board.animateTileClear(tileRefs);
       // Generate resources for each cleared tile
-      for (const { type: tileType } of tilesToClear) {
+      for (const tileType of tileTypes) {
         const upgradeLevel = this.player.getUpgradeLevel(tileType);
         const output = this.resolver.resolveSingle(tileType, upgradeLevel);
         this.applyResourceOutput(output);
