@@ -64,9 +64,14 @@ export const TraitDisplay = memo(function TraitDisplay() {
 
   if (artifacts.length === 0) return null;
 
-  const activeTraits = Object.entries(traitCounts)
-    .filter(([, count]) => count && count > 0)
-    .sort(([, a], [, b]) => (b ?? 0) - (a ?? 0)) as [TraitId, number][];
+  const activeTraits = (Object.entries(traitCounts)
+    .filter(([, count]) => count && count > 0) as [TraitId, number][])
+    .sort(([idA, a], [idB, b]) => {
+      const aActive = a >= (TRAIT_BREAKPOINTS[idA]?.[0] ?? 1) ? 1 : 0;
+      const bActive = b >= (TRAIT_BREAKPOINTS[idB]?.[0] ?? 1) ? 1 : 0;
+      if (bActive !== aActive) return bActive - aActive; // activated first
+      return b - a; // then by count descending
+    });
 
   if (activeTraits.length === 0) return null;
 

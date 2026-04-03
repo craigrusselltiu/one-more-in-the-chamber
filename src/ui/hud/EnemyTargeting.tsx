@@ -63,9 +63,9 @@ const EnemySlot = memo(function EnemySlot({
     }
   }, [index, enemy]);
 
-  // Empty or dead slot: reserve space but show nothing
+  // Empty or dead slot: fixed-height spacer to prevent position shifts
   if (!enemy || enemy.isDead) {
-    return null;
+    return <div style={{ width: 84, height: 120 }} />;
   }
 
   const effects = getEnemyStatusEffects(enemy);
