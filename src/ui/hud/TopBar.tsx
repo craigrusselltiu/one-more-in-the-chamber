@@ -85,7 +85,7 @@ export const TopBar = memo(function TopBar({ showMapButton }: { showMapButton?: 
 
   return (
     <>
-      <div className="flex justify-between items-center px-2 bg-black/50 text-[8px] font-mono pointer-events-auto" style={{ height: 24 }}>
+      <div className="flex justify-between items-center px-2 bg-black/50 text-[8px] font-mono pointer-events-auto" style={{ height: 28 }}>
         <div className="flex items-center gap-3">
           <span className="text-amber-400 font-bold">
             Act {act} - {getActName(act)}
@@ -171,9 +171,10 @@ function TilesPopup({
           <span className="text-stone-200 font-mono text-sm font-bold">Active Tiles</span>
           <button
             onClick={onClose}
-            className="text-stone-500 hover:text-stone-300 font-mono text-xs"
+            className="w-4 h-4 flex items-center justify-center bg-stone-800/80 text-red-400 font-mono font-bold border border-red-900/50 hover:bg-red-900/40"
+            style={{ fontSize: '8px' }}
           >
-            [X]
+            X
           </button>
         </div>
         <div className="flex flex-col gap-1.5">
