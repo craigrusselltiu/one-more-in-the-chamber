@@ -15,6 +15,14 @@ style.textContent = `
 `;
 document.head.appendChild(style);
 
+// Global click SFX: any button click plays the click sound
+document.addEventListener('click', (e) => {
+  const target = e.target as HTMLElement;
+  if (target.closest('button')) {
+    import('./services/sfx').then(({ playClick }) => playClick());
+  }
+}, true);
+
 // Initialize Supabase auth listener (no-op when env vars are missing)
 initAuth().catch(console.error);
 

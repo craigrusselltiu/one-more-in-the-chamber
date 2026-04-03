@@ -4,7 +4,7 @@ import { useRunStore } from '../../store/runStore';
 import { STARTER_POOL, ADDITIONAL_POOL, TILE_DEFINITIONS } from '../../data/tiles';
 import { TILE_FRAMES } from '../../data/spriteConfig';
 import { SpriteIcon } from '../components/SpriteIcon';
-import { playClick } from '../../services/sfx';
+
 import type { TileType } from '../../types/game';
 import type { Screen } from '../../App';
 
@@ -41,7 +41,7 @@ export const TileSelectScreen = memo(function TileSelectScreen() {
 
   const handleConfirm = () => {
     if (!selected) return;
-    playClick();
+
 
     if (isStarterSelection) {
       const seed = Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
