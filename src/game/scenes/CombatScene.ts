@@ -48,6 +48,15 @@ export class CombatScene extends Phaser.Scene {
   create(data?: { config?: CombatConfig; snapshot?: CombatSnapshot }): void {
     this.cameras.main.setRoundPixels(true);
     this.cameras.main.setBackgroundColor('#2a1a0e');
+
+    // Combat background image
+    if (this.textures.exists('act1_bg')) {
+      const bg = this.add.image(GAME_WIDTH / 2, GAME_HEIGHT / 2, 'act1_bg');
+      bg.setDisplaySize(GAME_WIDTH, GAME_HEIGHT);
+      bg.setDepth(-10);
+      bg.setAlpha(0.4);
+    }
+
     this.screenShake = new ScreenShake(this);
 
     // Clean up EventBus listeners when scene is stopped/restarted

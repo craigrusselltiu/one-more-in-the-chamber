@@ -45,6 +45,8 @@ export class BootScene extends Phaser.Scene {
     this.load.audio('sfx_match2', `${base}assets/audio/sfx/match2.wav`);
     this.load.audio('sfx_match3', `${base}assets/audio/sfx/match3.wav`);
     this.load.audio('sfx_match_pitch', `${base}assets/audio/sfx/match_pitch.wav`);
+    // Backgrounds
+    this.load.image('act1_bg', `${base}assets/act1_bg.png`);
     // Sprites
     this.load.spritesheet('items_sheet', `${base}assets/sprites/items_sheet.png`, {
       frameWidth: 16,
