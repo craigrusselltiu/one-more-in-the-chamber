@@ -1101,41 +1101,52 @@ export class CombatManager {
     EventBus.emit(GameEvent.FLASH_LINE, mid, result.position, sourceMatch.tileType);
   }
 
+  /** Emit a floating number on an enemy. */
+  private floatOnEnemy(enemy: Enemy, text: string, color: string): void {
+    EventBus.emit(GameEvent.FLOATING_NUMBER, 'enemy', this.enemies.indexOf(enemy), text, color);
+  }
+
+  /** Emit a floating number on the player. */
+  private floatOnPlayer(text: string, color: string): void {
+    EventBus.emit(GameEvent.FLOATING_NUMBER, 'player', 0, text, color);
+  }
+
+  /** Get the highest-HP alive enemy. */
+  private getHighestHpEnemy(): Enemy | null {
+    const alive = this.aliveEnemies();
+    return alive.reduce((best, e) =>
+      e.state.health > (best?.state.health ?? 0) ? e : best, alive[0]) ?? null;
+  }
+
+  /** Deal damage to an enemy, handling pierce, and show floating number. */
+  private dealDamageToEnemy(enemy: Enemy, damage: number, pierce: boolean): void {
+    if (pierce) {
+      const hpBefore = enemy.state.health;
+      enemy.state.health = Math.max(0, enemy.state.health - damage);
+      if (enemy.state.health <= 0) enemy.state.isDead = true;
+      this.damageDealtThisFight += hpBefore - enemy.state.health;
+    } else {
+      this.damageDealtThisFight += enemy.takeDamage(damage);
+    }
+    this.floatOnEnemy(enemy, `-${damage}`, '#ff4444');
+  }
+
   private applyResourceOutput(output: ResourceOutput): void {
     // Damage
     if (output.damage > 0) {
       if (output.isAoE) {
         for (const enemy of this.aliveEnemies()) {
-          this.damageDealtThisFight += enemy.takeDamage(output.damage);
+          this.dealDamageToEnemy(enemy, output.damage, false);
         }
       } else if (output.targetsHighestHp) {
-        // Target the alive enemy with the highest HP
-        const alive = this.aliveEnemies();
-        const target = alive.reduce((best, e) =>
-          e.state.health > (best?.state.health ?? 0) ? e : best, alive[0]);
-        if (target) {
-          if (output.piercesBlock) {
-            // Piercing damage bypasses block
-            const hpBefore = target.state.health;
-            target.state.health = Math.max(0, target.state.health - output.damage);
-            if (target.state.health <= 0) target.state.isDead = true;
-            this.damageDealtThisFight += hpBefore - target.state.health;
-          } else {
-            this.damageDealtThisFight += target.takeDamage(output.damage);
-          }
-        }
+        const target = this.getHighestHpEnemy();
+        if (target) this.dealDamageToEnemy(target, output.damage, output.piercesBlock);
       } else if (output.piercesBlock) {
-        // Piercing damage bypasses block (Rattler)
         const target = this.getTargetedAliveEnemy();
-        if (target) {
-          const hpBefore = target.state.health;
-          target.state.health = Math.max(0, target.state.health - output.damage);
-          if (target.state.health <= 0) target.state.isDead = true;
-          this.damageDealtThisFight += hpBefore - target.state.health;
-        }
+        if (target) this.dealDamageToEnemy(target, output.damage, true);
       } else {
         const target = this.getTargetedAliveEnemy();
-        if (target) this.damageDealtThisFight += target.takeDamage(output.damage);
+        if (target) this.dealDamageToEnemy(target, output.damage, false);
       }
       this.emitEnemyHpChanges();
     }
@@ -1143,6 +1154,7 @@ export class CombatManager {
     // Block
     if (output.block > 0) {
       this.player.addBlock(output.block);
+      this.floatOnPlayer(`+${output.block}`, '#6888A0');
     }
 
     // Barricade stacks
@@ -1154,12 +1166,14 @@ export class CombatManager {
     if (output.gold > 0) {
       const scaledGold = Math.max(1, Math.round(output.gold * this.goldMultiplier));
       this.player.addGold(scaledGold);
+      this.floatOnPlayer(`+${scaledGold}`, '#FFD700');
       EventBus.emit(GameEvent.GOLD_CHANGE, this.player.gold);
     }
 
     // Healing
     if (output.healing > 0) {
       this.player.heal(output.healing);
+      this.floatOnPlayer(`+${output.healing}`, '#40D840');
       EventBus.emit(GameEvent.PLAYER_HP_CHANGE, this.player.health, this.player.maxHealth);
     }
 
@@ -1169,45 +1183,44 @@ export class CombatManager {
       EventBus.emit(GameEvent.ABILITY_CHARGE_CHANGE, this.player.abilityCharge, this.player.abilityThreshold);
     }
 
-    // Venom (applied to targeted enemy or highest-HP enemy)
+    // Venom
     if (output.venomStacks > 0) {
-      if (output.targetsHighestHp) {
-        const alive = this.aliveEnemies();
-        const target = alive.reduce((best, e) =>
-          e.state.health > (best?.state.health ?? 0) ? e : best, alive[0]);
-        if (target) target.addVenom(output.venomStacks);
-      } else {
-        const target = this.getTargetedAliveEnemy();
-        if (target) target.addVenom(output.venomStacks);
+      const target = output.targetsHighestHp
+        ? this.getHighestHpEnemy()
+        : this.getTargetedAliveEnemy();
+      if (target) {
+        target.addVenom(output.venomStacks);
+        this.floatOnEnemy(target, `+${output.venomStacks} VNM`, '#60A040');
       }
     }
 
-    // Vulnerable (applied to target)
+    // Vulnerable
     if (output.vulnerableStacks > 0) {
-      if (output.targetsHighestHp) {
-        const alive = this.aliveEnemies();
-        const target = alive.reduce((best, e) =>
-          e.state.health > (best?.state.health ?? 0) ? e : best, alive[0]);
-        if (target) target.addVulnerable(output.vulnerableStacks);
-      } else {
-        const target = this.getTargetedAliveEnemy();
-        if (target) target.addVulnerable(output.vulnerableStacks);
+      const target = output.targetsHighestHp
+        ? this.getHighestHpEnemy()
+        : this.getTargetedAliveEnemy();
+      if (target) {
+        target.addVulnerable(output.vulnerableStacks);
+        this.floatOnEnemy(target, `+${output.vulnerableStacks} VUL`, '#C070D0');
       }
     }
 
     // Ace stacks
     if (output.aceStacks > 0) {
       this.player.addAceStacks(output.aceStacks);
+      this.floatOnPlayer(`+${output.aceStacks} ACE`, '#E0C880');
     }
 
     // Lucky stacks (crit chance)
     if (output.luckyStacks > 0) {
       this.player.addLuckyStacks(output.luckyStacks);
+      this.floatOnPlayer(`+${output.luckyStacks}% LCK`, '#C8A040');
     }
 
     // Bonus swaps (Cavalry 4+)
     if (output.bonusSwaps > 0) {
       this.swapsRemaining += output.bonusSwaps;
+      this.floatOnPlayer(`+${output.bonusSwaps} SWAP`, '#70B0D0');
       EventBus.emit(GameEvent.SWAPS_CHANGE, this.swapsRemaining, this.swapsPerTurn);
     }
 
@@ -1302,6 +1315,7 @@ export class CombatManager {
           if (action.value > 0) {
             const { hpLost, thornsDamage } = this.player.takeDamage(action.value);
             if (hpLost > 0) this.playerTookDamageThisFight = true;
+            this.floatOnPlayer(`-${action.value}`, '#ff4444');
             EventBus.emit(
               GameEvent.PLAYER_HP_CHANGE,
               this.player.health,
