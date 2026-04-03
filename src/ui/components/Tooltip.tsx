@@ -1,7 +1,10 @@
 import { memo, useState, useRef, useEffect, type ReactNode } from 'react';
 
 interface TooltipProps {
-  text: string;
+  /** Simple string tooltip text. */
+  text?: string;
+  /** Rich tooltip content (ReactNode). Takes precedence over text. */
+  content?: ReactNode;
   children: ReactNode;
   /** Position relative to the element. Default 'top'. */
   position?: 'top' | 'bottom';
@@ -9,14 +12,13 @@ interface TooltipProps {
 
 /**
  * Tooltip: wrap any element to show a styled tooltip on hover.
- * Automatically clamps to stay within viewport bounds.
+ * Supports both simple text and rich ReactNode content.
  *
  * Usage:
- *   <Tooltip text="Block: 5">
- *     <BlockBadge value={5} />
- *   </Tooltip>
+ *   <Tooltip text="Block: 5"><BlockBadge /></Tooltip>
+ *   <Tooltip content={<div>Rich <b>content</b></div>}><Icon /></Tooltip>
  */
-export const Tooltip = memo(function Tooltip({ text, children, position = 'top' }: TooltipProps) {
+export const Tooltip = memo(function Tooltip({ text, content, children, position = 'top' }: TooltipProps) {
   const [visible, setVisible] = useState(false);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const tooltipRef = useRef<HTMLDivElement>(null);
@@ -32,20 +34,20 @@ export const Tooltip = memo(function Tooltip({ text, children, position = 'top' 
     setVisible(false);
   };
 
+  const tooltipBody = content ?? text;
+
   // Clamp tooltip position to stay within the scaled viewport (960x540)
   useEffect(() => {
     if (!visible || !tooltipRef.current || !wrapperRef.current) return;
     const tip = tooltipRef.current;
     const wrapper = wrapperRef.current;
 
-    // Find the 960x540 viewport container
     const viewport = wrapper.closest('.overflow-hidden') as HTMLElement | null;
     if (!viewport) return;
 
     const vRect = viewport.getBoundingClientRect();
     const tRect = tip.getBoundingClientRect();
 
-    // Clamp left/right
     if (tRect.left < vRect.left) {
       tip.style.left = '0';
       tip.style.transform = 'none';
@@ -54,7 +56,7 @@ export const Tooltip = memo(function Tooltip({ text, children, position = 'top' 
       tip.style.right = '0';
       tip.style.transform = 'none';
     }
-  }, [visible, text]);
+  }, [visible, text, content]);
 
   return (
     <div
@@ -64,10 +66,10 @@ export const Tooltip = memo(function Tooltip({ text, children, position = 'top' 
       onMouseLeave={hide}
     >
       {children}
-      {visible && (
+      {visible && tooltipBody && (
         <div
           ref={tooltipRef}
-          className="absolute left-1/2 z-50 pointer-events-none whitespace-nowrap bg-stone-900/95 border border-stone-600 px-1.5 py-0.5 text-stone-200"
+          className={`absolute left-1/2 z-50 pointer-events-none bg-stone-900/95 border border-stone-600 px-1.5 py-0.5 text-stone-200 ${content ? '' : 'whitespace-nowrap'}`}
           style={{
             fontSize: '9px',
             transform: 'translateX(-50%)',
@@ -76,7 +78,7 @@ export const Tooltip = memo(function Tooltip({ text, children, position = 'top' 
               : { top: '100%', marginTop: 4 }),
           }}
         >
-          {text}
+          {tooltipBody}
         </div>
       )}
     </div>

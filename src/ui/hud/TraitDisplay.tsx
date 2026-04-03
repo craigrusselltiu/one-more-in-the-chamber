@@ -20,10 +20,43 @@ const TRAIT_LABELS: Record<TraitId, string> = {
   gunslinger: 'Gunslinger',
 };
 
+/** Descriptions for each trait at each breakpoint threshold. */
+const TRAIT_DESCRIPTIONS: Record<string, Record<number, string>> = {
+  outlaw: {
+    2: '4+ matches deal 30% bonus damage.',
+    4: '4+ matches apply 1 Vulnerable to targeted enemy.',
+    6: 'Tiles from 4+ match cascades trigger resource effects twice.',
+  },
+  sheriff: {
+    2: 'Iron matches +30% block. +2 block per turn.',
+    5: 'Block reflects 100% of absorbed damage back to attacker.',
+  },
+  rattlesnake: {
+    1: 'Immune to poison tile damage and debuffs.',
+    3: 'Matching poison tiles deals damage + applies venom.',
+  },
+  prospector: {
+    2: 'Non-gold matches: 15% chance to generate 1 gold.',
+    4: 'Gold matches: double gold + 2 block.',
+    6: 'Turn end: deal 50% of gold earned this fight as damage.',
+  },
+  sapper: {
+    1: 'Bombs deal +2 bonus damage when detonated.',
+    2: 'Bomb countdowns start 1 turn higher.',
+    3: 'Every 4th match spawns a player-side bomb tile.',
+  },
+  mustang: {
+    4: '+1 swap per turn. Non-adjacent swaps allowed. 5+ lasso matches: +50% damage.',
+  },
+  gunslinger: {
+    2: 'Start each fight with 15% crit. Crits deal 3 bonus flat damage.',
+    4: 'Crit multiplier 3x. Crit chance halves instead of resetting.',
+  },
+};
+
 /**
  * TraitDisplay: shows trait tag counts from artifacts below the player panel.
  * Only appears if the player has at least 1 artifact.
- * Greyed-out traits haven't reached their first breakpoint.
  */
 export const TraitDisplay = memo(function TraitDisplay() {
   const artifacts = useRunStore((s) => s.run?.artifacts ?? []);
@@ -31,7 +64,6 @@ export const TraitDisplay = memo(function TraitDisplay() {
 
   if (artifacts.length === 0) return null;
 
-  // Only show traits that have at least 1 point
   const activeTraits = Object.entries(traitCounts)
     .filter(([, count]) => count && count > 0)
     .sort(([, a], [, b]) => (b ?? 0) - (a ?? 0)) as [TraitId, number][];
@@ -44,40 +76,87 @@ export const TraitDisplay = memo(function TraitDisplay() {
         const breakpoints = TRAIT_BREAKPOINTS[traitId] ?? [];
         const firstBreakpoint = breakpoints[0] ?? 1;
         const isActive = count >= firstBreakpoint;
-        // Find which breakpoints are reached
-        const reachedCount = breakpoints.filter((bp) => count >= bp).length;
-        const nextBreakpoint = breakpoints.find((bp) => count < bp);
-        const tooltipText = `${TRAIT_LABELS[traitId]} (${count}${nextBreakpoint ? `/${nextBreakpoint}` : ''}) — ${reachedCount}/${breakpoints.length} active`;
 
         return (
-          <Tooltip key={traitId} text={tooltipText} position="bottom">
-            <div
-              className="relative"
-              style={{
-                width: 20,
-                height: 20,
-                opacity: isActive ? 1 : 0.4,
-                filter: isActive ? 'none' : 'grayscale(1) brightness(0.6)',
-              }}
-            >
-              <SpriteIcon frame={TRAIT_FRAMES[traitId] ?? 0} scale={1.25} />
-              <span
-                className="absolute font-bold"
-                style={{
-                  bottom: -2,
-                  right: -2,
-                  fontSize: '8px',
-                  color: isActive ? '#fbbf24' : '#888',
-                  lineHeight: 1,
-                  ...OUTLINE_STYLE,
-                }}
-              >
-                {count}
-              </span>
-            </div>
-          </Tooltip>
+          <TraitIcon
+            key={traitId}
+            traitId={traitId}
+            count={count}
+            breakpoints={breakpoints}
+            isActive={isActive}
+          />
         );
       })}
     </div>
+  );
+});
+
+const TraitIcon = memo(function TraitIcon({
+  traitId,
+  count,
+  breakpoints,
+  isActive,
+}: {
+  traitId: TraitId;
+  count: number;
+  breakpoints: number[];
+  isActive: boolean;
+}) {
+  const descriptions = TRAIT_DESCRIPTIONS[traitId] ?? {};
+
+  // Build multi-line tooltip content
+  const tooltipLines = breakpoints.map((bp) => ({
+    threshold: bp,
+    text: descriptions[bp] ?? `Breakpoint ${bp}`,
+    reached: count >= bp,
+  }));
+
+  const tooltipContent = (
+    <div className="flex flex-col gap-0.5" style={{ maxWidth: 200, whiteSpace: 'normal' }}>
+      <div className="font-bold text-amber-400" style={{ fontSize: '10px' }}>
+        {TRAIT_LABELS[traitId]}
+      </div>
+      {tooltipLines.map(({ threshold, text, reached }) => (
+        <div
+          key={threshold}
+          style={{
+            fontSize: '9px',
+            color: reached ? '#e5e5e5' : '#666',
+            lineHeight: 1.3,
+          }}
+        >
+          <span className="font-bold">{threshold}</span> - {text}
+        </div>
+      ))}
+    </div>
+  );
+
+  return (
+    <Tooltip content={tooltipContent} position="bottom">
+      <div
+        className="relative"
+        style={{
+          width: 20,
+          height: 20,
+          opacity: isActive ? 1 : 0.4,
+          filter: isActive ? 'none' : 'grayscale(1) brightness(0.6)',
+        }}
+      >
+        <SpriteIcon frame={TRAIT_FRAMES[traitId] ?? 0} scale={1.25} />
+        <span
+          className="absolute font-bold"
+          style={{
+            bottom: -2,
+            right: -2,
+            fontSize: '8px',
+            color: isActive ? '#fbbf24' : '#888',
+            lineHeight: 1,
+            ...OUTLINE_STYLE,
+          }}
+        >
+          {count}
+        </span>
+      </div>
+    </Tooltip>
   );
 });
