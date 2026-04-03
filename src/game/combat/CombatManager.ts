@@ -595,6 +595,9 @@ export class CombatManager {
       this.targetedEnemyIndex = 0;
     }
 
+    // Reset combo after cascade resolves
+    EventBus.emit(GameEvent.COMBO_UPDATE, 0);
+
     if (this.isCombatOver()) {
       this.endCombat();
       return;
@@ -753,6 +756,9 @@ export class CombatManager {
     }
 
     this.board.setIsResolving(false);
+
+    // Reset combo after cascade resolves
+    EventBus.emit(GameEvent.COMBO_UPDATE, 0);
 
     if (this.deadeyeShotsRemaining <= 0) {
       this.endDeadeye();
