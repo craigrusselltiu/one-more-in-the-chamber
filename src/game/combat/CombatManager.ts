@@ -1305,6 +1305,15 @@ export class CombatManager {
   private endCombat(): void {
     const victory = !this.player.isDead();
 
+    // Cancel deadeye if active
+    if (this.isDeadeyeActive) {
+      this.isDeadeyeActive = false;
+      this.deadeyeShotsRemaining = 0;
+      this.player.abilityCharge = 0;
+      this.board.setDeadeyeMode(false);
+      document.body.classList.remove('cursor-crosshair');
+    }
+
     this.setPhase('combat-end');
 
     // Reset per-fight effects
