@@ -272,7 +272,7 @@ export class CascadeResolver {
             : match.crossIntersections[0];
           // 5+ in the cross group -> showdown tile; otherwise -> explosive
           if (match.isShowdown) {
-            board.spawnSpecialTile(inter.row, inter.col, 'showdown', 'none');
+            board.spawnSpecialTile(inter.row, inter.col, 'showdown', 'showdown');
           } else {
             board.spawnSpecialTile(inter.row, inter.col, match.tileType, 'explosive');
           }
@@ -282,7 +282,7 @@ export class CascadeResolver {
 
       if (match.isShowdown && match.tiles.length > 0) {
         const pos = this.pickSpawnPosition(match.tiles, swapTarget);
-        board.spawnSpecialTile(pos.row, pos.col, 'showdown', 'none');
+        board.spawnSpecialTile(pos.row, pos.col, 'showdown', 'showdown');
       } else if (match.isExplosive && match.tiles.length > 0) {
         const pos = this.pickSpawnPosition(match.tiles, swapTarget);
         board.spawnSpecialTile(pos.row, pos.col, match.tileType, 'explosive');
