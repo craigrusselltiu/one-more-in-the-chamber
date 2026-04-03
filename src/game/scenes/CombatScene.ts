@@ -49,9 +49,11 @@ export class CombatScene extends Phaser.Scene {
     this.cameras.main.setRoundPixels(true);
     this.cameras.main.setBackgroundColor('#2a1a0e');
 
-    // Combat background image
-    if (this.textures.exists('act1_bg')) {
-      const bg = this.add.image(GAME_WIDTH / 2, GAME_HEIGHT / 2, 'act1_bg');
+    // Combat background image (boss uses dusty_bg, regular uses act bg)
+    const isBoss = data?.config?.isBoss || data?.snapshot?.isBoss;
+    const bgKey = isBoss && this.textures.exists('dusty_bg') ? 'dusty_bg' : 'act1_bg';
+    if (this.textures.exists(bgKey)) {
+      const bg = this.add.image(GAME_WIDTH / 2, GAME_HEIGHT / 2, bgKey);
       bg.setDisplaySize(GAME_WIDTH, GAME_HEIGHT);
       bg.setDepth(-10);
       bg.setAlpha(0.4);
