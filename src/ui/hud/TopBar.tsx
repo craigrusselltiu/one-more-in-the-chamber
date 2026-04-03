@@ -205,7 +205,7 @@ function TilesPopup({
                 <SpriteIcon frame={TILE_FRAMES[tileType]} scale={1} />
                 <span className="text-stone-200 text-xs font-bold">{def.label}</span>
                 <span className="text-amber-400" style={{ fontSize: '10px' }}>
-                  Lv {level}
+                  Lv {level + 1}
                 </span>
               </div>
             );

@@ -111,7 +111,7 @@ export const RestSiteScreen = memo(function RestSiteScreen() {
                 <SpriteIcon frame={TILE_FRAMES[tileType]} scale={2} className="mb-1" />
                 <span className="text-amber-300 text-xs font-bold">{def.label}</span>
                 <span className="text-stone-400" style={{ fontSize: '10px' }}>
-                  Lv {currentLevel} {'\u2192'} {currentLevel + 1}
+                  Lv {currentLevel + 1} {'\u2192'} {currentLevel + 2}
                 </span>
                 <span className="text-stone-500" style={{ fontSize: '10px' }}>
                   +{def.upgradeValue} per upgrade
