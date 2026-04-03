@@ -112,17 +112,18 @@ const TraitIcon = memo(function TraitIcon({
   }));
 
   const tooltipContent = (
-    <div className="flex flex-col gap-0.5" style={{ maxWidth: 200, whiteSpace: 'normal' }}>
+    <div className="flex flex-col gap-0.5">
       <div className="font-bold text-amber-400" style={{ fontSize: '10px' }}>
         {TRAIT_LABELS[traitId]}
       </div>
       {tooltipLines.map(({ threshold, text, reached }) => (
         <div
           key={threshold}
+          className="whitespace-nowrap"
           style={{
             fontSize: '9px',
             color: reached ? '#e5e5e5' : '#666',
-            lineHeight: 1.3,
+            lineHeight: 1.4,
           }}
         >
           <span className="font-bold">{threshold}</span> - {text}
