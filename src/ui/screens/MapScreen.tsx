@@ -2,20 +2,22 @@ import { memo, useCallback, useRef, useEffect } from 'react';
 import { EventBus, GameEvent } from '../../game/EventBus';
 import { useRunStore } from '../../store/runStore';
 import { getReachableNodes } from '../../game/map/MapGenerator';
-import { TopBar } from '../hud/TopBar';
-import { ArtifactBar } from '../hud/ArtifactBar';
+import { NODE_FRAMES } from '../../data/spriteConfig';
 import type { MapNode, MapNodeType } from '../../types/game';
 import type { Screen } from '../../App';
 
-/** Color and symbol per node type. */
-const NODE_STYLES: Record<MapNodeType, { color: string; symbol: string; label: string }> = {
-  combat: { color: '#D04040', symbol: '\u2694', label: 'Combat' },
-  elite: { color: '#E0A020', symbol: '\u2606', label: 'Elite' },
-  shop: { color: '#40A0D0', symbol: '\u0024', label: 'Shop' },
-  rest: { color: '#60C060', symbol: '\u2618', label: 'Rest' },
-  event: { color: '#C070D0', symbol: '\u003F', label: 'Event' },
-  treasure: { color: '#FFD700', symbol: '\u2666', label: 'Treasure' },
-  boss: { color: '#FF4040', symbol: '\u2620', label: 'Boss' },
+const SPRITE_FRAME_SIZE = 16;
+const SPRITE_SHEET_COLS = 36;
+
+/** Color per node type. */
+const NODE_COLORS: Record<MapNodeType, string> = {
+  combat: '#D04040',
+  elite: '#E0A020',
+  shop: '#40A0D0',
+  rest: '#60C060',
+  event: '#C070D0',
+  treasure: '#FFD700',
+  boss: '#FF4040',
 };
 
 const NODE_RADIUS = 14;
@@ -47,6 +49,14 @@ export const MapScreen = memo(function MapScreen({ readonly, onClose }: { readon
   const canvasWidth = PADDING_LEFT + 12 * FLOOR_SPACING + 40;
   const canvasHeight = PADDING_TOP + 6 * PATH_SPACING + 24;
 
+  // Load sprite sheet for node icons
+  const spriteRef = useRef<HTMLImageElement | null>(null);
+  useEffect(() => {
+    const img = new Image();
+    img.src = import.meta.env.BASE_URL + 'assets/sprites/items_sheet.png';
+    img.onload = () => { spriteRef.current = img; };
+  }, []);
+
   // Draw map with breathing animation for reachable nodes
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -57,6 +67,21 @@ export const MapScreen = memo(function MapScreen({ readonly, onClose }: { readon
 
     let animId: number;
     const hasReachable = reachable.length > 0;
+
+    function drawSpriteFrame(ctx: CanvasRenderingContext2D, frame: number, x: number, y: number, size: number) {
+      const img = spriteRef.current;
+      if (!img) return;
+      const col = frame % SPRITE_SHEET_COLS;
+      const row = Math.floor(frame / SPRITE_SHEET_COLS);
+      ctx.imageSmoothingEnabled = false;
+      ctx.drawImage(
+        img,
+        col * SPRITE_FRAME_SIZE, row * SPRITE_FRAME_SIZE,
+        SPRITE_FRAME_SIZE, SPRITE_FRAME_SIZE,
+        x - size / 2, y - size / 2,
+        size, size,
+      );
+    }
 
     function draw() {
       const ctx = ctxInit!;
@@ -88,7 +113,7 @@ export const MapScreen = memo(function MapScreen({ readonly, onClose }: { readon
       // Draw nodes
       for (const node of nodes) {
         const pos = getNodePos(node);
-        const style = NODE_STYLES[node.type];
+        const nodeColor = NODE_COLORS[node.type];
         const isReachable = reachable.includes(node.id);
         const isCurrent = node.id === mapState!.currentNodeId;
 
@@ -111,26 +136,27 @@ export const MapScreen = memo(function MapScreen({ readonly, onClose }: { readon
           ctx.lineWidth = 2;
           ctx.stroke();
         } else if (isReachable) {
-          ctx.fillStyle = style.color;
+          ctx.fillStyle = nodeColor;
           ctx.fill();
           ctx.strokeStyle = '#fbbf24';
           ctx.lineWidth = 2;
           ctx.stroke();
         } else {
-          ctx.fillStyle = style.color + '60';
+          ctx.fillStyle = nodeColor + '60';
           ctx.fill();
-          ctx.strokeStyle = style.color + '80';
+          ctx.strokeStyle = nodeColor + '80';
           ctx.lineWidth = 1;
           ctx.stroke();
         }
 
-        // Node symbol - scale font for reachable breathing
-        const fontSize = isReachable && !isCurrent ? Math.round(14 * breathScale) : 14;
-        ctx.fillStyle = isCurrent ? '#1a1a2e' : node.visited ? '#6b7280' : '#fff';
-        ctx.font = `bold ${fontSize}px monospace`;
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText(style.symbol, pos.x, pos.y + 1);
+        // Node sprite icon
+        const frame = NODE_FRAMES[node.type];
+        if (frame != null) {
+          const spriteSize = isReachable && !isCurrent ? Math.round(18 * breathScale) : 18;
+          if (node.visited && !isCurrent) ctx.globalAlpha = 0.5;
+          drawSpriteFrame(ctx, frame, pos.x, pos.y, spriteSize);
+          ctx.globalAlpha = 1.0;
+        }
       }
 
       if (hasReachable) {
@@ -192,11 +218,7 @@ export const MapScreen = memo(function MapScreen({ readonly, onClose }: { readon
   }
 
   return (
-    <div className="flex flex-col h-full bg-[#1a1a2e]/95">
-      {/* Shared top bar */}
-      <TopBar />
-      <ArtifactBar />
-
+    <div className="relative flex flex-col h-full bg-[#1a1a2e]/95">
       {/* Map area -- horizontal scroll, centered */}
       <div ref={containerRef} className="flex-1 overflow-x-auto overflow-y-hidden flex items-center justify-center">
         <canvas
@@ -208,16 +230,15 @@ export const MapScreen = memo(function MapScreen({ readonly, onClose }: { readon
         />
       </div>
 
-      {/* Close button for readonly overlay */}
+      {/* Close button for readonly overlay - top right */}
       {readonly && onClose && (
-        <div className="flex justify-center py-1 border-t border-stone-700">
-          <button
-            onClick={onClose}
-            className="px-4 py-0.5 bg-stone-800 text-stone-300 font-mono text-xs border border-stone-600 hover:bg-stone-700"
-          >
-            Close
-          </button>
-        </div>
+        <button
+          onClick={onClose}
+          className="absolute top-2 right-2 w-6 h-6 flex items-center justify-center bg-stone-800/80 text-red-400 font-mono text-sm font-bold border border-red-900/50 hover:bg-red-900/40"
+          title="Close"
+        >
+          X
+        </button>
       )}
 
     </div>

@@ -18,7 +18,9 @@ export const EnemyTargeting = memo(function EnemyTargeting() {
   const enemies = useCombatStore((s) => s.enemies);
   const targetedIndex = useCombatStore((s) => s.targetedEnemyIndex);
 
-  // Build fixed 3-slot layout. If only 1 enemy, place it in the middle slot.
+  // Build fixed 3-slot layout.
+  // Single enemy goes to the middle slot. Multiple enemies fill top-down
+  // and keep their array index so summoned enemies don't shift the original.
   const slots: (EnemyState | null)[] = [null, null, null];
   if (enemies.length === 1) {
     slots[1] = enemies[0];
@@ -111,23 +113,23 @@ const EnemySlot = memo(function EnemySlot({
       {/* Intent */}
       <EnemyIntent intent={enemy.intent} />
 
-      {/* HP bar with BLK badge to the left */}
-      <div className="relative">
-        {enemy.block > 0 && (
-          <div className="absolute right-full top-0 mr-0.5">
-            <BlockBadge value={enemy.block} />
-          </div>
-        )}
+      {/* HP bar with block badge to the left (always occupies space) */}
+      <div className="flex items-center gap-0.5">
+        <div style={{ width: 18 }}>
+          {enemy.block > 0 && <BlockBadge value={enemy.block} />}
+        </div>
         <HealthBar
           current={enemy.health}
           max={enemy.maxHealth}
-          width={70}
+          width={60}
           color="#D04040"
         />
       </div>
 
-      {/* Status effects (without block) */}
-      <StatusEffects effects={nonBlockEffects} />
+      {/* Status effects (without block) - fixed height section */}
+      <div style={{ minHeight: 22 }}>
+        <StatusEffects effects={nonBlockEffects} />
+      </div>
     </button>
   );
 });

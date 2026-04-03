@@ -3,11 +3,11 @@ import { useCombatStore, getPlayerStatusEffects } from '../../store/combatStore'
 import { HealthBar } from './HealthBar';
 import { BlockBadge } from './BlockBadge';
 import { StatusEffects } from './StatusEffects';
-import { AbilityMeter } from './AbilityMeter';
 
 /**
  * PlayerPanel: left-side player area during combat.
- * Shows: sprite placeholder, HP bar, status effects, ability meter.
+ * Shows: sprite placeholder, HP bar, status effects.
+ * Ability meter is rendered under the board in CombatHUD.
  */
 export const PlayerPanel = memo(function PlayerPanel() {
   const health = useCombatStore((s) => s.playerHealth);
@@ -27,21 +27,18 @@ export const PlayerPanel = memo(function PlayerPanel() {
         <span className="text-stone-600" style={{ fontSize: '9px' }}>PLAYER</span>
       </div>
 
-      {/* HP bar with BLK badge to the left */}
-      <div className="relative">
-        {block > 0 && (
-          <div className="absolute right-full top-0 mr-0.5" style={{ marginTop: 11 }}>
-            <BlockBadge value={block} />
-          </div>
-        )}
-        <HealthBar current={health} max={maxHealth} label="HP" width={80} />
+      {/* HP bar with block badge to the left (always occupies space) */}
+      <div className="flex items-center gap-0.5">
+        <div style={{ width: 20 }}>
+          {block > 0 && <BlockBadge value={block} />}
+        </div>
+        <HealthBar current={health} max={maxHealth} width={80} />
       </div>
 
-      {/* Status effects row (without block) */}
-      <StatusEffects effects={nonBlockEffects} />
-
-      {/* Ability meter */}
-      <AbilityMeter />
+      {/* Status effects (excl block) - fixed height section */}
+      <div style={{ minHeight: 24 }}>
+        <StatusEffects effects={nonBlockEffects} />
+      </div>
     </div>
   );
 });

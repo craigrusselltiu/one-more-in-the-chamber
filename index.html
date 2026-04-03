@@ -24,10 +24,6 @@
         overflow: hidden;
         width: 100%;
         height: 100%;
-        cursor: url('/one-more-in-the-chamber/assets/cursors/pointer.png'), auto;
-      }
-      body.cursor-crosshair, body.cursor-crosshair * {
-        cursor: url('/one-more-in-the-chamber/assets/cursors/crosshair.png') 16 16, crosshair !important;
       }
       #root {
         width: 100%;
@@ -39,13 +35,19 @@
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
     <script>
-      if ('serviceWorker' in navigator) {
+      // Only register service worker in production (not dev server)
+      if ('serviceWorker' in navigator && !window.location.port) {
         window.addEventListener('load', () => {
           navigator.serviceWorker.register('/one-more-in-the-chamber/sw.js')
             .then((reg) => {
               // Check for updates periodically (every 30 min)
               setInterval(() => reg.update(), 30 * 60 * 1000);
             });
+        });
+      } else if ('serviceWorker' in navigator && window.location.port) {
+        // Dev mode: unregister any existing service worker so it doesn't cache dev assets
+        navigator.serviceWorker.getRegistrations().then((regs) => {
+          for (const reg of regs) reg.unregister();
         });
       }
     </script>

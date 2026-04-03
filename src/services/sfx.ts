@@ -8,9 +8,9 @@ export function initSfx(phaserGame: Phaser.Game): void {
 
 function play(key: string, volume = 0.5, rate = 1.0): void {
   if (!game) return;
-  const master = useSettingsStore.getState().masterVolume;
+  const sfxVol = useSettingsStore.getState().sfxVolume;
   try {
-    const sound = game.sound.add(key, { volume: volume * master });
+    const sound = game.sound.add(key, { volume: volume * sfxVol });
     sound.play({ rate });
     // Auto-cleanup after playing
     sound.once('complete', () => sound.destroy());

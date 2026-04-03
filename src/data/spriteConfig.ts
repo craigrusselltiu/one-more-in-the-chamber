@@ -37,7 +37,7 @@ export const CONSUMABLE_FRAMES: Record<string, number> = {
 
 /** Status effect / buff / debuff sprite frames. */
 export const STATUS_FRAMES: Record<string, number> = {
-  block: 0,
+  block: 198,
   ace: 0,
   crit: 0,
   thorns: 0,
@@ -47,11 +47,18 @@ export const STATUS_FRAMES: Record<string, number> = {
 
 /** Map node type icons. */
 export const NODE_FRAMES: Record<string, number> = {
-  combat: 0,
-  elite: 0,
-  shop: 0,
-  rest: 0,
-  event: 0,
-  treasure: 0,
-  boss: 0,
+  combat: 1166,
+  elite: 207,
+  shop: 1159,
+  rest: 720,
+  event: 648,
+  treasure: 714,
+  boss: 206,
+};
+
+/** UI button icons for the top bar. */
+export const UI_FRAMES: Record<string, number> = {
+  tiles: 648,
+  map: 714,
+  settings: 1159,
 };

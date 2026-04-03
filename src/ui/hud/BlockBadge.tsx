@@ -1,28 +1,33 @@
 import { memo } from 'react';
+import { SpriteIcon } from '../components/SpriteIcon';
+import { STATUS_FRAMES } from '../../data/spriteConfig';
 
 interface BlockBadgeProps {
   value: number;
 }
 
+/** Text style with black outline. */
+const outlinedText: React.CSSProperties = {
+  fontSize: '7px',
+  color: '#ffffff',
+  fontWeight: 'bold',
+  lineHeight: 1,
+  textShadow: '-1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000',
+};
+
 /**
- * BlockBadge: small blue-gray badge showing BLK value.
- * Displayed to the left of health bars via absolute positioning.
+ * BlockBadge: sprite icon with block value.
+ * Always occupies fixed space to the left of the health bar.
  */
 export const BlockBadge = memo(function BlockBadge({ value }: BlockBadgeProps) {
   return (
     <div
-      className="flex flex-col items-center justify-center border"
-      style={{
-        minWidth: 24,
-        height: 18,
-        backgroundColor: '#6888A0',
-        borderColor: '#6888A0',
-        padding: '0 2px',
-      }}
-      title={`BLK: ${value}`}
+      className="flex flex-col items-center justify-center"
+      style={{ width: 20, height: 24 }}
+      title={`Block: ${value}`}
     >
-      <span className="text-[6px] text-white/80 leading-none">BLK</span>
-      <span className="text-[7px] text-white font-bold leading-none">{value}</span>
+      <SpriteIcon frame={STATUS_FRAMES.block} scale={1} />
+      <span style={outlinedText}>{value}</span>
     </div>
   );
 });

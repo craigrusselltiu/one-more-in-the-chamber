@@ -35,10 +35,12 @@ export class CascadeResolver {
   async resolve(
     board: Board,
     onStep?: (matches: MatchResult[]) => void,
+    swapTarget?: GridPosition,
   ): Promise<MatchResult[]> {
     const allMatches: MatchResult[] = [];
     const clearedEmberPositions: GridPosition[] = [];
     let matches = board.findMatches();
+    let isFirstStep = true;
 
     while (matches.length > 0) {
       // Step 1: Collect tiles to clear and extra results, animate clear
@@ -56,7 +58,9 @@ export class CascadeResolver {
       }
 
       // Step 2: Spawn special tiles at cleared positions
-      this.spawnSpecials(board, matches);
+      // For the first step of a player swap, spawn at the swap target position
+      this.spawnSpecials(board, matches, isFirstStep ? swapTarget : undefined);
+      isFirstStep = false;
 
       // Step 3: Apply gravity with animation
       const moves = this.applyGravityTracked(board);
@@ -247,17 +251,40 @@ export class CascadeResolver {
    * Spawn explosive/showdown tiles after 4-match or 5-match.
    * Places the special tile at the center of the cleared match area.
    */
-  private spawnSpecials(board: Board, matches: MatchResult[]): void {
+  /**
+   * Choose where to spawn a special tile within a match.
+   * If swapTarget is set and is part of this match, spawn there (player swap).
+   * Otherwise pick a random position in the match (cascade).
+   */
+  private pickSpawnPosition(tiles: GridPosition[], swapTarget?: GridPosition): GridPosition {
+    if (swapTarget) {
+      const atSwap = tiles.find(t => t.row === swapTarget.row && t.col === swapTarget.col);
+      if (atSwap) return atSwap;
+    }
+    return tiles[Math.floor(Math.random() * tiles.length)];
+  }
+
+  private spawnSpecials(board: Board, matches: MatchResult[], swapTarget?: GridPosition): void {
     for (const match of matches) {
-      if (match.isCross) continue;
+      if (match.isCross) {
+        // Cross matches (L/T/+) spawn an explosive tile at the intersection point
+        if (match.crossIntersections.length > 0) {
+          const inter = swapTarget
+            ? (match.crossIntersections.find(
+                i => i.row === swapTarget.row && i.col === swapTarget.col,
+              ) ?? match.crossIntersections[0])
+            : match.crossIntersections[0];
+          board.spawnSpecialTile(inter.row, inter.col, match.tileType, 'explosive');
+        }
+        continue;
+      }
 
       if (match.isShowdown && match.tiles.length > 0) {
-        const mid = match.tiles[Math.floor(match.tiles.length / 2)];
-        // Showdown is now its own tile type, not a modifier
-        board.spawnSpecialTile(mid.row, mid.col, 'showdown', 'none');
+        const pos = this.pickSpawnPosition(match.tiles, swapTarget);
+        board.spawnSpecialTile(pos.row, pos.col, 'showdown', 'none');
       } else if (match.isExplosive && match.tiles.length > 0) {
-        const mid = match.tiles[Math.floor(match.tiles.length / 2)];
-        board.spawnSpecialTile(mid.row, mid.col, match.tileType, 'explosive');
+        const pos = this.pickSpawnPosition(match.tiles, swapTarget);
+        board.spawnSpecialTile(pos.row, pos.col, match.tileType, 'explosive');
       }
     }
   }

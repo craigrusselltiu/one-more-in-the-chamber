@@ -268,9 +268,9 @@ export class Board {
       return { valid: false, matches: [] };
     }
 
-    // Valid swap: resolve all cascades
+    // Valid swap: resolve all cascades (pass swap target for special tile placement)
     EventBus.emit(GameEvent.SWAPS_CHANGE);
-    const allMatches = await this.cascadeResolver.resolve(this, onCascadeStep);
+    const allMatches = await this.cascadeResolver.resolve(this, onCascadeStep, to);
 
     // After cascade: check for no valid moves
     if (!this.hasValidMoves()) {
@@ -328,26 +328,31 @@ export class Board {
     showdownTile.destroy();
     this.grid[showdownPos.row][showdownPos.col] = null;
 
-    // Trigger all tiles of the target type: collect positions, then destroy
+    // Collect all tiles of the target type
     const triggered: GridPosition[] = [];
     for (let row = 0; row < BOARD_SIZE; row++) {
       for (let col = 0; col < BOARD_SIZE; col++) {
         const tile = this.grid[row][col];
         if (tile && tile.type === targetType) {
           triggered.push({ row, col });
-          tile.destroy();
-          this.grid[row][col] = null;
         }
       }
     }
 
-    // Flash lines from showdown tile to each triggered tile
+    // Trigger each tile one by one with a 0.1s delay between each
     for (const pos of triggered) {
-      EventBus.emit(GameEvent.FLASH_LINE, showdownPos, pos, targetType);
+      const tile = this.grid[pos.row][pos.col];
+      if (tile) {
+        EventBus.emit(GameEvent.FLASH_LINE, showdownPos, pos, targetType);
+        const center = tile.getWorldCenter();
+        EventBus.emit(GameEvent.TILE_PARTICLES, center.x, center.y, TILE_COLORS[targetType] ?? '#ffffff');
+        tile.destroy();
+        this.grid[pos.row][pos.col] = null;
+        await new Promise(r => setTimeout(r, 100));
+      }
     }
 
     // Build a MatchResult so CombatManager.processMatches applies effects
-    // (damage, block, gold, etc.) for every triggered tile at 1.0x per tile.
     const showdownMatch: MatchResult = {
       tiles: triggered,
       tileType: targetType,
@@ -363,9 +368,6 @@ export class Board {
     if (onCascadeStep) {
       onCascadeStep([showdownMatch]);
     }
-
-    // Brief pause so the player sees the showdown clear effect
-    await new Promise(r => setTimeout(r, 300));
 
     // Apply gravity and fill with animations
     this.cascadeResolver.applyGravity(this);
@@ -605,19 +607,34 @@ export class Board {
    * and drop into place simultaneously, same as gravity drop.
    */
   async playIntroAnimation(): Promise<void> {
-    const moves: Array<{ tile: Tile; toX: number; toY: number }> = [];
+    // Each column falls with a slightly random delay for an organic feel
+    const columnDelays: number[] = [];
+    for (let col = 0; col < BOARD_SIZE; col++) {
+      columnDelays.push(Math.random() * 120); // 0-120ms random offset per column
+    }
 
+    const tweens: Promise<void>[] = [];
     for (let col = 0; col < BOARD_SIZE; col++) {
       for (let row = 0; row < BOARD_SIZE; row++) {
         const tile = this.grid[row][col];
         if (!tile) continue;
         const startY = this.originY - (BOARD_SIZE - row) * TILE_SIZE;
         tile.setPosition(this.tileX(col), startY);
-        moves.push({ tile, toX: this.tileX(col), toY: this.tileY(row) });
+        tweens.push(
+          tile.tweenToPosition(
+            this.tileX(col),
+            this.tileY(row),
+            250,
+            Math.round(columnDelays[col]),
+            true,
+          ),
+        );
       }
     }
 
-    await this.animateGravityDrop(moves);
+    if (tweens.length > 0) {
+      await Promise.all(tweens);
+    }
   }
 
   // -- Valid move detection --
@@ -843,12 +860,17 @@ export class Board {
   }
 
   /**
-   * Apply gravity and fill empty cells. Used after Deadeye
+   * Apply gravity and fill empty cells (no animation). Used after Deadeye
    * destroys tiles, before cascade resolution.
    */
   applyGravityAndFill(): void {
     this.cascadeResolver.applyGravity(this);
     this.fillEmptyTiles();
+  }
+
+  /** Apply gravity only (no fill). Used when animated fill follows. */
+  applyGravityOnly(): void {
+    this.cascadeResolver.applyGravity(this);
   }
 
   setGravityDirection(direction: GravityDirection): void {

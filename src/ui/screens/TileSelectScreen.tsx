@@ -2,6 +2,8 @@ import { memo, useMemo, useState } from 'react';
 import { EventBus, GameEvent } from '../../game/EventBus';
 import { useRunStore } from '../../store/runStore';
 import { STARTER_POOL, ADDITIONAL_POOL, TILE_DEFINITIONS } from '../../data/tiles';
+import { TILE_FRAMES } from '../../data/spriteConfig';
+import { SpriteIcon } from '../components/SpriteIcon';
 import { playClick } from '../../services/sfx';
 import type { TileType } from '../../types/game';
 import type { Screen } from '../../App';
@@ -21,10 +23,17 @@ export const TileSelectScreen = memo(function TileSelectScreen() {
   const isStarterSelection = !run || run.status !== 'active';
   const pool = isStarterSelection ? STARTER_POOL : ADDITIONAL_POOL;
 
-  // Pick 3 random tiles from pool (excluding already-owned)
+  // Pick 3 random tiles from pool (excluding already-owned).
+  // If not enough tiles remain in the primary pool, backfill from the other pool.
   const offered = useMemo(() => {
     const owned = run?.activeTileTypes ?? [];
-    const available = pool.filter((t) => !owned.includes(t));
+    let available = pool.filter((t) => !owned.includes(t));
+    // If fewer than 3 available, backfill from the other pool
+    if (available.length < 3) {
+      const otherPool = pool === STARTER_POOL ? ADDITIONAL_POOL : STARTER_POOL;
+      const backfill = otherPool.filter((t) => !owned.includes(t) && !available.includes(t));
+      available = [...available, ...backfill];
+    }
     // Shuffle and pick 3
     const shuffled = [...available].sort(() => Math.random() - 0.5);
     return shuffled.slice(0, 3);
@@ -75,18 +84,12 @@ export const TileSelectScreen = memo(function TileSelectScreen() {
                 transform: isSelected ? 'translateY(-4px)' : 'none',
               }}
             >
-              <div
-                className="w-8 h-8 rounded-sm mb-1.5"
-                style={{ backgroundColor: def.color }}
-              />
+              <SpriteIcon frame={TILE_FRAMES[tileType]} scale={2} className="mb-1.5" />
               <span className="text-amber-300 font-mono text-xs font-bold">
                 {def.label}
               </span>
               <span className="text-stone-400 font-mono text-center mt-1 leading-tight" style={{ fontSize: '9px' }}>
                 {def.description}
-              </span>
-              <span className="text-stone-600 font-mono mt-1.5" style={{ fontSize: '8px' }}>
-                Base: {def.baseValue}
               </span>
             </button>
           );

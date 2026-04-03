@@ -43,7 +43,10 @@ export const HealthBar = memo(function HealthBar({
             backgroundColor: barColor,
           }}
         />
-        <span className="absolute inset-0 flex items-center justify-center text-[8px] text-white leading-none font-bold">
+        <span
+          className="absolute inset-0 flex items-center justify-center text-[8px] text-white leading-none font-bold"
+          style={{ textShadow: '-1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000' }}
+        >
           {current}/{max}
         </span>
       </div>

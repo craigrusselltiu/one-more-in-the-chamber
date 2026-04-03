@@ -18,11 +18,12 @@ export const GameNotification = memo(function GameNotification() {
     const handler = (...args: unknown[]) => {
       const payload = args[0] as { text: string; duration?: number };
       setMessage(payload.text);
-      setVisible(true);
+      // Trigger fade-in on next frame so the transition fires
+      requestAnimationFrame(() => setVisible(true));
 
       const hold = payload.duration ?? 3000;
       setTimeout(() => setVisible(false), hold);
-      setTimeout(() => setMessage(null), hold + 600);
+      setTimeout(() => setMessage(null), hold + 800);
     };
 
     EventBus.on('game:notification', handler);
@@ -41,7 +42,7 @@ export const GameNotification = memo(function GameNotification() {
         style={{
           fontSize: '11px',
           opacity: visible ? 1 : 0,
-          transition: 'opacity 0.5s ease-in-out',
+          transition: 'opacity 0.6s ease-in-out',
         }}
       >
         {message}

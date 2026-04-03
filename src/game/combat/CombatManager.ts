@@ -537,7 +537,9 @@ export class CombatManager {
       for (const match of stepMatches) {
         this.hazardManager.resolveAdjacentHazards(match.tiles);
       }
-      this.processMatches(stepMatches);
+      // Apply combo multiplier: each cascade step beyond the first adds +0.1x
+      const comboMultiplier = cascadeSteps > 1 ? 1 + (cascadeSteps - 1) * 0.1 : 1.0;
+      this.processMatches(stepMatches, comboMultiplier);
       // Emit full state so React HUD updates (HP bars, etc.) mid-cascade
       this.emitFullState();
       this.emitEnemyHpChanges();
@@ -654,69 +656,80 @@ export class CombatManager {
   /**
    * Fire a Deadeye shot at a specific tile position.
    * Destroys the tile and generates its resource.
+   * Each shot waits for cascading to finish before allowing the next.
    * Deadeye + Showdown: shooting a showdown tile clears all tiles of a random type.
    */
-  deadeyeShoot(row: number, col: number): void {
+  async deadeyeShoot(row: number, col: number): Promise<void> {
     if (!this.isDeadeyeActive || this.deadeyeShotsRemaining <= 0) return;
+    if (this.board.getIsResolving()) return;
 
     const tile = this.board.getTileAt({ row, col });
     if (!tile) return;
 
     const type = tile.type;
 
+    this.board.setIsResolving(true);
+
     // Handle showdown tile: clears all tiles of a random type on the board
     if (tile.isShowdown) {
-      // Destroy the showdown tile first
       const grid = this.board.getGrid();
       grid[row][col]?.destroy();
       grid[row][col] = null;
 
-      // Pick a random tile type and clear all of them
       const types = this.board.getActiveTileTypes();
       const randomType = types[Math.floor(Math.random() * types.length)];
       const upgradeLevel = this.player.getUpgradeLevel(randomType);
 
       const count = this.board.clearAllOfType(randomType);
-      // Generate resources for each cleared tile (1.0x per tile)
       if (count > 0) {
         const output = this.resolver.resolveCount(randomType, count, upgradeLevel);
         this.applyResourceOutput(output);
       }
     } else {
-      // Normal tile: destroy and generate resource
       const upgradeLevel = this.player.getUpgradeLevel(type);
       const output = this.resolver.resolveSingle(type, upgradeLevel);
       this.applyResourceOutput(output);
 
-      // Destroy the tile on the board
       const grid = this.board.getGrid();
       grid[row][col]?.destroy();
       grid[row][col] = null;
     }
 
     this.deadeyeShotsRemaining--;
+    this.emitFullState();
+    this.emitEnemyHpChanges();
+    EventBus.emit(GameEvent.PLAYER_HP_CHANGE, this.player.health, this.player.maxHealth);
+    EventBus.emit(GameEvent.GOLD_CHANGE, this.player.gold);
+
+    // Apply gravity and fill with animation, then resolve cascades
+    this.board.applyGravityOnly();
+    await this.board.fillEmptyTilesAnimated();
+    const cascadeMatches = await this.board.resolveMatches();
+    if (cascadeMatches.length > 0) {
+      this.processMatches(cascadeMatches);
+      this.emitFullState();
+      this.emitEnemyHpChanges();
+    }
+
+    this.board.setIsResolving(false);
 
     if (this.deadeyeShotsRemaining <= 0) {
       this.endDeadeye();
     }
 
-    this.emitFullState();
-  }
-
-  private async endDeadeye(): Promise<void> {
-    this.isDeadeyeActive = false;
-    this.deadeyeShotsRemaining = 0;
-    document.body.classList.remove('cursor-crosshair');
-
-    // Apply gravity + fill after all shots, then resolve cascades
-    this.board.applyGravityAndFill();
-    const cascadeMatches = await this.board.resolveMatches();
-    this.processMatches(cascadeMatches);
-
     if (this.isCombatOver()) {
       this.endCombat();
     }
 
+    this.emitFullState();
+  }
+
+  private endDeadeye(): void {
+    this.isDeadeyeActive = false;
+    this.deadeyeShotsRemaining = 0;
+    this.player.abilityCharge = 0;
+    document.body.classList.remove('cursor-crosshair');
+    EventBus.emit(GameEvent.ABILITY_CHARGE_CHANGE, this.player.abilityCharge, this.player.abilityThreshold);
     this.emitFullState();
   }
 
@@ -828,7 +841,7 @@ export class CombatManager {
   // Match Processing & Resource Application
   // ---------------------------------------------------------------------------
 
-  private processMatches(matches: MatchResult[]): void {
+  private processMatches(matches: MatchResult[], comboMultiplier = 1.0): void {
     for (const match of matches) {
       // Warrant (suppress): suppressed tile types produce zero output entirely.
       // Skip all trait/artifact/crit/multiplier processing so nothing leaks through.
@@ -905,13 +918,14 @@ export class CombatManager {
       const eliteId = this.eliteModifier?.id as EliteModifierId | null;
       const suppressDamage = shouldSuppressCascadeDamage(eliteId, this.turnNumber);
 
-      // Apply multiplier to damage/block/gold/healing (not to status effects)
+      // Apply multiplier + combo bonus to damage/block/gold/healing (not to status effects)
+      const totalMultiplier = multiplier * comboMultiplier;
       const scaled: ResourceOutput = {
         ...output,
-        damage: suppressDamage ? 0 : Math.round(output.damage * multiplier),
-        block: Math.round(output.block * multiplier),
-        gold: Math.round(output.gold * multiplier),
-        healing: Math.round(output.healing * multiplier),
+        damage: suppressDamage ? 0 : Math.floor(output.damage * totalMultiplier),
+        block: Math.floor(output.block * totalMultiplier),
+        gold: Math.floor(output.gold * totalMultiplier),
+        healing: Math.floor(output.healing * totalMultiplier),
         // These are NOT scaled by match bonus or multipliers:
         abilityCharges: output.abilityCharges,
         venomStacks: output.venomStacks,
@@ -1050,8 +1064,8 @@ export class CombatManager {
       EventBus.emit(GameEvent.GOLD_CHANGE, this.player.gold);
     }
 
-    // Artifact turn-end effects (Sharpshooter's Eye reset)
-    this.artifacts.onTurnEnd();
+    // Artifact turn-end effects (Sharpshooter's Eye reset, Patrol Route block)
+    this.artifacts.onTurnEnd(this.swapsRemaining, this.player);
 
     if (this.isCombatOver()) {
       this.endCombat();

@@ -3,7 +3,6 @@ import { EventBus, GameEvent } from '../../game/EventBus';
 import { useRunStore } from '../../store/runStore';
 import { EVENTS, type EventDefinition, type EventChoice } from '../../data/events';
 import { ARTIFACTS, type ArtifactDefinition } from '../../data/artifacts';
-import { TopBar } from '../hud/TopBar';
 import type { TraitId } from '../../types/game';
 import type { Screen } from '../../App';
 
@@ -272,6 +271,8 @@ export const EventScreen = memo(function EventScreen() {
       addArtifact({ id: rewardArtifact.id, tags: rewardArtifact.tags });
     }
     setArtifactHandled(true);
+    // Auto-continue after taking artifact
+    EventBus.emit(GameEvent.SCREEN_CHANGE, 'map' satisfies Screen);
   };
 
   const handleSkipArtifact = () => {
@@ -289,7 +290,6 @@ export const EventScreen = memo(function EventScreen() {
 
   return (
     <div className="flex flex-col h-full bg-[#1a1a2e]/95">
-      <TopBar />
       <div className="flex-1 flex flex-col items-center justify-center">
       <div className="max-w-md w-full px-4">
         {/* Event title */}

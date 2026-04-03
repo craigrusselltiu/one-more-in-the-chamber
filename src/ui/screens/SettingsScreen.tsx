@@ -81,16 +81,18 @@ function SpeedSelector({
 }
 
 function VolumeSlider({
+  label,
   value,
   onChange,
 }: {
+  label: string;
   value: number;
   onChange: (volume: number) => void;
 }) {
   return (
     <div className="flex items-center justify-between w-full py-3 px-4" style={{ fontFamily: MENU_FONT }}>
       <div className="flex flex-col gap-0.5">
-        <span className="text-sm text-stone-200">Master Volume</span>
+        <span className="text-sm text-stone-200">{label}</span>
         <span className="text-xs text-stone-500">{Math.round(value * 100)}%</span>
       </div>
       <input
@@ -109,11 +111,13 @@ export const SettingsScreen = memo(function SettingsScreen() {
   const screenShakeEnabled = useSettingsStore((s) => s.screenShakeEnabled);
   const juiceAnimationsEnabled = useSettingsStore((s) => s.juiceAnimationsEnabled);
   const gameSpeed = useSettingsStore((s) => s.gameSpeed);
-  const masterVolume = useSettingsStore((s) => s.masterVolume);
+  const musicVolume = useSettingsStore((s) => s.musicVolume);
+  const sfxVolume = useSettingsStore((s) => s.sfxVolume);
   const setScreenShake = useSettingsStore((s) => s.setScreenShake);
   const setJuiceAnimations = useSettingsStore((s) => s.setJuiceAnimations);
   const setGameSpeed = useSettingsStore((s) => s.setGameSpeed);
-  const setMasterVolume = useSettingsStore((s) => s.setMasterVolume);
+  const setMusicVolume = useSettingsStore((s) => s.setMusicVolume);
+  const setSfxVolume = useSettingsStore((s) => s.setSfxVolume);
 
   const handleBack = () => {
     EventBus.emit(GameEvent.SCREEN_CHANGE, 'main-menu' satisfies Screen);
@@ -134,7 +138,8 @@ export const SettingsScreen = memo(function SettingsScreen() {
       {/* Settings list */}
       <div className="w-full max-w-[400px] px-4">
         <div className="border border-stone-700 bg-stone-800/30 divide-y divide-stone-700/50">
-          <VolumeSlider value={masterVolume} onChange={setMasterVolume} />
+          <VolumeSlider label="Music Volume" value={musicVolume} onChange={setMusicVolume} />
+          <VolumeSlider label="SFX Volume" value={sfxVolume} onChange={setSfxVolume} />
           <SpeedSelector value={gameSpeed} onChange={setGameSpeed} />
           <Toggle
             label="Screen Shake"
@@ -180,11 +185,13 @@ export const CombatSettingsPopup = memo(function CombatSettingsPopup({
   onGiveUp: () => void;
 }) {
   const gameSpeed = useSettingsStore((s) => s.gameSpeed);
-  const masterVolume = useSettingsStore((s) => s.masterVolume);
+  const musicVolume = useSettingsStore((s) => s.musicVolume);
+  const sfxVolume = useSettingsStore((s) => s.sfxVolume);
   const screenShakeEnabled = useSettingsStore((s) => s.screenShakeEnabled);
   const juiceAnimationsEnabled = useSettingsStore((s) => s.juiceAnimationsEnabled);
   const setGameSpeed = useSettingsStore((s) => s.setGameSpeed);
-  const setMasterVolume = useSettingsStore((s) => s.setMasterVolume);
+  const setMusicVolume = useSettingsStore((s) => s.setMusicVolume);
+  const setSfxVolume = useSettingsStore((s) => s.setSfxVolume);
   const setScreenShake = useSettingsStore((s) => s.setScreenShake);
   const setJuiceAnimations = useSettingsStore((s) => s.setJuiceAnimations);
 
@@ -197,18 +204,32 @@ export const CombatSettingsPopup = memo(function CombatSettingsPopup({
         <h3 className="text-amber-400 text-sm font-bold text-center mb-3">Settings</h3>
 
         <div className="flex flex-col gap-2 text-[9px]">
-          {/* Volume */}
+          {/* Music Volume */}
           <div className="flex items-center justify-between">
-            <span className="text-stone-300">Volume</span>
+            <span className="text-stone-300">Music</span>
             <input
               type="range"
               min="0"
               max="100"
-              value={Math.round(masterVolume * 100)}
-              onChange={(e) => setMasterVolume(Number(e.target.value) / 100)}
+              value={Math.round(musicVolume * 100)}
+              onChange={(e) => setMusicVolume(Number(e.target.value) / 100)}
               className="w-20 h-1 accent-amber-600 cursor-pointer"
             />
-            <span className="text-stone-500 w-8 text-right">{Math.round(masterVolume * 100)}%</span>
+            <span className="text-stone-500 w-8 text-right">{Math.round(musicVolume * 100)}%</span>
+          </div>
+
+          {/* SFX Volume */}
+          <div className="flex items-center justify-between">
+            <span className="text-stone-300">SFX</span>
+            <input
+              type="range"
+              min="0"
+              max="100"
+              value={Math.round(sfxVolume * 100)}
+              onChange={(e) => setSfxVolume(Number(e.target.value) / 100)}
+              className="w-20 h-1 accent-amber-600 cursor-pointer"
+            />
+            <span className="text-stone-500 w-8 text-right">{Math.round(sfxVolume * 100)}%</span>
           </div>
 
           {/* Game Speed */}

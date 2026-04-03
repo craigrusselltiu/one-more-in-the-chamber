@@ -14,6 +14,8 @@ import { ReputationShopScreen } from './ui/screens/ReputationShopScreen';
 import { LeaderboardScreen } from './ui/screens/LeaderboardScreen';
 import { SettingsScreen } from './ui/screens/SettingsScreen';
 import { CombatHUD } from './ui/hud/CombatHUD';
+import { TopBar } from './ui/hud/TopBar';
+import { ArtifactBar } from './ui/hud/ArtifactBar';
 import { OfflineIndicator } from './ui/components/OfflineIndicator';
 import { GameNotification } from './ui/components/GameNotification';
 import { EventBus, GameEvent } from './game/EventBus';
@@ -242,7 +244,7 @@ export default function App() {
           if (visited >= 3 && !hasTumbleweed) {
             store.addTileType('tumbleweed');
             setTimeout(() => {
-              EventBus.emit('game:notification', { text: 'A dust storm has rolled in...' });
+              EventBus.emit('game:notification', { text: 'A dust storm rolls in...' });
             }, 500);
           }
         }
@@ -326,6 +328,12 @@ export default function App() {
   // all other screens are pointer-events-auto (opaque overlays).
   const pointerMode = screen === 'combat' ? 'none' : 'auto';
 
+  // Screens that show the unified TopBar + ArtifactBar (all in-run screens)
+  const IN_RUN_SCREENS: Set<Screen> = new Set([
+    'combat', 'map', 'shop', 'rest-site', 'event', 'treasure',
+  ]);
+  const showTopBar = IN_RUN_SCREENS.has(screen);
+
   return (
     <div className="relative w-full h-full" onContextMenu={(e) => e.preventDefault()}>
       <div ref={gameContainerRef} className="absolute inset-0" />
@@ -333,7 +341,7 @@ export default function App() {
 
       {/* Scaled overlay: 960x540 virtual pixels, CSS-transformed to match Phaser canvas */}
       <div
-        className="absolute overflow-hidden"
+        className={`absolute overflow-hidden ${showTopBar ? 'flex flex-col' : ''}`}
         style={{
           width: UI_WIDTH,
           height: UI_HEIGHT,
@@ -345,19 +353,38 @@ export default function App() {
         }}
       >
         <GameNotification />
-        {screen === 'main-menu' && <MainMenu />}
-        {screen === 'character-select' && <CharacterSelectScreen />}
-        {screen === 'tile-select' && <TileSelectScreen />}
+
+        {/* Unified TopBar + ArtifactBar for all in-run screens */}
+        {showTopBar && (
+          <>
+            <TopBar
+              showMapButton={screen === 'combat'}
+              showConsumables={screen === 'combat'}
+            />
+            <ArtifactBar />
+          </>
+        )}
+
+        {/* Combat HUD: uses absolute positioning, overlays full area */}
         {screen === 'combat' && <CombatHUD />}
-        {screen === 'map' && <MapScreen />}
-        {screen === 'shop' && <ShopScreen />}
-        {screen === 'rest-site' && <RestSiteScreen />}
-        {screen === 'event' && <EventScreen />}
-        {screen === 'score' && <ScoreScreen />}
-        {screen === 'treasure' && <TreasureScreen />}
-        {screen === 'reputation-shop' && <ReputationShopScreen />}
-        {screen === 'leaderboard' && <LeaderboardScreen />}
-        {screen === 'settings' && <SettingsScreen />}
+
+        {/* Non-combat screen content fills remaining space below TopBar */}
+        {screen !== 'combat' && (
+          <div className={showTopBar ? 'flex-1 overflow-hidden' : 'h-full'}>
+            {screen === 'main-menu' && <MainMenu />}
+            {screen === 'character-select' && <CharacterSelectScreen />}
+            {screen === 'tile-select' && <TileSelectScreen />}
+            {screen === 'map' && <MapScreen />}
+            {screen === 'shop' && <ShopScreen />}
+            {screen === 'rest-site' && <RestSiteScreen />}
+            {screen === 'event' && <EventScreen />}
+            {screen === 'score' && <ScoreScreen />}
+            {screen === 'treasure' && <TreasureScreen />}
+            {screen === 'reputation-shop' && <ReputationShopScreen />}
+            {screen === 'leaderboard' && <LeaderboardScreen />}
+            {screen === 'settings' && <SettingsScreen />}
+          </div>
+        )}
       </div>
     </div>
   );

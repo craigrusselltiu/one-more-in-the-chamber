@@ -2,7 +2,8 @@ import { memo, useState } from 'react';
 import { EventBus, GameEvent } from '../../game/EventBus';
 import { useRunStore } from '../../store/runStore';
 import { TILE_DEFINITIONS } from '../../data/tiles';
-import { TopBar } from '../hud/TopBar';
+import { TILE_FRAMES } from '../../data/spriteConfig';
+import { SpriteIcon } from '../components/SpriteIcon';
 import type { TileType } from '../../types/game';
 import type { Screen } from '../../App';
 
@@ -43,7 +44,7 @@ export const RestSiteScreen = memo(function RestSiteScreen() {
   // Rested
   if (choice === 'rest') {
     return (
-      <div className="flex flex-col h-full bg-[#1a1a2e]/95"><TopBar /><div className="flex-1 flex flex-col items-center justify-center">
+      <div className="flex flex-col h-full bg-[#1a1a2e]/95"><div className="flex-1 flex flex-col items-center justify-center">
         <div className="text-3xl mb-4">{'\u2618'}</div>
         <h2 className="text-xl text-amber-400 font-mono mb-2">Rested</h2>
         <p className="text-stone-300 font-mono text-sm mb-4">
@@ -66,7 +67,7 @@ export const RestSiteScreen = memo(function RestSiteScreen() {
   if (choice === 'upgraded') {
     const tileDef = selectedTile ? TILE_DEFINITIONS[selectedTile] : null;
     return (
-      <div className="flex flex-col h-full bg-[#1a1a2e]/95"><TopBar /><div className="flex-1 flex flex-col items-center justify-center">
+      <div className="flex flex-col h-full bg-[#1a1a2e]/95"><div className="flex-1 flex flex-col items-center justify-center">
         <div className="text-3xl mb-4">{'\u2B06'}</div>
         <h2 className="text-xl text-amber-400 font-mono mb-2">Upgraded</h2>
         <p className="text-stone-300 font-mono text-sm mb-4">
@@ -85,7 +86,7 @@ export const RestSiteScreen = memo(function RestSiteScreen() {
   // Upgrade tile selection
   if (choice === 'upgrade') {
     return (
-      <div className="flex flex-col h-full bg-[#1a1a2e]/95"><TopBar /><div className="flex-1 flex flex-col items-center justify-center">
+      <div className="flex flex-col h-full bg-[#1a1a2e]/95"><div className="flex-1 flex flex-col items-center justify-center">
         <h2 className="text-xl text-amber-400 font-mono mb-2">Upgrade a Tile</h2>
         <p className="text-stone-400 font-mono text-xs mb-4">
           Permanent +1 tier for the rest of the run
@@ -107,10 +108,7 @@ export const RestSiteScreen = memo(function RestSiteScreen() {
                     : 'border-stone-600 bg-stone-800/50 hover:border-stone-400'
                 }`}
               >
-                <div
-                  className="w-8 h-8 rounded mb-1"
-                  style={{ backgroundColor: def.color }}
-                />
+                <SpriteIcon frame={TILE_FRAMES[tileType]} scale={2} className="mb-1" />
                 <span className="text-amber-300 font-mono text-xs font-bold">{def.label}</span>
                 <span className="text-stone-400 font-mono" style={{ fontSize: '10px' }}>
                   Lv {currentLevel} {'\u2192'} {currentLevel + 1}
@@ -148,7 +146,7 @@ export const RestSiteScreen = memo(function RestSiteScreen() {
 
   // Initial choice
   return (
-    <div className="flex flex-col h-full bg-[#1a1a2e]/95"><TopBar /><div className="flex-1 flex flex-col items-center justify-center">
+    <div className="flex flex-col h-full bg-[#1a1a2e]/95"><div className="flex-1 flex flex-col items-center justify-center">
       <div className="text-3xl mb-4">
         {'\u2618'}
       </div>

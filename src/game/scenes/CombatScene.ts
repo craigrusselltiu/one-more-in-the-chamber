@@ -60,8 +60,10 @@ export class CombatScene extends Phaser.Scene {
     EventBus.on(GameEvent.SCREEN_SHAKE, this.boundOnScreenShake);
     EventBus.on(GameEvent.TILE_PARTICLES, this.boundOnTileParticles);
 
-    // Spacebar activates deadeye ability
-    this.input.keyboard?.on('keydown-SPACE', () => {
+    // Spacebar activates deadeye ability.
+    // Also prevent default so space doesn't trigger focused UI buttons.
+    this.input.keyboard?.on('keydown-SPACE', (event: KeyboardEvent) => {
+      event.preventDefault();
       EventBus.emit(GameEvent.ACTIVATE_ABILITY);
     });
 

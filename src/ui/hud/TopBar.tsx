@@ -5,7 +5,9 @@ import { EventBus, GameEvent } from '../../game/EventBus';
 import { MapScreen } from '../screens/MapScreen';
 import { CombatSettingsPopup } from '../screens/SettingsScreen';
 import { ConsumableSlots } from './ConsumableSlots';
+import { SpriteIcon } from '../components/SpriteIcon';
 import { TILE_DEFINITIONS } from '../../data/tiles';
+import { TILE_FRAMES, UI_FRAMES } from '../../data/spriteConfig';
 import type { Act, MapNodeType } from '../../types/game';
 import type { Screen } from '../../App';
 
@@ -40,11 +42,11 @@ function formatTimer(totalSeconds: number): string {
 }
 
 /**
- * TopBar: act label + consumable slots (left), HP + gold (right), gear (far right).
- * Shared between map and combat screens for visual consistency.
- * Reads from runStore, which CombatBridge keeps in sync during combat.
+ * TopBar: act label + consumable slots (left), HP + gold (right), icon buttons (far right).
+ * Rendered once by App.tsx for all in-run screens.
+ * Consumable slots are always visible. Taller bar to fit them.
  */
-export const TopBar = memo(function TopBar({ showMapButton, showConsumables }: { showMapButton?: boolean; showConsumables?: boolean }) {
+export const TopBar = memo(function TopBar({ showMapButton }: { showMapButton?: boolean; showConsumables?: boolean }) {
   const run = useRunStore((s) => s.run);
   const act = (run?.currentAct ?? 1) as Act;
   const health = run?.health ?? 100;
@@ -82,44 +84,44 @@ export const TopBar = memo(function TopBar({ showMapButton, showConsumables }: {
 
   return (
     <>
-      <div className="flex justify-between items-center px-2 h-5 bg-black/50 text-[8px] font-mono pointer-events-auto">
+      <div className="flex justify-between items-center px-2 bg-black/50 text-[8px] font-mono pointer-events-auto" style={{ height: 24 }}>
         <div className="flex items-center gap-3">
           <span className="text-amber-400 font-bold">
             Act {act} - {getActName(act)}
           </span>
-          {showConsumables && <ConsumableSlots />}
+          <ConsumableSlots />
           {currentNodeType && (
             <span className={`${NODE_TYPE_COLORS[currentNodeType]} font-bold`}>
               {NODE_TYPE_LABELS[currentNodeType]}
             </span>
           )}
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
           <span className="text-stone-500">{formatTimer(elapsed)}</span>
-          <span className="text-red-400">HP {health}/{maxHealth}</span>
+          <span className="text-red-400">{health}/{maxHealth}</span>
           <span className="text-yellow-300">{gold} gold</span>
           <button
             onClick={() => setShowTiles((v) => !v)}
-            className="text-stone-400 hover:text-stone-200"
+            className="hover:opacity-80"
             title="Tiles"
           >
-            [T]
+            <SpriteIcon frame={UI_FRAMES.tiles} scale={1} />
           </button>
           {showMapButton && (
             <button
               onClick={() => setShowMap((v) => !v)}
-              className="text-stone-400 hover:text-stone-200"
+              className="hover:opacity-80"
               title="Map"
             >
-              [M]
+              <SpriteIcon frame={UI_FRAMES.map} scale={1} />
             </button>
           )}
           <button
             onClick={() => setShowSettings(true)}
-            className="text-stone-500 hover:text-stone-300"
+            className="hover:opacity-80"
             title="Settings"
           >
-            [=]
+            <SpriteIcon frame={UI_FRAMES.settings} scale={1} />
           </button>
         </div>
       </div>
@@ -176,15 +178,7 @@ function TilesPopup({
             if (!def) return null;
             return (
               <div key={tileType} className="flex items-center gap-2">
-                <span
-                  className="shrink-0"
-                  style={{
-                    width: 12,
-                    height: 12,
-                    backgroundColor: def.color,
-                    display: 'inline-block',
-                  }}
-                />
+                <SpriteIcon frame={TILE_FRAMES[tileType]} scale={1} />
                 <span className="text-stone-200 font-mono text-xs font-bold">{def.label}</span>
                 <span className="text-stone-500 font-mono" style={{ fontSize: '10px' }}>
                   {def.description}

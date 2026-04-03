@@ -24,22 +24,35 @@ export class BootScene extends Phaser.Scene {
   }
 
   preload(): void {
-    this.load.audio('combat_theme', 'assets/audio/combat_theme.mp3');
-    this.load.audio('main_menu', 'assets/audio/main_menu.mp3');
-    this.load.audio('sfx_click', 'assets/audio/sfx/click.wav');
-    this.load.audio('sfx_swap', 'assets/audio/sfx/swap.wav');
-    this.load.audio('sfx_match1', 'assets/audio/sfx/match1.wav');
-    this.load.audio('sfx_match2', 'assets/audio/sfx/match2.wav');
-    this.load.audio('sfx_match3', 'assets/audio/sfx/match3.wav');
-    this.load.audio('sfx_match_pitch', 'assets/audio/sfx/match_pitch.wav');
-    this.load.spritesheet('items_sheet', 'assets/sprites/items_sheet.png', {
+    const base = import.meta.env.BASE_URL;
+    this.load.audio('combat_theme', `${base}assets/audio/combat_theme.mp3`);
+    this.load.audio('main_menu', `${base}assets/audio/main_menu.mp3`);
+    this.load.audio('sfx_click', `${base}assets/audio/sfx/click.wav`);
+    this.load.audio('sfx_swap', `${base}assets/audio/sfx/swap.wav`);
+    this.load.audio('sfx_match1', `${base}assets/audio/sfx/match1.wav`);
+    this.load.audio('sfx_match2', `${base}assets/audio/sfx/match2.wav`);
+    this.load.audio('sfx_match3', `${base}assets/audio/sfx/match3.wav`);
+    this.load.audio('sfx_match_pitch', `${base}assets/audio/sfx/match_pitch.wav`);
+    this.load.spritesheet('items_sheet', `${base}assets/sprites/items_sheet.png`, {
       frameWidth: 16,
       frameHeight: 16,
     });
   }
 
+  /** Target volume for currently playing music (before master scaling). */
+  private menuMusicTarget = 0.5;
+  private combatMusicTarget = 0.4;
+
   create(): void {
     this.cameras.main.setRoundPixels(true);
+
+    // Live volume: subscribe to musicVolume changes and apply to active music
+    useSettingsStore.subscribe((state, prev) => {
+      if (state.musicVolume !== prev.musicVolume) {
+        if (this.menuMusic) this.safeSetVolume(this.menuMusic, this.menuMusicTarget);
+        if (this.combatMusic) this.safeSetVolume(this.combatMusic, this.combatMusicTarget);
+      }
+    });
 
     // Defer music until first user interaction to avoid AudioContext warning.
     // The browser blocks audio before a gesture; listen for the first click.
@@ -56,6 +69,8 @@ export class BootScene extends Phaser.Scene {
         document.removeEventListener('pointerdown', startOnGesture);
         this.stopCombatMusic();
         this.playMenuMusic();
+      } else if (screen === 'settings') {
+        // Settings screen: don't change music at all
       } else if (screen === 'combat') {
         this.fadeOutMenuMusic();
         this.playCombatMusic();
@@ -72,7 +87,7 @@ export class BootScene extends Phaser.Scene {
   }
 
   private safeSetVolume(sound: Phaser.Sound.BaseSound, vol: number): void {
-    try { (sound as Phaser.Sound.WebAudioSound).setVolume(vol * useSettingsStore.getState().masterVolume); } catch { /* audio node may be null */ }
+    try { (sound as Phaser.Sound.WebAudioSound).setVolume(vol * useSettingsStore.getState().musicVolume); } catch { /* audio node may be null */ }
   }
 
   private playMenuMusic(): void {
@@ -89,12 +104,13 @@ export class BootScene extends Phaser.Scene {
     this.menuMusic = music;
 
     // Fade in via proxy to avoid direct volume tween crash
+    this.menuMusicTarget = 0.5;
     const proxy = { vol: 0 };
     this.fadeInTween = this.tweens.add({
       targets: proxy,
       vol: 0.5,
       duration: 2000,
-      onUpdate: () => this.safeSetVolume(music, proxy.vol),
+      onUpdate: () => { this.menuMusicTarget = proxy.vol; this.safeSetVolume(music, proxy.vol); },
       onComplete: () => { this.fadeInTween = null; },
     });
   }
@@ -141,12 +157,13 @@ export class BootScene extends Phaser.Scene {
     try { music.play(); } catch { /* ignore */ }
     this.combatMusic = music;
 
+    this.combatMusicTarget = 0.4;
     const proxy = { vol: 0 };
     this.combatFadeTween = this.tweens.add({
       targets: proxy,
       vol: 0.4,
       duration: 2000,
-      onUpdate: () => this.safeSetVolume(music, proxy.vol),
+      onUpdate: () => { this.combatMusicTarget = proxy.vol; this.safeSetVolume(music, proxy.vol); },
       onComplete: () => { this.combatFadeTween = null; },
     });
   }

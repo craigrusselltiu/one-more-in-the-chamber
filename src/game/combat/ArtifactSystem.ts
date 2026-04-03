@@ -237,6 +237,11 @@ export class ArtifactSystem {
       }
     }
 
+    // Envenomed Ammo: Bullet matches apply 1 venom stack to target
+    if (this.has('envenomed_ammo') && match.tileType === 'bullet') {
+      modified.venomStacks += 1;
+    }
+
     return modified;
   }
 
@@ -267,9 +272,14 @@ export class ArtifactSystem {
   // Turn End
   // ---------------------------------------------------------------------------
 
-  onTurnEnd(): void {
+  onTurnEnd(swapsRemaining?: number, player?: Player): void {
     // Sharpshooter's Eye crit bonus resets at turn end
     this.swapCritBonus = 0;
+
+    // Patrol Route: unused swaps at turn end give +3 block each
+    if (this.has('patrol_route') && player && swapsRemaining && swapsRemaining > 0) {
+      player.addBlock(swapsRemaining * 3);
+    }
   }
 
   // ---------------------------------------------------------------------------
