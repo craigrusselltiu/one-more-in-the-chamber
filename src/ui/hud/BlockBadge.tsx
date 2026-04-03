@@ -1,5 +1,6 @@
 import { memo } from 'react';
 import { SpriteIcon } from '../components/SpriteIcon';
+import { Tooltip } from '../components/Tooltip';
 import { STATUS_FRAMES } from '../../data/spriteConfig';
 
 interface BlockBadgeProps {
@@ -13,25 +14,23 @@ const OUTLINE = '-1px 0 0 #000, 1px 0 0 #000, 0 -1px 0 #000, 0 1px 0 #000, -1px 
  */
 export const BlockBadge = memo(function BlockBadge({ value }: BlockBadgeProps) {
   return (
-    <div
-      className="relative"
-      style={{ width: 16, height: 16 }}
-      title={`Block: ${value}`}
-    >
-      <SpriteIcon frame={STATUS_FRAMES.block} scale={1} />
-      <span
-        className="absolute font-bold font-mono"
-        style={{
-          bottom: -2,
-          right: -2,
-          fontSize: '7px',
-          color: '#fff',
-          lineHeight: 1,
-          textShadow: OUTLINE,
-        }}
-      >
-        {value}
-      </span>
-    </div>
+    <Tooltip text={`Block: ${value}`}>
+      <div className="relative" style={{ width: 16, height: 16 }}>
+        <SpriteIcon frame={STATUS_FRAMES.block} scale={1} />
+        <span
+          className="absolute font-bold font-mono"
+          style={{
+            bottom: -2,
+            right: -2,
+            fontSize: '7px',
+            color: '#fff',
+            lineHeight: 1,
+            textShadow: OUTLINE,
+          }}
+        >
+          {value}
+        </span>
+      </div>
+    </Tooltip>
   );
 });

@@ -6,6 +6,7 @@ import { MapScreen } from '../screens/MapScreen';
 import { CombatSettingsPopup } from '../screens/SettingsScreen';
 import { ConsumableSlots } from './ConsumableSlots';
 import { SpriteIcon } from '../components/SpriteIcon';
+import { Tooltip } from '../components/Tooltip';
 import { TILE_DEFINITIONS } from '../../data/tiles';
 import { TILE_FRAMES, UI_FRAMES } from '../../data/spriteConfig';
 import type { Act, MapNodeType } from '../../types/game';
@@ -106,29 +107,23 @@ export const TopBar = memo(function TopBar({ showMapButton }: { showMapButton?: 
             <SpriteIcon frame={UI_FRAMES.gold} scale={1} />
             {gold}
           </span>
-          <button
-            onClick={() => setShowTiles((v) => !v)}
-            className="hover:opacity-80"
-            title="Tiles"
-          >
-            <SpriteIcon frame={UI_FRAMES.tiles} scale={1} />
-          </button>
-          {showMapButton && (
-            <button
-              onClick={() => setShowMap((v) => !v)}
-              className="hover:opacity-80"
-              title="Map"
-            >
-              <SpriteIcon frame={UI_FRAMES.map} scale={1} />
+          <Tooltip text="Tiles" position="bottom">
+            <button onClick={() => setShowTiles((v) => !v)} className="hover:opacity-80">
+              <SpriteIcon frame={UI_FRAMES.tiles} scale={1} />
             </button>
+          </Tooltip>
+          {showMapButton && (
+            <Tooltip text="Map" position="bottom">
+              <button onClick={() => setShowMap((v) => !v)} className="hover:opacity-80">
+                <SpriteIcon frame={UI_FRAMES.map} scale={1} />
+              </button>
+            </Tooltip>
           )}
-          <button
-            onClick={() => setShowSettings(true)}
-            className="hover:opacity-80"
-            title="Settings"
-          >
-            <SpriteIcon frame={UI_FRAMES.settings} scale={1} />
-          </button>
+          <Tooltip text="Settings" position="bottom">
+            <button onClick={() => setShowSettings(true)} className="hover:opacity-80">
+              <SpriteIcon frame={UI_FRAMES.settings} scale={1} />
+            </button>
+          </Tooltip>
         </div>
       </div>
       {showTiles && run && (

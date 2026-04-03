@@ -1,6 +1,7 @@
 import { memo, useCallback } from 'react';
 import { EventBus, GameEvent } from '../../game/EventBus';
 import { useCombatStore } from '../../store/combatStore';
+import { Tooltip } from '../components/Tooltip';
 
 /**
  * AbilityMeter: Deadeye charge bar below player.
@@ -50,11 +51,11 @@ export const AbilityMeter = memo(function AbilityMeter() {
   }
 
   return (
+    <Tooltip text={ready ? 'Activate Deadeye' : `${charge}/${threshold} charges`} position="top">
     <button
       className="mt-1 pointer-events-auto"
       onClick={handleActivate}
       disabled={!canActivate}
-      title={ready ? 'Activate Deadeye' : `${charge}/${threshold} charges`}
     >
       <div
         className="relative bg-stone-800 border"
@@ -79,5 +80,6 @@ export const AbilityMeter = memo(function AbilityMeter() {
         {ready ? 'READY' : `${charge}/${threshold}`}
       </div>
     </button>
+    </Tooltip>
   );
 });

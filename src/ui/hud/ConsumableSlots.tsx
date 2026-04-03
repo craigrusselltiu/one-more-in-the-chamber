@@ -4,6 +4,7 @@ import { useRunStore } from '../../store/runStore';
 import { useCombatStore } from '../../store/combatStore';
 import { CONSUMABLES } from '../../data/consumables';
 import { SpriteIcon } from '../components/SpriteIcon';
+import { Tooltip } from '../components/Tooltip';
 import { CONSUMABLE_FRAMES } from '../../data/spriteConfig';
 
 const CATEGORY_COLORS: Record<string, string> = {
@@ -83,7 +84,10 @@ const ConsumableSlot = memo(function ConsumableSlot({
     : 'transparent';
   const borderColor = canUse ? '#FFD700' : '#555';
 
+  const tooltipText = filled ? `${name}: ${effect}` : 'Empty slot';
+
   return (
+    <Tooltip text={tooltipText} position="bottom">
     <button
       onClick={handleUse}
       disabled={!canUse}
@@ -95,7 +99,6 @@ const ConsumableSlot = memo(function ConsumableSlot({
         border: `1px solid ${borderColor}`,
         opacity: filled ? 1 : 0.4,
       }}
-      title={filled ? `${name}: ${effect}` : 'Empty slot'}
     >
       {filled && consumableId && CONSUMABLE_FRAMES[consumableId] != null ? (
         <SpriteIcon frame={CONSUMABLE_FRAMES[consumableId]} scale={1} />
@@ -105,5 +108,6 @@ const ConsumableSlot = memo(function ConsumableSlot({
         </span>
       ) : null}
     </button>
+    </Tooltip>
   );
 });

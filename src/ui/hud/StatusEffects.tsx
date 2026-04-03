@@ -1,6 +1,7 @@
 import { memo } from 'react';
 import type { PlayerStatusEffect, EnemyStatusEffect } from '../../types/combat';
 import { SpriteIcon } from '../components/SpriteIcon';
+import { Tooltip } from '../components/Tooltip';
 import { STATUS_FRAMES } from '../../data/spriteConfig';
 
 interface StatusEffectsProps {
@@ -25,11 +26,10 @@ export const StatusEffects = memo(function StatusEffects({ effects }: StatusEffe
   return (
     <div className="flex gap-0.5 mt-0.5">
       {effects.map((effect, i) => (
+        <Tooltip key={`${effect.type}-${i}`} text={`${effect.type}: ${formatValue(effect.type, effect.value)}`}>
         <div
-          key={`${effect.type}-${i}`}
           className="relative"
           style={{ width: 16, height: 16 }}
-          title={`${effect.type}: ${formatValue(effect.type, effect.value)}`}
         >
           <SpriteIcon
             frame={STATUS_FRAMES[effect.type] ?? 0}
@@ -49,6 +49,7 @@ export const StatusEffects = memo(function StatusEffects({ effects }: StatusEffe
             {formatValue(effect.type, effect.value)}
           </span>
         </div>
+        </Tooltip>
       ))}
     </div>
   );

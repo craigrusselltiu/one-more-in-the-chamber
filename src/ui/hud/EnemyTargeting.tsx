@@ -90,7 +90,6 @@ const EnemySlot = memo(function EnemySlot({
         border: `1px solid ${borderColor}`,
         backgroundColor: isTargeted ? 'rgba(255, 215, 0, 0.08)' : 'rgba(0,0,0,0.3)',
       }}
-      title={`Target: ${enemy.enemyType}`}
     >
       {/* Intent above sprite */}
       <EnemyIntent intent={enemy.intent} />
