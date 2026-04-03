@@ -69,13 +69,18 @@ export class BootScene extends Phaser.Scene {
     let audioUnlocked = false;
 
     const startOnGesture = () => {
-      document.removeEventListener('pointerdown', startOnGesture);
+      document.removeEventListener('click', startOnGesture);
       audioUnlocked = true;
-      if (desiredTrack) {
-        this.playTrack(desiredTrack);
-      }
+      // Defer playback to next frame so any screen change from this same
+      // click event updates desiredTrack first.
+      requestAnimationFrame(() => {
+        if (desiredTrack && !this.currentMusic) {
+          this.playTrack(desiredTrack);
+        }
+      });
     };
-    document.addEventListener('pointerdown', startOnGesture);
+    // Use 'click' (not pointerdown) so React onClick handlers fire first
+    document.addEventListener('click', startOnGesture);
 
     // Music transitions on screen changes
     EventBus.on(GameEvent.SCREEN_CHANGE, (...args: unknown[]) => {
