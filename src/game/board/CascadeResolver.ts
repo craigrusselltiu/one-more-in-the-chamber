@@ -139,7 +139,7 @@ export class CascadeResolver {
       if (!tile) return;
       extraTiles.set(key, tile.type);
       if (tile.isExplosive) explosiveQueue.push({ row: r, col: c });
-      if (tile.isShowdown) {
+      if (tile.isShowdown || tile.type === 'showdown') {
         // Showdown triggered by AOE: clear all tiles of its type
         for (let sr = 0; sr < size; sr++) {
           for (let sc = 0; sc < size; sc++) {

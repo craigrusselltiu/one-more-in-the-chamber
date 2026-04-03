@@ -59,6 +59,7 @@ export const STATUS_FRAMES: Record<string, number> = {
   thorns: 1006,
   venom: 828,
   vulnerable: 770,
+  cracked_ground: 649,
 };
 
 /** Map node type icons. */
