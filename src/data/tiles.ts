@@ -224,7 +224,7 @@ export const TILE_DEFINITIONS: Record<TileType, TileDefinition> = {
     baseValue: 3,
     upgradeValue: 1,
     pool: 'additional',
-    description: 'Deal 3 damage per tile to the enemy with the highest current HP. Apply 1 Vulnerable per tile.',
+    description: 'Deal 3 damage per tile to the enemy with the highest current HP then apply 1 Vulnerable.',
     flavor: 'Every hit paints a bigger target.',
   },
   rattler: {

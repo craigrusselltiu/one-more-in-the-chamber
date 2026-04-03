@@ -135,7 +135,7 @@ export class ResourceResolver {
 
       case 'wanted':
         output.damage = total;
-        output.vulnerableStacks = count;
+        output.vulnerableStacks = 1;
         output.targetsHighestHp = true;
         break;
 
