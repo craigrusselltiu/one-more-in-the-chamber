@@ -45,6 +45,7 @@ export const TILE_DEFINITIONS: Record<TileType, TileDefinition> = {
     upgradeValue: 1,
     pool: 'core',
     description: 'Deal 2 damage per tile.',
+    flavor: 'Highly effective negotiation tool.',
   },
   iron: {
     type: 'iron',
@@ -55,6 +56,7 @@ export const TILE_DEFINITIONS: Record<TileType, TileDefinition> = {
     upgradeValue: 1,
     pool: 'core',
     description: 'Gain 3 block per tile.',
+    flavor: "Bend, don't break.",
   },
   gold: {
     type: 'gold',
@@ -65,6 +67,7 @@ export const TILE_DEFINITIONS: Record<TileType, TileDefinition> = {
     upgradeValue: 1,
     pool: 'core',
     description: 'Earn 2 gold per tile.',
+    flavor: "Makes the world go 'round.",
   },
 
   // --- Starter ---
@@ -76,7 +79,8 @@ export const TILE_DEFINITIONS: Record<TileType, TileDefinition> = {
     baseValue: 2,
     upgradeValue: 1,
     pool: 'starter',
-    description: '2 damage per tile + destroys 1 random tile each.',
+    description: 'Deal 2 damage per tile + each tile destroys 1 random tile elsewhere.',
+    flavor: "Bullets bounce. You never know what they'll hit.",
   },
   stampede: {
     type: 'stampede',
@@ -86,7 +90,8 @@ export const TILE_DEFINITIONS: Record<TileType, TileDefinition> = {
     baseValue: 2,
     upgradeValue: 1,
     pool: 'starter',
-    description: '2 damage to ALL enemies per tile.',
+    description: 'Deal 2 damage to ALL enemies per tile.',
+    flavor: 'The ground shakes. Everything in the way gets flattened.',
   },
   buckshot: {
     type: 'buckshot',
@@ -96,7 +101,8 @@ export const TILE_DEFINITIONS: Record<TileType, TileDefinition> = {
     baseValue: 2,
     upgradeValue: 1,
     pool: 'starter',
-    description: '2 damage to a random enemy per tile.',
+    description: 'Deal 2 damage to a random enemy per tile.',
+    flavor: 'Spread shot. Hits harder, less precise.',
   },
   battery: {
     type: 'battery',
@@ -106,7 +112,8 @@ export const TILE_DEFINITIONS: Record<TileType, TileDefinition> = {
     baseValue: 1,
     upgradeValue: 1,
     pool: 'starter',
-    description: '+1 ability charge per 3-match; +1 per extra tile.',
+    description: 'Gain 1 ability charge per 3-match; +1 per extra tile.',
+    flavor: 'Juice for the iron. Every spark counts.',
   },
   venom: {
     type: 'venom',
@@ -117,6 +124,7 @@ export const TILE_DEFINITIONS: Record<TileType, TileDefinition> = {
     upgradeValue: 1,
     pool: 'starter',
     description: 'Apply 1 Venom per tile.',
+    flavor: "Slow poison. The patient killer's weapon.",
   },
   prairie_fire: {
     type: 'prairie_fire',
@@ -126,7 +134,8 @@ export const TILE_DEFINITIONS: Record<TileType, TileDefinition> = {
     baseValue: 3,
     upgradeValue: 1,
     pool: 'starter',
-    description: '3 damage per tile. 50% to convert adjacent tile.',
+    description: 'Deal 3 damage per tile. 50% chance to convert 1 adjacent tile to Ember.',
+    flavor: 'Sparks fly. Some of them catch.',
   },
 
   // --- Additional ---
@@ -138,7 +147,8 @@ export const TILE_DEFINITIONS: Record<TileType, TileDefinition> = {
     baseValue: 1,
     upgradeValue: 1,
     pool: 'additional',
-    description: '1 damage per tile. +1 per Chain match this combat.',
+    description: 'Deal 1 damage per tile. Each Chain match adds +1 damage to ALL Chain tiles for this combat.',
+    flavor: 'Links in the chain. More you match, harder they hit.',
   },
   whiskey: {
     type: 'whiskey',
@@ -148,7 +158,8 @@ export const TILE_DEFINITIONS: Record<TileType, TileDefinition> = {
     baseValue: 1,
     upgradeValue: 1,
     pool: 'additional',
-    description: 'Heal 1 HP per tile.',
+    description: 'Heals 1 HP per tile.',
+    flavor: "The cowboy's medicine.",
   },
   ace: {
     type: 'ace',
@@ -158,7 +169,8 @@ export const TILE_DEFINITIONS: Record<TileType, TileDefinition> = {
     baseValue: 1,
     upgradeValue: 1,
     pool: 'additional',
-    description: 'Gain 1 Ace stack per tile.',
+    description: 'Gain 1 stack of Ace per tile.',
+    flavor: 'Always keep one up your sleeve.',
   },
   horseshoe: {
     type: 'horseshoe',
@@ -168,7 +180,8 @@ export const TILE_DEFINITIONS: Record<TileType, TileDefinition> = {
     baseValue: 1,
     upgradeValue: 1,
     pool: 'additional',
-    description: 'Gain 1 Lucky stack per tile.',
+    description: 'Gain 1 stack of Lucky per tile.',
+    flavor: 'Luck favors the prepared.',
   },
   fifty_cal: {
     type: 'fifty_cal',
@@ -178,7 +191,8 @@ export const TILE_DEFINITIONS: Record<TileType, TileDefinition> = {
     baseValue: 5,
     upgradeValue: 1,
     pool: 'additional',
-    description: '5 damage per tile.',
+    description: 'Deal 5 damage per tile.',
+    flavor: 'Turns cover into a suggestion.',
   },
   tombstone: {
     type: 'tombstone',
@@ -188,7 +202,8 @@ export const TILE_DEFINITIONS: Record<TileType, TileDefinition> = {
     baseValue: 3,
     upgradeValue: 1,
     pool: 'additional',
-    description: '3 damage. Double when target below 30% HP.',
+    description: 'Deal 3 damage per tile. Deals double damage when target is below 30% HP.',
+    flavor: 'Dead men pay debts.',
   },
   saloon: {
     type: 'saloon',
@@ -198,7 +213,8 @@ export const TILE_DEFINITIONS: Record<TileType, TileDefinition> = {
     baseValue: 1,
     upgradeValue: 1,
     pool: 'additional',
-    description: 'Heal 1 HP per tile. Generate adjacent tile resources.',
+    description: 'Heal 1 HP per tile. Generate the resources of adjacent tiles.',
+    flavor: 'Belly up to the bar. Drinks are on the house.',
   },
   wanted: {
     type: 'wanted',
@@ -208,7 +224,8 @@ export const TILE_DEFINITIONS: Record<TileType, TileDefinition> = {
     baseValue: 3,
     upgradeValue: 1,
     pool: 'additional',
-    description: '3 damage to highest HP enemy. Apply 1 Vulnerable.',
+    description: 'Deal 3 damage per tile to the enemy with the highest current HP. Apply 1 Vulnerable per tile.',
+    flavor: 'Every hit paints a bigger target.',
   },
   rattler: {
     type: 'rattler',
@@ -218,7 +235,8 @@ export const TILE_DEFINITIONS: Record<TileType, TileDefinition> = {
     baseValue: 3,
     upgradeValue: 1,
     pool: 'additional',
-    description: '3 damage + 1 Venom. Pierces block.',
+    description: 'Deal 3 damage per tile and apply 1 Venom. Pierces block.',
+    flavor: 'Fangs out. Bite first, ask questions never.',
   },
   barricade: {
     type: 'barricade',
@@ -228,7 +246,8 @@ export const TILE_DEFINITIONS: Record<TileType, TileDefinition> = {
     baseValue: 3,
     upgradeValue: 1,
     pool: 'additional',
-    description: '3 block per tile + 1 Barricade.',
+    description: 'Gain 3 block per tile and 1 Barricade.',
+    flavor: 'Flip the table. Take cover.',
   },
   cavalry: {
     type: 'cavalry',
@@ -238,7 +257,8 @@ export const TILE_DEFINITIONS: Record<TileType, TileDefinition> = {
     baseValue: 1,
     upgradeValue: 1,
     pool: 'additional',
-    description: '1 damage per tile. 4+ match: +1 swap.',
+    description: '1 damage per tile. If 4+ matched, +1 swap this turn.',
+    flavor: 'Reinforcements have arrived.',
   },
   duel: {
     type: 'duel',
@@ -248,7 +268,8 @@ export const TILE_DEFINITIONS: Record<TileType, TileDefinition> = {
     baseValue: 6,
     upgradeValue: 2,
     pool: 'additional',
-    description: '6 damage if exactly 3 matched. 4+ = 0.',
+    description: 'Deal 6 damage but ONLY if exactly 3 matched. 4+ matches deal no damage.',
+    flavor: 'High noon rules. Three paces, one shot.',
   },
   mirage: {
     type: 'mirage',
@@ -258,7 +279,8 @@ export const TILE_DEFINITIONS: Record<TileType, TileDefinition> = {
     baseValue: 0,
     upgradeValue: 0,
     pool: 'additional',
-    description: 'Changes type every swap. Matches as shown.',
+    description: 'Changes tile type every swap to a random tile you own. Matches as whatever it currently shows.',
+    flavor: "Now you see it. Now you don't. Now it's something else.",
   },
 
   // --- Special ---
@@ -270,7 +292,8 @@ export const TILE_DEFINITIONS: Record<TileType, TileDefinition> = {
     baseValue: 0,
     upgradeValue: 0,
     pool: 'special',
-    description: 'Swap to destroy all tiles of that type.',
+    description: 'Swap with any adjacent tile to destroy all tiles of that type on the board.',
+    flavor: 'Clear the board. No survivors.',
   },
   tumbleweed: {
     type: 'tumbleweed',
@@ -280,7 +303,8 @@ export const TILE_DEFINITIONS: Record<TileType, TileDefinition> = {
     baseValue: 0,
     upgradeValue: 0,
     pool: 'special',
-    description: 'Does nothing when matched.',
+    description: 'Does nothing.',
+    flavor: 'Just passing through. Taking up space.',
   },
   fools_gold: {
     type: 'fools_gold',
@@ -290,7 +314,8 @@ export const TILE_DEFINITIONS: Record<TileType, TileDefinition> = {
     baseValue: 0,
     upgradeValue: 0,
     pool: 'special',
-    description: 'Looks like Gold but generates nothing.',
+    description: "Looks like Gold but generates nothing. Can match with regular Gold tiles. Reveals when matched.",
+    flavor: 'All that glitters.',
   },
 };
 
