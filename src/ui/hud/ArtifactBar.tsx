@@ -37,7 +37,20 @@ export const ArtifactBar = memo(function ArtifactBar() {
             : DEFAULT_COLOR;
 
         return (
-          <Tooltip key={`${inst.id}-${i}`} text={def ? `${def.name}: ${def.effect}` : inst.id} position="bottom">
+          <Tooltip key={`${inst.id}-${i}`} position="bottom" content={def ? (
+            <div className="flex flex-col gap-0.5">
+              <div className="font-bold text-amber-400" style={{ fontSize: '10px' }}>
+                {def.name}
+                {inst.tags.length > 0 && (
+                  <span className="text-stone-400 font-normal ml-1">({inst.tags.join(', ')})</span>
+                )}
+              </div>
+              <div className="text-stone-200 whitespace-nowrap" style={{ fontSize: '9px' }}>{def.effect}</div>
+              {def.description && (
+                <div className="text-stone-500 italic whitespace-nowrap" style={{ fontSize: '8px' }}>"{def.description}"</div>
+              )}
+            </div>
+          ) : undefined} text={def ? undefined : inst.id}>
             <div
               className="flex items-center justify-center text-[6px] text-white font-bold"
               style={{

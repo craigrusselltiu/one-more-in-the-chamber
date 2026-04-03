@@ -966,15 +966,18 @@ export class Board {
     return this.cascadeResolver.getGravityDirection();
   }
 
-  /** Change all mirage tiles to a random active tile type. */
-  shuffleMirageTiles(): void {
-    const types = this.activeTileTypes.filter(t => t !== 'mirage' && t !== 'showdown' && t !== 'tumbleweed' && t !== 'fools_gold');
-    if (types.length === 0) return;
+  /** Transform all mirage tiles into a random tile the player doesn't own. Called once at combat start. */
+  transformMirageTiles(allTileTypes: TileType[]): void {
+    const owned = new Set(this.activeTileTypes);
+    const unowned = allTileTypes.filter(t => !owned.has(t) && t !== 'mirage' && t !== 'showdown' && t !== 'tumbleweed' && t !== 'fools_gold');
+    if (unowned.length === 0) return;
+    // Pick one random unowned type for all mirages this combat
+    const chosenType = unowned[Math.floor(Math.random() * unowned.length)];
     for (let row = 0; row < BOARD_SIZE; row++) {
       for (let col = 0; col < BOARD_SIZE; col++) {
         const tile = this.grid[row][col];
         if (tile && tile.type === 'mirage') {
-          tile.setType(types[Math.floor(Math.random() * types.length)]);
+          tile.setType(chosenType);
         }
       }
     }

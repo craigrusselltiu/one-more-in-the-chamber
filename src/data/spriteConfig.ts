@@ -68,7 +68,7 @@ export const NODE_FRAMES: Record<string, number> = {
   elite: 1167,
   shop: 1159,
   rest: 720,
-  event: 648,
+  event: 629,
   treasure: 691,
   boss: 206,
 };

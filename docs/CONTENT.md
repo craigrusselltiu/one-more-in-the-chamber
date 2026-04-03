@@ -1,6 +1,12 @@
 need to implement and flesh out:
 - crit system
 
+future ideas:
+- artifact combine
+- upgrading tile
+- dusty dan tumbleed deals damage to you when fighting him
+- add bullet holes for deadeye on shoot
+
 # Tiles
 
 ## Core Tiles
@@ -124,7 +130,7 @@ Buffs/debuffs:
 - Flavor: "High noon rules. Three paces, one shot."
 
 ### Mirage
-- Behaviour: Changes tile type every swap to a random tile you own. Matches as whatever it currently shows.
+- Behaviour: At the start of combat, transforms into a random tile you don't own for the rest of combat.
 - Flavor: "Now you see it. Now you don't. Now it's something else."
 
 ## Special Tiles

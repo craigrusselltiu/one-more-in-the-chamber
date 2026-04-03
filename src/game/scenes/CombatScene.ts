@@ -6,7 +6,7 @@ import type { CombatSnapshot } from '../../types/combatSnapshot';
 import { EventBus, GameEvent } from '../EventBus';
 import { GAME_WIDTH, GAME_HEIGHT } from '../GameConfig';
 import { TILE_SIZE } from '../board/Tile';
-import { TILE_COLORS } from '../../data/tiles';
+import { TILE_COLORS, STARTER_POOL, ADDITIONAL_POOL } from '../../data/tiles';
 import { ACT1_ENEMIES } from '../../data/enemies';
 import { ScreenShake } from '../effects/ScreenShake';
 import type { ShakeIntensity } from '../effects/ScreenShake';
@@ -109,6 +109,9 @@ export class CombatScene extends Phaser.Scene {
     this.drawCheckerboard(boardX, boardY, boardSize);
 
     this.board = new Board(this, boardX, boardY, combatConfig.activeTileTypes);
+
+    // Transform mirage tiles into a random unowned tile type for this combat
+    this.board.transformMirageTiles([...STARTER_POOL, ...ADDITIONAL_POOL]);
 
     this.combatManager = new CombatManager(this.board, combatConfig);
 

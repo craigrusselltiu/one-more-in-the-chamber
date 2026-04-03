@@ -535,9 +535,6 @@ export class CombatManager {
     if (this.phase !== 'swap-phase' || this.swapsRemaining <= 0) return;
     if (this.board.getIsResolving()) return;
 
-    // Mirage tiles change type on every swap
-    this.board.shuffleMirageTiles();
-
     this.swapsRemaining--;
     this.swapsUsedThisTurn++;
     this.setPhase('resolving');

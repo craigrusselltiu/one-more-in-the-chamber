@@ -126,8 +126,9 @@ export class Tile {
 
     if (needsOverlay) {
       if (!this.overlay) {
+        // Overlay sized to match the sprite (slightly inset from tile grid)
         this.overlay = this.scene.add
-          .rectangle(cx, cy, TILE_SIZE, TILE_SIZE, 0x000000, 0)
+          .rectangle(cx, cy, TILE_SIZE - 4, TILE_SIZE - 4, 0x000000, 0)
           .setDepth(1);
       } else {
         this.overlay.setPosition(cx, cy);
