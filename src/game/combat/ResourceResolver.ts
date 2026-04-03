@@ -24,7 +24,7 @@ export interface ResourceOutput {
 
 /** Tiles where upgrade scales per tile (not flat per match). */
 const PER_TILE_UPGRADE: Set<TileType> = new Set([
-  'buckshot', 'fifty_cal', 'saloon', 'barricade',
+  'buckshot', 'fifty_cal', 'barricade',
 ]);
 
 /**
@@ -192,13 +192,13 @@ export class ResourceResolver {
         output.gold = total;
         break;
 
-      // --- Healing ---
+      // --- Healing (per 3-match; +1 per extra tile) ---
       case 'whiskey':
-        output.healing = total;
+        output.healing = Math.max(0, count - 2) + Math.round(upgradeBonus);
         break;
 
       case 'saloon':
-        output.healing = total;
+        output.healing = Math.max(0, count - 2) + Math.round(upgradeBonus);
         // Adjacent tile resource generation handled by CombatManager
         break;
 
