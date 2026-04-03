@@ -52,10 +52,10 @@ export const CombatHUD = memo(function CombatHUD() {
           <AbilityMeter />
         </div>
 
-        {/* Enemy area -- centered between board right and screen right */}
+        {/* Enemy area -- centered, shifted up to align with player sprite */}
         <div
           className="flex flex-col items-center justify-center px-1"
-          style={{ width: '26.67%' }}
+          style={{ width: '26.67%', marginTop: -20 }}
         >
           <EnemyTargeting />
         </div>
