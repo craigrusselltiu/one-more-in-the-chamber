@@ -144,7 +144,15 @@ export const TopBar = memo(function TopBar({ showMapButton }: { showMapButton?: 
           className="absolute inset-0 z-50 pointer-events-auto"
           onClick={(e) => { if (e.target === e.currentTarget) setShowMap(false); }}
         >
-          <MapScreen readonly onClose={() => setShowMap(false)} />
+          <MapScreen readonly />
+          {/* Close button positioned at top-right near the map icon */}
+          <button
+            onClick={() => setShowMap(false)}
+            className="absolute flex items-center justify-center bg-stone-800/80 text-red-400 font-mono font-bold border border-red-900/50 hover:bg-red-900/40"
+            style={{ top: 6, right: 52, width: 16, height: 16, fontSize: '8px' }}
+          >
+            X
+          </button>
         </div>
       )}
     </>

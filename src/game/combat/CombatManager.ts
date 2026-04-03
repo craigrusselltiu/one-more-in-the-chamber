@@ -544,22 +544,7 @@ export class CombatManager {
 
     // Process each cascade step's matches immediately (damage, block, etc.)
     let cascadeSteps = 0;
-    const onCascadeStep = (stepMatches: MatchResult[]) => {
-      cascadeSteps++;
-      playMatch(cascadeSteps);
-      for (const match of stepMatches) {
-        this.hazardManager.resolveAdjacentHazards(match.tiles);
-      }
-      // Apply combo multiplier: each cascade step beyond the first adds +0.1x
-      const comboMultiplier = cascadeSteps > 1 ? 1 + (cascadeSteps - 1) * 0.1 : 1.0;
-      this.processMatches(stepMatches, comboMultiplier);
-      // Emit full state so React HUD updates (HP bars, etc.) mid-cascade
-      this.emitFullState();
-      this.emitEnemyHpChanges();
-      EventBus.emit(GameEvent.PLAYER_HP_CHANGE, this.player.health, this.player.maxHealth);
-      EventBus.emit(GameEvent.GOLD_CHANGE, this.player.gold);
-      EventBus.emit(GameEvent.COMBO_UPDATE, cascadeSteps);
-    };
+    const onCascadeStep = this.makeCascadeStepHandler(() => ++cascadeSteps);
 
     const result: SwapResult = await this.board.trySwap(from, to, onCascadeStep);
 
@@ -751,16 +736,8 @@ export class CombatManager {
     // Use the same cascade resolution path as normal swaps so hazards,
     // ricochets, special tile triggers, and all other logic is consistent.
     this.ricochetTriggeredThisResolution = false;
-    const onCascadeStep = (stepMatches: MatchResult[]) => {
-      for (const match of stepMatches) {
-        this.hazardManager.resolveAdjacentHazards(match.tiles);
-      }
-      this.processMatches(stepMatches);
-      this.emitFullState();
-      this.emitEnemyHpChanges();
-      EventBus.emit(GameEvent.PLAYER_HP_CHANGE, this.player.health, this.player.maxHealth);
-      EventBus.emit(GameEvent.GOLD_CHANGE, this.player.gold);
-    };
+    let cascadeSteps = 0;
+    const onCascadeStep = this.makeCascadeStepHandler(() => ++cascadeSteps);
 
     // Gravity + fill + full cascade resolution (matches, hazards, specials)
     await this.board.applyGravityAnimated();
@@ -1410,6 +1387,27 @@ export class CombatManager {
   // ---------------------------------------------------------------------------
   // Helpers
   // ---------------------------------------------------------------------------
+
+  /**
+   * Create the standard onCascadeStep callback used by both swap and deadeye.
+   * Handles SFX, combo multiplier, hazard resolution, resource processing, and HUD sync.
+   */
+  private makeCascadeStepHandler(getStep: () => number): (stepMatches: MatchResult[]) => void {
+    return (stepMatches: MatchResult[]) => {
+      const step = getStep();
+      playMatch(step);
+      for (const match of stepMatches) {
+        this.hazardManager.resolveAdjacentHazards(match.tiles);
+      }
+      const comboMultiplier = step > 1 ? 1 + (step - 1) * 0.1 : 1.0;
+      this.processMatches(stepMatches, comboMultiplier);
+      this.emitFullState();
+      this.emitEnemyHpChanges();
+      EventBus.emit(GameEvent.PLAYER_HP_CHANGE, this.player.health, this.player.maxHealth);
+      EventBus.emit(GameEvent.GOLD_CHANGE, this.player.gold);
+      EventBus.emit(GameEvent.COMBO_UPDATE, step);
+    };
+  }
 
   private aliveEnemies(): Enemy[] {
     return this.enemies.filter((e) => !e.state.isDead);

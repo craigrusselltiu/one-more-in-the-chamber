@@ -55,16 +55,12 @@ export const TileSelectScreen = memo(function TileSelectScreen() {
   };
 
   const title = isStarterSelection ? 'Choose Your 4th Tile' : 'Choose a New Tile';
-  const subtitle = isStarterSelection
-    ? 'This tile defines your early-game identity'
-    : `Act ${(run?.currentAct ?? 1) + 1} begins. More tiles, more dilution.`;
 
   return (
     <div className="flex flex-col items-center justify-center bg-[#1a1a2e]" style={{ width: 960, height: 540 }}>
       {/* Title banner */}
       <div className="text-center mb-6">
         <h2 className="text-lg text-amber-400 font-mono font-bold">{title}</h2>
-        <p className="text-[10px] text-stone-500 font-mono mt-1">{subtitle}</p>
       </div>
 
       {/* Tile cards */}

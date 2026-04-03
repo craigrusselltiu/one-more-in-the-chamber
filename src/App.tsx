@@ -122,7 +122,22 @@ export default function App() {
     initSfx(gameRef.current);
 
     const handleScreenChange = (...args: unknown[]) => {
-      setScreen(args[0] as Screen);
+      const next = args[0] as Screen;
+      setScreen(next);
+
+      // Show dust storm notification at the start of Act 2 map
+      if (next === 'map') {
+        const run = useRunStore.getState().run;
+        if (run && run.currentAct === 2 && !run.activeTileTypes.includes('tumbleweed')) {
+          // Only show once: check if we just entered Act 2 (tumbleweed was removed)
+          const visited = run.mapState?.nodes.filter((n) => n.visited).length ?? 0;
+          if (visited === 0) {
+            setTimeout(() => {
+              EventBus.emit('game:notification', { text: 'The dust storm has settled.' });
+            }, 500);
+          }
+        }
+      }
     };
 
     EventBus.on(GameEvent.SCREEN_CHANGE, handleScreenChange);
@@ -250,12 +265,9 @@ export default function App() {
         }
 
         if (currentNode?.type === 'boss') {
-          // Remove tumbleweed after Act 1 boss
+          // Remove tumbleweed after Act 1 boss (notification shows on Act 2 map)
           if (currentRun!.currentAct === 1) {
             store.removeTileType('tumbleweed');
-            setTimeout(() => {
-              EventBus.emit('game:notification', { text: 'The dust storm has settled.' });
-            }, 500);
           }
 
           if (currentRun!.currentAct >= 3) {

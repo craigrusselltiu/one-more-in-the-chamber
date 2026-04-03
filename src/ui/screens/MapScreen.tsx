@@ -34,7 +34,7 @@ function getNodePos(node: MapNode): { x: number; y: number } {
   };
 }
 
-export const MapScreen = memo(function MapScreen({ readonly, onClose }: { readonly?: boolean; onClose?: () => void } = {}) {
+export const MapScreen = memo(function MapScreen({ readonly }: { readonly?: boolean } = {}) {
   const run = useRunStore((s) => s.run);
   const markNodeVisited = useRunStore((s) => s.markNodeVisited);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -257,17 +257,6 @@ export const MapScreen = memo(function MapScreen({ readonly, onClose }: { readon
         >
           {tooltip.text}
         </div>
-      )}
-
-      {/* Close button for readonly overlay - top right */}
-      {readonly && onClose && (
-        <button
-          onClick={onClose}
-          className="absolute top-2 right-2 w-6 h-6 flex items-center justify-center bg-stone-800/80 text-red-400 font-mono text-sm font-bold border border-red-900/50 hover:bg-red-900/40"
-          title="Close"
-        >
-          X
-        </button>
       )}
 
     </div>
