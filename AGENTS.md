@@ -31,6 +31,7 @@ Main Menu -> Character Select -> Tile Select -> Map -> [Combat/Shop/Event/Rest/T
 ## Browser Testing
 - To open a URL in Chrome: use `mcp__chrome-devtools__list_pages` to check Chrome, then `mcp__chrome-devtools__navigate_page` or `mcp__chrome-devtools__new_page`. Use `mcp__chrome-devtools__take_screenshot` for screenshots. Never use `start chrome` via Bash or `claude-in-chrome` tabs_context — both create duplicate windows.
 - Service worker only registers in production (no port in URL). In dev, any existing SW is auto-unregistered to prevent stale cache issues.
+- Canvas click limitation: the game UI uses a CSS-transformed overlay (scale transform). React 18's event delegation does NOT respond to synthetic `dispatchEvent` on canvas elements inside transformed containers. `mcp__chrome-devtools__click` only works with uid-based elements, not canvas pixels. For canvas interactions (map nodes, board tiles), ask the user to click manually.
 
 ## Key Files
 - `src/App.tsx` - Screen management, combat start/stop orchestration
