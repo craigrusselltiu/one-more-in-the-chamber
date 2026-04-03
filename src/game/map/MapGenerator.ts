@@ -28,6 +28,48 @@ const ACT_NAMES: Record<Act, string> = {
 const ROWS_PER_ACT = 13;
 const COLS = 7;
 
+/** Protected node types that should never be overwritten. */
+const PROTECTED_TYPES: Set<MapNodeType> = new Set(['boss', 'treasure']);
+
+/**
+ * Ensure a minimum number of a given node type exists on the map.
+ * Converts random combat nodes to the target type if needed.
+ * Never touches row 0 (start), last row (boss), second-to-last (pre-boss rest),
+ * or midpoint (treasure).
+ */
+function ensureMinCount(
+  nodes: MapNode[],
+  targetType: MapNodeType,
+  min: number,
+  max: number,
+  rng: () => number,
+  totalRows: number,
+): void {
+  const midRow = Math.floor(totalRows / 2);
+  const protectedRows = new Set([0, totalRows - 1, totalRows - 2, midRow]);
+
+  const current = nodes.filter((n) => n.type === targetType && !protectedRows.has(n.row)).length;
+  const target = min + Math.floor(rng() * (max - min + 1));
+
+  if (current >= target) return;
+
+  // Find combat nodes we can convert (not in protected rows)
+  const candidates = nodes.filter(
+    (n) => n.type === 'combat' && !protectedRows.has(n.row) && !PROTECTED_TYPES.has(n.type),
+  );
+
+  // Shuffle candidates
+  for (let i = candidates.length - 1; i > 0; i--) {
+    const j = Math.floor(rng() * (i + 1));
+    [candidates[i], candidates[j]] = [candidates[j], candidates[i]];
+  }
+
+  const needed = target - current;
+  for (let i = 0; i < needed && i < candidates.length; i++) {
+    candidates[i].type = targetType;
+  }
+}
+
 /** Node type distribution weights per row position. */
 function pickNodeType(
   row: number,
@@ -98,6 +140,12 @@ export function generateMap(seed: string, act: Act): MapState {
     }
     rowNodes.push(ids);
   }
+
+  // Post-generation: ensure minimum counts for shops, campfires, and elites.
+  // Target: 2-3 shops, 3-4 rest sites (excl pre-boss), 3-4 elites.
+  ensureMinCount(nodes, 'shop', 2, 3, rng, totalRows);
+  ensureMinCount(nodes, 'rest', 3, 4, rng, totalRows);
+  ensureMinCount(nodes, 'elite', 3, 4, rng, totalRows);
 
   // Build connections: each node connects to 1-2 nodes in the next row
   for (let row = 0; row < totalRows - 1; row++) {

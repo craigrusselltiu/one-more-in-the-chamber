@@ -13,20 +13,12 @@ const CATEGORIES: { key: ShopCategory | 'all'; label: string }[] = [
   { key: 'character', label: 'Characters' },
 ];
 
-const CATEGORY_COLORS: Record<ShopCategory, string> = {
-  artifact: 'text-purple-300',
-  event: 'text-cyan-300',
-  loadout: 'text-green-300',
-  cosmetic: 'text-pink-300',
-  character: 'text-amber-300',
-};
-
-const CATEGORY_TAGS: Record<ShopCategory, string> = {
-  artifact: '[A]',
-  event: '[E]',
-  loadout: '[L]',
-  cosmetic: '[C]',
-  character: '[Ch]',
+const CATEGORY_BADGE: Record<ShopCategory, { label: string; bg: string; color: string }> = {
+  artifact: { label: 'A', bg: 'rgba(168,85,247,0.3)', color: '#c084fc' },
+  event: { label: 'E', bg: 'rgba(34,211,238,0.3)', color: '#67e8f9' },
+  loadout: { label: 'L', bg: 'rgba(74,222,128,0.3)', color: '#86efac' },
+  cosmetic: { label: 'C', bg: 'rgba(244,114,182,0.3)', color: '#f9a8d4' },
+  character: { label: 'Ch', bg: 'rgba(251,191,36,0.3)', color: '#fcd34d' },
 };
 
 export const ReputationShopScreen = memo(function ReputationShopScreen() {
@@ -96,8 +88,11 @@ export const ReputationShopScreen = memo(function ReputationShopScreen() {
               >
                 <div className="flex-1 mr-3">
                   <div className="flex items-center gap-2">
-                    <span className={`font-mono text-xs ${CATEGORY_COLORS[item.category]}`}>
-                      {CATEGORY_TAGS[item.category]}
+                    <span className="w-4 h-4 flex items-center justify-center rounded text-[8px] font-bold" style={{
+                      backgroundColor: CATEGORY_BADGE[item.category].bg,
+                      color: CATEGORY_BADGE[item.category].color,
+                    }}>
+                      {CATEGORY_BADGE[item.category].label}
                     </span>
                     <span className="text-stone-200 text-sm">{item.name}</span>
                   </div>

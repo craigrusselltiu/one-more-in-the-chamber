@@ -3,7 +3,9 @@ import { EventBus, GameEvent } from '../../game/EventBus';
 import { useRunStore } from '../../store/runStore';
 import { ARTIFACTS } from '../../data/artifacts';
 import { CONSUMABLES } from '../../data/consumables';
-import { ADDITIONAL_POOL, CORE_TILES, STARTER_POOL, TILE_COLORS, TILE_DEFINITIONS } from '../../data/tiles';
+import { ADDITIONAL_POOL, STARTER_POOL, TILE_COLORS, TILE_DEFINITIONS } from '../../data/tiles';
+import { TILE_FRAMES } from '../../data/spriteConfig';
+import { SpriteIcon } from '../components/SpriteIcon';
 import type { TileType } from '../../types/game';
 import type { Screen } from '../../App';
 import { getAscensionModifiers } from '../../data/ascension';
@@ -62,9 +64,9 @@ export const ShopScreen = memo(function ShopScreen() {
       });
     }
 
-    // 1 tile swap (50-75 gold base, inflated by ascension, if player has swappable tiles)
+    // 1 tile swap (50-75 gold base, inflated by ascension)
     const swappableTiles = run.activeTileTypes.filter(
-      (t) => !(CORE_TILES as string[]).includes(t) && !(STARTER_POOL as string[]).includes(t) && t !== 'tumbleweed' && t !== 'showdown',
+      (t) => t !== 'tumbleweed' && t !== 'showdown' && t !== 'fools_gold',
     );
     if (swappableTiles.length > 0) {
       const available = [...STARTER_POOL, ...ADDITIONAL_POOL].filter((t) => !run.activeTileTypes.includes(t));
@@ -85,11 +87,11 @@ export const ShopScreen = memo(function ShopScreen() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  /** Tiles the player can swap away (non-core, non-starter additional pool tiles). */
+  /** Tiles the player can swap away (any non-special tile). */
   const swappableTiles = useMemo(() => {
     if (!run) return [];
     return run.activeTileTypes.filter(
-      (t) => !(CORE_TILES as string[]).includes(t) && !(STARTER_POOL as string[]).includes(t) && t !== 'tumbleweed' && t !== 'showdown',
+      (t) => t !== 'tumbleweed' && t !== 'showdown' && t !== 'fools_gold',
     );
   }, [run]);
 
@@ -164,17 +166,16 @@ export const ShopScreen = memo(function ShopScreen() {
             >
               <div className="flex-1 mr-3">
                 <div className="flex items-center gap-2">
-                  <span
-                    className={`font-mono text-sm ${
-                      item.type === 'artifact'
-                        ? 'text-purple-300'
-                        : item.type === 'consumable'
-                          ? 'text-green-300'
-                          : 'text-blue-300'
-                    }`}
-                  >
-                    {item.type === 'artifact' ? '[A]' : item.type === 'consumable' ? '[C]' : '[T]'}
-                  </span>
+                  {item.type === 'tile_swap' ? (
+                    <SpriteIcon frame={TILE_FRAMES[item.id.replace('swap-', '') as TileType]} scale={1} />
+                  ) : (
+                    <span className="w-4 h-4 flex items-center justify-center rounded text-[8px] font-bold" style={{
+                      backgroundColor: item.type === 'artifact' ? 'rgba(168,85,247,0.3)' : 'rgba(74,222,128,0.3)',
+                      color: item.type === 'artifact' ? '#c084fc' : '#86efac',
+                    }}>
+                      {item.type === 'artifact' ? 'A' : 'C'}
+                    </span>
+                  )}
                   <span className="text-stone-200 text-sm">{item.name}</span>
                 </div>
                 <p className="text-stone-400 text-xs mt-1">{item.description}</p>
