@@ -20,18 +20,18 @@ Buffs/debuffs:
 - Venom - at the start of your turn, take damage equal to the number of stacks and decrease stacks by 1
 
 ### Bullet
-- Behaviour: Deal 2 damage per tile.
-- Upgrade: +1 damage to match total per level
+- Behaviour: Deal 1 damage per tile.
+- Upgrade: +2 damage to match total per level
 - Flavor: "Highly effective negotiation tool."
 
 ### Iron
-- Behaviour: Gain 2 block per tile.
-- Upgrade: +1 block to match total per level
+- Behaviour: Gain 1 block per tile.
+- Upgrade: +2 block to match total per level
 - Flavor: "Bend, don't break."
 
 ### Gold
 - Behaviour: Earn 1 gold per tile.
-- Upgrade: +1 gold to match total per level
+- Upgrade: +2 gold to match total per level
 - Flavor: "Makes the world go 'round."
 
 ## Starter Tiles
@@ -42,13 +42,13 @@ Buffs/debuffs:
 - Flavor: "Bullets bounce. You never know what they'll hit."
 
 ### Stampede
-- Behaviour: Deal 2 damage to ALL enemies per tile.
-- Upgrade: +1 damage to match total per level
+- Behaviour: Deal 1 damage to ALL enemies per tile.
+- Upgrade: +2 damage to match total per level
 - Flavor: "The ground shakes. Everything in the way gets flattened."
 
 ### Buckshot
-- Behaviour: Deal 2 damage to a random enemy per tile.
-- Upgrade: +1 damage per tile per level
+- Behaviour: Deal 1 damage to a random enemy per tile.
+- Upgrade: +2 damage per tile per level
 - Flavor: "Spread shot. Hits harder, less precise."
 
 ### Battery
@@ -62,8 +62,8 @@ Buffs/debuffs:
 - Flavor: "Slow poison. The patient killer's weapon."
 
 ### Prairie Fire
-- Behaviour: Deal 3 damage per tile. 50% chance to convert 1 adjacent tile to Ember.
-- Upgrade: +1 damage to match total per level
+- Behaviour: Deal 2 damage per tile. 50% chance to convert 1 adjacent tile to Ember.
+- Upgrade: +2 damage to match total per level
 - Flavor: "Sparks fly. Some of them catch."
 
 ## Additional Tiles
@@ -75,7 +75,7 @@ Buffs/debuffs:
 
 ### Whiskey
 - Behaviour: Heals 1 HP per tile.
-- Upgrade: +1 heal to match total per level
+- Upgrade: +2 heal to match total per level
 - Flavor: "The cowboy's medicine."
 
 ### Ace
@@ -89,45 +89,50 @@ Buffs/debuffs:
 - Flavor: "Luck favors the prepared."
 
 ### .50 Cal
-- Behaviour: Deal 5 damage per tile.
-- Upgrade: +1 damage per tile per level
+- Behaviour: Deal 3 damage per tile.
+- Upgrade: +3 damage per tile per level
 - Flavor: "Turns cover into a suggestion."
 
 ### Tombstone
-- Behaviour: Deal 3 damage per tile. Deals double damage when target is below 30% HP.
-- Upgrade: +1 damage to match total per level
+- Behaviour: Deal 2 damage per tile. Deals double damage when target is below 30% HP.
+- Upgrade: +2 damage to match total per level
 - Flavor: "Dead men pay debts."
 
 ### Saloon
 - Behaviour: Heal 1 HP per tile. Generate the resources of adjacent tiles.
-- Upgrade: +1 heal per tile per level
+- Upgrade: +2 heal per tile per level
 - Flavor: "Belly up to the bar. Drinks are on the house."
 
 ### Wanted
-- Behaviour: Deal 3 damage per tile to the enemy with the highest current HP. Apply 1 Vulnerable per tile.
-- Upgrade: +1 damage to match total per level
+- Behaviour: Deal 2 damage per tile and apply 1 Vulnerable to the enemy with the highest current HP.
+- Upgrade: +2 damage to match total per level
 - Flavor: "Every hit paints a bigger target."
 
 ### Rattler
-- Behaviour: Deal 3 damage per tile and apply 1 Venom. Pierces block.
+- Behaviour: Deal 2 damage per tile and apply 1 Venom. Pierces block.
 - Upgrade: +1 damage and venom stack to match total per level
 - Flavor: "Fangs out. Bite first, ask questions never."
 - Note: if all enemies die by venom at turn start, the player has won the combat
 
 ### Barricade
-- Behaviour: Gain 3 block per tile and 1 Barricade.
+- Behaviour: Gain 2 block per tile and 1 Barricade.
 - Upgrade: +1 block per tile per level
 - Flavor: "Flip the table. Take cover."
 
-### Cavalry
-- Behaviour: 1 damage per tile. If 4+ matched, +1 swap this turn.
+### Boulder
+- Behaviour: Deal 1 damage per block.
 - Upgrade: +1 damage to match total per level
+- Flavor: "Gravity does the rest."
+
+### Cavalry
+- Behaviour: 1 damage per tile. If 4+ matched, +1 swap this turn (max 1 per turn).
+- Upgrade: +2 damage to match total per level
 - Flavor: "Reinforcements have arrived."
 
 ### Duel
-- Behaviour: Deal 6 damage but ONLY if exactly 3 matched. 4+ matches deal no damage.
-- Upgrade: +2 damage to match total per level
-- Flavor: "High noon rules. Three paces, one shot."
+- Behaviour: Deal 4 damage per tile but ONLY if exactly 4 matched. 3 or 5+ matches deal no damage.
+- Upgrade: +4 damage to match total per level
+- Flavor: "In carnage, I bloom, like a flower in the dawn."
 
 ### Mirage
 - Behaviour: At the start of combat, transforms into a random tile you don't own for the rest of combat.
