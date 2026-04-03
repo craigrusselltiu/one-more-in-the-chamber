@@ -94,7 +94,7 @@ const EnemySlot = memo(function EnemySlot({
     >
       {/* Enemy sprite placeholder */}
       <div
-        className="border border-stone-600 border-dashed mb-0.5 flex items-center justify-center"
+        className="border border-stone-600 border-dashed mb-0.5 flex items-center justify-center shrink-0"
         style={{ width: 64, height: 64 }}
       >
         <span className="text-stone-600 capitalize" style={{ fontSize: '8px' }}>
@@ -113,15 +113,15 @@ const EnemySlot = memo(function EnemySlot({
       {/* Intent */}
       <EnemyIntent intent={enemy.intent} />
 
-      {/* HP bar with block badge to the left (always occupies space) */}
-      <div className="flex items-center gap-0.5">
-        <div style={{ width: 18 }}>
+      {/* HP bar centered, block badge overlaid to the left */}
+      <div className="relative">
+        <div className="absolute right-full top-0 mr-0.5 flex items-center" style={{ height: '100%' }}>
           {enemy.block > 0 && <BlockBadge value={enemy.block} />}
         </div>
         <HealthBar
           current={enemy.health}
           max={enemy.maxHealth}
-          width={60}
+          width={70}
           color="#D04040"
         />
       </div>

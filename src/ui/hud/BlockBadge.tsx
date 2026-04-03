@@ -12,7 +12,7 @@ const outlinedText: React.CSSProperties = {
   color: '#ffffff',
   fontWeight: 'bold',
   lineHeight: 1,
-  textShadow: '-1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000',
+  textShadow: '-1px 0 0 #000, 1px 0 0 #000, 0 -1px 0 #000, 0 1px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000',
 };
 
 /**

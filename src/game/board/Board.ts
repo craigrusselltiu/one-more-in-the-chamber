@@ -100,11 +100,25 @@ export class Board {
 
   private dragStart: GridPosition | null = null;
 
+  /** Whether deadeye targeting mode is active (clicks shoot instead of swap). */
+  private deadeyeMode = false;
+
+  setDeadeyeMode(active: boolean): void {
+    this.deadeyeMode = active;
+    if (active) this.clearSelection();
+  }
+
   private setupInput(): void {
     this.scene.input.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
       if (!this.inputEnabled || this.isResolving) return;
       const pos = this.pointerToGrid(pointer);
       if (!pos) return;
+
+      // Deadeye mode: click to shoot a tile
+      if (this.deadeyeMode) {
+        EventBus.emit(GameEvent.DEADEYE_SHOOT, pos.row, pos.col);
+        return;
+      }
 
       // Start tracking drag from this tile
       this.dragStart = pos;

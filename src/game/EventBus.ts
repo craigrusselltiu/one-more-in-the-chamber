@@ -69,6 +69,7 @@ export const GameEvent = {
 
   // Board input -> CombatManager
   SWAP_REQUESTED: 'board:swap-requested',
+  DEADEYE_SHOOT: 'board:deadeye-shoot',
 
   // Map / run flow
   NODE_SELECTED: 'map:node-selected',

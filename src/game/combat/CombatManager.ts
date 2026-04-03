@@ -227,6 +227,11 @@ export class CombatManager {
       const [fromRow, fromCol, toRow, toCol] = args as number[];
       this.performSwap(fromRow, fromCol, toRow, toCol);
     });
+
+    on(GameEvent.DEADEYE_SHOOT, (...args: unknown[]) => {
+      const [row, col] = args as number[];
+      this.deadeyeShoot(row, col);
+    });
   }
 
   /** Remove all EventBus listeners. Call on scene shutdown. */
@@ -647,6 +652,7 @@ export class CombatManager {
 
     this.isDeadeyeActive = true;
     this.deadeyeShotsRemaining = this.deadeyeMaxShots;
+    this.board.setDeadeyeMode(true);
     document.body.classList.add('cursor-crosshair');
     this.emitFullState();
     EventBus.emit(GameEvent.ABILITY_CHARGE_CHANGE, this.player.abilityCharge, this.player.abilityThreshold);
@@ -728,6 +734,7 @@ export class CombatManager {
     this.isDeadeyeActive = false;
     this.deadeyeShotsRemaining = 0;
     this.player.abilityCharge = 0;
+    this.board.setDeadeyeMode(false);
     document.body.classList.remove('cursor-crosshair');
     EventBus.emit(GameEvent.ABILITY_CHARGE_CHANGE, this.player.abilityCharge, this.player.abilityThreshold);
     this.emitFullState();
