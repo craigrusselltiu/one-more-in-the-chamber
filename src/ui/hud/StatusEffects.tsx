@@ -21,6 +21,7 @@ const STATUS_DESCRIPTIONS: Record<string, string> = {
   thorns: 'Thorns: reflect damage to attackers',
   venom: 'Venom: take damage equal to stacks per turn',
   vulnerable: 'Vulnerable: take 50% extra damage',
+  cracked_ground: 'Cracked Ground: cascade damage is nullified',
 };
 
 const OUTLINE_STYLE: React.CSSProperties = {

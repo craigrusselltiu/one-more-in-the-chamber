@@ -16,7 +16,6 @@ import { BossController } from './BossController';
 import {
   rollEliteModifier,
   applyEliteModifier,
-  shouldSuppressCascadeDamage,
   ELITE_MODIFIERS,
 } from './EliteModifiers';
 import type { EliteModifierId, EliteModifier } from './EliteModifiers';
@@ -159,6 +158,11 @@ export class CombatManager {
     if (config.isElite) {
       this.eliteModifier = rollEliteModifier();
       applyEliteModifier(this.eliteModifier, this.hazardManager);
+      if (this.eliteModifier.id === 'cracked_ground') {
+        for (const enemy of this.enemies) {
+          enemy.state.crackedGround = 2;
+        }
+      }
     }
 
     // Timed encounter: pre-place hazard tiles (e.g. Mine Cart)
@@ -1029,9 +1033,9 @@ export class CombatManager {
         this.nextMatchMultiplier = 1.0;
       }
 
-      // Cracked Ground: suppress cascade damage for first 2 turns
-      const eliteId = this.eliteModifier?.id as EliteModifierId | null;
-      const suppressDamage = comboMultiplier > 1.0 && shouldSuppressCascadeDamage(eliteId, this.turnNumber);
+      // Cracked Ground: suppress cascade damage while any enemy has the buff
+      const suppressDamage = comboMultiplier > 1.0
+        && this.aliveEnemies().some(e => e.state.crackedGround > 0);
 
       // Apply multiplier + combo bonus to damage/block/gold/healing (not to status effects)
       const totalMultiplier = multiplier * comboMultiplier;
@@ -1232,6 +1236,11 @@ export class CombatManager {
   // ---------------------------------------------------------------------------
 
   private endTurn(): void {
+    // Tick cracked ground stacks
+    for (const enemy of this.aliveEnemies()) {
+      if (enemy.state.crackedGround > 0) enemy.state.crackedGround--;
+    }
+
     // Trait turn-end effects (Prospector gold damage)
     const targetEnemy = this.getTargetedAliveEnemy();
     const hpBefore = targetEnemy ? targetEnemy.state.health : 0;

@@ -140,5 +140,6 @@ export function getEnemyStatusEffects(enemy: EnemyState): EnemyStatusEffect[] {
   if (enemy.block > 0) effects.push({ type: 'block', value: enemy.block });
   if (enemy.venomStacks > 0) effects.push({ type: 'venom', value: enemy.venomStacks });
   if (enemy.vulnerable > 0) effects.push({ type: 'vulnerable', value: enemy.vulnerable });
+  if (enemy.crackedGround > 0) effects.push({ type: 'cracked_ground', value: enemy.crackedGround });
   return effects;
 }

@@ -43,6 +43,7 @@ export interface EnemyState {
   block: number;
   venomStacks: number;
   vulnerable: number;
+  crackedGround: number;
   intent: EnemyIntent;
   isDead: boolean;
 }
@@ -71,7 +72,8 @@ export type PlayerStatusEffect =
 export type EnemyStatusEffect =
   | { type: 'block'; value: number }
   | { type: 'venom'; value: number }
-  | { type: 'vulnerable'; value: number };
+  | { type: 'vulnerable'; value: number }
+  | { type: 'cracked_ground'; value: number };
 
 export interface MatchResult {
   tiles: GridPosition[];

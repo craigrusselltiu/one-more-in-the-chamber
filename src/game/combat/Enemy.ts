@@ -26,6 +26,7 @@ export class Enemy {
       block: 0,
       venomStacks: 0,
       vulnerable: 0,
+      crackedGround: 0,
       intent: { type: 'attack', value: 0, description: '' },
       isDead: false,
     };
