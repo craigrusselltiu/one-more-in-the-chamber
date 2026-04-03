@@ -62,21 +62,34 @@ export class BootScene extends Phaser.Scene {
       }
     });
 
-    // Defer music until first user interaction (browser AudioContext requirement)
+    // Track what music SHOULD be playing. The gesture handler will start
+    // it once the browser allows audio. Screen changes update this immediately
+    // so even if the user clicks before audio is unlocked, the right track plays.
+    let desiredTrack = 'main_menu';
+    let audioUnlocked = false;
+
     const startOnGesture = () => {
       document.removeEventListener('pointerdown', startOnGesture);
-      this.playTrack('main_menu');
+      audioUnlocked = true;
+      if (desiredTrack) {
+        this.playTrack(desiredTrack);
+      }
     };
     document.addEventListener('pointerdown', startOnGesture);
 
     // Music transitions on screen changes
     EventBus.on(GameEvent.SCREEN_CHANGE, (...args: unknown[]) => {
       const screen = args[0] as string;
-      document.removeEventListener('pointerdown', startOnGesture);
+
+      // Helper: set desired track and play if audio is unlocked
+      const setTrack = (track: string) => {
+        desiredTrack = track;
+        if (audioUnlocked) this.playTrack(track);
+      };
 
       switch (screen) {
         case 'main-menu':
-          this.playTrack('main_menu');
+          setTrack('main_menu');
           break;
         case 'settings':
         case 'leaderboard':
@@ -85,39 +98,38 @@ export class BootScene extends Phaser.Scene {
           break;
         case 'character-select':
         case 'tile-select':
-          // Keep current music (menu -> character select keeps menu music,
-          // post-boss tile select keeps map music)
+          // Keep current music
           break;
         case 'map':
-          this.playTrack('map_theme');
+          setTrack('map_theme');
           break;
         case 'combat': {
           const run = useRunStore.getState().run;
           if (!run) break;
           const currentNode = run.mapState?.nodes.find((n) => n.id === run.currentNodeId);
           if (currentNode?.type === 'boss') {
-            // Boss-specific themes
             const bossThemes: Record<number, string> = {
               1: 'dustys_theme',
               2: 'copperheads_theme',
               3: 'ironeyes_theme',
             };
-            this.playTrack(bossThemes[run.currentAct] ?? `act${run.currentAct}_theme`);
+            setTrack(bossThemes[run.currentAct] ?? `act${run.currentAct}_theme`);
           } else {
-            this.playTrack(`act${run.currentAct}_theme`);
+            setTrack(`act${run.currentAct}_theme`);
           }
           break;
         }
         case 'shop':
         case 'event':
-          this.playTrack('shop_theme');
+          setTrack('shop_theme');
           break;
         case 'rest-site':
         case 'treasure':
-          // Keep map music for rest/treasure (short stops)
+          // Keep map music
           break;
         case 'score':
-          this.fadeOut();
+          desiredTrack = '';
+          if (audioUnlocked) this.fadeOut();
           break;
       }
     });
