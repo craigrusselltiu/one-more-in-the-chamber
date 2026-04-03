@@ -6,28 +6,32 @@ interface BlockBadgeProps {
   value: number;
 }
 
-/** Text style with black outline. */
-const outlinedText: React.CSSProperties = {
-  fontSize: '7px',
-  color: '#ffffff',
-  fontWeight: 'bold',
-  lineHeight: 1,
-  textShadow: '-1px 0 0 #000, 1px 0 0 #000, 0 -1px 0 #000, 0 1px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000, -2px 0 0 #000, 2px 0 0 #000, 0 -2px 0 #000, 0 2px 0 #000',
-};
+const OUTLINE = '-1px 0 0 #000, 1px 0 0 #000, 0 -1px 0 #000, 0 1px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000, -2px 0 0 #000, 2px 0 0 #000, 0 -2px 0 #000, 0 2px 0 #000';
 
 /**
- * BlockBadge: sprite icon with block value.
- * Always occupies fixed space to the left of the health bar.
+ * BlockBadge: sprite icon with block value overlaid in the bottom-right corner.
  */
 export const BlockBadge = memo(function BlockBadge({ value }: BlockBadgeProps) {
   return (
     <div
-      className="flex flex-col items-center justify-center"
-      style={{ width: 20, height: 24 }}
+      className="relative"
+      style={{ width: 16, height: 16 }}
       title={`Block: ${value}`}
     >
       <SpriteIcon frame={STATUS_FRAMES.block} scale={1} />
-      <span style={outlinedText}>{value}</span>
+      <span
+        className="absolute font-bold font-mono"
+        style={{
+          bottom: -2,
+          right: -2,
+          fontSize: '7px',
+          color: '#fff',
+          lineHeight: 1,
+          textShadow: OUTLINE,
+        }}
+      >
+        {value}
+      </span>
     </div>
   );
 });
