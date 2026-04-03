@@ -22,7 +22,10 @@ const STATUS_DESCRIPTIONS: Record<string, string> = {
   vulnerable: 'Vulnerable: takes 25% more damage',
 };
 
-const OUTLINE = '-1px 0 0 #000, 1px 0 0 #000, 0 -1px 0 #000, 0 1px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000, -2px 0 0 #000, 2px 0 0 #000, 0 -2px 0 #000, 0 2px 0 #000';
+const OUTLINE_STYLE: React.CSSProperties = {
+  WebkitTextStroke: '2px #000',
+  paintOrder: 'stroke fill',
+};
 
 /**
  * StatusEffects: horizontal row of sprite icons with value overlaid
@@ -44,14 +47,14 @@ export const StatusEffects = memo(function StatusEffects({ effects }: StatusEffe
             scale={1}
           />
           <span
-            className="absolute font-bold font-mono"
+            className="absolute font-bold"
             style={{
               bottom: -2,
               right: -2,
               fontSize: '7px',
               color: '#fff',
               lineHeight: 1,
-              textShadow: OUTLINE,
+              ...OUTLINE_STYLE,
             }}
           >
             {formatValue(effect.type, effect.value)}

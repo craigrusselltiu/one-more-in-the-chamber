@@ -90,7 +90,7 @@ export const TopBar = memo(function TopBar({ showMapButton }: { showMapButton?: 
 
   return (
     <>
-      <div className="flex justify-between items-center px-2 bg-black/50 text-[8px] font-mono pointer-events-auto" style={{ height: 28 }}>
+      <div className="flex justify-between items-center px-2 bg-black/50 text-[8px] pointer-events-auto" style={{ height: 28 }}>
         <div className="flex items-center gap-3">
           <span className="text-amber-400 font-bold">
             Act {act} - {getActName(act)}
@@ -158,7 +158,7 @@ export const TopBar = memo(function TopBar({ showMapButton }: { showMapButton?: 
           {/* Close button positioned at top-right near the map icon */}
           <button
             onClick={() => setShowMap(false)}
-            className="absolute flex items-center justify-center bg-stone-800/80 text-red-400 font-mono font-bold border border-red-900/50 hover:bg-red-900/40"
+            className="absolute flex items-center justify-center bg-stone-800/80 text-red-400 font-bold border border-red-900/50 hover:bg-red-900/40"
             style={{ top: 6, right: 34, width: 16, height: 16, fontSize: '8px' }}
           >
             X
@@ -186,10 +186,10 @@ function TilesPopup({
     >
       <div className="bg-stone-900 border border-stone-600 p-3" style={{ minWidth: 140 }} onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between mb-3">
-          <span className="text-stone-200 font-mono text-sm font-bold">Active Tiles</span>
+          <span className="text-stone-200 text-sm font-bold">Active Tiles</span>
           <button
             onClick={onClose}
-            className="w-4 h-4 flex items-center justify-center bg-stone-800/80 text-red-400 font-mono font-bold border border-red-900/50 hover:bg-red-900/40"
+            className="w-4 h-4 flex items-center justify-center bg-stone-800/80 text-red-400 font-bold border border-red-900/50 hover:bg-red-900/40"
             style={{ fontSize: '8px' }}
           >
             X
@@ -203,15 +203,15 @@ function TilesPopup({
             return (
               <div key={tileType} className="flex items-center gap-2">
                 <SpriteIcon frame={TILE_FRAMES[tileType]} scale={1} />
-                <span className="text-stone-200 font-mono text-xs font-bold">{def.label}</span>
-                <span className="text-amber-400 font-mono" style={{ fontSize: '10px' }}>
+                <span className="text-stone-200 text-xs font-bold">{def.label}</span>
+                <span className="text-amber-400" style={{ fontSize: '10px' }}>
                   Lv {level}
                 </span>
               </div>
             );
           })}
           {activeTileTypes.length === 0 && (
-            <span className="text-stone-500 font-mono text-xs">No active tiles</span>
+            <span className="text-stone-500 text-xs">No active tiles</span>
           )}
         </div>
       </div>

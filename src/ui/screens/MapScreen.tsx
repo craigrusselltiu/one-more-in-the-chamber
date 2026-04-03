@@ -229,7 +229,7 @@ export const MapScreen = memo(function MapScreen({ readonly }: { readonly?: bool
   if (!run || !mapState) {
     return (
       <div className="flex flex-col items-center justify-center bg-[#1a1a2e]" style={{ width: 960, height: 540 }}>
-        <p className="text-stone-400 font-mono text-sm">No active run</p>
+        <p className="text-stone-400 text-sm">No active run</p>
       </div>
     );
   }
@@ -252,7 +252,7 @@ export const MapScreen = memo(function MapScreen({ readonly }: { readonly?: bool
       {/* Tooltip - positioned using canvas-internal coords (virtual pixels) */}
       {tooltip && (
         <div
-          className="absolute pointer-events-none bg-stone-900/95 border border-stone-600 px-2 py-0.5 text-stone-200 font-mono text-[9px] z-10"
+          className="absolute pointer-events-none bg-stone-900/95 border border-stone-600 px-2 py-0.5 text-stone-200 text-[9px] z-10"
           style={{ left: tooltip.x + 10, top: tooltip.y + 10 }}
         >
           {tooltip.text}

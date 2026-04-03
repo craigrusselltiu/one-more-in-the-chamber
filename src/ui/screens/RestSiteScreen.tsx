@@ -46,16 +46,16 @@ export const RestSiteScreen = memo(function RestSiteScreen() {
     return (
       <div className="flex flex-col h-full bg-[#1a1a2e]/95"><div className="flex-1 flex flex-col items-center justify-center">
         <div className="text-3xl mb-4">{'\u2618'}</div>
-        <h2 className="text-xl text-amber-400 font-mono mb-2">Rested</h2>
-        <p className="text-stone-300 font-mono text-sm mb-4">
+        <h2 className="text-xl text-amber-400 mb-2">Rested</h2>
+        <p className="text-stone-300 text-sm mb-4">
           You rest by the fire. Healed {healAmount} HP.
         </p>
-        <p className="text-red-400 font-mono text-xs mb-6">
+        <p className="text-red-400 text-xs mb-6">
           HP: {run.health}/{run.maxHealth}
         </p>
         <button
           onClick={handleLeave}
-          className="px-6 py-2 bg-amber-900/60 text-amber-300 font-mono text-sm border border-amber-700 hover:bg-amber-800/60"
+          className="px-6 py-2 bg-amber-900/60 text-amber-300 text-sm border border-amber-700 hover:bg-amber-800/60"
         >
           Continue
         </button>
@@ -69,13 +69,13 @@ export const RestSiteScreen = memo(function RestSiteScreen() {
     return (
       <div className="flex flex-col h-full bg-[#1a1a2e]/95"><div className="flex-1 flex flex-col items-center justify-center">
         <div className="text-3xl mb-4">{'\u2B06'}</div>
-        <h2 className="text-xl text-amber-400 font-mono mb-2">Upgraded</h2>
-        <p className="text-stone-300 font-mono text-sm mb-4">
+        <h2 className="text-xl text-amber-400 mb-2">Upgraded</h2>
+        <p className="text-stone-300 text-sm mb-4">
           {tileDef?.label ?? 'Tile'} has been upgraded.
         </p>
         <button
           onClick={handleLeave}
-          className="px-6 py-2 bg-amber-900/60 text-amber-300 font-mono text-sm border border-amber-700 hover:bg-amber-800/60"
+          className="px-6 py-2 bg-amber-900/60 text-amber-300 text-sm border border-amber-700 hover:bg-amber-800/60"
         >
           Continue
         </button>
@@ -87,8 +87,8 @@ export const RestSiteScreen = memo(function RestSiteScreen() {
   if (choice === 'upgrade') {
     return (
       <div className="flex flex-col h-full bg-[#1a1a2e]/95"><div className="flex-1 flex flex-col items-center justify-center">
-        <h2 className="text-xl text-amber-400 font-mono mb-2">Upgrade a Tile</h2>
-        <p className="text-stone-400 font-mono text-xs mb-4">
+        <h2 className="text-xl text-amber-400 mb-2">Upgrade a Tile</h2>
+        <p className="text-stone-400 text-xs mb-4">
           Permanent +1 tier for the rest of the run
         </p>
 
@@ -109,11 +109,11 @@ export const RestSiteScreen = memo(function RestSiteScreen() {
                 }`}
               >
                 <SpriteIcon frame={TILE_FRAMES[tileType]} scale={2} className="mb-1" />
-                <span className="text-amber-300 font-mono text-xs font-bold">{def.label}</span>
-                <span className="text-stone-400 font-mono" style={{ fontSize: '10px' }}>
+                <span className="text-amber-300 text-xs font-bold">{def.label}</span>
+                <span className="text-stone-400" style={{ fontSize: '10px' }}>
                   Lv {currentLevel} {'\u2192'} {currentLevel + 1}
                 </span>
-                <span className="text-stone-500 font-mono" style={{ fontSize: '10px' }}>
+                <span className="text-stone-500" style={{ fontSize: '10px' }}>
                   +{def.upgradeValue} per upgrade
                 </span>
               </button>
@@ -124,14 +124,14 @@ export const RestSiteScreen = memo(function RestSiteScreen() {
         <div className="flex gap-3 mt-4">
           <button
             onClick={() => setChoice('none')}
-            className="px-4 py-2 bg-stone-700/50 text-stone-400 font-mono text-sm border border-stone-600 hover:bg-stone-600/50"
+            className="px-4 py-2 bg-stone-700/50 text-stone-400 text-sm border border-stone-600 hover:bg-stone-600/50"
           >
             Back
           </button>
           <button
             onClick={handleConfirmUpgrade}
             disabled={!selectedTile}
-            className={`px-6 py-2 font-mono text-sm border ${
+            className={`px-6 py-2 text-sm border ${
               selectedTile
                 ? 'bg-amber-900/60 text-amber-300 border-amber-700 hover:bg-amber-800/60'
                 : 'bg-stone-700/50 text-stone-500 border-stone-600 cursor-not-allowed'
@@ -150,8 +150,8 @@ export const RestSiteScreen = memo(function RestSiteScreen() {
       <div className="text-3xl mb-4">
         {'\u2618'}
       </div>
-      <h2 className="text-xl text-amber-400 font-mono mb-2">Campfire</h2>
-      <p className="text-stone-400 font-mono text-xs mb-6">
+      <h2 className="text-xl text-amber-400 mb-2">Campfire</h2>
+      <p className="text-stone-400 text-xs mb-6">
         A moment of peace. Choose wisely.
       </p>
 
@@ -165,12 +165,12 @@ export const RestSiteScreen = memo(function RestSiteScreen() {
               : 'border-stone-600 bg-stone-800/50 hover:border-green-500 hover:bg-stone-700/50'
           }`}
         >
-          <span className="text-green-400 font-mono text-lg mb-1">{'\u2665'}</span>
-          <span className="text-stone-200 font-mono text-sm font-bold">Rest</span>
-          <span className="text-stone-400 font-mono text-xs mt-1">
+          <span className="text-green-400 text-lg mb-1">{'\u2665'}</span>
+          <span className="text-stone-200 text-sm font-bold">Rest</span>
+          <span className="text-stone-400 text-xs mt-1">
             Heal {healAmount} HP
           </span>
-          <span className="text-red-400 font-mono text-xs mt-1">
+          <span className="text-red-400 text-xs mt-1">
             {run.health}/{run.maxHealth}
           </span>
         </button>
@@ -179,9 +179,9 @@ export const RestSiteScreen = memo(function RestSiteScreen() {
           onClick={handleUpgrade}
           className="flex flex-col items-center p-4 w-40 border-2 border-stone-600 bg-stone-800/50 hover:border-amber-500 hover:bg-stone-700/50"
         >
-          <span className="text-amber-400 font-mono text-lg mb-1">{'\u2B06'}</span>
-          <span className="text-stone-200 font-mono text-sm font-bold">Upgrade Tile</span>
-          <span className="text-stone-400 font-mono text-xs mt-1">
+          <span className="text-amber-400 text-lg mb-1">{'\u2B06'}</span>
+          <span className="text-stone-200 text-sm font-bold">Upgrade Tile</span>
+          <span className="text-stone-400 text-xs mt-1">
             Permanent +1 tier
           </span>
         </button>

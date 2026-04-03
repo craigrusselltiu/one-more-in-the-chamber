@@ -48,11 +48,11 @@ export const STATUS_FRAMES: Record<string, number> = {
 /** Map node type icons. */
 export const NODE_FRAMES: Record<string, number> = {
   combat: 1166,
-  elite: 207,
+  elite: 1167,
   shop: 1159,
   rest: 720,
   event: 648,
-  treasure: 714,
+  treasure: 717,
   boss: 206,
 };
 

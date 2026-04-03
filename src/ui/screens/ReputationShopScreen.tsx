@@ -51,8 +51,8 @@ export const ReputationShopScreen = memo(function ReputationShopScreen() {
     <div className="flex flex-col items-center h-full bg-[#1a1a2e]/95">
       {/* Header */}
       <div className="mt-6 mb-2 text-center">
-        <h2 className="text-xl text-amber-400 font-mono">Reputation Shop</h2>
-        <p className="text-xs text-stone-400 font-mono mt-1">
+        <h2 className="text-xl text-amber-400">Reputation Shop</h2>
+        <p className="text-xs text-stone-400 mt-1">
           Reputation: <span className="text-amber-300 font-bold">{reputation}</span>
         </p>
       </div>
@@ -63,7 +63,7 @@ export const ReputationShopScreen = memo(function ReputationShopScreen() {
           <button
             key={cat.key}
             onClick={() => setFilter(cat.key)}
-            className={`px-2 py-1 font-mono text-xs border transition-colors ${
+            className={`px-2 py-1 text-xs border transition-colors ${
               filter === cat.key
                 ? 'border-amber-600 bg-amber-900/40 text-amber-300'
                 : 'border-stone-700 bg-stone-800/30 text-stone-400 hover:border-stone-500'
@@ -99,9 +99,9 @@ export const ReputationShopScreen = memo(function ReputationShopScreen() {
                     <span className={`font-mono text-xs ${CATEGORY_COLORS[item.category]}`}>
                       {CATEGORY_TAGS[item.category]}
                     </span>
-                    <span className="text-stone-200 font-mono text-sm">{item.name}</span>
+                    <span className="text-stone-200 text-sm">{item.name}</span>
                   </div>
-                  <p className="text-stone-400 font-mono text-xs mt-0.5">{item.description}</p>
+                  <p className="text-stone-400 text-xs mt-0.5">{item.description}</p>
                 </div>
                 <span className={`font-mono text-sm font-bold whitespace-nowrap ${
                   unlocked ? 'text-stone-500' : 'text-amber-400'
@@ -118,7 +118,7 @@ export const ReputationShopScreen = memo(function ReputationShopScreen() {
       <div className="py-3">
         <button
           onClick={handleBack}
-          className="px-6 py-2 bg-stone-700/50 text-stone-300 font-mono text-sm border border-stone-600 hover:bg-stone-600/50"
+          className="px-6 py-2 bg-stone-700/50 text-stone-300 text-sm border border-stone-600 hover:bg-stone-600/50"
         >
           Back
         </button>

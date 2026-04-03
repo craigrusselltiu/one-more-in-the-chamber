@@ -51,8 +51,8 @@ export const CharacterSelectScreen = memo(function CharacterSelectScreen() {
     <div className="flex flex-col items-center justify-center bg-[#1a1a2e]" style={{ width: 960, height: 540 }}>
       {/* Title */}
       <div className="text-center mb-6">
-        <h2 className="text-lg text-amber-400 font-mono font-bold">Choose Your Character</h2>
-        <p className="text-[10px] text-stone-500 font-mono mt-1">
+        <h2 className="text-lg text-amber-400 font-bold">Choose Your Character</h2>
+        <p className="text-[10px] text-stone-500 mt-1">
           Each character has a unique ability.
         </p>
       </div>
@@ -74,17 +74,17 @@ export const CharacterSelectScreen = memo(function CharacterSelectScreen() {
                 transition: 'all 0.15s',
               }}
             >
-              <span className="text-amber-300 font-mono text-sm font-bold mb-2">
+              <span className="text-amber-300 text-sm font-bold mb-2">
                 {char.name}
               </span>
               <div className="w-full flex flex-col gap-1.5">
                 <div className="flex items-center gap-2">
-                  <span className="text-stone-500 font-mono" style={{ fontSize: '10px' }}>HP</span>
-                  <span className="text-red-400 font-mono text-xs font-bold">{char.hp}</span>
+                  <span className="text-stone-500" style={{ fontSize: '10px' }}>HP</span>
+                  <span className="text-red-400 text-xs font-bold">{char.hp}</span>
                 </div>
                 <div className="flex flex-col gap-0.5">
-                  <span className="text-amber-400 font-mono text-xs font-bold">{char.ability}</span>
-                  <span className="text-stone-400 font-mono leading-tight" style={{ fontSize: '9px' }}>
+                  <span className="text-amber-400 text-xs font-bold">{char.ability}</span>
+                  <span className="text-stone-400 leading-tight" style={{ fontSize: '9px' }}>
                     {char.abilityDescription}
                   </span>
                 </div>
@@ -107,13 +107,13 @@ export const CharacterSelectScreen = memo(function CharacterSelectScreen() {
       <div className="flex gap-3 mt-5">
         <button
           onClick={handleBack}
-          className="px-4 py-1.5 font-mono text-xs bg-stone-800/50 text-stone-400 border border-stone-700 hover:bg-stone-700/50"
+          className="px-4 py-1.5 text-xs bg-stone-800/50 text-stone-400 border border-stone-700 hover:bg-stone-700/50"
         >
           Back
         </button>
         <button
           onClick={handleConfirm}
-          className="px-5 py-1.5 font-mono text-xs bg-amber-900/60 text-amber-300 border border-amber-700 hover:bg-amber-800/60"
+          className="px-5 py-1.5 text-xs bg-amber-900/60 text-amber-300 border border-amber-700 hover:bg-amber-800/60"
         >
           Start
         </button>
@@ -137,11 +137,11 @@ function AscensionSelector({
   return (
     <div className="flex flex-col items-center gap-1">
       <div className="flex items-center gap-3">
-        <span className="text-stone-400 font-mono text-xs">Ascension</span>
+        <span className="text-stone-400 text-xs">Ascension</span>
         <button
           onClick={() => onChange(Math.max(0, level - 1))}
           disabled={level <= 0}
-          className={`w-5 h-5 flex items-center justify-center font-mono text-xs border ${
+          className={`w-5 h-5 flex items-center justify-center text-xs border ${
             level > 0
               ? 'text-amber-300 border-amber-700 bg-amber-900/40 hover:bg-amber-800/50'
               : 'text-stone-600 border-stone-700 bg-stone-800/30 cursor-not-allowed'
@@ -149,13 +149,13 @@ function AscensionSelector({
         >
           -
         </button>
-        <span className="text-amber-300 font-mono text-sm w-6 text-center font-bold">
+        <span className="text-amber-300 text-sm w-6 text-center font-bold">
           {level}
         </span>
         <button
           onClick={() => onChange(Math.min(maxLevel, level + 1))}
           disabled={level >= maxLevel}
-          className={`w-5 h-5 flex items-center justify-center font-mono text-xs border ${
+          className={`w-5 h-5 flex items-center justify-center text-xs border ${
             level < maxLevel
               ? 'text-amber-300 border-amber-700 bg-amber-900/40 hover:bg-amber-800/50'
               : 'text-stone-600 border-stone-700 bg-stone-800/30 cursor-not-allowed'
@@ -164,13 +164,13 @@ function AscensionSelector({
           +
         </button>
         {level > 0 && (
-          <span className="text-stone-500 font-mono" style={{ fontSize: '10px' }}>
+          <span className="text-stone-500" style={{ fontSize: '10px' }}>
             Score x{scoreMultiplier}
           </span>
         )}
       </div>
       {level > 0 && (
-        <div className="flex gap-3 text-stone-500 font-mono" style={{ fontSize: '9px' }}>
+        <div className="flex gap-3 text-stone-500" style={{ fontSize: '9px' }}>
           <span>HP +{Math.round((mods.enemyHpMultiplier - 1) * 100)}%</span>
           <span>DMG +{Math.round((mods.enemyDamageMultiplier - 1) * 100)}%</span>
           <span>Gold -{Math.round((1 - mods.goldMultiplier) * 100)}%</span>

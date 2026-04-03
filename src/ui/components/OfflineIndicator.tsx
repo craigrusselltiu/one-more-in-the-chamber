@@ -33,7 +33,7 @@ export function OfflineIndicator() {
     <div
       className={`
         fixed top-1 left-1/2 -translate-x-1/2 z-[9999]
-        px-3 py-0.5 rounded text-[10px] font-mono
+        px-3 py-0.5 rounded text-[10px]
         transition-opacity duration-500 pointer-events-none
         ${offline
           ? 'bg-amber-900/90 text-amber-300 opacity-100'

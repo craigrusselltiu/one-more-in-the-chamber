@@ -67,7 +67,7 @@ export const Tooltip = memo(function Tooltip({ text, children, position = 'top' 
       {visible && (
         <div
           ref={tooltipRef}
-          className="absolute left-1/2 z-50 pointer-events-none whitespace-nowrap bg-stone-900/95 border border-stone-600 px-1.5 py-0.5 font-mono text-stone-200"
+          className="absolute left-1/2 z-50 pointer-events-none whitespace-nowrap bg-stone-900/95 border border-stone-600 px-1.5 py-0.5 text-stone-200"
           style={{
             fontSize: '9px',
             transform: 'translateX(-50%)',

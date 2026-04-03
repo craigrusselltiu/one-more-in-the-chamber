@@ -135,8 +135,8 @@ export const ShopScreen = memo(function ShopScreen() {
 
   return (
     <div className="flex flex-col items-center justify-center h-full bg-[#1a1a2e]/95">
-      <h2 className="text-xl text-amber-400 font-mono mb-1">General Store</h2>
-      <p className="text-xs text-stone-400 font-mono mb-4">
+      <h2 className="text-xl text-amber-400 mb-1">General Store</h2>
+      <p className="text-xs text-stone-400 mb-4">
         Gold: <span className="text-yellow-400">{run.gold}</span>
       </p>
 
@@ -175,11 +175,11 @@ export const ShopScreen = memo(function ShopScreen() {
                   >
                     {item.type === 'artifact' ? '[A]' : item.type === 'consumable' ? '[C]' : '[T]'}
                   </span>
-                  <span className="text-stone-200 font-mono text-sm">{item.name}</span>
+                  <span className="text-stone-200 text-sm">{item.name}</span>
                 </div>
-                <p className="text-stone-400 font-mono text-xs mt-1">{item.description}</p>
+                <p className="text-stone-400 text-xs mt-1">{item.description}</p>
               </div>
-              <span className="text-yellow-400 font-mono text-sm font-bold whitespace-nowrap">
+              <span className="text-yellow-400 text-sm font-bold whitespace-nowrap">
                 {isSold ? 'SOLD' : `${item.price}g`}
               </span>
             </button>
@@ -189,7 +189,7 @@ export const ShopScreen = memo(function ShopScreen() {
 
       <button
         onClick={handleLeave}
-        className="mt-4 px-6 py-2 bg-stone-700/50 text-stone-300 font-mono text-sm border border-stone-600 hover:bg-stone-600/50"
+        className="mt-4 px-6 py-2 bg-stone-700/50 text-stone-300 text-sm border border-stone-600 hover:bg-stone-600/50"
       >
         Leave Shop
       </button>
@@ -198,8 +198,8 @@ export const ShopScreen = memo(function ShopScreen() {
       {swapPending && (
         <div className="absolute inset-0 flex items-center justify-center bg-black/70 z-10">
           <div className="bg-[#1a1a2e] border border-stone-600 p-4 w-72">
-            <h3 className="text-sm text-amber-400 font-mono mb-1">Choose tile to swap away</h3>
-            <p className="text-xs text-stone-400 font-mono mb-3">
+            <h3 className="text-sm text-amber-400 mb-1">Choose tile to swap away</h3>
+            <p className="text-xs text-stone-400 mb-3">
               Replacing with{' '}
               <span className="text-blue-300">
                 {TILE_DEFINITIONS[swapPending.id.replace('swap-', '') as TileType].label}
@@ -219,15 +219,15 @@ export const ShopScreen = memo(function ShopScreen() {
                       className="inline-block w-3 h-3 shrink-0"
                       style={{ backgroundColor: TILE_COLORS[tile] }}
                     />
-                    <span className="text-stone-200 font-mono text-sm">{def.label}</span>
-                    <span className="text-stone-500 font-mono text-xs ml-auto">{def.description}</span>
+                    <span className="text-stone-200 text-sm">{def.label}</span>
+                    <span className="text-stone-500 text-xs ml-auto">{def.description}</span>
                   </button>
                 );
               })}
             </div>
             <button
               onClick={() => setSwapPending(null)}
-              className="w-full px-4 py-1.5 bg-stone-700/50 text-stone-400 font-mono text-xs border border-stone-600 hover:bg-stone-600/50"
+              className="w-full px-4 py-1.5 bg-stone-700/50 text-stone-400 text-xs border border-stone-600 hover:bg-stone-600/50"
             >
               Cancel
             </button>

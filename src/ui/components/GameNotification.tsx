@@ -38,7 +38,7 @@ export const GameNotification = memo(function GameNotification() {
       style={{ top: 28 }}
     >
       <div
-        className="px-6 py-2 bg-stone-900/90 border border-amber-700/50 font-mono text-amber-300 text-center"
+        className="px-6 py-2 bg-stone-900/90 border border-amber-700/50 text-amber-300 text-center"
         style={{
           fontSize: '11px',
           opacity: visible ? 1 : 0,

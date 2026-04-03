@@ -146,17 +146,17 @@ export const ScoreScreen = memo(function ScoreScreen() {
   if (!run || !score) {
     return (
       <div className="flex flex-col items-center justify-center h-full bg-[#1a1a2e]/90">
-        <p className="text-stone-400 font-mono text-sm">No run data</p>
+        <p className="text-stone-400 text-sm">No run data</p>
       </div>
     );
   }
 
   return (
     <div className="flex flex-col items-center justify-center h-full bg-[#1a1a2e]/95 px-8">
-      <h2 className="text-xl text-amber-400 font-mono mb-0.5">
+      <h2 className="text-xl text-amber-400 mb-0.5">
         {score.completed ? 'Victory' : 'Defeat'}
       </h2>
-      <p className="text-stone-400 font-mono mb-4" style={{ fontSize: '10px' }}>
+      <p className="text-stone-400 mb-4" style={{ fontSize: '10px' }}>
         {score.completed
           ? 'The West remembers your name.'
           : 'The trail claims another soul.'}
@@ -202,8 +202,8 @@ export const ScoreScreen = memo(function ScoreScreen() {
       {/* Final score */}
       <div className="w-64 border-2 border-amber-700 bg-amber-900/20 p-2 mb-3">
         <div className="flex items-center justify-between">
-          <span className="text-amber-300 font-mono text-xs font-bold">FINAL SCORE</span>
-          <span className="text-amber-400 font-mono text-lg font-bold">
+          <span className="text-amber-300 text-xs font-bold">FINAL SCORE</span>
+          <span className="text-amber-400 text-lg font-bold">
             {score.finalScore.toLocaleString()}
           </span>
         </div>
@@ -211,15 +211,15 @@ export const ScoreScreen = memo(function ScoreScreen() {
 
       {/* Reputation earned */}
       <div className="w-64 flex items-center justify-between mb-4 px-1">
-        <span className="text-stone-400 font-mono text-xs">Reputation earned</span>
-        <span className="text-amber-300 font-mono text-xs font-bold">
+        <span className="text-stone-400 text-xs">Reputation earned</span>
+        <span className="text-amber-300 text-xs font-bold">
           +{Math.max(10, Math.floor(score.finalScore / 10)).toLocaleString()}
         </span>
       </div>
 
       <button
         onClick={handleMainMenu}
-        className="px-6 py-2 bg-amber-900/60 text-amber-300 font-mono text-sm border border-amber-700 hover:bg-amber-800/60"
+        className="px-6 py-2 bg-amber-900/60 text-amber-300 text-sm border border-amber-700 hover:bg-amber-800/60"
       >
         Main Menu
       </button>
@@ -241,8 +241,8 @@ function ScoreLine({
   return (
     <div className="flex items-center justify-between">
       <div className="flex items-center gap-2">
-        <span className="text-stone-400 font-mono text-xs">{label}</span>
-        {detail && <span className="text-stone-500 font-mono" style={{ fontSize: '10px' }}>({detail})</span>}
+        <span className="text-stone-400 text-xs">{label}</span>
+        {detail && <span className="text-stone-500" style={{ fontSize: '10px' }}>({detail})</span>}
       </div>
       <span className={`font-mono text-xs ${isMultiplier ? 'text-blue-300' : 'text-stone-200'}`}>
         {typeof value === 'number' ? (value > 0 ? `+${value}` : value.toString()) : value}

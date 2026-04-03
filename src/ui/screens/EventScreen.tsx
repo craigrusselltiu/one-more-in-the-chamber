@@ -293,11 +293,11 @@ export const EventScreen = memo(function EventScreen() {
       <div className="flex-1 flex flex-col items-center justify-center">
       <div className="max-w-md w-full px-4">
         {/* Event title */}
-        <h2 className="text-xl text-amber-400 font-mono mb-3 text-center">{event.title}</h2>
+        <h2 className="text-xl text-amber-400 mb-3 text-center">{event.title}</h2>
 
         {/* Flavour text / result text */}
         <div className="border border-stone-600 bg-stone-800/50 p-4 mb-4">
-          <p className="text-stone-300 font-mono text-sm italic leading-relaxed">
+          <p className="text-stone-300 text-sm italic leading-relaxed">
             "{choiceMade ? displayText : event.flavourText}"
           </p>
         </div>
@@ -311,10 +311,10 @@ export const EventScreen = memo(function EventScreen() {
                 onClick={() => handleChoice(choice)}
                 className="flex flex-col p-3 border border-stone-600 bg-stone-800/50 hover:border-amber-600 hover:bg-stone-700/50 text-left"
               >
-                <span className="text-amber-300 font-mono text-sm font-bold">
+                <span className="text-amber-300 text-sm font-bold">
                   {choice.label}
                 </span>
-                <span className="text-stone-400 font-mono text-xs mt-1">
+                <span className="text-stone-400 text-xs mt-1">
                   {choice.description}
                 </span>
               </button>
@@ -334,26 +334,26 @@ export const EventScreen = memo(function EventScreen() {
               }}
             >
               <div className="w-10 h-10 rounded-sm mb-3 bg-amber-700/60 border border-amber-600" />
-              <span className="text-amber-300 font-mono text-sm font-bold text-center">
+              <span className="text-amber-300 text-sm font-bold text-center">
                 {rewardArtifact.name}
               </span>
-              <span className="text-stone-400 font-mono text-center mt-2 leading-tight" style={{ fontSize: '9px' }}>
+              <span className="text-stone-400 text-center mt-2 leading-tight" style={{ fontSize: '9px' }}>
                 {rewardArtifact.description}
               </span>
-              <span className="text-amber-600 font-mono text-center mt-2 leading-tight" style={{ fontSize: '9px' }}>
+              <span className="text-amber-600 text-center mt-2 leading-tight" style={{ fontSize: '9px' }}>
                 {rewardArtifact.effect}
               </span>
             </div>
             <div className="flex gap-3">
               <button
                 onClick={handleTakeArtifact}
-                className="px-6 py-1.5 font-mono text-xs bg-amber-900/60 text-amber-300 border border-amber-700 hover:bg-amber-800/60"
+                className="px-6 py-1.5 text-xs bg-amber-900/60 text-amber-300 border border-amber-700 hover:bg-amber-800/60"
               >
                 Take It
               </button>
               <button
                 onClick={handleSkipArtifact}
-                className="px-6 py-1.5 font-mono text-xs bg-stone-800/50 text-stone-400 border border-stone-700 hover:bg-stone-700/50"
+                className="px-6 py-1.5 text-xs bg-stone-800/50 text-stone-400 border border-stone-700 hover:bg-stone-700/50"
               >
                 Skip
               </button>
@@ -366,7 +366,7 @@ export const EventScreen = memo(function EventScreen() {
           <div className="flex flex-col items-center">
             <button
               onClick={handleContinue}
-              className="px-6 py-2 bg-amber-900/60 text-amber-300 font-mono text-sm border border-amber-700 hover:bg-amber-800/60"
+              className="px-6 py-2 bg-amber-900/60 text-amber-300 text-sm border border-amber-700 hover:bg-amber-800/60"
             >
               Continue
             </button>

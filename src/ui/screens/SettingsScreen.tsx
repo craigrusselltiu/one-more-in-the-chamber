@@ -4,7 +4,6 @@ import { useSettingsStore } from '../../store/settingsStore';
 import type { GameSpeed } from '../../store/settingsStore';
 import type { Screen } from '../../App';
 
-const MENU_FONT = 'monospace';
 
 function Toggle({
   label,
@@ -21,7 +20,7 @@ function Toggle({
     <button
       onClick={() => onChange(!checked)}
       className="flex items-center justify-between w-full py-3 px-4 bg-transparent border-none outline-none text-left group"
-      style={{ fontFamily: MENU_FONT, cursor: 'pointer' }}
+      style={{ cursor: 'pointer' }}
     >
       <div className="flex flex-col gap-0.5">
         <span className="text-sm text-stone-200">{label}</span>
@@ -54,7 +53,7 @@ function SpeedSelector({
 }) {
   const speeds: GameSpeed[] = [1, 2, 3];
   return (
-    <div className="flex items-center justify-between w-full py-3 px-4" style={{ fontFamily: MENU_FONT }}>
+    <div className="flex items-center justify-between w-full py-3 px-4">
       <div className="flex flex-col gap-0.5">
         <span className="text-sm text-stone-200">Game Speed</span>
         <span className="text-xs text-stone-500">Animation speed multiplier</span>
@@ -64,7 +63,7 @@ function SpeedSelector({
           <button
             key={s}
             onClick={() => onChange(s)}
-            className="w-8 h-6 flex items-center justify-center font-mono text-xs border"
+            className="w-8 h-6 flex items-center justify-center text-xs border"
             style={{
               backgroundColor: value === s ? 'rgba(180, 83, 9, 0.6)' : 'rgba(28, 25, 23, 0.6)',
               borderColor: value === s ? '#b45309' : '#44403c',
@@ -90,7 +89,7 @@ function VolumeSlider({
   onChange: (volume: number) => void;
 }) {
   return (
-    <div className="flex items-center justify-between w-full py-3 px-4" style={{ fontFamily: MENU_FONT }}>
+    <div className="flex items-center justify-between w-full py-3 px-4">
       <div className="flex flex-col gap-0.5" style={{ minWidth: 120 }}>
         <span className="text-sm text-stone-200">{label}</span>
         <span className="text-xs text-stone-500" style={{ minWidth: 32 }}>{Math.round(value * 100)}%</span>
@@ -129,7 +128,7 @@ export const SettingsScreen = memo(function SettingsScreen() {
       <div className="mt-6 mb-4 text-center">
         <h2
           className="text-xl text-amber-400"
-          style={{ fontFamily: MENU_FONT, letterSpacing: '1px' }}
+          style={{ letterSpacing: '1px' }}
         >
           Settings
         </h2>
@@ -163,8 +162,8 @@ export const SettingsScreen = memo(function SettingsScreen() {
       <div className="py-3">
         <button
           onClick={handleBack}
-          className="px-6 py-2 bg-stone-700/50 text-stone-300 font-mono text-sm border border-stone-600 hover:bg-stone-600/50"
-          style={{ fontFamily: MENU_FONT, cursor: 'pointer' }}
+          className="px-6 py-2 bg-stone-700/50 text-stone-300 text-sm border border-stone-600 hover:bg-stone-600/50"
+          style={{ cursor: 'pointer' }}
         >
           Back
         </button>
@@ -202,7 +201,7 @@ export const CombatSettingsPopup = memo(function CombatSettingsPopup({
       className="absolute inset-0 flex items-center justify-center bg-black/60 z-50 pointer-events-auto"
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
-      <div className="w-64 border border-stone-600 bg-stone-900 p-4" style={{ fontFamily: MENU_FONT }}>
+      <div className="w-64 border border-stone-600 bg-stone-900 p-4">
         <h3 className="text-amber-400 text-sm font-bold text-center mb-3">Settings</h3>
 
         <div className="flex flex-col gap-2 text-[9px]">

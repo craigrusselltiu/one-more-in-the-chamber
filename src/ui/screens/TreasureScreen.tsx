@@ -27,8 +27,8 @@ export const TreasureScreen = memo(function TreasureScreen() {
   return (
     <div className="flex flex-col items-center justify-center bg-[#1a1a2e]" style={{ width: 960, height: 540 }}>
       <div className="text-center mb-8">
-        <h2 className="text-lg text-amber-400 font-mono font-bold">Treasure Found</h2>
-        <p className="text-[10px] text-stone-500 font-mono mt-1">Something worth keeping.</p>
+        <h2 className="text-lg text-amber-400 font-bold">Treasure Found</h2>
+        <p className="text-[10px] text-stone-500 mt-1">Something worth keeping.</p>
       </div>
 
       <div
@@ -40,11 +40,11 @@ export const TreasureScreen = memo(function TreasureScreen() {
         }}
       >
         <div className="w-10 h-10 rounded-sm mb-3 bg-amber-700/60 border border-amber-600" />
-        <span className="text-amber-300 font-mono text-sm font-bold text-center">{artifact.name}</span>
-        <span className="text-stone-400 font-mono text-center mt-2 leading-tight" style={{ fontSize: '9px' }}>
+        <span className="text-amber-300 text-sm font-bold text-center">{artifact.name}</span>
+        <span className="text-stone-400 text-center mt-2 leading-tight" style={{ fontSize: '9px' }}>
           {artifact.description}
         </span>
-        <span className="text-amber-600 font-mono text-center mt-2 leading-tight" style={{ fontSize: '9px' }}>
+        <span className="text-amber-600 text-center mt-2 leading-tight" style={{ fontSize: '9px' }}>
           {artifact.effect}
         </span>
       </div>
@@ -52,13 +52,13 @@ export const TreasureScreen = memo(function TreasureScreen() {
       <div className="flex gap-3">
         <button
           onClick={handleTake}
-          className="px-6 py-1.5 font-mono text-xs bg-amber-900/60 text-amber-300 border border-amber-700 hover:bg-amber-800/60"
+          className="px-6 py-1.5 text-xs bg-amber-900/60 text-amber-300 border border-amber-700 hover:bg-amber-800/60"
         >
           Take It
         </button>
         <button
           onClick={handleSkip}
-          className="px-6 py-1.5 font-mono text-xs bg-stone-800/50 text-stone-400 border border-stone-700 hover:bg-stone-700/50"
+          className="px-6 py-1.5 text-xs bg-stone-800/50 text-stone-400 border border-stone-700 hover:bg-stone-700/50"
         >
           Skip
         </button>

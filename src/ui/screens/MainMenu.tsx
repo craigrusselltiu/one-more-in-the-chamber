@@ -5,7 +5,6 @@ import { checkForCombatResume } from '../../services/combatResume';
 import { playClick } from '../../services/sfx';
 import type { Screen } from '../../App';
 
-const MENU_FONT = 'monospace';
 
 function MenuButton({
   label,
@@ -21,8 +20,7 @@ function MenuButton({
       <div
         className="py-1 px-3 text-left"
         style={{
-          fontFamily: MENU_FONT,
-          fontSize: '18px',
+                    fontSize: '18px',
           letterSpacing: '1px',
           color: '#5a3a3a',
           textShadow:
@@ -39,8 +37,7 @@ function MenuButton({
       onClick={onClick}
       className="group relative text-left py-1 px-3 bg-transparent border-none outline-none"
       style={{
-        fontFamily: MENU_FONT,
-        fontSize: '18px',
+                fontSize: '18px',
         letterSpacing: '1px',
         color: '#e8e8e8',
         textShadow:
@@ -138,19 +135,19 @@ export const MainMenu = memo(function MainMenu() {
       {showConfirm && (
         <div className="absolute inset-0 flex items-center justify-center bg-black/70 z-10">
           <div className="border border-stone-600 bg-stone-900 p-6 max-w-xs text-center">
-            <p className="text-stone-300 font-mono text-sm mb-4">
+            <p className="text-stone-300 text-sm mb-4">
               Starting a new game will delete your current saved run. Continue?
             </p>
             <div className="flex gap-3 justify-center">
               <button
                 onClick={handleConfirmNewGame}
-                className="px-4 py-1.5 font-mono text-xs bg-red-900/60 text-red-300 border border-red-700 hover:bg-red-800/60"
+                className="px-4 py-1.5 text-xs bg-red-900/60 text-red-300 border border-red-700 hover:bg-red-800/60"
               >
                 Delete & Start New
               </button>
               <button
                 onClick={handleCancelNewGame}
-                className="px-4 py-1.5 font-mono text-xs bg-stone-800/60 text-stone-300 border border-stone-600 hover:bg-stone-700/60"
+                className="px-4 py-1.5 text-xs bg-stone-800/60 text-stone-300 border border-stone-600 hover:bg-stone-700/60"
               >
                 Cancel
               </button>
@@ -163,8 +160,7 @@ export const MainMenu = memo(function MainMenu() {
       <div className="absolute right-4 bottom-3">
         <span
           style={{
-            fontFamily: MENU_FONT,
-            fontSize: '9px',
+                        fontSize: '9px',
             color: 'rgba(255,255,255,0.3)',
           }}
         >

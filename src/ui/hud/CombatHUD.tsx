@@ -27,7 +27,7 @@ export const CombatHUD = memo(function CombatHUD() {
   const swapsPerTurn = useCombatStore((s) => s.swapsPerTurn);
 
   return (
-    <div className="pointer-events-none font-mono text-xs select-none" style={{ width: 960, height: 540, position: 'relative' }}>
+    <div className="pointer-events-none text-xs select-none" style={{ width: 960, height: 540, position: 'relative' }}>
       {/* EventBus -> Zustand bridge (invisible) */}
       <CombatBridge />
 

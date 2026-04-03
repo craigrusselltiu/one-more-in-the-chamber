@@ -60,7 +60,7 @@ export const TileSelectScreen = memo(function TileSelectScreen() {
     <div className="flex flex-col items-center justify-center bg-[#1a1a2e]" style={{ width: 960, height: 540 }}>
       {/* Title banner */}
       <div className="text-center mb-6">
-        <h2 className="text-lg text-amber-400 font-mono font-bold">{title}</h2>
+        <h2 className="text-lg text-amber-400 font-bold">{title}</h2>
       </div>
 
       {/* Tile cards */}
@@ -81,10 +81,10 @@ export const TileSelectScreen = memo(function TileSelectScreen() {
               }}
             >
               <SpriteIcon frame={TILE_FRAMES[tileType]} scale={2} className="mb-1.5" />
-              <span className="text-amber-300 font-mono text-xs font-bold">
+              <span className="text-amber-300 text-xs font-bold">
                 {def.label}
               </span>
-              <span className="text-stone-400 font-mono text-center mt-1 leading-tight" style={{ fontSize: '9px' }}>
+              <span className="text-stone-400 text-center mt-1 leading-tight" style={{ fontSize: '9px' }}>
                 {def.description}
               </span>
             </button>
@@ -96,7 +96,7 @@ export const TileSelectScreen = memo(function TileSelectScreen() {
       <button
         onClick={handleConfirm}
         disabled={!selected}
-        className={`mt-5 px-5 py-1.5 font-mono text-xs border ${
+        className={`mt-5 px-5 py-1.5 text-xs border ${
           selected
             ? 'bg-amber-900/60 text-amber-300 border-amber-700 hover:bg-amber-800/60'
             : 'bg-stone-800/50 text-stone-600 border-stone-700 cursor-not-allowed'

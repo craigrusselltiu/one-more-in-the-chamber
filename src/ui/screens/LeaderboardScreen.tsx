@@ -47,8 +47,8 @@ export const LeaderboardScreen = memo(function LeaderboardScreen() {
     <div className="flex flex-col items-center h-full bg-[#1a1a2e]/95">
       {/* Header */}
       <div className="mt-6 mb-2 text-center">
-        <h2 className="text-xl text-amber-400 font-mono">Leaderboard</h2>
-        <p className="text-xs text-stone-400 font-mono mt-1">Top gunslingers of the West</p>
+        <h2 className="text-xl text-amber-400">Leaderboard</h2>
+        <p className="text-xs text-stone-400 mt-1">Top gunslingers of the West</p>
       </div>
 
       {/* Period tabs */}
@@ -57,7 +57,7 @@ export const LeaderboardScreen = memo(function LeaderboardScreen() {
           <button
             key={tab.key}
             onClick={() => handleTabChange(tab.key)}
-            className={`px-3 py-1 font-mono text-xs border transition-colors ${
+            className={`px-3 py-1 text-xs border transition-colors ${
               period === tab.key
                 ? 'border-amber-600 bg-amber-900/40 text-amber-300'
                 : 'border-stone-700 bg-stone-800/30 text-stone-400 hover:border-stone-500'
@@ -71,21 +71,21 @@ export const LeaderboardScreen = memo(function LeaderboardScreen() {
       {/* Table */}
       <div className="flex-1 overflow-y-auto w-full max-w-[560px] px-4">
         {loading && (
-          <p className="text-stone-400 font-mono text-xs text-center mt-8">Loading...</p>
+          <p className="text-stone-400 text-xs text-center mt-8">Loading...</p>
         )}
 
         {!loading && error && entries.length === 0 && (
-          <p className="text-stone-500 font-mono text-xs text-center mt-8">{error}</p>
+          <p className="text-stone-500 text-xs text-center mt-8">{error}</p>
         )}
 
         {!loading && entries.length > 0 && (
           <div className="border border-stone-600 bg-stone-800/50">
             {/* Table header */}
             <div className="flex items-center px-3 py-2 border-b border-stone-600 bg-stone-700/30">
-              <span className="w-8 text-stone-400 font-mono text-xs">#</span>
-              <span className="flex-1 text-stone-400 font-mono text-xs">Player</span>
-              <span className="w-14 text-right text-stone-400 font-mono text-xs">Asc</span>
-              <span className="w-24 text-right text-stone-400 font-mono text-xs">Score</span>
+              <span className="w-8 text-stone-400 text-xs">#</span>
+              <span className="flex-1 text-stone-400 text-xs">Player</span>
+              <span className="w-14 text-right text-stone-400 text-xs">Asc</span>
+              <span className="w-24 text-right text-stone-400 text-xs">Score</span>
             </div>
 
             {/* Rows */}
@@ -96,18 +96,18 @@ export const LeaderboardScreen = memo(function LeaderboardScreen() {
                   entry.rank <= 3 ? 'bg-amber-900/10' : ''
                 }`}
               >
-                <span className={`w-8 font-mono text-xs font-bold ${rankColor(entry.rank)}`}>
+                <span className={`w-8 text-xs font-bold ${rankColor(entry.rank)}`}>
                   {entry.rank}
                 </span>
                 <div className="flex-1 min-w-0">
-                  <span className="text-stone-200 font-mono text-sm truncate block">
+                  <span className="text-stone-200 text-sm truncate block">
                     {entry.playerName}
                   </span>
                 </div>
-                <span className="w-14 text-right text-stone-400 font-mono text-xs">
+                <span className="w-14 text-right text-stone-400 text-xs">
                   {entry.ascensionLevel > 0 ? `A${entry.ascensionLevel}` : '-'}
                 </span>
-                <span className="w-24 text-right text-amber-300 font-mono text-sm font-bold">
+                <span className="w-24 text-right text-amber-300 text-sm font-bold">
                   {entry.score.toLocaleString()}
                 </span>
               </div>
@@ -120,7 +120,7 @@ export const LeaderboardScreen = memo(function LeaderboardScreen() {
       <div className="py-3">
         <button
           onClick={handleBack}
-          className="px-6 py-2 bg-stone-700/50 text-stone-300 font-mono text-sm border border-stone-600 hover:bg-stone-600/50"
+          className="px-6 py-2 bg-stone-700/50 text-stone-300 text-sm border border-stone-600 hover:bg-stone-600/50"
         >
           Back
         </button>
