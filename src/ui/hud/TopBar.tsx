@@ -47,7 +47,7 @@ function formatTimer(totalSeconds: number): string {
  * Rendered once by App.tsx for all in-run screens.
  * Consumable slots are always visible. Taller bar to fit them.
  */
-export const TopBar = memo(function TopBar({ showMapButton }: { showMapButton?: boolean; showConsumables?: boolean }) {
+export const TopBar = memo(function TopBar({ mapDisabled }: { showMapButton?: boolean; showConsumables?: boolean; mapDisabled?: boolean }) {
   const run = useRunStore((s) => s.run);
   const act = (run?.currentAct ?? 1) as Act;
   const health = run?.health ?? 100;
@@ -121,13 +121,15 @@ export const TopBar = memo(function TopBar({ showMapButton }: { showMapButton?: 
               <SpriteIcon frame={UI_FRAMES.tiles} scale={1} />
             </button>
           </Tooltip>
-          {showMapButton && (
-            <Tooltip text="Map" position="bottom">
-              <button onClick={() => setShowMap((v) => !v)} className="hover:opacity-80">
-                <SpriteIcon frame={UI_FRAMES.map} scale={1} />
-              </button>
-            </Tooltip>
-          )}
+          <Tooltip text="Map" position="bottom">
+            <button
+              onClick={() => !mapDisabled && setShowMap((v) => !v)}
+              className={mapDisabled ? 'opacity-30' : 'hover:opacity-80'}
+              style={mapDisabled ? { cursor: 'default' } : undefined}
+            >
+              <SpriteIcon frame={UI_FRAMES.map} scale={1} />
+            </button>
+          </Tooltip>
           <Tooltip text="Settings" position="bottom">
             <button onClick={() => setShowSettings(true)} className="hover:opacity-80">
               <SpriteIcon frame={UI_FRAMES.settings} scale={1} />

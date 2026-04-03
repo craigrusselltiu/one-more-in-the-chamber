@@ -385,7 +385,7 @@ export default function App() {
         {showTopBar && (
           <>
             <TopBar
-              showMapButton={screen === 'combat'}
+              mapDisabled={screen === 'map'}
               showConsumables={screen === 'combat'}
             />
             <ArtifactBar />

@@ -22,7 +22,7 @@ export const FloatingNumbers = memo(function FloatingNumbers() {
   const [numbers, setNumbers] = useState<FloatingNumber[]>([]);
 
   const handleFloat = useCallback((...args: unknown[]) => {
-    const target = args[0] as 'player' | 'enemy';
+    const target = args[0] as 'player' | 'enemy' | 'topbar';
     const index = (args[1] as number) ?? 0;
     const text = args[2] as string;
     const color = (args[3] as string) ?? '#ffffff';
@@ -31,19 +31,21 @@ export const FloatingNumbers = memo(function FloatingNumbers() {
     let x: number;
     let y: number;
 
+    // Spawn areas (rectangles) for each target type
     if (target === 'player') {
-      // Player: left area, vertically centered
-      x = 128;
-      y = 240;
+      // Player sprite area
+      x = 80 + Math.random() * 96;
+      y = 190 + Math.random() * 96;
+    } else if (target === 'topbar') {
+      // Top bar gold indicator area
+      x = 870 + Math.random() * 30;
+      y = 18;
     } else {
-      // Enemy: right area. Map index to visual slot (0->center, 1->top, 2->bottom)
-      x = 830;
-      const slotY = [270, 170, 370]; // center, top, bottom
-      y = slotY[index] ?? 270;
+      // Enemy sprite areas. Map index to visual slot (0->center, 1->top, 2->bottom)
+      const slotY = [270, 170, 370];
+      x = 800 + Math.random() * 64;
+      y = (slotY[index] ?? 270) - 32 + Math.random() * 64;
     }
-
-    // Random horizontal offset
-    x += (Math.random() - 0.5) * 30;
 
     setNumbers((prev) => [
       ...prev,

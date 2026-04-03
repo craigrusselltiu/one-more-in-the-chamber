@@ -1170,7 +1170,7 @@ export class CombatManager {
     if (output.gold > 0) {
       const scaledGold = Math.max(1, Math.round(output.gold * this.goldMultiplier));
       this.player.addGold(scaledGold);
-      this.floatOnPlayer(`+${scaledGold}`, '#FFD700');
+      EventBus.emit(GameEvent.FLOATING_NUMBER, 'topbar', 0, `+${scaledGold}`, '#FFD700');
       EventBus.emit(GameEvent.GOLD_CHANGE, this.player.gold);
     }
 
