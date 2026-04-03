@@ -1031,7 +1031,7 @@ export class CombatManager {
 
       // Cracked Ground: suppress cascade damage for first 2 turns
       const eliteId = this.eliteModifier?.id as EliteModifierId | null;
-      const suppressDamage = shouldSuppressCascadeDamage(eliteId, this.turnNumber);
+      const suppressDamage = comboMultiplier > 1.0 && shouldSuppressCascadeDamage(eliteId, this.turnNumber);
 
       // Apply multiplier + combo bonus to damage/block/gold/healing (not to status effects)
       const totalMultiplier = multiplier * comboMultiplier;
