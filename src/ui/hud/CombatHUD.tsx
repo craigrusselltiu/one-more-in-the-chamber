@@ -5,6 +5,7 @@ import { EnemyTargeting } from './EnemyTargeting';
 import { ComboDisplay } from './ComboDisplay';
 import { AbilityMeter } from './AbilityMeter';
 import { EndTurnButton } from './EndTurnButton';
+import { FloatingNumbers } from './FloatingNumbers';
 import { useCombatStore } from '../../store/combatStore';
 
 /**
@@ -30,9 +31,10 @@ export const CombatHUD = memo(function CombatHUD() {
     <div className="pointer-events-none text-xs select-none" style={{ width: 960, height: 540, position: 'relative' }}>
       {/* EventBus -> Zustand bridge (invisible) */}
       <CombatBridge />
+      <FloatingNumbers />
 
-      {/* Main combat area */}
-      <div className="absolute inset-x-0 top-5 bottom-0 flex">
+      {/* Main combat area - starts below top bar (28px) + artifact bar */}
+      <div className="absolute inset-x-0 bottom-0 flex" style={{ top: 36 }}>
         {/* Player area -- combo has fixed height so it doesn't shift the sprite */}
         <div
           className="flex flex-col items-center justify-center px-1 pointer-events-auto"

@@ -35,7 +35,6 @@ export class CombatScene extends Phaser.Scene {
   private boundOnFlashLineToEnemy: (...args: unknown[]) => void;
   private boundOnScreenShake: (...args: unknown[]) => void;
   private boundOnTileParticles: (...args: unknown[]) => void;
-  private boundOnFloatingNumber: (...args: unknown[]) => void;
 
   constructor() {
     super({ key: 'CombatScene' });
@@ -44,7 +43,6 @@ export class CombatScene extends Phaser.Scene {
     this.boundOnFlashLineToEnemy = this.onFlashLineToEnemy.bind(this);
     this.boundOnScreenShake = this.onScreenShake.bind(this);
     this.boundOnTileParticles = this.onTileParticles.bind(this);
-    this.boundOnFloatingNumber = this.onFloatingNumber.bind(this);
   }
 
   create(data?: { config?: CombatConfig; snapshot?: CombatSnapshot }): void {
@@ -61,7 +59,6 @@ export class CombatScene extends Phaser.Scene {
     EventBus.on(GameEvent.FLASH_LINE_TO_ENEMY, this.boundOnFlashLineToEnemy);
     EventBus.on(GameEvent.SCREEN_SHAKE, this.boundOnScreenShake);
     EventBus.on(GameEvent.TILE_PARTICLES, this.boundOnTileParticles);
-    EventBus.on(GameEvent.FLOATING_NUMBER, this.boundOnFloatingNumber);
 
     // Spacebar activates deadeye ability.
     // Also prevent default so space doesn't trigger focused UI buttons.
@@ -282,83 +279,7 @@ export class CombatScene extends Phaser.Scene {
     }
   }
 
-  /**
-   * Spawn a floating number that pops up then falls with gravity, fading out.
-   * target: 'player' | 'enemy', index: enemy index (ignored for player).
-   */
-  private onFloatingNumber(...args: unknown[]): void {
-    if (!useSettingsStore.getState().juiceAnimationsEnabled) return;
-    const target = args[0] as 'player' | 'enemy';
-    const index = (args[1] as number) ?? 0;
-    const text = args[2] as string;
-    const color = (args[3] as string) ?? '#ffffff';
-
-    // Calculate spawn position
-    let x: number;
-    let y: number;
-
-    if (target === 'player') {
-      // Player area: left 26.67% of screen, vertically centered
-      x = Math.round(GAME_WIDTH * 0.133);
-      y = Math.round(GAME_HEIGHT * 0.45);
-    } else {
-      // Enemy area: right side, stacked vertically
-      const origin = this.board.getOrigin();
-      const boardRight = origin.x + 8 * TILE_SIZE;
-      x = Math.round((boardRight + GAME_WIDTH) / 2);
-      const enemies = this.combatManager.getEnemies();
-      const count = enemies.length;
-      const panelHeight = 32;
-      const gap = 2;
-      const totalHeight = count * panelHeight + (count - 1) * gap;
-      const stackTop = GAME_HEIGHT / 2 - totalHeight / 2;
-      // Map enemy array index to visual slot (0->center, 1->top, 2->bottom)
-      const slotMap = count === 1 ? [1] : count === 2 ? [1, 0] : [1, 0, 2];
-      const slot = slotMap[index] ?? index;
-      y = Math.round(stackTop + slot * (panelHeight + gap) + panelHeight / 2);
-    }
-
-    // Add random horizontal offset so numbers don't stack exactly
-    x += Math.round((Math.random() - 0.5) * 20);
-
-    const label = this.add
-      .text(x, y, text, {
-        fontSize: '12px',
-        fontFamily: 'Inter, sans-serif',
-        color,
-        fontStyle: 'bold',
-      })
-      .setOrigin(0.5)
-      .setDepth(20)
-      .setStroke('#000000', 3);
-
-    // Pop up then arc down with gravity
-    const vx = (Math.random() - 0.5) * 30; // random horizontal drift
-    const startVy = -40; // initial upward velocity
-    const gravity = 120;
-    const duration = 1000;
-    const startX = x;
-    const startY = y;
-    const startTime = this.time.now;
-
-    // Use a custom update to simulate projectile motion
-    const updateEvent = this.time.addEvent({
-      delay: 16,
-      loop: true,
-      callback: () => {
-        const elapsed = (this.time.now - startTime) / 1000;
-        if (elapsed >= duration / 1000) {
-          label.destroy();
-          updateEvent.destroy();
-          return;
-        }
-        const t = elapsed;
-        label.x = startX + vx * t;
-        label.y = startY + startVy * t + 0.5 * gravity * t * t;
-        label.alpha = 1 - elapsed / (duration / 1000);
-      },
-    });
-  }
+  // Floating numbers are rendered by React (FloatingNumbers component in CombatHUD)
 
   shutdown(): void {
     EventBus.off(GameEvent.COMBAT_END, this.boundOnCombatEnd);
@@ -366,7 +287,6 @@ export class CombatScene extends Phaser.Scene {
     EventBus.off(GameEvent.FLASH_LINE_TO_ENEMY, this.boundOnFlashLineToEnemy);
     EventBus.off(GameEvent.SCREEN_SHAKE, this.boundOnScreenShake);
     EventBus.off(GameEvent.TILE_PARTICLES, this.boundOnTileParticles);
-    EventBus.off(GameEvent.FLOATING_NUMBER, this.boundOnFloatingNumber);
     this.screenShake?.destroy();
     this.combatManager?.destroy();
     this.board?.destroy();
