@@ -35,12 +35,12 @@ export const GameNotification = memo(function GameNotification() {
   return (
     <div
       className="absolute left-0 right-0 flex justify-center pointer-events-none z-40"
-      style={{ top: 28 }}
+      style={{ top: 40 }}
     >
       <div
-        className="px-6 py-2 bg-stone-900/90 border border-amber-700/50 text-amber-300 text-center"
+        className="px-4 py-1 bg-stone-900/90 border border-amber-700/50 text-amber-300 text-center"
         style={{
-          fontSize: '11px',
+          fontSize: '10px',
           opacity: visible ? 1 : 0,
           transition: 'opacity 0.6s ease-in-out',
         }}
