@@ -748,25 +748,31 @@ export class CombatManager {
     EventBus.emit(GameEvent.PLAYER_HP_CHANGE, this.player.health, this.player.maxHealth);
     EventBus.emit(GameEvent.GOLD_CHANGE, this.player.gold);
 
-    // Animated gravity + fill, then resolve cascades (including ricochet gaps)
-    await this.board.applyGravityAnimated();
-    await this.board.fillEmptyTilesAnimated();
-    const cascadeMatches = await this.board.resolveMatches();
-    if (cascadeMatches.length > 0) {
-      this.processMatches(cascadeMatches);
+    // Use the same cascade resolution path as normal swaps so hazards,
+    // ricochets, special tile triggers, and all other logic is consistent.
+    this.ricochetTriggeredThisResolution = false;
+    const onCascadeStep = (stepMatches: MatchResult[]) => {
+      for (const match of stepMatches) {
+        this.hazardManager.resolveAdjacentHazards(match.tiles);
+      }
+      this.processMatches(stepMatches);
       this.emitFullState();
       this.emitEnemyHpChanges();
+      EventBus.emit(GameEvent.PLAYER_HP_CHANGE, this.player.health, this.player.maxHealth);
+      EventBus.emit(GameEvent.GOLD_CHANGE, this.player.gold);
+    };
 
-      // Handle ricochet gaps from cascade matches
-      while (this.ricochetTriggeredThisResolution) {
-        this.ricochetTriggeredThisResolution = false;
-        await this.board.applyGravityAnimated();
-        await this.board.fillEmptyTilesAnimated();
-        const ricochetCascades = await this.board.resolveMatches();
-        if (ricochetCascades.length > 0) {
-          this.processMatches(ricochetCascades);
-        }
-      }
+    // Gravity + fill + full cascade resolution (matches, hazards, specials)
+    await this.board.applyGravityAnimated();
+    await this.board.fillEmptyTilesAnimated();
+    await this.board.resolveMatchesFull(onCascadeStep);
+
+    // Handle ricochet gaps
+    while (this.ricochetTriggeredThisResolution) {
+      this.ricochetTriggeredThisResolution = false;
+      await this.board.applyGravityAnimated();
+      await this.board.fillEmptyTilesAnimated();
+      await this.board.resolveMatchesFull(onCascadeStep);
     }
 
     this.board.setIsResolving(false);

@@ -802,6 +802,11 @@ export class Board {
     return this.cascadeResolver.resolve(this);
   }
 
+  /** Resolve matches with the full onStep callback (hazards, resources, etc). */
+  async resolveMatchesFull(onStep: (matches: MatchResult[]) => void): Promise<MatchResult[]> {
+    return this.cascadeResolver.resolve(this, onStep);
+  }
+
   getIsResolving(): boolean {
     return this.isResolving;
   }
