@@ -71,7 +71,8 @@ export const ScoreScreen = memo(function ScoreScreen() {
     // Multipliers
     const ascensionMultiplier = 1.0 + 0.2 * run.ascensionLevel;
     const runDurationSeconds = Math.floor((Date.now() - run.runStartedAt) / 1000);
-    const timeMultiplier = computeTimeMultiplier(runDurationSeconds);
+    // Time multiplier only applies to completed runs (beat Act 3)
+    const timeMultiplier = completed ? computeTimeMultiplier(runDurationSeconds) : 1.0;
 
     const finalScore = Math.round((baseScore + bonusPoints) * ascensionMultiplier * timeMultiplier);
 
@@ -190,12 +191,14 @@ export const ScoreScreen = memo(function ScoreScreen() {
               isMultiplier
             />
           )}
-          <ScoreLine
-            label="Time"
-            value={`x${score.timeMultiplier.toFixed(2)}`}
-            detail={formatDuration(score.runDurationSeconds)}
-            isMultiplier
-          />
+          {score.completed && (
+            <ScoreLine
+              label="Time"
+              value={`x${score.timeMultiplier.toFixed(2)}`}
+              detail={formatDuration(score.runDurationSeconds)}
+              isMultiplier
+            />
+          )}
         </div>
       </div>
 
