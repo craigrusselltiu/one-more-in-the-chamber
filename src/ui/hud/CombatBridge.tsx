@@ -3,7 +3,7 @@ import { GameEvent } from '../../game/EventBus';
 import { useCombatStore } from '../../store/combatStore';
 import { useRunStore } from '../../store/runStore';
 import { useEventBus } from '../hooks/useEventBus';
-import type { CombatState, EnemyState } from '../../types/combat';
+import type { CombatState } from '../../types/combat';
 
 /**
  * CombatBridge: invisible component that listens to EventBus events
@@ -18,7 +18,6 @@ export function CombatBridge() {
   const setSwaps = useCombatStore((s) => s.setSwaps);
   const setAbility = useCombatStore((s) => s.setAbilityCharge);
   const setCombo = useCombatStore((s) => s.setCombo);
-  const syncEnemy = useCombatStore((s) => s.syncEnemy);
   const syncRunHealth = useRunStore((s) => s.syncHealth);
   const syncRunGold = useRunStore((s) => s.syncGold);
 
@@ -74,14 +73,6 @@ export function CombatBridge() {
     useCallback((...args: unknown[]) => {
       setCombo(args[0] as number);
     }, [setCombo]),
-  );
-
-  // Directly sync individual enemy HP changes to avoid React batching delays
-  useEventBus(
-    GameEvent.ENEMY_HP_CHANGE,
-    useCallback((...args: unknown[]) => {
-      syncEnemy(args[0] as EnemyState);
-    }, [syncEnemy]),
   );
 
   return null;
