@@ -172,16 +172,24 @@ export const MapScreen = memo(function MapScreen({ readonly, onClose }: { readon
       const mx = (e.clientX - rect.left) * scaleX;
       const my = (e.clientY - rect.top) * scaleY;
 
-      // Position tooltip using canvas-internal coordinates (already in virtual space).
-      // The canvas element's offset within its scroll container gives us the base.
-      const scrollLeft = containerRef.current?.scrollLeft ?? 0;
+      // Position tooltip using the mouse position in the virtual (unscaled) coordinate space.
+      // The CSS transform means clientX/Y are in screen space; we need to reverse-map to virtual.
+      // Find the scaled overlay container to get the transform scale.
+      const overlay = canvas.closest('[style*="transform"]') as HTMLElement | null;
+      const scale = overlay
+        ? parseFloat(overlay.style.transform.match(/scale\(([^)]+)\)/)?.[1] || '1')
+        : 1;
+      // Mouse position in virtual pixels relative to the outer map container
+      const outerRect = containerRef.current?.parentElement?.getBoundingClientRect();
+      const vx = outerRect ? (e.clientX - outerRect.left) / scale : e.clientX;
+      const vy = outerRect ? (e.clientY - outerRect.top) / scale : e.clientY;
 
       for (const node of nodes) {
         const pos = getNodePos(node);
         const dx = mx - pos.x;
         const dy = my - pos.y;
         if (dx * dx + dy * dy <= NODE_RADIUS * NODE_RADIUS * 2) {
-          setTooltip({ text: NODE_LABELS[node.type], x: pos.x - scrollLeft, y: pos.y });
+          setTooltip({ text: NODE_LABELS[node.type], x: vx, y: vy });
           return;
         }
       }
@@ -245,7 +253,7 @@ export const MapScreen = memo(function MapScreen({ readonly, onClose }: { readon
       {tooltip && (
         <div
           className="absolute pointer-events-none bg-stone-900/95 border border-stone-600 px-2 py-0.5 text-stone-200 font-mono text-[9px] z-10"
-          style={{ left: tooltip.x, top: tooltip.y + 18, transform: 'translateX(-50%)' }}
+          style={{ left: tooltip.x + 10, top: tooltip.y + 10 }}
         >
           {tooltip.text}
         </div>
