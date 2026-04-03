@@ -1065,6 +1065,12 @@ export class Board {
   }
 
   update(): void {
-    // Per-frame updates (animations, etc.)
+    // Drive tile effect overlays (breathing animations)
+    const time = this.scene.time.now;
+    for (let row = 0; row < BOARD_SIZE; row++) {
+      for (let col = 0; col < BOARD_SIZE; col++) {
+        this.grid[row][col]?.updateEffects(time);
+      }
+    }
   }
 }

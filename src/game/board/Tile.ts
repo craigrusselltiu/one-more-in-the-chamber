@@ -11,6 +11,11 @@ const STATUS_OFFSET = 12;
 /**
  * Tile: sprite + state for a single board cell.
  * Renders a 16x16 frame from the sprite sheet at 2x scale (32x32).
+ *
+ * Effect overlays:
+ *   - Showdown tile: rainbow breathing overlay
+ *   - Explosive (4-match bomb): yellow breathing overlay
+ *   - Bomb hazard: red breathing overlay + countdown number
  */
 export class Tile {
   readonly scene: Phaser.Scene;
@@ -22,8 +27,12 @@ export class Tile {
 
   private _hazard: TileHazardState | null = null;
   private sprite: Phaser.GameObjects.Image;
-  private border: Phaser.GameObjects.Rectangle | null = null;
   private highlight: Phaser.GameObjects.Rectangle | null = null;
+  /** Animated color overlay for special tiles and bomb hazards. */
+  private overlay: Phaser.GameObjects.Rectangle | null = null;
+  /** Countdown label for bomb hazards (centered on tile). */
+  private bombLabel: Phaser.GameObjects.Text | null = null;
+  /** Status indicators for non-bomb hazards. */
   private statusDot: Phaser.GameObjects.Rectangle | null = null;
   private statusLabel: Phaser.GameObjects.Text | null = null;
   private destroyed = false;
@@ -34,7 +43,10 @@ export class Tile {
 
   set hazard(val: TileHazardState | null) {
     this._hazard = val;
-    if (!this.destroyed) this.updateStatusIndicator();
+    if (!this.destroyed) {
+      this.updateOverlay();
+      this.updateStatusIndicator();
+    }
   }
 
   constructor(
@@ -60,51 +72,110 @@ export class Tile {
 
   setType(newType: TileType): void {
     this.type = newType;
-    this.updateVisuals();
+    this.sprite.setFrame(TILE_FRAMES[this.type]);
+    this.updateOverlay();
   }
 
   setExplosive(value: boolean): void {
     this.isExplosive = value;
     this.isShowdown = false;
-    this.updateVisuals();
+    this.updateOverlay();
   }
 
   setShowdown(value: boolean): void {
     this.isShowdown = value;
     this.isExplosive = false;
-    this.updateVisuals();
+    this.updateOverlay();
   }
 
   refreshStatusIndicator(): void {
-    if (!this.destroyed) this.updateStatusIndicator();
-  }
-
-  private updateVisuals(): void {
-    this.sprite.setFrame(TILE_FRAMES[this.type]);
-
-    if (this.isExplosive) {
-      if (!this.border) {
-        this.border = this.scene.add
-          .rectangle(this.sprite.x, this.sprite.y, TILE_SIZE, TILE_SIZE)
-          .setStrokeStyle(2, 0xffff00)
-          .setFillStyle(0xffff00, 0.1);
-      } else {
-        this.border.setStrokeStyle(2, 0xffff00).setFillStyle(0xffff00, 0.1);
-      }
-    } else if (this.isShowdown) {
-      if (!this.border) {
-        this.border = this.scene.add
-          .rectangle(this.sprite.x, this.sprite.y, TILE_SIZE, TILE_SIZE)
-          .setStrokeStyle(2, 0xff00ff)
-          .setFillStyle(0xff00ff, 0.1);
-      } else {
-        this.border.setStrokeStyle(2, 0xff00ff).setFillStyle(0xff00ff, 0.1);
-      }
-    } else if (this.border) {
-      this.border.destroy();
-      this.border = null;
+    if (!this.destroyed) {
+      this.updateOverlay();
+      this.updateStatusIndicator();
     }
   }
+
+  // ---------------------------------------------------------------------------
+  // Animated overlay system
+  // ---------------------------------------------------------------------------
+
+  /** Per-frame update called by Board.update(). Drives breathing animations. */
+  updateEffects(time: number): void {
+    if (this.destroyed || !this.overlay) return;
+
+    const breath = 0.5 + 0.5 * Math.sin(time / 400);
+
+    if (this.isShowdown) {
+      // Rainbow: cycle hue over time
+      const hue = (time / 20) % 360;
+      const color = Phaser.Display.Color.HSLToColor(hue / 360, 0.8, 0.5);
+      this.overlay.setFillStyle(color.color, 0.15 + breath * 0.2);
+    } else if (this.isExplosive) {
+      // Yellow breathing
+      this.overlay.setFillStyle(0xffff00, 0.1 + breath * 0.15);
+    } else if (this._hazard?.type === 'bomb') {
+      // Red breathing
+      this.overlay.setFillStyle(0xff0000, 0.1 + breath * 0.2);
+    }
+  }
+
+  private updateOverlay(): void {
+    const needsOverlay = this.isShowdown || this.isExplosive || this._hazard?.type === 'bomb';
+    const cx = this.sprite.x;
+    const cy = this.sprite.y;
+
+    if (needsOverlay) {
+      if (!this.overlay) {
+        this.overlay = this.scene.add
+          .rectangle(cx, cy, TILE_SIZE, TILE_SIZE, 0x000000, 0)
+          .setDepth(1);
+      } else {
+        this.overlay.setPosition(cx, cy);
+      }
+    } else {
+      this.destroyOverlay();
+    }
+
+    // Bomb hazard: centered countdown number
+    if (this._hazard?.type === 'bomb') {
+      const countdown = String(this._hazard.countdown);
+      if (!this.bombLabel) {
+        this.bombLabel = this.scene.add
+          .text(cx, cy, countdown, {
+            fontSize: '14px',
+            fontFamily: 'Inter, sans-serif',
+            color: '#ffffff',
+            fontStyle: 'bold',
+          })
+          .setOrigin(0.5)
+          .setDepth(2)
+          .setStroke('#000000', 4);
+      } else {
+        this.bombLabel.setPosition(cx, cy);
+        this.bombLabel.setText(countdown);
+      }
+    } else {
+      this.destroyBombLabel();
+    }
+  }
+
+  private destroyOverlay(): void {
+    if (this.overlay) {
+      this.overlay.destroy();
+      this.overlay = null;
+    }
+  }
+
+  private destroyBombLabel(): void {
+    if (this.bombLabel) {
+      this.bombLabel.destroy();
+      this.bombLabel = null;
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // Non-bomb hazard indicators (lock, poison, sand, etc.)
+  // ---------------------------------------------------------------------------
 
   private updateStatusIndicator(): void {
     const cx = this.sprite.x;
@@ -112,7 +183,8 @@ export class Tile {
     const ix = Math.round(cx + STATUS_OFFSET);
     const iy = Math.round(cy + STATUS_OFFSET);
 
-    if (this._hazard === null || this._hazard.type === 'fools_gold') {
+    // Bomb hazards use the overlay + centered label, not the corner indicator
+    if (this._hazard === null || this._hazard.type === 'fools_gold' || this._hazard.type === 'bomb') {
       this.destroyStatusIndicator();
       return;
     }
@@ -148,7 +220,7 @@ export class Tile {
       case 'lock':           return { dotColor: 0xaaaaaa, text: 'L' };
       case 'hardened_lock':  return { dotColor: 0x666666, text: String(hazard.hits) };
       case 'poison':         return { dotColor: 0x40d840, text: 'P' };
-      case 'bomb':           return { dotColor: 0xff4040, text: String(hazard.countdown) };
+      case 'bomb':           return { dotColor: 0xff4040, text: '' }; // handled by overlay
       case 'sand':           return { dotColor: 0xe8c170, text: '?' };
       case 'fools_gold':     return { dotColor: 0xffd700, text: '' };
     }
@@ -165,16 +237,17 @@ export class Tile {
     }
   }
 
+  // ---------------------------------------------------------------------------
+  // Position / selection
+  // ---------------------------------------------------------------------------
+
   setPosition(x: number, y: number): void {
     const cx = Math.round(x + TILE_SIZE / 2);
     const cy = Math.round(y + TILE_SIZE / 2);
     this.sprite.setPosition(cx, cy);
-    if (this.border) {
-      this.border.setPosition(cx, cy);
-    }
-    if (this.highlight) {
-      this.highlight.setPosition(cx, cy);
-    }
+    if (this.overlay) this.overlay.setPosition(cx, cy);
+    if (this.bombLabel) this.bombLabel.setPosition(cx, cy);
+    if (this.highlight) this.highlight.setPosition(cx, cy);
     if (this.statusDot) {
       this.statusDot.setPosition(Math.round(cx + STATUS_OFFSET), Math.round(cy + STATUS_OFFSET));
     }
@@ -199,7 +272,9 @@ export class Tile {
     return { x: Math.round(this.sprite.x), y: Math.round(this.sprite.y) };
   }
 
-  // -- Animation methods --
+  // ---------------------------------------------------------------------------
+  // Animation methods
+  // ---------------------------------------------------------------------------
 
   tweenToPosition(x: number, y: number, duration: number, delay = 0, bounce = false): Promise<void> {
     if (this.destroyed) return Promise.resolve();
@@ -220,8 +295,9 @@ export class Tile {
 
     return new Promise((resolve) => {
       const targets: Phaser.GameObjects.GameObject[] = [this.sprite];
-      if (this.border) targets.push(this.border);
+      if (this.overlay) targets.push(this.overlay);
       if (this.highlight) targets.push(this.highlight);
+      if (this.bombLabel) targets.push(this.bombLabel);
 
       if (this.statusDot) {
         this.scene.tweens.add({
@@ -267,7 +343,8 @@ export class Tile {
 
     return new Promise((resolve) => {
       const targets: Phaser.GameObjects.GameObject[] = [this.sprite];
-      if (this.border) targets.push(this.border);
+      if (this.overlay) targets.push(this.overlay);
+      if (this.bombLabel) targets.push(this.bombLabel);
       if (this.highlight) targets.push(this.highlight);
       if (this.statusDot) targets.push(this.statusDot);
       if (this.statusLabel) targets.push(this.statusLabel);
@@ -305,10 +382,8 @@ export class Tile {
     if (this.destroyed) return;
     this.destroyed = true;
     this.sprite.destroy();
-    if (this.border) {
-      this.border.destroy();
-      this.border = null;
-    }
+    this.destroyOverlay();
+    this.destroyBombLabel();
     if (this.highlight) {
       this.highlight.destroy();
       this.highlight = null;
