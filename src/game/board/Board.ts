@@ -966,6 +966,20 @@ export class Board {
     return this.cascadeResolver.getGravityDirection();
   }
 
+  /** Change all mirage tiles to a random active tile type. */
+  shuffleMirageTiles(): void {
+    const types = this.activeTileTypes.filter(t => t !== 'mirage' && t !== 'showdown' && t !== 'tumbleweed' && t !== 'fools_gold');
+    if (types.length === 0) return;
+    for (let row = 0; row < BOARD_SIZE; row++) {
+      for (let col = 0; col < BOARD_SIZE; col++) {
+        const tile = this.grid[row][col];
+        if (tile && tile.type === 'mirage') {
+          tile.setType(types[Math.floor(Math.random() * types.length)]);
+        }
+      }
+    }
+  }
+
   setInputEnabled(enabled: boolean): void {
     this.inputEnabled = enabled;
     if (!enabled) this.clearSelection();

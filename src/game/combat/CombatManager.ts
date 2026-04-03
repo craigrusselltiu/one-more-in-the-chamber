@@ -535,6 +535,9 @@ export class CombatManager {
     if (this.phase !== 'swap-phase' || this.swapsRemaining <= 0) return;
     if (this.board.getIsResolving()) return;
 
+    // Mirage tiles change type on every swap
+    this.board.shuffleMirageTiles();
+
     this.swapsRemaining--;
     this.swapsUsedThisTurn++;
     this.setPhase('resolving');
@@ -1072,6 +1075,11 @@ export class CombatManager {
         this.triggerRandomTileForRicochet(match);
       }
 
+      // Saloon: generate resources of adjacent tiles on the board
+      if (match.tileType === 'saloon') {
+        this.resolveSaloonAdjacent(match);
+      }
+
       // Check if an enemy died from this match
       for (const enemy of this.enemies) {
         if (enemy.state.isDead) {
@@ -1103,6 +1111,35 @@ export class CombatManager {
     // Flash a line from source match center to the destroyed tile
     const mid = sourceMatch.tiles[Math.floor(sourceMatch.tiles.length / 2)];
     EventBus.emit(GameEvent.FLASH_LINE, mid, result.position, sourceMatch.tileType);
+  }
+
+  /**
+   * Saloon: for each matched saloon tile position, generate the resource
+   * of each adjacent tile still on the board.
+   */
+  private resolveSaloonAdjacent(match: MatchResult): void {
+    const grid = this.board.getGrid();
+    const size = this.board.getBoardSize();
+    const directions = [[-1, 0], [1, 0], [0, -1], [0, 1]];
+    const seen = new Set<string>();
+
+    for (const pos of match.tiles) {
+      for (const [dr, dc] of directions) {
+        const r = pos.row + dr;
+        const c = pos.col + dc;
+        if (r < 0 || r >= size || c < 0 || c >= size) continue;
+        const key = `${r},${c}`;
+        if (seen.has(key)) continue;
+        seen.add(key);
+
+        const tile = grid[r]?.[c];
+        if (!tile || tile.type === 'saloon' || tile.type === 'showdown' || tile.type === 'tumbleweed' || tile.type === 'fools_gold') continue;
+
+        const upgradeLevel = this.player.getUpgradeLevel(tile.type);
+        const output = this.resolver.resolveSingle(tile.type, upgradeLevel);
+        this.applyResourceOutput(output);
+      }
+    }
   }
 
   /** Emit a floating number on an enemy. */

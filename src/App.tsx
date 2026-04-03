@@ -279,7 +279,7 @@ export default function App() {
           }
         }
 
-        if (currentNode?.type === 'boss') {
+        if (currentNode && currentNode.type === 'boss') {
           // Remove tumbleweed after Act 1 boss (notification shows on Act 2 map)
           if (currentRun!.currentAct === 1) {
             store.removeTileType('tumbleweed');
