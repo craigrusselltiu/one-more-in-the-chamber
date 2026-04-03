@@ -3,9 +3,10 @@ import { EventBus, GameEvent } from '../../game/EventBus';
 import { useRunStore } from '../../store/runStore';
 import { ARTIFACTS } from '../../data/artifacts';
 import { CONSUMABLES } from '../../data/consumables';
-import { ADDITIONAL_POOL, STARTER_POOL, TILE_COLORS, TILE_DEFINITIONS } from '../../data/tiles';
+import { ADDITIONAL_POOL, STARTER_POOL, TILE_DEFINITIONS } from '../../data/tiles';
 import { TILE_FRAMES } from '../../data/spriteConfig';
 import { SpriteIcon } from '../components/SpriteIcon';
+import { Tooltip } from '../components/Tooltip';
 import type { TileType } from '../../types/game';
 import type { Screen } from '../../App';
 import { getAscensionModifiers } from '../../data/ascension';
@@ -210,19 +211,23 @@ export const ShopScreen = memo(function ShopScreen() {
             <div className="flex flex-col gap-2 mb-3">
               {swappableTiles.map((tile) => {
                 const def = TILE_DEFINITIONS[tile];
+                const tooltipContent = (
+                  <div className="flex flex-col gap-0.5">
+                    <div className="font-bold text-amber-400" style={{ fontSize: '10px' }}>{def.label}</div>
+                    <div className="text-stone-200 whitespace-nowrap" style={{ fontSize: '9px' }}>{def.description}</div>
+                    {def.flavor && <div className="text-stone-500 italic whitespace-nowrap" style={{ fontSize: '8px' }}>"{def.flavor}"</div>}
+                  </div>
+                );
                 return (
-                  <button
-                    key={tile}
-                    onClick={() => handleSwapConfirm(tile)}
-                    className="flex items-center gap-2 p-2 border border-stone-600 bg-stone-800/50 hover:border-amber-600 hover:bg-stone-700/50 text-left"
-                  >
-                    <span
-                      className="inline-block w-3 h-3 shrink-0"
-                      style={{ backgroundColor: TILE_COLORS[tile] }}
-                    />
-                    <span className="text-stone-200 text-sm">{def.label}</span>
-                    <span className="text-stone-500 text-xs ml-auto">{def.description}</span>
-                  </button>
+                  <Tooltip key={tile} content={tooltipContent} position="bottom">
+                    <button
+                      onClick={() => handleSwapConfirm(tile)}
+                      className="flex items-center gap-2 p-2 border border-stone-600 bg-stone-800/50 hover:border-amber-600 hover:bg-stone-700/50 text-left w-full"
+                    >
+                      <SpriteIcon frame={TILE_FRAMES[tile]} scale={1} />
+                      <span className="text-stone-200 text-sm">{def.label}</span>
+                    </button>
+                  </Tooltip>
                 );
               })}
             </div>

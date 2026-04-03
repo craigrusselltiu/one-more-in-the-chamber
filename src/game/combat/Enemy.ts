@@ -123,10 +123,9 @@ export class Enemy {
   takeDamage(amount: number): number {
     let remaining = amount;
 
-    // Vulnerable: +25% damage, consumed per hit
+    // Vulnerable: +50% damage (stacks decrease at end of turn, not on hit)
     if (this.state.vulnerable > 0) {
-      remaining = Math.round(remaining * 1.25);
-      this.state.vulnerable--;
+      remaining = Math.round(remaining * 1.5);
     }
 
     // Block absorption

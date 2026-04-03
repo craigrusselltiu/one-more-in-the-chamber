@@ -19,12 +19,12 @@ Buffs/debuffs:
 - Flavor: "Highly effective negotiation tool."
 
 ### Iron
-- Behaviour: Gain 3 block per tile.
+- Behaviour: Gain 2 block per tile.
 - Upgrade: +1 block to match total per level
 - Flavor: "Bend, don't break."
 
 ### Gold
-- Behaviour: Earn 2 gold per tile.
+- Behaviour: Earn 1 gold per tile.
 - Upgrade: +1 gold to match total per level
 - Flavor: "Makes the world go 'round."
 
@@ -147,16 +147,16 @@ Buffs/debuffs:
 
 Trait level = number of artifacts held with that tag. Effects activate at breakpoints.
 
+## Sheriff
+- Flavor: "The law is heavier than it looks."
+- 2 -- Iron matches +30% block. +2 block per turn.
+- 5 -- Block reflects 100% of absorbed damage back to attacker.
+
 ## Outlaw
 - Flavor: "Wanted: Alive. Preferably not."
 - 2 -- 4+ matches deal 30% bonus damage.
 - 4 -- 4+ matches apply 1 Vulnerable to targeted enemy.
 - 6 -- Tiles from 4+ match cascades trigger resource effects twice.
-
-## Sheriff
-- Flavor: "The law is heavier than it looks."
-- 2 -- Iron matches +30% block. +2 block per turn.
-- 5 -- Block reflects 100% of absorbed damage back to attacker.
 
 ## Rattlesnake
 - Flavor: "Don't step on anything that hisses."

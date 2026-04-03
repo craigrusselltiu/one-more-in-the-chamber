@@ -1322,7 +1322,12 @@ export class CombatManager {
       const venomDamage = enemy.tickVenom(venomUpgrade);
       if (venomDamage > 0) {
         this.damageDealtThisFight += venomDamage;
+        this.floatOnEnemy(enemy, `-${venomDamage}`, '#60A040');
         EventBus.emit(GameEvent.ENEMY_HP_CHANGE, { ...enemy.state });
+      }
+      // Vulnerable decreases by 1 at end of turn
+      if (enemy.state.vulnerable > 0) {
+        enemy.state.vulnerable--;
       }
     }
 
