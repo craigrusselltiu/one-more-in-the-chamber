@@ -24,7 +24,7 @@ export const Tooltip = memo(function Tooltip({ text, children, position = 'top' 
 
   const show = () => {
     clearTimeout(timeoutRef.current);
-    timeoutRef.current = setTimeout(() => setVisible(true), 250);
+    setVisible(true);
   };
 
   const hide = () => {
