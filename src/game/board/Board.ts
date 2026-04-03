@@ -342,45 +342,43 @@ export class Board {
     showdownTile.destroy();
     this.grid[showdownPos.row][showdownPos.col] = null;
 
-    // Collect all tiles of the target type
-    const triggered: GridPosition[] = [];
+    // Flash lines from showdown to each target before clearing
     for (let row = 0; row < BOARD_SIZE; row++) {
       for (let col = 0; col < BOARD_SIZE; col++) {
         const tile = this.grid[row][col];
         if (tile && tile.type === targetType) {
-          triggered.push({ row, col });
+          EventBus.emit(GameEvent.FLASH_LINE, showdownPos, { row, col }, targetType);
         }
       }
     }
 
-    // Trigger each tile one by one with a 0.1s delay between each
-    for (const pos of triggered) {
-      const tile = this.grid[pos.row][pos.col];
-      if (tile) {
-        EventBus.emit(GameEvent.FLASH_LINE, showdownPos, pos, targetType);
-        const center = tile.getWorldCenter();
-        EventBus.emit(GameEvent.TILE_PARTICLES, center.x, center.y, TILE_COLORS[targetType] ?? '#ffffff');
-        tile.destroy();
-        this.grid[pos.row][pos.col] = null;
-        await new Promise(r => setTimeout(r, 100));
-      }
-    }
+    // Animated clear with chain detonation of explosives
+    const clearedTypes = await this.clearAllOfTypeAnimated(targetType);
 
-    // Build a MatchResult so CombatManager.processMatches applies effects
-    const showdownMatch: MatchResult = {
-      tiles: triggered,
-      tileType: targetType,
-      length: triggered.length,
-      isExplosive: false,
-      isShowdown: true,
-      isCross: false,
-      crossIntersections: [],
-      matchBonus: 1.0,
-    };
+    // Build MatchResults for resource generation.
+    // Group by type: primary showdown targets + any chain-detonated tiles.
+    const byType = new Map<string, number>();
+    for (const t of clearedTypes) {
+      byType.set(t, (byType.get(t) ?? 0) + 1);
+    }
+    const matchResults: MatchResult[] = [];
+    for (const [tType, count] of byType) {
+      const positions: GridPosition[] = Array.from({ length: count }, (_, i) => ({ row: 0, col: i }));
+      matchResults.push({
+        tiles: positions,
+        tileType: tType as TileType,
+        length: count,
+        isExplosive: false,
+        isShowdown: tType === targetType,
+        isCross: false,
+        crossIntersections: [],
+        matchBonus: 1.0,
+      });
+    }
 
     // Apply showdown effects immediately so the player sees them right away
     if (onCascadeStep) {
-      onCascadeStep([showdownMatch]);
+      onCascadeStep(matchResults);
     }
 
     // Apply gravity with animation, then fill
@@ -390,7 +388,7 @@ export class Board {
 
     // Resolve any new matches that form after the board refills
     const cascadeMatches = await this.cascadeResolver.resolve(this, onCascadeStep);
-    const allMatches = [showdownMatch, ...cascadeMatches];
+    const allMatches = [...matchResults, ...cascadeMatches];
 
     if (!this.hasValidMoves()) {
       this.reshuffle();
@@ -856,8 +854,8 @@ export class Board {
   }
 
   /**
-   * Clear all tiles of a given type from the board.
-   * Returns the number of tiles cleared. Used by Deadeye + Showdown.
+   * Clear all tiles of a given type from the board (no animation).
+   * Returns the number of tiles cleared.
    */
   clearAllOfType(type: TileType): number {
     let count = 0;
@@ -872,6 +870,65 @@ export class Board {
       }
     }
     return count;
+  }
+
+  /**
+   * Clear all tiles of a given type with animation and explosive chain detonation.
+   * Returns tile types cleared (for resource generation).
+   * Used by deadeye showdown and showdown swap.
+   */
+  async clearAllOfTypeAnimated(type: TileType): Promise<TileType[]> {
+    // Collect target tiles
+    const targets: Array<{ tile: Tile; row: number; col: number }> = [];
+    for (let row = 0; row < BOARD_SIZE; row++) {
+      for (let col = 0; col < BOARD_SIZE; col++) {
+        const tile = this.grid[row][col];
+        if (tile && tile.type === type) {
+          targets.push({ tile, row, col });
+        }
+      }
+    }
+
+    // Trigger each tile one by one with delay (showdown style)
+    const clearedTypes: TileType[] = [];
+    const explosiveQueue: GridPosition[] = [];
+
+    for (const { tile, row, col } of targets) {
+      if (!this.grid[row][col]) continue; // already cleared by chain explosion
+      const center = tile.getWorldCenter();
+      EventBus.emit(GameEvent.TILE_PARTICLES, center.x, center.y, TILE_COLORS[tile.type] ?? '#ffffff');
+      if (tile.isExplosive) explosiveQueue.push({ row, col });
+      clearedTypes.push(tile.type);
+      tile.destroy();
+      this.grid[row][col] = null;
+      await new Promise(r => setTimeout(r, 100));
+    }
+
+    // Chain-detonate any explosives that were cleared
+    while (explosiveQueue.length > 0) {
+      const pos = explosiveQueue.shift()!;
+      const blastTiles: Tile[] = [];
+      for (let dr = -1; dr <= 1; dr++) {
+        for (let dc = -1; dc <= 1; dc++) {
+          const r = pos.row + dr;
+          const c = pos.col + dc;
+          if (r < 0 || r >= BOARD_SIZE || c < 0 || c >= BOARD_SIZE) continue;
+          const t = this.grid[r]?.[c];
+          if (t) {
+            if (t.isExplosive) explosiveQueue.push({ row: r, col: c });
+            clearedTypes.push(t.type);
+            blastTiles.push(t);
+            this.grid[r][c] = null;
+          }
+        }
+      }
+      if (blastTiles.length > 0) {
+        await this.animateTileClear(blastTiles);
+        EventBus.emit(GameEvent.SCREEN_SHAKE, 'medium');
+      }
+    }
+
+    return clearedTypes;
   }
 
   /**

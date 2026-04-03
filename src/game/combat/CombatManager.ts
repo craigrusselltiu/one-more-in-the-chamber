@@ -686,18 +686,20 @@ export class CombatManager {
 
     // Handle special tiles
     if (tile.isShowdown) {
-      // Showdown: clear all tiles of a random type on the board
+      // Showdown: animate the showdown tile clear, then clear all tiles of a random type
       const grid = this.board.getGrid();
-      grid[row][col]?.destroy();
+      const showdownTile = grid[row][col]!;
       grid[row][col] = null;
+      await this.board.animateTileClear([showdownTile]);
 
       const types = this.board.getActiveTileTypes();
       const randomType = types[Math.floor(Math.random() * types.length)];
-      const upgradeLevel = this.player.getUpgradeLevel(randomType);
 
-      const count = this.board.clearAllOfType(randomType);
-      if (count > 0) {
-        const output = this.resolver.resolveCount(randomType, count, upgradeLevel);
+      // Animated clear with chain detonation of explosives
+      const clearedTypes = await this.board.clearAllOfTypeAnimated(randomType);
+      for (const tileType of clearedTypes) {
+        const upgradeLevel = this.player.getUpgradeLevel(tileType);
+        const output = this.resolver.resolveSingle(tileType, upgradeLevel);
         this.applyResourceOutput(output);
       }
     } else if (tile.isExplosive) {
