@@ -469,6 +469,7 @@ export class CombatManager {
     this.swapsRemaining = this.swapsPerTurn;
     this.nextMatchMultiplier = 1.0;
     this.swapsUsedThisTurn = 0;
+    this.resolver.resetTurn();
 
     // Tick suppress (warrant) durations -- expires at start of player turn
     this.hazardManager.tickSuppressions();

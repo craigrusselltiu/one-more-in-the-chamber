@@ -34,9 +34,16 @@ const PER_TILE_UPGRADE: Set<TileType> = new Set([
 export class ResourceResolver {
   /** Persistent chain damage bonus that increases per Chain match in a fight. */
   chainBonusThisFight = 0;
+  /** Whether cavalry bonus swap has been granted this turn. */
+  cavalrySwapUsedThisTurn = false;
 
   resetFight(): void {
     this.chainBonusThisFight = 0;
+    this.cavalrySwapUsedThisTurn = false;
+  }
+
+  resetTurn(): void {
+    this.cavalrySwapUsedThisTurn = false;
   }
 
   resolve(match: MatchResult, upgradeLevel: number): ResourceOutput {
@@ -147,12 +154,15 @@ export class ResourceResolver {
 
       case 'cavalry':
         output.damage = total;
-        if (count >= 4) output.bonusSwaps = 1;
+        if (count >= 4 && !this.cavalrySwapUsedThisTurn) {
+          output.bonusSwaps = 1;
+          this.cavalrySwapUsedThisTurn = true;
+        }
         break;
 
       case 'duel':
         // Only deals damage on exactly 3-match
-        output.damage = count === 3 ? total : 0;
+        output.damage = count === 4 ? total : 0;
         break;
 
       case 'chain': {
