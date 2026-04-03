@@ -297,7 +297,7 @@ export class CascadeResolver {
   private applyFireSpread(board: Board, firePositions: GridPosition[]): void {
     const grid = board.getGrid();
     const size = board.getBoardSize();
-    const SPREAD_CHANCE = 0.50;
+    const SPREAD_CHANCE = 0.10;
     const directions = [
       { dr: -1, dc: 0 },
       { dr: 1, dc: 0 },
