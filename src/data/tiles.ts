@@ -46,6 +46,7 @@ export const TILE_DEFINITIONS: Record<TileType, TileDefinition> = {
     pool: 'core',
     description: 'Deal 2 damage per tile.',
     flavor: 'Highly effective negotiation tool.',
+    upgradeText: '+1 damage to match total per level',
   },
   iron: {
     type: 'iron',
@@ -57,6 +58,7 @@ export const TILE_DEFINITIONS: Record<TileType, TileDefinition> = {
     pool: 'core',
     description: 'Gain 2 block per tile.',
     flavor: "Bend, don't break.",
+    upgradeText: '+1 block to match total per level',
   },
   gold: {
     type: 'gold',
@@ -68,6 +70,7 @@ export const TILE_DEFINITIONS: Record<TileType, TileDefinition> = {
     pool: 'core',
     description: 'Earn 1 gold per tile.',
     flavor: "Makes the world go 'round.",
+    upgradeText: '+1 gold to match total per level',
   },
 
   // --- Starter ---
@@ -81,6 +84,7 @@ export const TILE_DEFINITIONS: Record<TileType, TileDefinition> = {
     pool: 'starter',
     description: 'Deal 2 damage per tile + each tile destroys 1 random tile elsewhere.',
     flavor: "Bullets bounce. You never know what they'll hit.",
+    upgradeText: '+1 to number of tiles destroyed on match',
   },
   stampede: {
     type: 'stampede',
@@ -92,6 +96,7 @@ export const TILE_DEFINITIONS: Record<TileType, TileDefinition> = {
     pool: 'starter',
     description: 'Deal 2 damage to ALL enemies per tile.',
     flavor: 'The ground shakes. Everything in the way gets flattened.',
+    upgradeText: '+1 damage to match total per level',
   },
   buckshot: {
     type: 'buckshot',
@@ -103,6 +108,7 @@ export const TILE_DEFINITIONS: Record<TileType, TileDefinition> = {
     pool: 'starter',
     description: 'Deal 2 damage to a random enemy per tile.',
     flavor: 'Spread shot. Hits harder, less precise.',
+    upgradeText: '+1 damage per tile per level',
   },
   battery: {
     type: 'battery',
@@ -114,6 +120,7 @@ export const TILE_DEFINITIONS: Record<TileType, TileDefinition> = {
     pool: 'starter',
     description: 'Gain 1 ability charge per 3-match; +1 per extra tile.',
     flavor: 'Juice for the iron. Every spark counts.',
+    upgradeText: '+1 charge to match total per level',
   },
   venom: {
     type: 'venom',
@@ -125,6 +132,7 @@ export const TILE_DEFINITIONS: Record<TileType, TileDefinition> = {
     pool: 'starter',
     description: 'Apply 1 Venom per tile.',
     flavor: "Slow poison. The patient killer's weapon.",
+    upgradeText: '+1 stack to match total per level',
   },
   prairie_fire: {
     type: 'prairie_fire',
@@ -136,6 +144,7 @@ export const TILE_DEFINITIONS: Record<TileType, TileDefinition> = {
     pool: 'starter',
     description: 'Deal 3 damage per tile. 50% chance to convert 1 adjacent tile to Ember.',
     flavor: 'Sparks fly. Some of them catch.',
+    upgradeText: '+1 damage to match total per level',
   },
 
   // --- Additional ---
@@ -149,6 +158,7 @@ export const TILE_DEFINITIONS: Record<TileType, TileDefinition> = {
     pool: 'additional',
     description: 'Deal 1 damage per tile. Each Chain match adds +1 damage to ALL Chain tiles for this combat.',
     flavor: 'Links in the chain. More you match, harder they hit.',
+    upgradeText: '+1 damage to match total per level',
   },
   whiskey: {
     type: 'whiskey',
@@ -160,6 +170,7 @@ export const TILE_DEFINITIONS: Record<TileType, TileDefinition> = {
     pool: 'additional',
     description: 'Heals 1 HP per tile.',
     flavor: "The cowboy's medicine.",
+    upgradeText: '+1 heal to match total per level',
   },
   ace: {
     type: 'ace',
@@ -171,6 +182,7 @@ export const TILE_DEFINITIONS: Record<TileType, TileDefinition> = {
     pool: 'additional',
     description: 'Gain 1 stack of Ace per tile.',
     flavor: 'Always keep one up your sleeve.',
+    upgradeText: '+1 stack to match total per level',
   },
   horseshoe: {
     type: 'horseshoe',
@@ -182,6 +194,7 @@ export const TILE_DEFINITIONS: Record<TileType, TileDefinition> = {
     pool: 'additional',
     description: 'Gain 1 stack of Lucky per tile.',
     flavor: 'Luck favors the prepared.',
+    upgradeText: '+1 stack to match total per level',
   },
   fifty_cal: {
     type: 'fifty_cal',
@@ -193,6 +206,7 @@ export const TILE_DEFINITIONS: Record<TileType, TileDefinition> = {
     pool: 'additional',
     description: 'Deal 5 damage per tile.',
     flavor: 'Turns cover into a suggestion.',
+    upgradeText: '+1 damage per tile per level',
   },
   tombstone: {
     type: 'tombstone',
@@ -204,6 +218,7 @@ export const TILE_DEFINITIONS: Record<TileType, TileDefinition> = {
     pool: 'additional',
     description: 'Deal 3 damage per tile. Deals double damage when target is below 30% HP.',
     flavor: 'Dead men pay debts.',
+    upgradeText: '+1 damage to match total per level',
   },
   saloon: {
     type: 'saloon',
@@ -215,6 +230,7 @@ export const TILE_DEFINITIONS: Record<TileType, TileDefinition> = {
     pool: 'additional',
     description: 'Heal 1 HP per tile. Generate the resources of adjacent tiles.',
     flavor: 'Belly up to the bar. Drinks are on the house.',
+    upgradeText: '+1 heal per tile per level',
   },
   wanted: {
     type: 'wanted',
@@ -226,6 +242,7 @@ export const TILE_DEFINITIONS: Record<TileType, TileDefinition> = {
     pool: 'additional',
     description: 'Deal 3 damage per tile to the enemy with the highest current HP then apply 1 Vulnerable.',
     flavor: 'Every hit paints a bigger target.',
+    upgradeText: '+1 damage to match total per level',
   },
   rattler: {
     type: 'rattler',
@@ -237,6 +254,7 @@ export const TILE_DEFINITIONS: Record<TileType, TileDefinition> = {
     pool: 'additional',
     description: 'Deal 3 damage per tile and apply 1 Venom. Pierces block.',
     flavor: 'Fangs out. Bite first, ask questions never.',
+    upgradeText: '+1 damage and venom stack to match total per level',
   },
   barricade: {
     type: 'barricade',
@@ -248,6 +266,7 @@ export const TILE_DEFINITIONS: Record<TileType, TileDefinition> = {
     pool: 'additional',
     description: 'Gain 3 block per tile and 1 Barricade.',
     flavor: 'Flip the table. Take cover.',
+    upgradeText: '+1 block per tile per level',
   },
   cavalry: {
     type: 'cavalry',
@@ -259,6 +278,7 @@ export const TILE_DEFINITIONS: Record<TileType, TileDefinition> = {
     pool: 'additional',
     description: '1 damage per tile. If 4+ matched, +1 swap this turn.',
     flavor: 'Reinforcements have arrived.',
+    upgradeText: '+1 damage to match total per level',
   },
   duel: {
     type: 'duel',
@@ -270,6 +290,7 @@ export const TILE_DEFINITIONS: Record<TileType, TileDefinition> = {
     pool: 'additional',
     description: 'Deal 6 damage but ONLY if exactly 3 matched. 4+ matches deal no damage.',
     flavor: 'High noon rules. Three paces, one shot.',
+    upgradeText: '+2 damage to match total per level',
   },
   mirage: {
     type: 'mirage',

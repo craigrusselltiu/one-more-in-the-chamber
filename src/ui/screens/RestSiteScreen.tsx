@@ -93,7 +93,7 @@ export const RestSiteScreen = memo(function RestSiteScreen() {
         </p>
 
         <div className="flex flex-wrap justify-center gap-3 max-w-md">
-          {run.activeTileTypes.filter((t) => t !== 'tumbleweed' && t !== 'showdown').map((tileType) => {
+          {run.activeTileTypes.filter((t) => TILE_DEFINITIONS[t]?.upgradeText).map((tileType) => {
             const def = TILE_DEFINITIONS[tileType];
             const currentLevel = run.tileUpgrades[tileType] ?? 0;
             const isSelected = selectedTile === tileType;
@@ -113,8 +113,8 @@ export const RestSiteScreen = memo(function RestSiteScreen() {
                 <span className="text-stone-400" style={{ fontSize: '10px' }}>
                   Lv {currentLevel + 1} {'\u2192'} {currentLevel + 2}
                 </span>
-                <span className="text-stone-500" style={{ fontSize: '10px' }}>
-                  +{def.upgradeValue} per upgrade
+                <span className="text-stone-500 text-center" style={{ fontSize: '9px' }}>
+                  {def.upgradeText}
                 </span>
               </button>
             );
