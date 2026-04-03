@@ -35,7 +35,7 @@ export const CombatHUD = memo(function CombatHUD() {
       <div className="absolute inset-x-0 top-5 bottom-0 flex">
         {/* Player area -- combo has fixed height so it doesn't shift the sprite */}
         <div
-          className="flex flex-col items-center justify-center px-1"
+          className="flex flex-col items-center justify-center px-1 pointer-events-auto"
           style={{ width: '26.67%' }}
         >
           {/* Combo indicator - fixed height so it doesn't push player panel */}
