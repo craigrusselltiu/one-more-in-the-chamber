@@ -19,13 +19,13 @@ export const PlayerPanel = memo(function PlayerPanel() {
 
   return (
     <div className="flex flex-col items-center">
-      {/* Character sprite placeholder */}
-      <div
-        className="border border-stone-600 border-dashed mb-1 flex items-center justify-center"
-        style={{ width: 96, height: 96 }}
-      >
-        <span className="text-stone-600" style={{ fontSize: '9px' }}>PLAYER</span>
-      </div>
+      {/* Character sprite */}
+      <img
+        src={`${import.meta.env.BASE_URL}assets/sprites/panda.png`}
+        alt="Player"
+        className="mb-1"
+        style={{ width: 96, height: 96, imageRendering: 'pixelated', objectFit: 'cover' }}
+      />
 
       {/* HP bar centered, block badge overlaid to the left */}
       <div className="relative">

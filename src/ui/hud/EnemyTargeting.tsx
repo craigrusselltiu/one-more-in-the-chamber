@@ -92,6 +92,9 @@ const EnemySlot = memo(function EnemySlot({
       }}
       title={`Target: ${enemy.enemyType}`}
     >
+      {/* Intent above sprite */}
+      <EnemyIntent intent={enemy.intent} />
+
       {/* Enemy sprite placeholder */}
       <div
         className="border border-stone-600 border-dashed mb-0.5 flex items-center justify-center shrink-0"
@@ -109,9 +112,6 @@ const EnemySlot = memo(function EnemySlot({
           <span className="text-yellow-400 ml-0.5">&lt;</span>
         )}
       </div>
-
-      {/* Intent */}
-      <EnemyIntent intent={enemy.intent} />
 
       {/* HP bar centered, block badge overlaid to the left */}
       <div className="relative">
