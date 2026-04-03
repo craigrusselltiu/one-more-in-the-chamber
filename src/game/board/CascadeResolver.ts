@@ -330,7 +330,7 @@ export class CascadeResolver {
     }
   }
 
-  private applyGravityTracked(
+  applyGravityTracked(
     board: Board,
   ): Array<{ tile: Tile; toX: number; toY: number }> {
     switch (this.gravityDirection) {

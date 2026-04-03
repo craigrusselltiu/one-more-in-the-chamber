@@ -383,8 +383,9 @@ export class Board {
       onCascadeStep([showdownMatch]);
     }
 
-    // Apply gravity and fill with animations
-    this.cascadeResolver.applyGravity(this);
+    // Apply gravity with animation, then fill
+    const gravMoves = this.cascadeResolver.applyGravityTracked(this);
+    await this.animateGravityDrop(gravMoves);
     await this.fillEmptyTilesAnimated();
 
     // Resolve any new matches that form after the board refills
@@ -885,6 +886,12 @@ export class Board {
   /** Apply gravity only (no fill). Used when animated fill follows. */
   applyGravityOnly(): void {
     this.cascadeResolver.applyGravity(this);
+  }
+
+  /** Apply gravity with drop animation. Returns when all tiles have landed. */
+  async applyGravityAnimated(): Promise<void> {
+    const moves = this.cascadeResolver.applyGravityTracked(this);
+    await this.animateGravityDrop(moves);
   }
 
   setGravityDirection(direction: GravityDirection): void {

@@ -715,14 +715,25 @@ export class CombatManager {
     EventBus.emit(GameEvent.PLAYER_HP_CHANGE, this.player.health, this.player.maxHealth);
     EventBus.emit(GameEvent.GOLD_CHANGE, this.player.gold);
 
-    // Apply gravity and fill with animation, then resolve cascades
-    this.board.applyGravityOnly();
+    // Animated gravity + fill, then resolve cascades (including ricochet gaps)
+    await this.board.applyGravityAnimated();
     await this.board.fillEmptyTilesAnimated();
     const cascadeMatches = await this.board.resolveMatches();
     if (cascadeMatches.length > 0) {
       this.processMatches(cascadeMatches);
       this.emitFullState();
       this.emitEnemyHpChanges();
+
+      // Handle ricochet gaps from cascade matches
+      while (this.ricochetTriggeredThisResolution) {
+        this.ricochetTriggeredThisResolution = false;
+        await this.board.applyGravityAnimated();
+        await this.board.fillEmptyTilesAnimated();
+        const ricochetCascades = await this.board.resolveMatches();
+        if (ricochetCascades.length > 0) {
+          this.processMatches(ricochetCascades);
+        }
+      }
     }
 
     this.board.setIsResolving(false);
