@@ -180,8 +180,10 @@ export const SettingsScreen = memo(function SettingsScreen() {
 export const CombatSettingsPopup = memo(function CombatSettingsPopup({
   onClose,
   onGiveUp,
+  onMainMenu,
 }: {
   onClose: () => void;
+  onMainMenu: () => void;
   onGiveUp: () => void;
 }) {
   const gameSpeed = useSettingsStore((s) => s.gameSpeed);
@@ -289,8 +291,15 @@ export const CombatSettingsPopup = memo(function CombatSettingsPopup({
           </div>
         </div>
 
-        {/* Divider + Give Up */}
+        {/* Divider + Main Menu / Give Up */}
         <div className="border-t border-stone-700 mt-3 pt-3 flex flex-col gap-2">
+          <button
+            onClick={onMainMenu}
+            className="w-full py-1.5 text-stone-300 hover:bg-stone-700/50 border border-stone-600 text-[10px]"
+            style={{ cursor: 'pointer' }}
+          >
+            Main Menu
+          </button>
           <button
             onClick={onGiveUp}
             className="w-full py-1.5 text-red-400 hover:bg-red-900/30 border border-red-900/50 text-[10px]"

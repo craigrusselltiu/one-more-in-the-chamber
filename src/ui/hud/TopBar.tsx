@@ -83,6 +83,11 @@ export const TopBar = memo(function TopBar({ showMapButton }: { showMapButton?: 
     EventBus.emit(GameEvent.SCREEN_CHANGE, 'score' satisfies Screen);
   };
 
+  const handleMainMenu = () => {
+    setShowSettings(false);
+    EventBus.emit(GameEvent.SCREEN_CHANGE, 'main-menu' satisfies Screen);
+  };
+
   return (
     <>
       <div className="flex justify-between items-center px-2 bg-black/50 text-[8px] font-mono pointer-events-auto" style={{ height: 28 }}>
@@ -141,6 +146,7 @@ export const TopBar = memo(function TopBar({ showMapButton }: { showMapButton?: 
         <CombatSettingsPopup
           onClose={() => setShowSettings(false)}
           onGiveUp={handleGiveUp}
+          onMainMenu={handleMainMenu}
         />
       )}
       {showMap && (
