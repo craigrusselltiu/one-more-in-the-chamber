@@ -416,6 +416,14 @@ export class CombatManager {
       snapshot.lassoUsedThisFight ?? false,
     );
 
+    // Cancel deadeye on restore -- cursor/board state won't carry over
+    if (this.isDeadeyeActive) {
+      this.isDeadeyeActive = false;
+      this.deadeyeShotsRemaining = 0;
+      this.board.setDeadeyeMode(false);
+      document.body.classList.remove('cursor-crosshair');
+    }
+
     // If the snapshot was taken mid-resolution (e.g. app backgrounded during
     // cascade), transition to the next interactive phase so input works.
     if (this.phase === 'resolving') {
