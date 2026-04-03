@@ -65,7 +65,7 @@ const EnemySlot = memo(function EnemySlot({
 
   // Empty or dead slot: reserve space but show nothing
   if (!enemy || enemy.isDead) {
-    return <div style={{ width: 84, height: 120 }} />;
+    return null;
   }
 
   const effects = getEnemyStatusEffects(enemy);

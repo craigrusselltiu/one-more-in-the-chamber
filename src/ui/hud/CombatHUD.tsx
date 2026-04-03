@@ -57,8 +57,6 @@ export const CombatHUD = memo(function CombatHUD() {
           className="flex flex-col items-center justify-center px-1"
           style={{ width: '26.67%' }}
         >
-          {/* Match the combo indicator spacer from player area */}
-          <div style={{ height: 16 }} />
           <EnemyTargeting />
         </div>
       </div>
