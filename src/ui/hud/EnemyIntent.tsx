@@ -9,14 +9,13 @@ const KEYWORD_COLORS: Record<string, string> = {
   ATK: '#D04040',
   DEF: '#6888A0',
   BLOCK: '#6888A0',
-  BUFF: '#C070D0',
-  CALL: '#E0C880',
-  HOWL: '#E0C880',
+  SUMMON: '#E0C880',
   LOCK: '#D4A030',
   BOMB: '#D04040',
   POISON: '#60A040',
-  STRIKE: '#D04040',
-  COIL: '#6888A0',
+  BURY: '#C8A040',
+  SUPPRESS: '#C070D0',
+  GRAV: '#70B0D0',
 };
 
 /** Get the primary color from the last action keyword (the main threat). */

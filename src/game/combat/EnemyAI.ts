@@ -78,7 +78,7 @@ function chooseCoyoteIntent(enemy: Enemy, aliveCount: number): EnemyIntent {
   if (aliveCount < 3) {
     const howlWeight = aliveCount === 1 ? 3 : 1;
     options.push({
-      intent: { type: 'summon', value: 1, description: 'HOWL' },
+      intent: { type: 'summon', value: 1, description: 'SUMMON 1' },
       weight: howlWeight,
     });
   }
@@ -239,7 +239,7 @@ function chooseMineCartIntent(_enemy: Enemy): EnemyIntent {
   return {
     type: 'attack',
     value: 0,
-    description: 'CRASH',
+    description: 'ATK 0',
   };
 }
 
@@ -251,7 +251,7 @@ export function chooseMineCartTimedIntent(turnsLeft: number, failureDamage: numb
   return {
     type: 'ability',
     value: failureDamage,
-    description: turnsLeft <= 1 ? `CRASH ${failureDamage}` : `CRASH in ${turnsLeft}`,
+    description: turnsLeft <= 1 ? `ATK ${failureDamage}` : `ATK ${failureDamage} IN ${turnsLeft}`,
   };
 }
 

@@ -240,7 +240,7 @@ export class BossController {
     // Can summon a coyote minion if slots available
     if (aliveEnemyCount < 3) {
       options.push({
-        intent: { type: 'summon', value: 1, description: `GRAV ${nextGrav}, LOCK 1, CALL 1` },
+        intent: { type: 'summon', value: 1, description: `GRAV ${nextGrav}, LOCK 1, SUMMON 1` },
         weight: 2,
       });
     }
@@ -312,7 +312,7 @@ export class BossController {
     const baseDamage = 15 + Math.floor(Math.random() * 6); // 15-20
     const bonus = poisonCount * 2;
     const damage = baseDamage + bonus;
-    return { type: 'attack', value: damage, description: `STRIKE ${damage}` };
+    return { type: 'attack', value: damage, description: `ATK ${damage}` };
   }
 
   /**
@@ -326,7 +326,7 @@ export class BossController {
     const damage = baseDamage + bonus;
 
     const options: { intent: EnemyIntent; weight: number }[] = [
-      { intent: { type: 'attack', value: damage, description: `STRIKE ${damage}` }, weight: 4 },
+      { intent: { type: 'attack', value: damage, description: `ATK ${damage}` }, weight: 4 },
       { intent: { type: 'board-manipulation', value: 2, description: 'POISON 2' }, weight: 1 },
     ];
 
