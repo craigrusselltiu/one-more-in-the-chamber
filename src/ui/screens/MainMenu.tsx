@@ -20,11 +20,11 @@ function MenuButton({
       <div
         className="py-1 px-3 text-left"
         style={{
-                    fontSize: '18px',
+          fontSize: '18px',
           letterSpacing: '1px',
           color: '#5a3a3a',
-          textShadow:
-            '-1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000, 0 0 4px rgba(0,0,0,0.5)',
+          WebkitTextStroke: '3px #000',
+          paintOrder: 'stroke fill',
         }}
       >
         {label}
@@ -37,11 +37,11 @@ function MenuButton({
       onClick={onClick}
       className="group relative text-left py-1 px-3 bg-transparent border-none outline-none"
       style={{
-                fontSize: '18px',
+        fontSize: '18px',
         letterSpacing: '1px',
         color: '#e8e8e8',
-        textShadow:
-          '-1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000, 0 0 4px rgba(0,0,0,0.5)',
+        WebkitTextStroke: '3px #000',
+        paintOrder: 'stroke fill',
         cursor: 'pointer',
       }}
     >
