@@ -9,72 +9,87 @@ export interface ResourceOutput {
   healing: number;
   abilityCharges: number;
   venomStacks: number;
-  critPercent: number;
-  aceMultiplier: number;
+  aceStacks: number;
+  luckyStacks: number;
+  barricadeStacks: number;
+  vulnerableStacks: number;
   isAoE: boolean;
+  /** If true, damage pierces block. */
+  piercesBlock: boolean;
+  /** If true, targets the highest-HP enemy instead of the targeted one. */
+  targetsHighestHp: boolean;
+  /** Extra swaps to grant this turn. */
+  bonusSwaps: number;
 }
 
+/** Tiles where upgrade scales per tile (not flat per match). */
+const PER_TILE_UPGRADE: Set<TileType> = new Set([
+  'buckshot', 'fifty_cal', 'saloon', 'barricade',
+]);
+
 /**
- * ResourceResolver: universal resource generation rule.
+ * ResourceResolver: universal resource generation.
  * "When a tile is cleared by any means, it generates its own resource."
- * Base values scale with tile count and match bonus; upgrade bonuses are
- * added flat to the total match output (not multiplied per tile).
  */
 export class ResourceResolver {
-  resolve(match: MatchResult, tileUpgradeLevel: number): ResourceOutput {
+  /** Persistent chain damage bonus that increases per Chain match in a fight. */
+  chainBonusThisFight = 0;
+
+  resetFight(): void {
+    this.chainBonusThisFight = 0;
+  }
+
+  resolve(match: MatchResult, upgradeLevel: number): ResourceOutput {
     const def = TILE_DEFINITIONS[match.tileType];
     if (!def) return this.emptyOutput();
 
     const count = match.tiles.length;
+    const { baseTotal, upgradeBonus } = this.computeTotals(match.tileType, def.baseValue, def.upgradeValue, count, upgradeLevel, match.matchBonus);
 
-    // Per-tile upgrade tiles: upgrade adds per tile, not flat per match.
-    if (match.tileType === 'buckshot' || match.tileType === 'fifty_cal') {
-      const baseTotal = (def.baseValue + tileUpgradeLevel * def.upgradeValue) * count * match.matchBonus;
-      return this.computeOutput(match.tileType, baseTotal, 0, count);
-    }
-
-    // Per-tile upgrade tiles NOT affected by match bonus (ace, horseshoe).
-    if (match.tileType === 'ace' || match.tileType === 'horseshoe') {
-      const perTileTotal = (def.baseValue + tileUpgradeLevel * def.upgradeValue) * count;
-      return this.computeOutput(match.tileType, perTileTotal, 0, count);
-    }
-
-    const baseTotal = def.baseValue * count * match.matchBonus;
-    const upgradeBonus = tileUpgradeLevel * def.upgradeValue;
-
-    return this.computeOutput(match.tileType, baseTotal, upgradeBonus, count);
+    return this.buildOutput(match.tileType, baseTotal, upgradeBonus, count);
   }
 
   resolveSingle(type: TileType, upgradeLevel: number): ResourceOutput {
     const def = TILE_DEFINITIONS[type];
     if (!def) return this.emptyOutput();
 
-    // Per-tile upgrade tiles: upgrade applies per tile, so include in base for a single tile.
-    if (type === 'buckshot' || type === 'fifty_cal' || type === 'ace' || type === 'horseshoe') {
-      return this.computeOutput(type, def.baseValue + upgradeLevel * def.upgradeValue, 0, 1);
-    }
+    const { baseTotal, upgradeBonus } = this.computeTotals(type, def.baseValue, def.upgradeValue, 1, upgradeLevel, 1.0);
 
-    const upgradeBonus = upgradeLevel * def.upgradeValue;
-    return this.computeOutput(type, def.baseValue, upgradeBonus, 1);
+    return this.buildOutput(type, baseTotal, upgradeBonus, 1);
   }
 
-  /** Resolve resources for multiple tiles of the same type at 1.0x each. */
   resolveCount(type: TileType, count: number, upgradeLevel: number): ResourceOutput {
     const def = TILE_DEFINITIONS[type];
     if (!def) return this.emptyOutput();
 
-    // Per-tile upgrade tiles: upgrade adds per tile, not flat per match.
-    if (type === 'buckshot' || type === 'fifty_cal' || type === 'ace' || type === 'horseshoe') {
-      const baseTotal = (def.baseValue + upgradeLevel * def.upgradeValue) * count;
-      return this.computeOutput(type, baseTotal, 0, count);
-    }
+    const { baseTotal, upgradeBonus } = this.computeTotals(type, def.baseValue, def.upgradeValue, count, upgradeLevel, 1.0);
 
-    const baseTotal = def.baseValue * count;
-    const upgradeBonus = upgradeLevel * def.upgradeValue;
-    return this.computeOutput(type, baseTotal, upgradeBonus, count);
+    return this.buildOutput(type, baseTotal, upgradeBonus, count);
   }
 
-  private computeOutput(
+  private computeTotals(
+    type: TileType,
+    baseValue: number,
+    upgradeValue: number,
+    count: number,
+    upgradeLevel: number,
+    matchBonus: number,
+  ): { baseTotal: number; upgradeBonus: number } {
+    if (PER_TILE_UPGRADE.has(type)) {
+      // Upgrade scales per tile
+      return {
+        baseTotal: (baseValue + upgradeLevel * upgradeValue) * count * matchBonus,
+        upgradeBonus: 0,
+      };
+    }
+    // Flat upgrade bonus added to match total
+    return {
+      baseTotal: baseValue * count * matchBonus,
+      upgradeBonus: upgradeLevel * upgradeValue,
+    };
+  }
+
+  private buildOutput(
     type: TileType,
     baseTotal: number,
     upgradeBonus: number,
@@ -84,47 +99,126 @@ export class ResourceResolver {
     const total = Math.round(baseTotal + upgradeBonus);
 
     switch (type) {
+      // --- Damage tiles ---
       case 'bullet':
+        output.damage = total;
+        break;
+
       case 'buckshot':
+        output.damage = total;
+        // Target is randomized by CombatManager, not here
+        break;
+
       case 'fifty_cal':
-      case 'ember':
         output.damage = total;
         break;
-      case 'iron':
-        output.block = total;
-        break;
-      case 'gold':
-        output.gold = total;
-        break;
-      case 'whiskey':
-        output.healing = total;
-        break;
-      case 'ricochet':
-        output.damage = total;
-        break;
-      case 'dynamite':
-        // Match-size-based: 1 for 3-match, 2 for 4-match, 3 for 5-match + flat upgrade bonus
-        output.abilityCharges = Math.max(0, count - 2) + Math.round(upgradeBonus);
-        break;
+
       case 'stampede':
         output.damage = total;
         output.isAoE = true;
         break;
+
+      case 'ricochet':
+        output.damage = total;
+        // Ricochet random tile destruction handled by CombatManager
+        break;
+
+      case 'prairie_fire':
+        output.damage = total;
+        // Spread effect handled by CascadeResolver (like ember was)
+        break;
+
+      case 'tombstone':
+        // Base damage; doubling for low-HP targets handled by CombatManager
+        output.damage = total;
+        break;
+
+      case 'wanted':
+        output.damage = total;
+        output.vulnerableStacks = count;
+        output.targetsHighestHp = true;
+        break;
+
+      case 'rattler':
+        output.damage = total;
+        output.venomStacks = count + Math.round(upgradeBonus);
+        output.piercesBlock = true;
+        break;
+
+      case 'cavalry':
+        output.damage = total;
+        if (count >= 4) output.bonusSwaps = 1;
+        break;
+
+      case 'duel':
+        // Only deals damage on exactly 3-match
+        output.damage = count === 3 ? total : 0;
+        break;
+
+      case 'chain': {
+        const chainTotal = Math.round(baseTotal + upgradeBonus) + this.chainBonusThisFight * count;
+        output.damage = chainTotal;
+        this.chainBonusThisFight += 1; // +1 per Chain match this combat
+        break;
+      }
+
+      // --- Block tiles ---
+      case 'iron':
+        output.block = total;
+        break;
+
+      case 'barricade':
+        output.block = total;
+        output.barricadeStacks = 1;
+        break;
+
+      // --- Gold ---
+      case 'gold':
+        output.gold = total;
+        break;
+
+      // --- Healing ---
+      case 'whiskey':
+        output.healing = total;
+        break;
+
+      case 'saloon':
+        output.healing = total;
+        // Adjacent tile resource generation handled by CombatManager
+        break;
+
+      // --- Ability charge ---
+      case 'battery':
+        // 1 for 3-match, 2 for 4, 3 for 5, etc. + flat upgrade
+        output.abilityCharges = Math.max(0, count - 2) + Math.round(upgradeBonus);
+        break;
+
+      // --- Status stacks (no match bonus scaling) ---
       case 'ace':
-        output.aceMultiplier = baseTotal; // (base + upgrade) * count, no match bonus
+        output.aceStacks = count + Math.round(upgradeBonus);
         break;
-      case 'venom':
-        output.venomStacks = count; // stacks, not affected by match bonus or upgrades
-        break;
+
       case 'horseshoe':
-        output.critPercent = baseTotal; // (base + upgrade) * count, no match bonus
+        output.luckyStacks = count + Math.round(upgradeBonus);
+        break;
+
+      case 'venom':
+        output.venomStacks = count + Math.round(upgradeBonus);
+        break;
+
+      // --- Special ---
+      case 'mirage':
+      case 'showdown':
+      case 'tumbleweed':
+      case 'fools_gold':
+        // No resource generation
         break;
     }
 
     return output;
   }
 
-  private emptyOutput(): ResourceOutput {
+  emptyOutput(): ResourceOutput {
     return {
       damage: 0,
       block: 0,
@@ -132,9 +226,14 @@ export class ResourceResolver {
       healing: 0,
       abilityCharges: 0,
       venomStacks: 0,
-      critPercent: 0,
-      aceMultiplier: 0,
+      aceStacks: 0,
+      luckyStacks: 0,
+      barricadeStacks: 0,
+      vulnerableStacks: 0,
       isAoE: false,
+      piercesBlock: false,
+      targetsHighestHp: false,
+      bonusSwaps: 0,
     };
   }
 }

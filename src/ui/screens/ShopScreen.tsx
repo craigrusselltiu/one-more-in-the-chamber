@@ -67,7 +67,7 @@ export const ShopScreen = memo(function ShopScreen() {
       (t) => !(CORE_TILES as string[]).includes(t) && !(STARTER_POOL as string[]).includes(t) && t !== 'tumbleweed' && t !== 'showdown',
     );
     if (swappableTiles.length > 0) {
-      const available = ADDITIONAL_POOL.filter((t) => !run.activeTileTypes.includes(t));
+      const available = [...STARTER_POOL, ...ADDITIONAL_POOL].filter((t) => !run.activeTileTypes.includes(t));
       if (available.length > 0) {
         const swapTile = available[Math.floor(Math.random() * available.length)];
         const def = TILE_DEFINITIONS[swapTile];

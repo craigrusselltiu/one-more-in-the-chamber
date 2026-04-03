@@ -38,14 +38,14 @@ export class CascadeResolver {
     swapTarget?: GridPosition,
   ): Promise<MatchResult[]> {
     const allMatches: MatchResult[] = [];
-    const clearedEmberPositions: GridPosition[] = [];
+    const clearedFirePositions: GridPosition[] = [];
     let matches = board.findMatches();
     let isFirstStep = true;
 
     while (matches.length > 0) {
       // Step 1: Collect tiles to clear and extra results, animate clear
-      const { extraResults, tilesToAnimate, emberPositions } = this.prepareClear(board, matches);
-      clearedEmberPositions.push(...emberPositions);
+      const { extraResults, tilesToAnimate, firePositions } = this.prepareClear(board, matches);
+      clearedFirePositions.push(...firePositions);
       await board.animateTileClear(tilesToAnimate);
 
       // Apply this step's effects immediately (damage, block, gold, etc.)
@@ -72,10 +72,10 @@ export class CascadeResolver {
       matches = board.findMatches();
     }
 
-    // Step 5: Ember spread — each cleared ember tile has 25% chance to
-    // convert 1 adjacent non-ember tile into an ember tile.
-    if (clearedEmberPositions.length > 0) {
-      this.applyEmberSpread(board, clearedEmberPositions);
+    // Step 5: Prairie Fire spread — each cleared ember tile has 25% chance to
+    // convert 1 adjacent non-prairie_fire tile into an ember tile.
+    if (clearedFirePositions.length > 0) {
+      this.applyEmberSpread(board, clearedFirePositions);
     }
 
     return allMatches;
@@ -89,7 +89,7 @@ export class CascadeResolver {
   private prepareClear(
     board: Board,
     matches: MatchResult[],
-  ): { extraResults: MatchResult[]; tilesToAnimate: Tile[]; emberPositions: GridPosition[] } {
+  ): { extraResults: MatchResult[]; tilesToAnimate: Tile[]; firePositions: GridPosition[] } {
     const grid = board.getGrid();
     const size = board.getBoardSize();
     const posKey = (r: number, c: number) => `${r},${c}`;
@@ -188,15 +188,15 @@ export class CascadeResolver {
     // Phase 3: Collect Tile references, track ember positions and fool's gold count,
     // then null grid cells.
     const tilesToAnimate: Tile[] = [];
-    const emberPositions: GridPosition[] = [];
+    const firePositions: GridPosition[] = [];
 
     for (const match of matches) {
       let fgCount = 0;
       for (const pos of match.tiles) {
         const tile = grid[pos.row]?.[pos.col];
         if (tile) {
-          if (tile.type === 'ember') {
-            emberPositions.push({ row: pos.row, col: pos.col });
+          if (tile.type === 'prairie_fire') {
+            firePositions.push({ row: pos.row, col: pos.col });
           }
           if (tile.hazard?.type === 'fools_gold') fgCount++;
           tilesToAnimate.push(tile);
@@ -212,8 +212,8 @@ export class CascadeResolver {
       const c = Number(parts[1]);
       const tile = grid[r]?.[c];
       if (tile) {
-        if (type === 'ember') {
-          emberPositions.push({ row: r, col: c });
+        if (type === 'prairie_fire') {
+          firePositions.push({ row: r, col: c });
         }
         tilesToAnimate.push(tile);
         grid[r][c] = null;
@@ -244,7 +244,7 @@ export class CascadeResolver {
       });
     }
 
-    return { extraResults, tilesToAnimate, emberPositions };
+    return { extraResults, tilesToAnimate, firePositions };
   }
 
   /**
@@ -294,13 +294,13 @@ export class CascadeResolver {
   }
 
   /**
-   * Ember spread: after cascade resolution, each cleared ember tile has a
-   * 25% chance to convert 1 random adjacent non-ember tile into an ember tile.
+   * Prairie Fire spread: after cascade resolution, each cleared ember tile has a
+   * 25% chance to convert 1 random adjacent non-prairie_fire tile into an ember tile.
    */
-  private applyEmberSpread(board: Board, emberPositions: GridPosition[]): void {
+  private applyEmberSpread(board: Board, firePositions: GridPosition[]): void {
     const grid = board.getGrid();
     const size = board.getBoardSize();
-    const SPREAD_CHANCE = 0.25;
+    const SPREAD_CHANCE = 0.50;
     const directions = [
       { dr: -1, dc: 0 },
       { dr: 1, dc: 0 },
@@ -308,17 +308,17 @@ export class CascadeResolver {
       { dr: 0, dc: 1 },
     ];
 
-    for (const pos of emberPositions) {
+    for (const pos of firePositions) {
       if (Math.random() >= SPREAD_CHANCE) continue;
 
-      // Collect adjacent non-ember tiles
+      // Collect adjacent non-prairie_fire tiles
       const candidates: GridPosition[] = [];
       for (const { dr, dc } of directions) {
         const r = pos.row + dr;
         const c = pos.col + dc;
         if (r < 0 || r >= size || c < 0 || c >= size) continue;
         const tile = grid[r]?.[c];
-        if (tile && tile.type !== 'ember') {
+        if (tile && tile.type !== 'prairie_fire') {
           candidates.push({ row: r, col: c });
         }
       }
@@ -329,7 +329,7 @@ export class CascadeResolver {
       const target = candidates[Math.floor(Math.random() * candidates.length)];
       const tile = grid[target.row][target.col];
       if (tile) {
-        tile.setType('ember');
+        tile.setType('prairie_fire');
       }
     }
   }

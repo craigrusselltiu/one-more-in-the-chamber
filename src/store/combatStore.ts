@@ -10,7 +10,10 @@ interface CombatStore {
   playerHealth: number;
   playerMaxHealth: number;
   playerBlock: number;
+  aceStacks: number;
   aceMultiplier: number;
+  luckyStacks: number;
+  barricadeStacks: number;
   critChance: number;
   thorns: number;
 
@@ -52,7 +55,10 @@ const initialState = {
   playerHealth: 100,
   playerMaxHealth: 100,
   playerBlock: 0,
+  aceStacks: 0,
   aceMultiplier: 1.0,
+  luckyStacks: 0,
+  barricadeStacks: 0,
   critChance: 0,
   thorns: 0,
   abilityCharge: 0,
@@ -77,7 +83,10 @@ export const useCombatStore = create<CombatStore>((set) => ({
   syncFromCombatState: (state: CombatState) =>
     set({
       playerBlock: state.playerBlock,
+      aceStacks: state.aceStacks,
       aceMultiplier: state.aceMultiplier,
+      luckyStacks: state.luckyStacks,
+      barricadeStacks: state.barricadeStacks,
       critChance: state.critChance,
       thorns: state.thorns,
       abilityCharge: state.abilityCharge,
@@ -117,7 +126,9 @@ export const useCombatStore = create<CombatStore>((set) => ({
 export function getPlayerStatusEffects(store: CombatStore): PlayerStatusEffect[] {
   const effects: PlayerStatusEffect[] = [];
   if (store.playerBlock > 0) effects.push({ type: 'block', value: store.playerBlock });
-  if (store.aceMultiplier > 1.0) effects.push({ type: 'ace', value: store.aceMultiplier });
+  if (store.aceStacks > 0) effects.push({ type: 'ace', value: store.aceStacks });
+  if (store.luckyStacks > 0) effects.push({ type: 'lucky', value: store.luckyStacks });
+  if (store.barricadeStacks > 0) effects.push({ type: 'barricade', value: store.barricadeStacks });
   if (store.critChance > 0) effects.push({ type: 'crit', value: store.critChance });
   if (store.thorns > 0) effects.push({ type: 'thorns', value: store.thorns });
   return effects;

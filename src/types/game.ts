@@ -29,21 +29,35 @@ export type CharacterId = 'red_panda';
 export type Act = 1 | 2 | 3;
 
 export type TileType =
+  // Core
   | 'bullet'
   | 'iron'
   | 'gold'
+  // Starter
   | 'ricochet'
-  | 'dynamite'
   | 'stampede'
-  | 'whiskey'
   | 'buckshot'
-  | 'ace'
+  | 'battery'
   | 'venom'
-  | 'ember'
+  | 'prairie_fire'
+  // Additional
+  | 'chain'
+  | 'whiskey'
+  | 'ace'
   | 'horseshoe'
   | 'fifty_cal'
+  | 'tombstone'
+  | 'saloon'
+  | 'wanted'
+  | 'rattler'
+  | 'barricade'
+  | 'cavalry'
+  | 'duel'
+  | 'mirage'
+  // Special
   | 'showdown'
-  | 'tumbleweed';
+  | 'tumbleweed'
+  | 'fools_gold';
 
 export type TraitId =
   | 'outlaw'

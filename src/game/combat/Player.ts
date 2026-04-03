@@ -8,7 +8,10 @@ export class Player {
   health: number;
   maxHealth: number;
   block = 0;
+  aceStacks = 0;
   aceMultiplier = 1.0;
+  luckyStacks = 0;
+  barricadeStacks = 0;
   critChance = 0;
   thorns = 0;
   gold = 0;
@@ -18,6 +21,8 @@ export class Player {
   deadeyeShots = 3;
   activeTileTypes: TileType[];
   tileUpgrades: Partial<Record<TileType, number>>;
+  /** Whether the player took damage this turn (for Barricade check). */
+  tookDamageThisTurn = false;
 
   constructor(
     health: number,
@@ -37,21 +42,20 @@ export class Player {
 
   /**
    * Apply incoming damage. Returns actual HP lost (after block/thorns).
-   * Thorns damage is returned as the second element if triggered.
    */
   takeDamage(amount: number): { hpLost: number; thornsDamage: number } {
     let remaining = amount;
-    let absorbedByBlock = 0;
 
     // Block absorption
     if (this.block > 0) {
-      absorbedByBlock = Math.min(this.block, remaining);
-      this.block -= absorbedByBlock;
-      remaining -= absorbedByBlock;
+      const absorbed = Math.min(this.block, remaining);
+      this.block -= absorbed;
+      remaining -= absorbed;
     }
 
     // Apply damage to HP
     this.health = Math.max(0, this.health - remaining);
+    if (remaining > 0) this.tookDamageThisTurn = true;
 
     // Thorns: reflect 100% of the incoming attack back (consumed on trigger)
     let thornsDamage = 0;
@@ -78,6 +82,33 @@ export class Player {
     this.goldThisFight += amount;
   }
 
+  /** Add Ace stacks. Each stack = +0.25x multiplier on next non-Ace match. */
+  addAceStacks(stacks: number): void {
+    this.aceStacks += stacks;
+    this.aceMultiplier = 1.0 + this.aceStacks * 0.25;
+  }
+
+  /** Consume Ace stacks on non-Ace match. Returns the multiplier. */
+  consumeAce(): number {
+    if (this.aceStacks <= 0) return 1.0;
+    const mult = this.aceMultiplier;
+    this.aceStacks = 0;
+    this.aceMultiplier = 1.0;
+    return mult;
+  }
+
+  /** Add Lucky stacks. Each stack = +1% crit. Removed when crit occurs. */
+  addLuckyStacks(stacks: number): void {
+    this.luckyStacks += stacks;
+    this.critChance += stacks;
+  }
+
+  /** Consume Lucky stacks when crit occurs. */
+  consumeLucky(): void {
+    this.critChance -= this.luckyStacks;
+    this.luckyStacks = 0;
+  }
+
   isDeadeyeReady(): boolean {
     return this.abilityCharge >= this.abilityThreshold;
   }
@@ -88,14 +119,25 @@ export class Player {
     return true;
   }
 
-  /** Expire block at end of player turn. */
+  /** End-of-turn effects. Block expires unless Barricade is active. */
   resetTurnEffects(): void {
-    this.block = 0;
+    // Barricade: if no damage taken this turn, retain block, decrement stacks
+    if (this.barricadeStacks > 0 && !this.tookDamageThisTurn) {
+      this.barricadeStacks--;
+      // Block persists (not reset)
+    } else {
+      this.block = 0;
+      this.barricadeStacks = 0;
+    }
+    this.tookDamageThisTurn = false;
   }
 
   /** Reset per-fight effects between fights. */
   resetFightEffects(): void {
+    this.aceStacks = 0;
     this.aceMultiplier = 1.0;
+    this.luckyStacks = 0;
+    this.barricadeStacks = 0;
     this.critChance = 0;
     this.thorns = 0;
     this.goldThisFight = 0;

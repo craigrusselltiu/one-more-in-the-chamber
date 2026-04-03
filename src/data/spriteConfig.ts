@@ -8,21 +8,35 @@ import type { TileType } from '../types/game';
 
 /** Tile sprite frames (from items_sheet.png). */
 export const TILE_FRAMES: Record<TileType, number> = {
+  // Core
   bullet: 1244,
   iron: 565,
   gold: 1158,
+  // Starter
   ricochet: 907,
-  dynamite: 722,
   stampede: 268,
-  whiskey: 666,
   buckshot: 908,
-  ace: 792,
+  battery: 722,
   venom: 762,
-  ember: 720,
+  prairie_fire: 720,
+  // Additional
+  chain: 689,
+  whiskey: 666,
+  ace: 792,
   horseshoe: 689,
   fifty_cal: 906,
+  tombstone: 206,
+  saloon: 499,
+  wanted: 648,
+  rattler: 762,
+  barricade: 565,
+  cavalry: 268,
+  duel: 1244,
+  mirage: 599,
+  // Special
   showdown: 599,
   tumbleweed: 1035,
+  fools_gold: 1158,
 };
 
 /** Artifact sprite frames (by artifact ID). */
@@ -38,10 +52,12 @@ export const CONSUMABLE_FRAMES: Record<string, number> = {
 /** Status effect / buff / debuff sprite frames. */
 export const STATUS_FRAMES: Record<string, number> = {
   block: 198,
-  ace: 0,
+  ace: 792,
+  lucky: 689,
+  barricade: 565,
   crit: 0,
   thorns: 0,
-  venom: 0,
+  venom: 762,
   vulnerable: 0,
 };
 

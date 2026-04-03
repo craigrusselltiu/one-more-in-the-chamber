@@ -7,7 +7,10 @@ export interface CombatState {
   swapsRemaining: number;
   swapsPerTurn: number;
   playerBlock: number;
+  aceStacks: number;
   aceMultiplier: number;
+  luckyStacks: number;
+  barricadeStacks: number;
   critChance: number;
   thorns: number;
   enemies: EnemyState[];
@@ -60,6 +63,8 @@ export interface EnemyIntent {
 export type PlayerStatusEffect =
   | { type: 'block'; value: number }
   | { type: 'ace'; value: number }
+  | { type: 'lucky'; value: number }
+  | { type: 'barricade'; value: number }
   | { type: 'crit'; value: number }
   | { type: 'thorns'; value: number };
 

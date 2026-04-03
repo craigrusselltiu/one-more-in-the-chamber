@@ -317,7 +317,10 @@ export class CombatManager {
         health: this.player.health,
         maxHealth: this.player.maxHealth,
         block: this.player.block,
+        aceStacks: this.player.aceStacks,
         aceMultiplier: this.player.aceMultiplier,
+        luckyStacks: this.player.luckyStacks,
+        barricadeStacks: this.player.barricadeStacks,
         critChance: this.player.critChance,
         thorns: this.player.thorns,
         gold: this.player.gold,
@@ -360,7 +363,10 @@ export class CombatManager {
       sp.gold,
     );
     this.player.block = sp.block;
+    this.player.aceStacks = sp.aceStacks ?? 0;
     this.player.aceMultiplier = sp.aceMultiplier;
+    this.player.luckyStacks = sp.luckyStacks ?? 0;
+    this.player.barricadeStacks = sp.barricadeStacks ?? 0;
     this.player.critChance = sp.critChance;
     this.player.thorns = sp.thorns;
     this.player.goldThisFight = sp.goldThisFight;
@@ -957,11 +963,7 @@ export class CombatManager {
       // Warrant (suppress): suppressed tile types produce zero output entirely.
       // Skip all trait/artifact/crit/multiplier processing so nothing leaks through.
       if (this.hazardManager.isSuppressed(match.tileType)) {
-        const zero: ResourceOutput = {
-          damage: 0, block: 0, gold: 0, healing: 0,
-          abilityCharges: 0, venomStacks: 0,
-          critPercent: 0, aceMultiplier: 0, isAoE: false,
-        };
+        const zero = this.resolver.emptyOutput();
         EventBus.emit(GameEvent.MATCH_RESOLVED, match, zero);
         continue;
       }
@@ -1002,6 +1004,9 @@ export class CombatManager {
           output.damage += critConfig.bonusFlatDamage;
         }
 
+        // Lucky stacks consumed on crit
+        this.player.consumeLucky();
+
         // Reset or halve crit chance based on Gunslinger(4)
         if (critConfig.halveOnTrigger) {
           this.player.critChance = Math.floor(this.player.critChance / 2);
@@ -1013,10 +1018,9 @@ export class CombatManager {
         this.artifacts.onCritTriggered(this.player, targetEnemy);
       }
 
-      // Ace multiplier: consumed on next non-Ace match
-      if (match.tileType !== 'ace' && this.player.aceMultiplier > 1.0) {
-        multiplier *= this.player.aceMultiplier;
-        this.player.aceMultiplier = 1.0;
+      // Ace stacks: consumed on next non-Ace match
+      if (match.tileType !== 'ace' && this.player.aceStacks > 0) {
+        multiplier *= this.player.consumeAce();
       }
 
       // Consumable match multiplier (Moonshine/Coffee) -- applies to first match only
@@ -1037,12 +1041,7 @@ export class CombatManager {
         block: Math.floor(output.block * totalMultiplier),
         gold: Math.floor(output.gold * totalMultiplier),
         healing: Math.floor(output.healing * totalMultiplier),
-        // These are NOT scaled by match bonus or multipliers:
-        abilityCharges: output.abilityCharges,
-        venomStacks: output.venomStacks,
-        critPercent: output.critPercent,
-        aceMultiplier: output.aceMultiplier,
-        isAoE: output.isAoE,
+        // Status stacks, flags, etc. are NOT scaled:
       };
 
       this.applyResourceOutput(scaled);
@@ -1092,7 +1091,7 @@ export class CombatManager {
     const upgradeLevel = this.player.getUpgradeLevel(result.type);
     const isSuppressed = this.hazardManager.isSuppressed(result.type);
     const output = isSuppressed
-      ? { damage: 0, block: 0, gold: 0, healing: 0, abilityCharges: 0, venomStacks: 0, critPercent: 0, aceMultiplier: 0, isAoE: false }
+      ? this.resolver.emptyOutput()
       : this.resolver.resolveSingle(result.type, upgradeLevel);
     this.applyResourceOutput(output);
     this.ricochetTriggeredThisResolution = true;
@@ -1109,6 +1108,31 @@ export class CombatManager {
         for (const enemy of this.aliveEnemies()) {
           this.damageDealtThisFight += enemy.takeDamage(output.damage);
         }
+      } else if (output.targetsHighestHp) {
+        // Target the alive enemy with the highest HP
+        const alive = this.aliveEnemies();
+        const target = alive.reduce((best, e) =>
+          e.state.health > (best?.state.health ?? 0) ? e : best, alive[0]);
+        if (target) {
+          if (output.piercesBlock) {
+            // Piercing damage bypasses block
+            const hpBefore = target.state.health;
+            target.state.health = Math.max(0, target.state.health - output.damage);
+            if (target.state.health <= 0) target.state.isDead = true;
+            this.damageDealtThisFight += hpBefore - target.state.health;
+          } else {
+            this.damageDealtThisFight += target.takeDamage(output.damage);
+          }
+        }
+      } else if (output.piercesBlock) {
+        // Piercing damage bypasses block (Rattler)
+        const target = this.getTargetedAliveEnemy();
+        if (target) {
+          const hpBefore = target.state.health;
+          target.state.health = Math.max(0, target.state.health - output.damage);
+          if (target.state.health <= 0) target.state.isDead = true;
+          this.damageDealtThisFight += hpBefore - target.state.health;
+        }
       } else {
         const target = this.getTargetedAliveEnemy();
         if (target) this.damageDealtThisFight += target.takeDamage(output.damage);
@@ -1119,6 +1143,11 @@ export class CombatManager {
     // Block
     if (output.block > 0) {
       this.player.addBlock(output.block);
+    }
+
+    // Barricade stacks
+    if (output.barricadeStacks > 0) {
+      this.player.barricadeStacks += output.barricadeStacks;
     }
 
     // Gold (reduced by ascension modifier)
@@ -1140,20 +1169,46 @@ export class CombatManager {
       EventBus.emit(GameEvent.ABILITY_CHARGE_CHANGE, this.player.abilityCharge, this.player.abilityThreshold);
     }
 
-    // Venom (applied to targeted enemy)
+    // Venom (applied to targeted enemy or highest-HP enemy)
     if (output.venomStacks > 0) {
-      const target = this.getTargetedAliveEnemy();
-      if (target) target.addVenom(output.venomStacks);
+      if (output.targetsHighestHp) {
+        const alive = this.aliveEnemies();
+        const target = alive.reduce((best, e) =>
+          e.state.health > (best?.state.health ?? 0) ? e : best, alive[0]);
+        if (target) target.addVenom(output.venomStacks);
+      } else {
+        const target = this.getTargetedAliveEnemy();
+        if (target) target.addVenom(output.venomStacks);
+      }
     }
 
-    // Crit chance
-    if (output.critPercent > 0) {
-      this.player.critChance += output.critPercent;
+    // Vulnerable (applied to target)
+    if (output.vulnerableStacks > 0) {
+      if (output.targetsHighestHp) {
+        const alive = this.aliveEnemies();
+        const target = alive.reduce((best, e) =>
+          e.state.health > (best?.state.health ?? 0) ? e : best, alive[0]);
+        if (target) target.addVulnerable(output.vulnerableStacks);
+      } else {
+        const target = this.getTargetedAliveEnemy();
+        if (target) target.addVulnerable(output.vulnerableStacks);
+      }
     }
 
-    // Ace multiplier (stacks within a fight)
-    if (output.aceMultiplier > 0) {
-      this.player.aceMultiplier += output.aceMultiplier;
+    // Ace stacks
+    if (output.aceStacks > 0) {
+      this.player.addAceStacks(output.aceStacks);
+    }
+
+    // Lucky stacks (crit chance)
+    if (output.luckyStacks > 0) {
+      this.player.addLuckyStacks(output.luckyStacks);
+    }
+
+    // Bonus swaps (Cavalry 4+)
+    if (output.bonusSwaps > 0) {
+      this.swapsRemaining += output.bonusSwaps;
+      EventBus.emit(GameEvent.SWAPS_CHANGE, this.swapsRemaining, this.swapsPerTurn);
     }
 
     EventBus.emit(GameEvent.STATUS_EFFECT_CHANGE);
@@ -1479,7 +1534,10 @@ export class CombatManager {
       swapsRemaining: this.swapsRemaining,
       swapsPerTurn: this.swapsPerTurn,
       playerBlock: this.player.block,
+      aceStacks: this.player.aceStacks,
       aceMultiplier: this.player.aceMultiplier,
+      luckyStacks: this.player.luckyStacks,
+      barricadeStacks: this.player.barricadeStacks,
       critChance: this.player.critChance,
       thorns: this.player.thorns,
       enemies: this.enemies.map((e) => ({ ...e.state })),

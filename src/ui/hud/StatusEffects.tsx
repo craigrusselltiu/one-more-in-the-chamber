@@ -9,17 +9,18 @@ interface StatusEffectsProps {
 }
 
 function formatValue(type: string, value: number): string {
-  if (type === 'crit') return `${value}%`;
-  if (type === 'ace') return `${value.toFixed(1)}x`;
+  if (type === 'crit' || type === 'lucky') return `${value}%`;
   return String(value);
 }
 
 const STATUS_DESCRIPTIONS: Record<string, string> = {
-  ace: 'Ace: next match multiplier',
+  ace: 'Ace: +0.25x multiplier on next non-Ace match per stack',
+  lucky: 'Lucky: +1% crit per stack, consumed on crit',
+  barricade: 'Barricade: retain block if no damage taken',
   crit: 'Crit: chance to deal double damage',
   thorns: 'Thorns: reflect damage to attackers',
-  venom: 'Venom: poison damage per turn',
-  vulnerable: 'Vulnerable: takes 25% more damage',
+  venom: 'Venom: take damage equal to stacks per turn',
+  vulnerable: 'Vulnerable: take 50% extra damage',
 };
 
 const OUTLINE_STYLE: React.CSSProperties = {

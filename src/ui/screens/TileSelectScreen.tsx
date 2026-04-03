@@ -84,9 +84,14 @@ export const TileSelectScreen = memo(function TileSelectScreen() {
               <span className="text-amber-300 text-xs font-bold">
                 {def.label}
               </span>
-              <span className="text-stone-400 text-center mt-1 leading-tight" style={{ fontSize: '9px' }}>
+              <span className="text-stone-300 text-center mt-1 leading-tight" style={{ fontSize: '9px' }}>
                 {def.description}
               </span>
+              {def.flavor && (
+                <span className="text-stone-600 text-center mt-1 leading-tight italic" style={{ fontSize: '8px' }}>
+                  "{def.flavor}"
+                </span>
+              )}
             </button>
           );
         })}

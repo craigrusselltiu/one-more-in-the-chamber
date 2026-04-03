@@ -1,178 +1,131 @@
+need to implement and flesh out:
+- crit system
+
 # Tiles
 
 ## Core Tiles
+NOTE: Observe the difference between +1 to match total and +1 per tile. The tile pool for Acts 2, 3, and also the shop should be the Starter Tiles AND the Additional Tiles. Act 1 should only be limited to Starter Tiles.
+
+Buffs/debuffs:
+- Ace - add x0.25 multiplier to the next non-Ace match, gets removed when used
+- Lucky - 1% crit chance per stack, removed when crit occurs
+- Barricade - at the end of the turn, if you did not take damage, retain block and decrease stacks by 1
+- Vulnerable - take 50% extra damage from attacks, decrease stacks by 1 at the end of your turn
+- Venom - at the start of your turn, take damage equal to the number of stacks and decrease stacks by 1
 
 ### Bullet
-- Behaviour: Deal X damage per tile to targeted enemy.
-- Base value: 2
-- Upgrade: +1 to match total per level
+- Behaviour: Deal 2 damage per tile.
+- Upgrade: +1 damage to match total per level
 - Flavor: "Highly effective negotiation tool."
 
 ### Iron
-- Behaviour: Gain X block per tile. Absorbs damage this turn.
-- Base value: 1
-- Upgrade: +1 to match total per level
+- Behaviour: Gain 3 block per tile.
+- Upgrade: +1 block to match total per level
 - Flavor: "Bend, don't break."
 
 ### Gold
-- Behaviour: Earn X gold per tile.
-- Base value: 1
-- Upgrade: +1 to match total per level
+- Behaviour: Earn 2 gold per tile.
+- Upgrade: +1 gold to match total per level
 - Flavor: "Makes the world go 'round."
 
 ## Starter Tiles
 
 ### Ricochet
-- Behaviour: 1 damage per tile + each tile destroys 1 random tile elsewhere (which generates its resource).
-- Base value: 1
-- Upgrade: +1 damage per level
+- Behaviour: Deal 2 damage per tile + each tile destroys 1 random tile elsewhere.
+- Upgrade: +1 to number of tiles destroyed on match
 - Flavor: "Bullets bounce. You never know what they'll hit."
 
-### Dynamite
-- Behaviour: 1 charge per 3-match; +1 per extra tile. Charges detonate for damage at turn end.
-- Base value: 1
-- Upgrade: +1 to match total per level
-- Flavor: "Light the fuse and count to three."
-
 ### Stampede
-- Behaviour: 1 damage to ALL enemies per tile.
-- Base value: 1
-- Upgrade: +1 to match total per level
+- Behaviour: Deal 2 damage to ALL enemies per tile.
+- Upgrade: +1 damage to match total per level
 - Flavor: "The ground shakes. Everything in the way gets flattened."
 
-### Lariat
-- Behaviour: Pulls 1 random tile adjacent to the match, destroying it and dealing 1 damage.
-- Base value: 1
-- Upgrade: +1 damage per level
-- Flavor: "Rope 'em in. What you catch is what you get."
-
-### Smoke
-- Behaviour: +1% dodge per tile (caps at 50%). Resets between fights.
-- Base value: 0
-- Upgrade: --
-- Flavor: "Disappear into the haze. They can't hit what they can't see."
-
-## Additional Tiles
-
-### Whiskey
-- Behaviour: Heals X HP per tile.
-- Base value: 1
-- Upgrade: +1 to match total per level
-- Flavor: "The cowboy's medicine."
-
 ### Buckshot
-- Behaviour: X damage per tile. Scales past Bullet with upgrades.
-- Base value: 1
+- Behaviour: Deal 2 damage to a random enemy per tile.
 - Upgrade: +1 damage per tile per level
 - Flavor: "Spread shot. Hits harder, less precise."
 
-### Ace
-- Behaviour: +0.25x multiplier on next non-Ace match. Stacks.
-- Base value: 0.25
-- Upgrade: +0.25 per level
-- Flavor: "Always keep one up your sleeve."
+### Battery
+- Behaviour: Gain 1 ability charge per 3-match; +1 per extra tile.
+- Upgrade: +1 charge to match total per level
+- Flavor: "Juice for the iron. Every spark counts."
 
 ### Venom
-- Behaviour: 1 venom stack per tile to targeted enemy. Venom ticks at turn start.
-- Base value: 1
-- Upgrade: +1 to match total per level
+- Behaviour: Apply 1 Venom per tile.
+- Upgrade: +1 stack to match total per level
 - Flavor: "Slow poison. The patient killer's weapon."
 
-### Ember
-- Behaviour: 4 damage. 25% chance to convert 1 adjacent tile to Ember.
-- Base value: 4
-- Upgrade: +1 damage per level
+### Prairie Fire
+- Behaviour: Deal 3 damage per tile. 50% chance to convert 1 adjacent tile to Ember.
+- Upgrade: +1 damage to match total per level
 - Flavor: "Sparks fly. Some of them catch."
 
+## Additional Tiles
+
+### Chain
+- Behaviour: Deal 1 damage per tile. Each Chain match adds +1 damage to ALL Chain tiles for this combat.
+- Upgrade: +1 damage to match total per level
+- Flavor: "Links in the chain. More you match, harder they hit."
+
+### Whiskey
+- Behaviour: Heals 1 HP per tile.
+- Upgrade: +1 heal to match total per level
+- Flavor: "The cowboy's medicine."
+
+### Ace
+- Behaviour: Gain 1 stack of Ace per tile.
+- Upgrade: +1 stack to match total per level
+- Flavor: "Always keep one up your sleeve."
+
 ### Horseshoe
-- Behaviour: +5% crit chance per tile.
-- Base value: 5%
-- Upgrade: +5% per level
+- Behaviour: Gain 1 stack of Lucky per tile.
+- Upgrade: +1 stack to match total per level
 - Flavor: "Luck favors the prepared."
 
 ### .50 Cal
-- Behaviour: 5 damage per tile. Heavy single-target damage.
-- Base value: 5
+- Behaviour: Deal 5 damage per tile.
 - Upgrade: +1 damage per tile per level
-- Flavor: "One shot. One very large hole."
+- Flavor: "Turns cover into a suggestion."
 
 ### Tombstone
-- Behaviour: 3 damage. If it kills the target, heal 2 HP.
-- Base value: 3
-- Upgrade: +1 damage per level
+- Behaviour: Deal 3 damage per tile. Deals double damage when target is below 30% HP.
+- Upgrade: +1 damage to match total per level
 - Flavor: "Dead men pay debts."
 
 ### Saloon
-- Behaviour: Heal 1 HP per tile. If 5+ matched, draw 1 random consumable.
-- Base value: 0
-- Upgrade: +1 heal per level
+- Behaviour: Heal 1 HP per tile. Generate the resources of adjacent tiles.
+- Upgrade: +1 heal per tile per level
 - Flavor: "Belly up to the bar. Drinks are on the house."
 
 ### Wanted
-- Behaviour: 2 damage per tile. Applies 1 Vulnerable per tile.
-- Base value: 2
-- Upgrade: +1 damage per level
+- Behaviour: Deal 3 damage per tile to the enemy with the highest current HP. Apply 1 Vulnerable per tile.
+- Upgrade: +1 damage to match total per level
 - Flavor: "Every hit paints a bigger target."
 
-### Tequila
-- Behaviour: +0.5x multiplier to the CURRENT match. Stacks within a match.
-- Base value: 0.5
-- Upgrade: +0.25 per level
-- Flavor: "Liquid courage. Makes everything hit harder -- including you."
+### Rattler
+- Behaviour: Deal 3 damage per tile and apply 1 Venom. Pierces block.
+- Upgrade: +1 damage and venom stack to match total per level
+- Flavor: "Fangs out. Bite first, ask questions never."
+- Note: if all enemies die by venom at turn start, the player has won the combat
 
 ### Barricade
-- Behaviour: 2 block per tile. Adjacent tiles gain +1 block each.
-- Base value: 2
-- Upgrade: +1 block per level
+- Behaviour: Gain 3 block per tile and 1 Barricade.
+- Upgrade: +1 block per tile per level
 - Flavor: "Flip the table. Take cover."
-
-### Rattler
-- Behaviour: 2 damage + 1 venom per tile. Hybrid damage/poison.
-- Base value: 2
-- Upgrade: +1 damage per level
-- Flavor: "Fangs out. Bite first, ask questions never."
-
-### Bounty
-- Behaviour: 3 damage to the enemy with the highest current HP. Ignores targeting.
-- Base value: 3
-- Upgrade: +1 damage per level
-- Flavor: "There's a price on every head."
 
 ### Cavalry
 - Behaviour: 1 damage per tile. If 4+ matched, +1 swap this turn.
-- Base value: 1
-- Upgrade: +1 damage per level
+- Upgrade: +1 damage to match total per level
 - Flavor: "Reinforcements have arrived."
 
-### Prairie Fire
-- Behaviour: 3 damage. 15% chance to spread to 1 random adjacent tile.
-- Base value: 3
-- Upgrade: +1 damage per level
-- Flavor: "Wildfire don't care about property lines."
-
 ### Duel
-- Behaviour: 6 damage but ONLY if exactly 3 matched. 4+ match = 0 damage.
-- Base value: 6
-- Upgrade: +2 per level
+- Behaviour: Deal 6 damage but ONLY if exactly 3 matched. 4+ matches deal no damage.
+- Upgrade: +2 damage to match total per level
 - Flavor: "High noon rules. Three paces, one shot."
 
-### Chain
-- Behaviour: 1 damage per tile. Each Chain tile in the match adds +1 to ALL Chain tiles.
-- Base value: 1
-- Upgrade: +1 per level
-- Flavor: "Links in the chain. More you match, harder they hit."
-
 ### Mirage
-- Behaviour: Changes tile type every 3 turns. Matches as whatever it currently shows.
-- Base value: 0
-- Upgrade: --
+- Behaviour: Changes tile type every swap to a random tile you own. Matches as whatever it currently shows.
 - Flavor: "Now you see it. Now you don't. Now it's something else."
-
-### Fool's Gold
-- Behaviour: Looks like Gold but generates nothing. Cleansed by matching 4+.
-- Base value: 0
-- Upgrade: --
-- Flavor: "All that glitters."
 
 ## Special Tiles
 
@@ -181,8 +134,12 @@
 - Flavor: "Clear the board. No survivors."
 
 ### Tumbleweed
-- Behaviour: Does nothing when matched. Dilutes the board.
+- Behaviour: Does nothing.
 - Flavor: "Just passing through. Taking up space."
+
+### Fool's Gold
+- Behaviour: Looks like Gold but generates nothing. Can match with regular Gold tiles. Reveals when matched.
+- Flavor: "All that glitters."
 
 ---
 
@@ -204,7 +161,7 @@ Trait level = number of artifacts held with that tag. Effects activate at breakp
 ## Rattlesnake
 - Flavor: "Don't step on anything that hisses."
 - 1 -- Immune to poison tile damage and debuffs.
-- 3 -- Matching poison tiles deals damage + applies venom.
+- 3 -- Matching poison tiles applies venom to target.
 
 ## Prospector
 - Flavor: "There's gold in them hills. And in that match."

@@ -39,7 +39,10 @@ export interface SerializedPlayer {
   health: number;
   maxHealth: number;
   block: number;
+  aceStacks?: number;
   aceMultiplier: number;
+  luckyStacks?: number;
+  barricadeStacks?: number;
   critChance: number;
   thorns: number;
   gold: number;

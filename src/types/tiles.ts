@@ -11,6 +11,7 @@ export interface TileDefinition {
   upgradeValue: number;
   pool: 'core' | 'starter' | 'additional' | 'special';
   description: string;
+  flavor?: string;
 }
 
 export interface TileState {
