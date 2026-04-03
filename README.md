@@ -7,4 +7,3 @@ A roguelike match-3 set in a spaghetti western world. Play as a red panda cowboy
 ## Docs
 
 - [Game Design Spec](docs/SPEC.md) -- full game design specification
-- [Asset Pipeline](docs/ASSET_PIPELINE.md) -- AI-driven pixel art generation pipeline (post-MVP)

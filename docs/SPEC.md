@@ -941,7 +941,6 @@ All placeholder rendering is behind a single abstraction layer per entity type (
 
 ### Post-MVP
 
-- [ ] **Asset pipeline** (AI-generated pixel art via ASSET_PIPELINE.md, replace all placeholders).
 - [ ] Boss cutscene animations (pixel art intros).
 - [ ] Character + enemy sprite animations with priority state machine.
 - [ ] Acts 2-3 (tile count to 5, 6 via between-act choices).
