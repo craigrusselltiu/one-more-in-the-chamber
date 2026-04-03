@@ -144,7 +144,10 @@ export const ShopScreen = memo(function ShopScreen() {
         {stock.map((item) => {
           const isSold = purchased.has(item.id);
           const canAfford = run.gold >= item.price;
-          const disabled = isSold || !canAfford;
+          const hasSaddlebag = run.artifacts.some((a) => a.id === 'saddlebag');
+          const maxSlots = hasSaddlebag ? 4 : 3;
+          const consumablesFull = item.type === 'consumable' && run.consumables.length >= maxSlots;
+          const disabled = isSold || !canAfford || consumablesFull;
 
           return (
             <button

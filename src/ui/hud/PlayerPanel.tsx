@@ -29,8 +29,8 @@ export const PlayerPanel = memo(function PlayerPanel() {
 
       {/* HP bar centered, block badge overlaid to the left */}
       <div className="relative">
-        <div className="absolute right-full top-0 mr-0.5 flex items-center" style={{ height: '100%' }}>
-          {block > 0 ? <BlockBadge value={block} /> : <div style={{ width: 20 }} />}
+        <div className="absolute right-full top-0 mr-1.5 flex items-center" style={{ height: '100%' }}>
+          {block > 0 && <BlockBadge value={block} />}
         </div>
         <HealthBar current={health} max={maxHealth} width={80} />
       </div>

@@ -33,14 +33,19 @@ export const CombatHUD = memo(function CombatHUD() {
 
       {/* Main combat area */}
       <div className="absolute inset-x-0 top-5 bottom-0 flex">
-        {/* Player area -- centered between screen left and board left */}
-        {/* Board left is at 128/480 = 26.67% of width */}
+        {/* Player area -- fixed layout so combo/status don't shift the sprite */}
         <div
-          className="flex flex-col items-center justify-center px-1"
+          className="relative px-1"
           style={{ width: '26.67%' }}
         >
-          <ComboDisplay />
-          <PlayerPanel />
+          {/* Combo indicator pinned above the player panel */}
+          <div className="absolute left-0 right-0 flex justify-center" style={{ top: '18%' }}>
+            <ComboDisplay />
+          </div>
+          {/* Player panel anchored at center */}
+          <div className="absolute left-0 right-0 flex justify-center" style={{ top: '28%' }}>
+            <PlayerPanel />
+          </div>
         </div>
 
         {/* Board area (center, Phaser renders the board here) */}
