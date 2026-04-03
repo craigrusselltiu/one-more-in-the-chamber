@@ -1,6 +1,8 @@
 import { create } from 'zustand';
 import type { ShopCategory } from '../data/shopItems';
 
+const META_STORAGE_KEY = 'omitc-meta';
+
 interface MetaProgression {
   reputation: number;
   unlockedArtifacts: string[];
@@ -34,84 +36,89 @@ const CATEGORY_KEY: Record<ShopCategory, keyof Pick<MetaProgression, 'unlockedAr
   character: 'unlockedCharacters',
 };
 
+const DEFAULT_META: MetaProgression = {
+  reputation: 0,
+  unlockedArtifacts: [],
+  unlockedEvents: [],
+  unlockedCosmetics: [],
+  unlockedLoadouts: [],
+  unlockedCharacters: ['red_panda'],
+  highestAscensionCleared: -1,
+};
+
+function loadMeta(): MetaProgression {
+  try {
+    const raw = localStorage.getItem(META_STORAGE_KEY);
+    if (raw) return { ...DEFAULT_META, ...JSON.parse(raw) };
+  } catch { /* ignore */ }
+  return { ...DEFAULT_META };
+}
+
+function persistMeta(meta: MetaProgression): void {
+  try {
+    localStorage.setItem(META_STORAGE_KEY, JSON.stringify(meta));
+  } catch { /* ignore */ }
+}
+
 export const useMetaStore = create<MetaStore>((set, get) => ({
-  meta: {
-    reputation: 0,
-    unlockedArtifacts: [],
-    unlockedEvents: [],
-    unlockedCosmetics: [],
-    unlockedLoadouts: [],
-    unlockedCharacters: ['red_panda'],
-    highestAscensionCleared: -1,
-  },
+  meta: loadMeta(),
 
   addReputation: (amount) =>
-    set((state) => ({
-      meta: { ...state.meta, reputation: state.meta.reputation + amount },
-    })),
+    set((state) => {
+      const meta = { ...state.meta, reputation: state.meta.reputation + amount };
+      persistMeta(meta);
+      return { meta };
+    }),
 
   spendReputation: (amount) => {
     const { meta } = get();
     if (meta.reputation < amount) return false;
-    set((state) => ({
-      meta: { ...state.meta, reputation: state.meta.reputation - amount },
-    }));
+    set((state) => {
+      const next = { ...state.meta, reputation: state.meta.reputation - amount };
+      persistMeta(next);
+      return { meta: next };
+    });
     return true;
   },
 
   unlockArtifact: (id) =>
     set((state) => {
       if (state.meta.unlockedArtifacts.includes(id)) return state;
-      return {
-        meta: {
-          ...state.meta,
-          unlockedArtifacts: [...state.meta.unlockedArtifacts, id],
-        },
-      };
+      const meta = { ...state.meta, unlockedArtifacts: [...state.meta.unlockedArtifacts, id] };
+      persistMeta(meta);
+      return { meta };
     }),
 
   unlockEvent: (id) =>
     set((state) => {
       if (state.meta.unlockedEvents.includes(id)) return state;
-      return {
-        meta: {
-          ...state.meta,
-          unlockedEvents: [...state.meta.unlockedEvents, id],
-        },
-      };
+      const meta = { ...state.meta, unlockedEvents: [...state.meta.unlockedEvents, id] };
+      persistMeta(meta);
+      return { meta };
     }),
 
   unlockCosmetic: (id) =>
     set((state) => {
       if (state.meta.unlockedCosmetics.includes(id)) return state;
-      return {
-        meta: {
-          ...state.meta,
-          unlockedCosmetics: [...state.meta.unlockedCosmetics, id],
-        },
-      };
+      const meta = { ...state.meta, unlockedCosmetics: [...state.meta.unlockedCosmetics, id] };
+      persistMeta(meta);
+      return { meta };
     }),
 
   unlockLoadout: (id) =>
     set((state) => {
       if (state.meta.unlockedLoadouts.includes(id)) return state;
-      return {
-        meta: {
-          ...state.meta,
-          unlockedLoadouts: [...state.meta.unlockedLoadouts, id],
-        },
-      };
+      const meta = { ...state.meta, unlockedLoadouts: [...state.meta.unlockedLoadouts, id] };
+      persistMeta(meta);
+      return { meta };
     }),
 
   unlockCharacter: (id) =>
     set((state) => {
       if (state.meta.unlockedCharacters.includes(id)) return state;
-      return {
-        meta: {
-          ...state.meta,
-          unlockedCharacters: [...state.meta.unlockedCharacters, id],
-        },
-      };
+      const meta = { ...state.meta, unlockedCharacters: [...state.meta.unlockedCharacters, id] };
+      persistMeta(meta);
+      return { meta };
     }),
 
   purchaseShopItem: (unlockId, cost, category) => {
@@ -119,12 +126,11 @@ export const useMetaStore = create<MetaStore>((set, get) => ({
     if (store.isUnlocked(unlockId, category)) return false;
     if (!store.spendReputation(cost)) return false;
     const key = CATEGORY_KEY[category];
-    set((state) => ({
-      meta: {
-        ...state.meta,
-        [key]: [...state.meta[key], unlockId],
-      },
-    }));
+    set((state) => {
+      const meta = { ...state.meta, [key]: [...state.meta[key], unlockId] };
+      persistMeta(meta);
+      return { meta };
+    });
     return true;
   },
 
@@ -135,10 +141,9 @@ export const useMetaStore = create<MetaStore>((set, get) => ({
   },
 
   setHighestAscension: (level) =>
-    set((state) => ({
-      meta: {
-        ...state.meta,
-        highestAscensionCleared: Math.max(state.meta.highestAscensionCleared, level),
-      },
-    })),
+    set((state) => {
+      const meta = { ...state.meta, highestAscensionCleared: Math.max(state.meta.highestAscensionCleared, level) };
+      persistMeta(meta);
+      return { meta };
+    }),
 }));

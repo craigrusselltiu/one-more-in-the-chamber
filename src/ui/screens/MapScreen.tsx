@@ -51,10 +51,11 @@ export const MapScreen = memo(function MapScreen({ readonly, onClose }: { readon
 
   // Load sprite sheet for node icons
   const spriteRef = useRef<HTMLImageElement | null>(null);
+  const [spriteLoaded, setSpriteLoaded] = useState(false);
   useEffect(() => {
     const img = new Image();
     img.src = import.meta.env.BASE_URL + 'assets/sprites/items_sheet.png';
-    img.onload = () => { spriteRef.current = img; };
+    img.onload = () => { spriteRef.current = img; setSpriteLoaded(true); };
   }, []);
 
   // Draw map with breathing animation for reachable nodes
@@ -129,16 +130,12 @@ export const MapScreen = memo(function MapScreen({ readonly, onClose }: { readon
         drawSpriteFrame(ctx, frame, pos.x, pos.y, spriteSize);
         ctx.globalAlpha = 1.0;
 
-        // Gold outline for current node
+        // Gold glow for current node (no box outline)
         if (isCurrent) {
-          ctx.strokeStyle = '#f59e0b';
-          ctx.lineWidth = 2;
-          ctx.strokeRect(pos.x - spriteSize / 2 - 2, pos.y - spriteSize / 2 - 2, spriteSize + 4, spriteSize + 4);
-        } else if (isReachable) {
-          // Subtle gold outline for reachable
-          ctx.strokeStyle = '#fbbf2480';
-          ctx.lineWidth = 1;
-          ctx.strokeRect(pos.x - spriteSize / 2 - 1, pos.y - spriteSize / 2 - 1, spriteSize + 2, spriteSize + 2);
+          ctx.shadowColor = '#f59e0b';
+          ctx.shadowBlur = 8;
+          drawSpriteFrame(ctx, frame, pos.x, pos.y, spriteSize);
+          ctx.shadowBlur = 0;
         }
       }
 
@@ -152,7 +149,7 @@ export const MapScreen = memo(function MapScreen({ readonly, onClose }: { readon
     return () => {
       if (animId) cancelAnimationFrame(animId);
     };
-  }, [nodes, mapState, reachable]);
+  }, [nodes, mapState, reachable, spriteLoaded]);
 
   // Scroll to current node on mount
   useEffect(() => {
@@ -163,6 +160,8 @@ export const MapScreen = memo(function MapScreen({ readonly, onClose }: { readon
       containerRef.current.scrollLeft = Math.max(0, pos.x - 200);
     }
   }, [mapState?.currentNodeId, nodes]);
+
+  const outerRef = useRef<HTMLDivElement>(null);
 
   const handleCanvasHover = useCallback(
     (e: React.MouseEvent<HTMLCanvasElement>) => {
@@ -175,16 +174,17 @@ export const MapScreen = memo(function MapScreen({ readonly, onClose }: { readon
       const mx = (e.clientX - rect.left) * scaleX;
       const my = (e.clientY - rect.top) * scaleY;
 
+      // Position tooltip relative to the outer container
+      const outerRect = outerRef.current?.getBoundingClientRect();
+      const ox = outerRect ? e.clientX - outerRect.left : e.clientX;
+      const oy = outerRect ? e.clientY - outerRect.top : e.clientY;
+
       for (const node of nodes) {
         const pos = getNodePos(node);
         const dx = mx - pos.x;
         const dy = my - pos.y;
         if (dx * dx + dy * dy <= NODE_RADIUS * NODE_RADIUS * 2) {
-          setTooltip({
-            text: NODE_LABELS[node.type],
-            x: e.clientX - (containerRef.current?.getBoundingClientRect().left ?? 0),
-            y: e.clientY - (containerRef.current?.getBoundingClientRect().top ?? 0),
-          });
+          setTooltip({ text: NODE_LABELS[node.type], x: ox, y: oy });
           return;
         }
       }
@@ -230,9 +230,9 @@ export const MapScreen = memo(function MapScreen({ readonly, onClose }: { readon
   }
 
   return (
-    <div className="relative flex flex-col h-full bg-[#1a1a2e]/95">
+    <div ref={outerRef} className="relative flex flex-col h-full bg-[#1a1a2e]/95">
       {/* Map area -- horizontal scroll, centered */}
-      <div ref={containerRef} className="relative flex-1 overflow-x-auto overflow-y-hidden flex items-center justify-center">
+      <div ref={containerRef} className="flex-1 overflow-x-auto overflow-y-hidden flex items-center justify-center">
         <canvas
           ref={canvasRef}
           width={canvasWidth}
@@ -242,15 +242,17 @@ export const MapScreen = memo(function MapScreen({ readonly, onClose }: { readon
           onMouseLeave={() => setTooltip(null)}
           className={readonly ? 'shrink-0' : 'cursor-pointer shrink-0'}
         />
-        {tooltip && (
-          <div
-            className="absolute pointer-events-none bg-stone-900/90 border border-stone-600 px-2 py-0.5 text-stone-200 font-mono text-[9px] z-10"
-            style={{ left: tooltip.x + 12, top: tooltip.y - 8 }}
-          >
-            {tooltip.text}
-          </div>
-        )}
       </div>
+
+      {/* Tooltip - positioned relative to the screen, outside scroll container */}
+      {tooltip && (
+        <div
+          className="absolute pointer-events-none bg-stone-900/95 border border-stone-600 px-2 py-0.5 text-stone-200 font-mono text-[9px] z-10"
+          style={{ left: Math.min(tooltip.x + 12, 900), top: tooltip.y - 8 }}
+        >
+          {tooltip.text}
+        </div>
+      )}
 
       {/* Close button for readonly overlay - top right */}
       {readonly && onClose && (

@@ -205,31 +205,31 @@ export const CombatSettingsPopup = memo(function CombatSettingsPopup({
 
         <div className="flex flex-col gap-2 text-[9px]">
           {/* Music Volume */}
-          <div className="flex items-center justify-between">
-            <span className="text-stone-300">Music</span>
+          <div className="flex items-center gap-2">
+            <span className="text-stone-300" style={{ width: 40 }}>Music</span>
             <input
               type="range"
               min="0"
               max="100"
               value={Math.round(musicVolume * 100)}
               onChange={(e) => setMusicVolume(Number(e.target.value) / 100)}
-              className="w-20 h-1 accent-amber-600 cursor-pointer"
+              className="flex-1 h-1 accent-amber-600 cursor-pointer"
             />
-            <span className="text-stone-500 w-8 text-right">{Math.round(musicVolume * 100)}%</span>
+            <span className="text-stone-500 text-right" style={{ width: 28 }}>{Math.round(musicVolume * 100)}%</span>
           </div>
 
           {/* SFX Volume */}
-          <div className="flex items-center justify-between">
-            <span className="text-stone-300">SFX</span>
+          <div className="flex items-center gap-2">
+            <span className="text-stone-300" style={{ width: 40 }}>SFX</span>
             <input
               type="range"
               min="0"
               max="100"
               value={Math.round(sfxVolume * 100)}
               onChange={(e) => setSfxVolume(Number(e.target.value) / 100)}
-              className="w-20 h-1 accent-amber-600 cursor-pointer"
+              className="flex-1 h-1 accent-amber-600 cursor-pointer"
             />
-            <span className="text-stone-500 w-8 text-right">{Math.round(sfxVolume * 100)}%</span>
+            <span className="text-stone-500 text-right" style={{ width: 28 }}>{Math.round(sfxVolume * 100)}%</span>
           </div>
 
           {/* Game Speed */}
