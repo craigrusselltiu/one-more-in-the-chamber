@@ -149,7 +149,7 @@ export const TopBar = memo(function TopBar({ showMapButton }: { showMapButton?: 
           <button
             onClick={() => setShowMap(false)}
             className="absolute flex items-center justify-center bg-stone-800/80 text-red-400 font-mono font-bold border border-red-900/50 hover:bg-red-900/40"
-            style={{ top: 6, right: 52, width: 16, height: 16, fontSize: '8px' }}
+            style={{ top: 6, right: 34, width: 16, height: 16, fontSize: '8px' }}
           >
             X
           </button>
