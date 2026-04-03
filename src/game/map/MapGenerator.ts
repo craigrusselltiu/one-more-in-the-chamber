@@ -75,6 +75,7 @@ function pickNodeType(
   row: number,
   totalRows: number,
   rng: () => number,
+  prevRowTypes?: MapNodeType[],
 ): MapNodeType {
   // Row 0 is always start combat
   if (row === 0) return 'combat';
@@ -86,13 +87,26 @@ function pickNodeType(
   const midRow = Math.floor(totalRows / 2);
   if (row === midRow) return 'treasure';
 
-  const roll = rng();
-  if (roll < 0.40) return 'combat';
-  if (roll < 0.55) return 'elite';
-  if (roll < 0.70) return 'event';
-  if (roll < 0.80) return 'shop';
-  if (roll < 0.90) return 'rest';
-  return 'combat';
+  // First 3 rows (1-3): no events or rest sites
+  const earlyRow = row <= 3;
+  // No consecutive rest sites
+  const prevHadRest = prevRowTypes?.includes('rest') ?? false;
+
+  let type: MapNodeType;
+  do {
+    const roll = rng();
+    if (roll < 0.40) type = 'combat';
+    else if (roll < 0.55) type = 'elite';
+    else if (roll < 0.70) type = 'event';
+    else if (roll < 0.80) type = 'shop';
+    else if (roll < 0.90) type = 'rest';
+    else type = 'combat';
+  } while (
+    (earlyRow && (type === 'event' || type === 'rest')) ||
+    (prevHadRest && type === 'rest')
+  );
+
+  return type;
 }
 
 export function generateMap(seed: string, act: Act): MapState {
@@ -123,9 +137,14 @@ export function generateMap(seed: string, act: Act): MapState {
     // Spread nodes across columns
     const positions = spreadColumns(count, COLS, rng);
 
+    // Collect previous row's node types for consecutive-rest prevention
+    const prevRowTypes = row > 0
+      ? nodes.filter((n) => n.row === row - 1).map((n) => n.type)
+      : [];
+
     for (let i = 0; i < count; i++) {
       const col = positions[i];
-      const type = pickNodeType(row, totalRows, rng);
+      const type = pickNodeType(row, totalRows, rng, prevRowTypes);
 
       const id = `${act}-${row}-${col}`;
       nodes.push({
