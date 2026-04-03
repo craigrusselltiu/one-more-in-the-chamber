@@ -31,6 +31,8 @@ export class Board {
   private activeTileTypes: TileType[] = ['bullet', 'iron', 'gold'];
   /** Bag-based tile generation: one of each active type, shuffled. Refilled when empty. */
   private tileTypeBag: TileType[] = [];
+  /** If mirage is active, the type it transformed into for this combat. */
+  private mirageReplacementType: TileType | null = null;
   private isResolving = false;
   private selectedTile: GridPosition | null = null;
   private inputEnabled = true;
@@ -767,7 +769,12 @@ export class Board {
     if (this.tileTypeBag.length === 0) {
       this.refillBag();
     }
-    return this.tileTypeBag.pop()!;
+    const type = this.tileTypeBag.pop()!;
+    // Mirage tiles that spawn mid-combat use the transformed type
+    if (type === 'mirage' && this.mirageReplacementType) {
+      return this.mirageReplacementType;
+    }
+    return type;
   }
 
   /** Fill the bag with one of each active tile type, then shuffle. */
@@ -973,6 +980,7 @@ export class Board {
     if (unowned.length === 0) return;
     // Pick one random unowned type for all mirages this combat
     const chosenType = unowned[Math.floor(Math.random() * unowned.length)];
+    this.mirageReplacementType = chosenType;
     for (let row = 0; row < BOARD_SIZE; row++) {
       for (let col = 0; col < BOARD_SIZE; col++) {
         const tile = this.grid[row][col];
