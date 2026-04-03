@@ -33,6 +33,7 @@ export const TILE_FRAMES: Record<TileType, number> = {
   cavalry: 786,
   duel: 211,
   mirage: 1004,
+  boulder: 198,
   // Special
   showdown: 819,
   tumbleweed: 1098,

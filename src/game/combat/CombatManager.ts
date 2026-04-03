@@ -1049,6 +1049,11 @@ export class CombatManager {
         // Status stacks, flags, etc. are NOT scaled:
       };
 
+      // Boulder: add player's current block as bonus damage
+      if (match.tileType === 'boulder') {
+        scaled.damage += this.player.block;
+      }
+
       this.applyResourceOutput(scaled);
 
       // Motherlode Map: 4+ gold match converts adjacent tiles to gold

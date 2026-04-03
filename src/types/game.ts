@@ -54,6 +54,7 @@ export type TileType =
   | 'cavalry'
   | 'duel'
   | 'mirage'
+  | 'boulder'
   // Special
   | 'showdown'
   | 'tumbleweed'

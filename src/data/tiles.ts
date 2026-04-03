@@ -28,6 +28,7 @@ export const TILE_COLORS: Record<TileType, string> = {
   cavalry: '#D0A040',
   duel: '#D06060',
   mirage: '#C070D0',
+  boulder: '#9B8B7B',
   showdown: '#FF00FF',
   tumbleweed: '#8B7355',
   fools_gold: '#FFD700',
@@ -304,6 +305,19 @@ export const TILE_DEFINITIONS: Record<TileType, TileDefinition> = {
     flavor: "Now you see it. Now you don't. Now it's something else.",
   },
 
+  boulder: {
+    type: 'boulder',
+    label: 'Boulder',
+    abbreviation: 'Bd',
+    color: TILE_COLORS.boulder,
+    baseValue: 1,
+    upgradeValue: 1,
+    pool: 'additional',
+    description: 'Deal 1 damage per block.',
+    flavor: 'Gravity does the rest.',
+    upgradeText: '+1 damage to match total per level',
+  },
+
   // --- Special ---
   showdown: {
     type: 'showdown',
@@ -348,5 +362,5 @@ export const STARTER_POOL: TileType[] = [
 
 export const ADDITIONAL_POOL: TileType[] = [
   'chain', 'whiskey', 'ace', 'horseshoe', 'fifty_cal', 'tombstone',
-  'saloon', 'wanted', 'rattler', 'barricade', 'cavalry', 'duel', 'mirage',
+  'saloon', 'wanted', 'rattler', 'barricade', 'cavalry', 'duel', 'mirage', 'boulder',
 ];

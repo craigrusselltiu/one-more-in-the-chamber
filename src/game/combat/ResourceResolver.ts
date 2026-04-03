@@ -165,6 +165,11 @@ export class ResourceResolver {
         output.damage = count === 4 ? total : 0;
         break;
 
+      case 'boulder':
+        // Base damage from upgrades only. CombatManager adds player.block as bonus.
+        output.damage = Math.round(upgradeBonus);
+        break;
+
       case 'chain': {
         const chainTotal = Math.round(baseTotal + upgradeBonus) + this.chainBonusThisFight * count;
         output.damage = chainTotal;
