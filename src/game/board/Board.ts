@@ -451,6 +451,8 @@ export class Board {
 
     if (kind === 'explosive') {
       tile.setExplosive(true);
+    } else if (kind === 'showdown') {
+      tile.setShowdown(true);
     }
 
     this.grid[row][col] = tile;
