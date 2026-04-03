@@ -89,8 +89,9 @@ function pickNodeType(
 
   // First 3 rows (1-3): no events or rest sites
   const earlyRow = row <= 3;
-  // No consecutive rest sites
+  // No consecutive rest sites or shops
   const prevHadRest = prevRowTypes?.includes('rest') ?? false;
+  const prevHadShop = prevRowTypes?.includes('shop') ?? false;
 
   let type: MapNodeType;
   do {
@@ -103,7 +104,8 @@ function pickNodeType(
     else type = 'combat';
   } while (
     (earlyRow && (type === 'event' || type === 'rest')) ||
-    (prevHadRest && type === 'rest')
+    (prevHadRest && type === 'rest') ||
+    (prevHadShop && type === 'shop')
   );
 
   return type;
