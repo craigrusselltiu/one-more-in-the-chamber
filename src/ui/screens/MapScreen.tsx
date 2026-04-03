@@ -161,8 +161,6 @@ export const MapScreen = memo(function MapScreen({ readonly, onClose }: { readon
     }
   }, [mapState?.currentNodeId, nodes]);
 
-  const outerRef = useRef<HTMLDivElement>(null);
-
   const handleCanvasHover = useCallback(
     (e: React.MouseEvent<HTMLCanvasElement>) => {
       const canvas = canvasRef.current;
@@ -174,17 +172,16 @@ export const MapScreen = memo(function MapScreen({ readonly, onClose }: { readon
       const mx = (e.clientX - rect.left) * scaleX;
       const my = (e.clientY - rect.top) * scaleY;
 
-      // Position tooltip relative to the outer container
-      const outerRect = outerRef.current?.getBoundingClientRect();
-      const ox = outerRect ? e.clientX - outerRect.left : e.clientX;
-      const oy = outerRect ? e.clientY - outerRect.top : e.clientY;
+      // Position tooltip using canvas-internal coordinates (already in virtual space).
+      // The canvas element's offset within its scroll container gives us the base.
+      const scrollLeft = containerRef.current?.scrollLeft ?? 0;
 
       for (const node of nodes) {
         const pos = getNodePos(node);
         const dx = mx - pos.x;
         const dy = my - pos.y;
         if (dx * dx + dy * dy <= NODE_RADIUS * NODE_RADIUS * 2) {
-          setTooltip({ text: NODE_LABELS[node.type], x: ox, y: oy });
+          setTooltip({ text: NODE_LABELS[node.type], x: pos.x - scrollLeft, y: pos.y });
           return;
         }
       }
@@ -230,7 +227,7 @@ export const MapScreen = memo(function MapScreen({ readonly, onClose }: { readon
   }
 
   return (
-    <div ref={outerRef} className="relative flex flex-col h-full bg-[#1a1a2e]/95">
+    <div className="relative flex flex-col h-full bg-[#1a1a2e]/95">
       {/* Map area -- horizontal scroll, centered */}
       <div ref={containerRef} className="flex-1 overflow-x-auto overflow-y-hidden flex items-center justify-center">
         <canvas
@@ -244,11 +241,11 @@ export const MapScreen = memo(function MapScreen({ readonly, onClose }: { readon
         />
       </div>
 
-      {/* Tooltip - positioned relative to the screen, outside scroll container */}
+      {/* Tooltip - positioned using canvas-internal coords (virtual pixels) */}
       {tooltip && (
         <div
           className="absolute pointer-events-none bg-stone-900/95 border border-stone-600 px-2 py-0.5 text-stone-200 font-mono text-[9px] z-10"
-          style={{ left: Math.min(tooltip.x + 12, 900), top: tooltip.y - 8 }}
+          style={{ left: tooltip.x, top: tooltip.y - 16, transform: 'translateX(-50%)' }}
         >
           {tooltip.text}
         </div>
