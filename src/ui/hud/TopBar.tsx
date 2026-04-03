@@ -98,8 +98,14 @@ export const TopBar = memo(function TopBar({ showMapButton }: { showMapButton?: 
         </div>
         <div className="flex items-center gap-2">
           <span className="text-stone-500">{formatTimer(elapsed)}</span>
-          <span className="text-red-400">{health}/{maxHealth}</span>
-          <span className="text-yellow-300">{gold} gold</span>
+          <span className="text-red-400 flex items-center gap-0.5">
+            <SpriteIcon frame={UI_FRAMES.health} scale={1} />
+            {health}/{maxHealth}
+          </span>
+          <span className="text-yellow-300 flex items-center gap-0.5">
+            <SpriteIcon frame={UI_FRAMES.gold} scale={1} />
+            {gold}
+          </span>
           <button
             onClick={() => setShowTiles((v) => !v)}
             className="hover:opacity-80"

@@ -24,7 +24,7 @@ export const ConsumableSlots = memo(function ConsumableSlots() {
   const phase = useCombatStore((s) => s.phase);
 
   const maxSlots = hasSaddlebag ? 4 : 3;
-  const canUse = phase === 'consumable-window';
+  const canUse = phase === 'consumable-window' || phase === 'swap-phase';
 
   return (
     <div className="flex gap-0.5">

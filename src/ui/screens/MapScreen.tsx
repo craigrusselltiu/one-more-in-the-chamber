@@ -1,4 +1,4 @@
-import { memo, useCallback, useRef, useEffect } from 'react';
+import { memo, useCallback, useRef, useEffect, useState } from 'react';
 import { EventBus, GameEvent } from '../../game/EventBus';
 import { useRunStore } from '../../store/runStore';
 import { getReachableNodes } from '../../game/map/MapGenerator';
@@ -9,15 +9,14 @@ import type { Screen } from '../../App';
 const SPRITE_FRAME_SIZE = 16;
 const SPRITE_SHEET_COLS = 36;
 
-/** Color per node type. */
-const NODE_COLORS: Record<MapNodeType, string> = {
-  combat: '#D04040',
-  elite: '#E0A020',
-  shop: '#40A0D0',
-  rest: '#60C060',
-  event: '#C070D0',
-  treasure: '#FFD700',
-  boss: '#FF4040',
+const NODE_LABELS: Record<MapNodeType, string> = {
+  combat: 'Combat',
+  elite: 'Elite',
+  shop: 'Shop',
+  rest: 'Rest',
+  event: 'Event',
+  treasure: 'Treasure',
+  boss: 'Boss',
 };
 
 const NODE_RADIUS = 14;
@@ -40,6 +39,7 @@ export const MapScreen = memo(function MapScreen({ readonly, onClose }: { readon
   const markNodeVisited = useRunStore((s) => s.markNodeVisited);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const [tooltip, setTooltip] = useState<{ text: string; x: number; y: number } | null>(null);
 
   const mapState = run?.mapState;
   const nodes = mapState?.nodes ?? [];
@@ -110,52 +110,35 @@ export const MapScreen = memo(function MapScreen({ readonly, onClose }: { readon
         }
       }
 
-      // Draw nodes
+      // Draw nodes as sprite icons (no circles)
       for (const node of nodes) {
         const pos = getNodePos(node);
-        const nodeColor = NODE_COLORS[node.type];
         const isReachable = reachable.includes(node.id);
         const isCurrent = node.id === mapState!.currentNodeId;
 
-        // Apply breathing scale to reachable nodes
-        const radius = isReachable && !isCurrent ? NODE_RADIUS * breathScale : NODE_RADIUS;
-
-        ctx.beginPath();
-        ctx.arc(pos.x, pos.y, radius, 0, Math.PI * 2);
-
-        if (isCurrent) {
-          ctx.fillStyle = '#fbbf24';
-          ctx.fill();
-          ctx.strokeStyle = '#f59e0b';
-          ctx.lineWidth = 3;
-          ctx.stroke();
-        } else if (node.visited) {
-          ctx.fillStyle = '#374151';
-          ctx.fill();
-          ctx.strokeStyle = '#4b5563';
-          ctx.lineWidth = 2;
-          ctx.stroke();
-        } else if (isReachable) {
-          ctx.fillStyle = nodeColor;
-          ctx.fill();
-          ctx.strokeStyle = '#fbbf24';
-          ctx.lineWidth = 2;
-          ctx.stroke();
-        } else {
-          ctx.fillStyle = nodeColor + '60';
-          ctx.fill();
-          ctx.strokeStyle = nodeColor + '80';
-          ctx.lineWidth = 1;
-          ctx.stroke();
-        }
-
-        // Node sprite icon
         const frame = NODE_FRAMES[node.type];
-        if (frame != null) {
-          const spriteSize = isReachable && !isCurrent ? Math.round(18 * breathScale) : 18;
-          if (node.visited && !isCurrent) ctx.globalAlpha = 0.5;
-          drawSpriteFrame(ctx, frame, pos.x, pos.y, spriteSize);
-          ctx.globalAlpha = 1.0;
+        if (frame == null) continue;
+
+        // Breathing scale for reachable nodes
+        const spriteSize = isReachable && !isCurrent ? Math.round(24 * breathScale) : 24;
+
+        // Dim visited nodes, full opacity for current/reachable
+        if (node.visited && !isCurrent) ctx.globalAlpha = 0.4;
+        else if (!isReachable && !isCurrent) ctx.globalAlpha = 0.5;
+
+        drawSpriteFrame(ctx, frame, pos.x, pos.y, spriteSize);
+        ctx.globalAlpha = 1.0;
+
+        // Gold outline for current node
+        if (isCurrent) {
+          ctx.strokeStyle = '#f59e0b';
+          ctx.lineWidth = 2;
+          ctx.strokeRect(pos.x - spriteSize / 2 - 2, pos.y - spriteSize / 2 - 2, spriteSize + 4, spriteSize + 4);
+        } else if (isReachable) {
+          // Subtle gold outline for reachable
+          ctx.strokeStyle = '#fbbf2480';
+          ctx.lineWidth = 1;
+          ctx.strokeRect(pos.x - spriteSize / 2 - 1, pos.y - spriteSize / 2 - 1, spriteSize + 2, spriteSize + 2);
         }
       }
 
@@ -180,6 +163,35 @@ export const MapScreen = memo(function MapScreen({ readonly, onClose }: { readon
       containerRef.current.scrollLeft = Math.max(0, pos.x - 200);
     }
   }, [mapState?.currentNodeId, nodes]);
+
+  const handleCanvasHover = useCallback(
+    (e: React.MouseEvent<HTMLCanvasElement>) => {
+      const canvas = canvasRef.current;
+      if (!canvas || !mapState) { setTooltip(null); return; }
+
+      const rect = canvas.getBoundingClientRect();
+      const scaleX = canvas.width / rect.width;
+      const scaleY = canvas.height / rect.height;
+      const mx = (e.clientX - rect.left) * scaleX;
+      const my = (e.clientY - rect.top) * scaleY;
+
+      for (const node of nodes) {
+        const pos = getNodePos(node);
+        const dx = mx - pos.x;
+        const dy = my - pos.y;
+        if (dx * dx + dy * dy <= NODE_RADIUS * NODE_RADIUS * 2) {
+          setTooltip({
+            text: NODE_LABELS[node.type],
+            x: e.clientX - (containerRef.current?.getBoundingClientRect().left ?? 0),
+            y: e.clientY - (containerRef.current?.getBoundingClientRect().top ?? 0),
+          });
+          return;
+        }
+      }
+      setTooltip(null);
+    },
+    [mapState, nodes],
+  );
 
   const handleCanvasClick = useCallback(
     (e: React.MouseEvent<HTMLCanvasElement>) => {
@@ -220,14 +232,24 @@ export const MapScreen = memo(function MapScreen({ readonly, onClose }: { readon
   return (
     <div className="relative flex flex-col h-full bg-[#1a1a2e]/95">
       {/* Map area -- horizontal scroll, centered */}
-      <div ref={containerRef} className="flex-1 overflow-x-auto overflow-y-hidden flex items-center justify-center">
+      <div ref={containerRef} className="relative flex-1 overflow-x-auto overflow-y-hidden flex items-center justify-center">
         <canvas
           ref={canvasRef}
           width={canvasWidth}
           height={canvasHeight}
           onClick={readonly ? undefined : handleCanvasClick}
+          onMouseMove={handleCanvasHover}
+          onMouseLeave={() => setTooltip(null)}
           className={readonly ? 'shrink-0' : 'cursor-pointer shrink-0'}
         />
+        {tooltip && (
+          <div
+            className="absolute pointer-events-none bg-stone-900/90 border border-stone-600 px-2 py-0.5 text-stone-200 font-mono text-[9px] z-10"
+            style={{ left: tooltip.x + 12, top: tooltip.y - 8 }}
+          >
+            {tooltip.text}
+          </div>
+        )}
       </div>
 
       {/* Close button for readonly overlay - top right */}

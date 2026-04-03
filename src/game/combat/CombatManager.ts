@@ -768,7 +768,7 @@ export class CombatManager {
    * Returns true if consumed.
    */
   useConsumable(consumableId: string): boolean {
-    if (this.phase !== 'consumable-window') return false;
+    if (this.phase !== 'consumable-window' && this.phase !== 'swap-phase') return false;
 
     switch (consumableId) {
       case 'tonic':

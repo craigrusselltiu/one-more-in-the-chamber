@@ -14,7 +14,7 @@ export const TILE_FRAMES: Record<TileType, number> = {
   ricochet: 907,
   dynamite: 722,
   stampede: 268,
-  whiskey: 499,
+  whiskey: 666,
   buckshot: 908,
   ace: 792,
   venom: 762,
@@ -22,7 +22,7 @@ export const TILE_FRAMES: Record<TileType, number> = {
   horseshoe: 689,
   fifty_cal: 906,
   showdown: 599,
-  tumbleweed: 996,
+  tumbleweed: 1035,
 };
 
 /** Artifact sprite frames (by artifact ID). */
@@ -58,7 +58,9 @@ export const NODE_FRAMES: Record<string, number> = {
 
 /** UI button icons for the top bar. */
 export const UI_FRAMES: Record<string, number> = {
-  tiles: 648,
-  map: 714,
-  settings: 1159,
+  tiles: 625,
+  map: 659,
+  settings: 933,
+  health: 687,
+  gold: 1162,
 };
