@@ -152,7 +152,7 @@ export class BootScene extends Phaser.Scene {
         this.fadeTween = this.tweens.add({
           targets: proxy,
           vol: volume,
-          duration: 2000,
+          duration: 800,
           onUpdate: () => {
             this.targetVolume = proxy.vol;
             this.safeSetVolume(music, proxy.vol);
@@ -192,7 +192,7 @@ export class BootScene extends Phaser.Scene {
     this.fadeTween = this.tweens.add({
       targets: proxy,
       vol: 0,
-      duration: 1000,
+      duration: 500,
       onUpdate: () => this.safeSetVolume(music, proxy.vol),
       onComplete: () => {
         this.fadeTween = null;
