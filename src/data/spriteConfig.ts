@@ -16,27 +16,27 @@ export const TILE_FRAMES: Record<TileType, number> = {
   ricochet: 907,
   stampede: 268,
   buckshot: 908,
-  battery: 722,
+  battery: 945,
   venom: 762,
-  prairie_fire: 720,
+  prairie_fire: 719,
   // Additional
-  chain: 689,
+  chain: 730,
   whiskey: 666,
   ace: 792,
   horseshoe: 689,
   fifty_cal: 906,
-  tombstone: 206,
-  saloon: 499,
+  tombstone: 824,
+  saloon: 715,
   wanted: 648,
-  rattler: 762,
-  barricade: 565,
-  cavalry: 268,
-  duel: 1244,
-  mirage: 599,
+  rattler: 1241,
+  barricade: 198,
+  cavalry: 786,
+  duel: 211,
+  mirage: 1004,
   // Special
-  showdown: 599,
-  tumbleweed: 1035,
-  fools_gold: 1158,
+  showdown: 819,
+  tumbleweed: 1098,
+  fools_gold: 1155,
 };
 
 /** Artifact sprite frames (by artifact ID). */
@@ -51,14 +51,14 @@ export const CONSUMABLE_FRAMES: Record<string, number> = {
 
 /** Status effect / buff / debuff sprite frames. */
 export const STATUS_FRAMES: Record<string, number> = {
-  block: 198,
+  block: 196,
   ace: 792,
-  lucky: 689,
-  barricade: 565,
-  crit: 0,
-  thorns: 0,
-  venom: 762,
-  vulnerable: 0,
+  lucky: 1012,
+  barricade: 198,
+  crit: 1080,
+  thorns: 1006,
+  venom: 828,
+  vulnerable: 770,
 };
 
 /** Map node type icons. */

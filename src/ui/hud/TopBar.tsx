@@ -200,14 +200,25 @@ function TilesPopup({
             const def = TILE_DEFINITIONS[tileType];
             if (!def) return null;
             const level = tileUpgrades[tileType] ?? 0;
-            return (
-              <div key={tileType} className="flex items-center gap-2">
-                <SpriteIcon frame={TILE_FRAMES[tileType]} scale={1} />
-                <span className="text-stone-200 text-xs font-bold">{def.label}</span>
-                <span className="text-amber-400" style={{ fontSize: '10px' }}>
-                  Lv {level + 1}
-                </span>
+            const tooltipContent = (
+              <div className="flex flex-col gap-0.5">
+                <div className="font-bold text-amber-400" style={{ fontSize: '10px' }}>{def.label}</div>
+                <div className="text-stone-200 whitespace-nowrap" style={{ fontSize: '9px' }}>{def.description}</div>
+                {def.flavor && (
+                  <div className="text-stone-500 italic whitespace-nowrap" style={{ fontSize: '8px' }}>"{def.flavor}"</div>
+                )}
               </div>
+            );
+            return (
+              <Tooltip key={tileType} content={tooltipContent} position="bottom">
+                <div className="flex items-center gap-2">
+                  <SpriteIcon frame={TILE_FRAMES[tileType]} scale={1} />
+                  <span className="text-stone-200 text-xs font-bold">{def.label}</span>
+                  <span className="text-amber-400" style={{ fontSize: '10px' }}>
+                    Lv {level + 1}
+                  </span>
+                </div>
+              </Tooltip>
             );
           })}
           {activeTileTypes.length === 0 && (
