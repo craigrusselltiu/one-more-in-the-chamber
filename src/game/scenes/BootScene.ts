@@ -79,7 +79,9 @@ export class BootScene extends Phaser.Scene {
           this.playTrack('main_menu');
           break;
         case 'settings':
-          // Don't change music
+        case 'leaderboard':
+        case 'reputation-shop':
+          // Main menu sub-screens: don't change music
           break;
         case 'character-select':
         case 'tile-select':
@@ -115,8 +117,6 @@ export class BootScene extends Phaser.Scene {
           // Keep map music for rest/treasure (short stops)
           break;
         case 'score':
-        case 'leaderboard':
-        case 'reputation-shop':
           this.fadeOut();
           break;
       }
