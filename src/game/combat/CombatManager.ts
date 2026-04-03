@@ -1483,7 +1483,7 @@ export class CombatManager {
       for (const match of stepMatches) {
         this.hazardManager.resolveAdjacentHazards(match.tiles);
       }
-      const comboMultiplier = step > 1 ? 1 + (step - 1) * 0.1 : 1.0;
+      const comboMultiplier = step > 1 ? Math.min(3.0, 1 + (step - 1) * 0.1) : 1.0;
       this.processMatches(stepMatches, comboMultiplier);
       this.emitFullState();
       this.emitEnemyHpChanges();

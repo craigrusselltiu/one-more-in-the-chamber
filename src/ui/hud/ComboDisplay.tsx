@@ -4,7 +4,7 @@ import { useCombatStore } from '../../store/combatStore';
 /** Calculate the cascade resource multiplier. */
 function getComboMultiplier(combo: number): number {
   if (combo <= 1) return 1.0;
-  return 1 + (combo - 1) * 0.1;
+  return Math.min(3.0, 1 + (combo - 1) * 0.1);
 }
 
 /**
