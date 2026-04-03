@@ -117,7 +117,7 @@ export class MatchDetector {
             isShowdown: runLength >= 5,
             isCross: false,
             crossIntersections: [],
-            matchBonus: runLength === 4 ? 1.5 : runLength >= 5 ? 2.0 : 1.0,
+            matchBonus: 1.0,
           });
         }
         runStart = inner;

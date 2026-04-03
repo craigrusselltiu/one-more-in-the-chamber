@@ -245,7 +245,7 @@ export const MapScreen = memo(function MapScreen({ readonly, onClose }: { readon
       {tooltip && (
         <div
           className="absolute pointer-events-none bg-stone-900/95 border border-stone-600 px-2 py-0.5 text-stone-200 font-mono text-[9px] z-10"
-          style={{ left: tooltip.x, top: tooltip.y - 16, transform: 'translateX(-50%)' }}
+          style={{ left: tooltip.x, top: tooltip.y + 18, transform: 'translateX(-50%)' }}
         >
           {tooltip.text}
         </div>

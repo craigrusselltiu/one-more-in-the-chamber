@@ -37,7 +37,7 @@ export const ArtifactBar = memo(function ArtifactBar() {
             : DEFAULT_COLOR;
 
         return (
-          <Tooltip key={`${inst.id}-${i}`} text={def ? `${def.name}: ${def.effect}` : inst.id}>
+          <Tooltip key={`${inst.id}-${i}`} text={def ? `${def.name}: ${def.effect}` : inst.id} position="bottom">
             <div
               className="flex items-center justify-center text-[6px] text-white font-bold"
               style={{

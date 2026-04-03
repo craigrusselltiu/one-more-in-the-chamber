@@ -876,24 +876,87 @@ export class CombatManager {
     }
   }
 
-  private resolveStickOfTNT(): void {
-    // Clear entire row (middle row for max impact)
+  private async resolveStickOfTNT(): Promise<void> {
+    // Clear entire row (middle row for max impact).
+    // Special tiles trigger: explosives chain-detonate, showdown clears a type.
     const boardSize = this.board.getBoardSize();
     const targetRow = Math.floor(boardSize / 2);
     const grid = this.board.getGrid();
 
+    // Collect tile refs and types, then null grid cells
+    const tileRefs: import('../board/Tile').Tile[] = [];
+    const tileTypes: TileType[] = [];
+    const explosivePositions: { row: number; col: number }[] = [];
+    let hasShowdown = false;
+
     for (let col = 0; col < boardSize; col++) {
       const tile = grid[targetRow][col];
       if (tile) {
-        const upgradeLevel = this.player.getUpgradeLevel(tile.type);
-        const output = this.resolver.resolveSingle(tile.type, upgradeLevel);
-        this.applyResourceOutput(output);
-        tile.destroy();
+        tileRefs.push(tile);
+        tileTypes.push(tile.type);
+        if (tile.isExplosive) explosivePositions.push({ row: targetRow, col });
+        if (tile.isShowdown) hasShowdown = true;
         grid[targetRow][col] = null;
       }
     }
 
+    // Animate clear
+    await this.board.animateTileClear(tileRefs);
+
+    // Generate resources
+    for (const tileType of tileTypes) {
+      const upgradeLevel = this.player.getUpgradeLevel(tileType);
+      const output = this.resolver.resolveSingle(tileType, upgradeLevel);
+      this.applyResourceOutput(output);
+    }
+
+    // Chain-detonate explosives
+    for (const pos of explosivePositions) {
+      const blastTiles: import('../board/Tile').Tile[] = [];
+      for (let dr = -1; dr <= 1; dr++) {
+        for (let dc = -1; dc <= 1; dc++) {
+          const r = pos.row + dr;
+          const c = pos.col + dc;
+          if (r < 0 || r >= boardSize || c < 0 || c >= boardSize) continue;
+          const t = grid[r]?.[c];
+          if (t) {
+            const upgradeLevel = this.player.getUpgradeLevel(t.type);
+            const output = this.resolver.resolveSingle(t.type, upgradeLevel);
+            this.applyResourceOutput(output);
+            blastTiles.push(t);
+            grid[r][c] = null;
+          }
+        }
+      }
+      if (blastTiles.length > 0) await this.board.animateTileClear(blastTiles);
+    }
+
+    // Showdown: clear all tiles of a random type
+    if (hasShowdown) {
+      const types = this.board.getActiveTileTypes();
+      const randomType = types[Math.floor(Math.random() * types.length)];
+      const clearedTypes = await this.board.clearAllOfTypeAnimated(randomType);
+      for (const t of clearedTypes) {
+        const upgradeLevel = this.player.getUpgradeLevel(t);
+        const output = this.resolver.resolveSingle(t, upgradeLevel);
+        this.applyResourceOutput(output);
+      }
+    }
+
     EventBus.emit(GameEvent.SCREEN_SHAKE, 'heavy');
+
+    // Cascade: gravity + fill + resolve matches
+    await this.board.applyGravityAnimated();
+    await this.board.fillEmptyTilesAnimated();
+    const cascadeMatches = await this.board.resolveMatches();
+    if (cascadeMatches.length > 0) {
+      this.processMatches(cascadeMatches);
+    }
+
+    this.emitFullState();
+    this.emitEnemyHpChanges();
+    EventBus.emit(GameEvent.PLAYER_HP_CHANGE, this.player.health, this.player.maxHealth);
+    EventBus.emit(GameEvent.GOLD_CHANGE, this.player.gold);
   }
 
   // ---------------------------------------------------------------------------

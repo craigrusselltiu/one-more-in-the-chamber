@@ -33,7 +33,6 @@ function pickNodeType(
   row: number,
   totalRows: number,
   rng: () => number,
-  hasTreasure: boolean,
 ): MapNodeType {
   // Row 0 is always start combat
   if (row === 0) return 'combat';
@@ -41,8 +40,9 @@ function pickNodeType(
   if (row === totalRows - 1) return 'boss';
   // Second-to-last is always rest site (pre-boss campfire)
   if (row === totalRows - 2) return 'rest';
-  // Mid-act treasure placement (row 5-7)
-  if (!hasTreasure && row >= 5 && row <= 7 && rng() < 0.5) return 'treasure';
+  // Halfway point is always treasure (guaranteed)
+  const midRow = Math.floor(totalRows / 2);
+  if (row === midRow) return 'treasure';
 
   const roll = rng();
   if (roll < 0.40) return 'combat';
@@ -57,7 +57,6 @@ export function generateMap(seed: string, act: Act): MapState {
   const rng = mulberry32(hashString(seed + ':act' + act));
   const nodes: MapNode[] = [];
   const totalRows = ROWS_PER_ACT;
-  let hasTreasure = false;
 
   // Generate nodes per row (2-4 nodes per row, branching paths)
   const rowNodes: string[][] = [];
@@ -84,8 +83,7 @@ export function generateMap(seed: string, act: Act): MapState {
 
     for (let i = 0; i < count; i++) {
       const col = positions[i];
-      const type = pickNodeType(row, totalRows, rng, hasTreasure);
-      if (type === 'treasure') hasTreasure = true;
+      const type = pickNodeType(row, totalRows, rng);
 
       const id = `${act}-${row}-${col}`;
       nodes.push({
@@ -99,18 +97,6 @@ export function generateMap(seed: string, act: Act): MapState {
       ids.push(id);
     }
     rowNodes.push(ids);
-  }
-
-  // Guarantee treasure if none was placed
-  if (!hasTreasure) {
-    const midRow = rowNodes[6];
-    if (midRow.length > 0) {
-      const treasureId = midRow[Math.floor(rng() * midRow.length)];
-      const node = nodes.find((n) => n.id === treasureId);
-      if (node && node.type !== 'boss' && node.type !== 'rest') {
-        node.type = 'treasure';
-      }
-    }
   }
 
   // Build connections: each node connects to 1-2 nodes in the next row
