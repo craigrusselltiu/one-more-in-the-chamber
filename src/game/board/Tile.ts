@@ -14,7 +14,7 @@ const STATUS_OFFSET = 12;
  *
  * Effect overlays:
  *   - Showdown tile: rainbow breathing overlay
- *   - Explosive (4-match bomb): yellow breathing overlay
+ *   - Explosive (4-match special tile): yellow breathing overlay
  *   - Bomb hazard: red breathing overlay + countdown number
  */
 export class Tile {

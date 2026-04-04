@@ -24,7 +24,7 @@ export const TILE_COLORS: Record<TileType, string> = {
   fifty_cal: '#7090B8',
   tombstone: '#808080',
   saloon: '#D4A870',
-  wanted: '#D04040',
+  mace: '#D04040',
   rattler: '#40A060',
   barricade: '#8B7355',
   cavalry: '#D0A040',
@@ -44,10 +44,10 @@ export const TILE_DEFINITIONS: Record<TileType, TileDefinition> = {
     label: 'Bullet',
     abbreviation: 'Bu',
     color: TILE_COLORS.bullet,
-    baseValue: 1,
+    baseValue: 2,
     upgradeValue: 2,
-    pool: 'core',
-    description: 'Deal 1 damage per tile.',
+    pool: 'starter',
+    description: 'Deal 2 damage per tile.',
     flavor: 'Highly effective negotiation tool.',
     upgradeText: '+2 damage to match total per level',
   },
@@ -56,10 +56,10 @@ export const TILE_DEFINITIONS: Record<TileType, TileDefinition> = {
     label: 'Iron',
     abbreviation: 'Ir',
     color: TILE_COLORS.iron,
-    baseValue: 1,
+    baseValue: 2,
     upgradeValue: 2,
-    pool: 'core',
-    description: 'Gain 1 block per tile.',
+    pool: 'starter',
+    description: 'Gain 2 block per tile.',
     flavor: "Bend, don't break.",
     upgradeText: '+2 block to match total per level',
   },
@@ -68,10 +68,10 @@ export const TILE_DEFINITIONS: Record<TileType, TileDefinition> = {
     label: 'Gold',
     abbreviation: 'Go',
     color: TILE_COLORS.gold,
-    baseValue: 1,
+    baseValue: 2,
     upgradeValue: 2,
-    pool: 'core',
-    description: 'Earn 1 gold per tile.',
+    pool: 'starter',
+    description: 'Earn 2 gold per tile.',
     flavor: "Makes the world go 'round.",
     upgradeText: '+2 gold to match total per level',
   },
@@ -83,9 +83,9 @@ export const TILE_DEFINITIONS: Record<TileType, TileDefinition> = {
     color: TILE_COLORS.bounty,
     baseValue: 1,
     upgradeValue: 2,
-    pool: 'core',
-    description: 'Apply 1 Bounty stack per 3-match; +1 per extra tile. If enemy HP <= Bounty stacks, enemy dies.',
-    flavor: "Everyone's got a number.",
+    pool: 'exclusive',
+    description: 'Apply 2 Bounty stacks per 3-match; +1 per extra tile. If enemy HP <= Bounty stacks, enemy dies.',
+    flavor: 'The S is silent.',
     upgradeText: '+2 stacks to match total per level',
   },
 
@@ -94,12 +94,12 @@ export const TILE_DEFINITIONS: Record<TileType, TileDefinition> = {
     label: 'Chip',
     abbreviation: 'Cp',
     color: TILE_COLORS.chip,
-    baseValue: 10,
-    upgradeValue: 5,
-    pool: 'core',
-    description: '50% chance to deal 10 damage; 50% chance to deal 0.',
-    flavor: "Heads or tails. Either way, the coin's in the air.",
-    upgradeText: '+5 damage per level',
+    baseValue: 5,
+    upgradeValue: 1,
+    pool: 'exclusive',
+    description: '50% chance to deal 5 damage per tile; 50% chance to deal 0.',
+    flavor: "What's the most you ever lost on a coin toss?",
+    upgradeText: '+1 damage per tile per level',
   },
 
   // --- Starter ---
@@ -208,7 +208,7 @@ export const TILE_DEFINITIONS: Record<TileType, TileDefinition> = {
     color: TILE_COLORS.ace,
     baseValue: 1,
     upgradeValue: 1,
-    pool: 'additional',
+    pool: 'starter',
     description: 'Gain 1 stack of Ace per tile.',
     flavor: 'Always keep one up your sleeve.',
     upgradeText: '+1 stack to match total per level',
@@ -261,16 +261,16 @@ export const TILE_DEFINITIONS: Record<TileType, TileDefinition> = {
     flavor: 'Belly up to the bar. Drinks are on the house.',
     upgradeText: '+1 heal per match total per level',
   },
-  wanted: {
-    type: 'wanted',
-    label: 'Wanted',
-    abbreviation: 'Wa',
-    color: TILE_COLORS.wanted,
+  mace: {
+    type: 'mace',
+    label: 'Mace',
+    abbreviation: 'Ma',
+    color: TILE_COLORS.mace,
     baseValue: 2,
     upgradeValue: 2,
-    pool: 'additional',
+    pool: 'starter',
     description: 'Deal 2 damage per tile and apply 1 Vulnerable to the enemy with the highest current HP.',
-    flavor: 'Every hit paints a bigger target.',
+    flavor: 'Tis but a scratch.',
     upgradeText: '+2 damage to match total per level',
   },
   rattler: {
@@ -382,13 +382,19 @@ export const TILE_DEFINITIONS: Record<TileType, TileDefinition> = {
   },
 };
 
-export const CORE_TILES: TileType[] = ['bullet', 'iron', 'gold', 'bounty'];
+/** Per-character starting tiles (before starter tile selection). */
+export const CHARACTER_TILES: Record<import('../types/game').CharacterId, TileType[]> = {
+  red_panda: ['bullet', 'iron', 'mace', 'bounty'],
+  reno: ['ace', 'iron', 'gold', 'chip'],
+};
 
 export const STARTER_POOL: TileType[] = [
+  'bullet', 'iron', 'gold',
   'ricochet', 'stampede', 'buckshot', 'battery', 'venom', 'prairie_fire',
+  'ace', 'mace',
 ];
 
 export const ADDITIONAL_POOL: TileType[] = [
-  'chain', 'whiskey', 'ace', 'horseshoe', 'fifty_cal', 'tombstone',
-  'saloon', 'wanted', 'rattler', 'barricade', 'cavalry', 'duel', 'mirage', 'boulder',
+  'chain', 'whiskey', 'horseshoe', 'fifty_cal', 'tombstone',
+  'saloon', 'rattler', 'barricade', 'cavalry', 'duel', 'mirage', 'boulder',
 ];

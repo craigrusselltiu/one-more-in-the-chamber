@@ -30,17 +30,17 @@ Russ starts with 4 core tiles (other characters start with 3):
 
 | Tile | Per-tile | Upgrade | Description |
 |------|----------|---------|-------------|
-| Bullet | 1 damage | +2 damage/level | Standard damage tile. |
-| Iron | 1 block | +2 block/level | Standard block tile. |
+| Bullet | 2 damage | +2 damage/level | Standard damage tile. |
+| Iron | 2 block | +2 block/level | Standard block tile. |
 | Gold | 1 gold | +2 gold/level | Standard gold tile. |
-| **Bounty** | 1 stack | +2 stacks/level | Apply 1 Bounty stack per 3-match; +1 per extra tile. If enemy HP <= Bounty stacks, enemy dies. |
+| **Bounty** | 2 stacks | +2 stacks/level | Apply 2 Bounty stacks per 3-match; +1 per extra tile. If enemy HP <= Bounty stacks, enemy dies. |
 
 Act 1 has 5 tile types (4 core + 1 starter) instead of 4. Board dilution starts earlier, but the character-specific tile gives Russ a unique strategic identity.
 
 ### Bounty Mechanic
 
 - Bounty stacks are applied to the **targeted enemy** when Bounty tiles are matched
-- A 3-match applies 1 stack; each extra tile in the match adds +1 stack
+- A 3-match applies 2 stacks; each extra tile in the match adds +1 stack
 - Upgrades add +2 stacks to the match total per level
 - Stacks persist until the enemy dies
 - **Kill threshold:** whenever Bounty stacks are applied or the enemy takes damage, if the enemy's current HP is less than or equal to its Bounty stacks, the enemy dies instantly

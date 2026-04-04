@@ -1,59 +1,44 @@
-need to implement and flesh out:
-- crit system
-
-future ideas:
-- artifact combine
-- upgrading tile
-- dusty dan tumble weed deals damage to you when fighting him
-- add bullet holes for deadeye on shoot
-
 # Tiles
 
-## Core Tiles
+## Exclusive Tiles
 NOTE: Observe the difference between +1 to match total and +1 per tile. The tile pool for Acts 2, 3, and also the shop should be the Starter Tiles AND the Additional Tiles. Act 1 should only be limited to Starter Tiles.
 
 Buffs/debuffs:
-- Ace - add x0.25 multiplier to the next non-Ace match, gets removed when used
-- Lucky - 1% crit chance per stack, removed when crit occurs
-- Barricade - at the end of the turn, if you did not take damage, retain block and decrease stacks by 1
-- Vulnerable - take 50% extra damage from attacks, decrease stacks by 1 at the end of your turn
-- Venom - at the start of your turn, take damage equal to the number of stacks and decrease stacks by 1
-- Bounty - upon applying this or taking damage, if HP is lower than Bounty stacks, die
+- Ace - Add x0.25 multiplier to the next non-Ace match.
+- Lucky - 1% crit chance per stack, removed when crit occurs.
+- Barricade - At the end of the turn, if you did not take damage, retain block and decrease stacks by 1.
+- Vulnerable - Take 50% extra damage from attacks, decrease stacks by 1 at the end of the turn.
+- Venom - At the start of the turn, take damage equal to the number of stacks and decrease stacks by 1.
+- Bounty - When applying this or taking damage, if HP is lower than Bounty stacks, die.
 
 ### Bounty
 - Russ exclusive
-- Behaviour: Apply 1 stack of bounty per 3-match; +1 per extra tile.
+- Behaviour: Apply 2 stacks of Bounty per 3-match; +1 per extra tile.
 - Upgrade: +2 stacks to match total per level
-- Flavor: "Everyone's got a number."
+- Flavor: "The S is silent."
 
 ### Chip
 - Reno exclusive
-- Behaviour: 50% chance to deal 10 damage; 50% chance to deal 0.
-- Upgrade: +5 damage per level
-- Flavor: "Heads or tails. Either way, the coin's in the air."
+- Behaviour: 50% chance to deal 5 damage per tile; 50% chance to deal 0.
+- Upgrade: +1 damage per tile per level
+- Flavor: "What's the most you ever lost on a coin toss?"
+
+## Starter Tiles
 
 ### Bullet
-- Behaviour: Deal 1 damage per tile.
+- Behaviour: Deal 2 damage per tile.
 - Upgrade: +2 damage to match total per level
 - Flavor: "Highly effective negotiation tool."
 
 ### Iron
-- Behaviour: Gain 1 block per tile.
+- Behaviour: Gain 2 block per tile.
 - Upgrade: +2 block to match total per level
 - Flavor: "Bend, don't break."
 
 ### Gold
-- Behaviour: Earn 1 gold per tile.
+- Behaviour: Earn 2 gold per tile.
 - Upgrade: +2 gold to match total per level
 - Flavor: "Makes the world go 'round."
-
-### Bounty
-- Russ exclusive
-- Behaviour: Apply 1 stack of Bounty per 3-match; +1 per extra tile.
-- Upgrade: +2 stacks to match total per level
-- Flavor: "Everyone's got a number."
-
-## Starter Tiles
 
 ### Ricochet
 - Behaviour: Deal 2 damage per tile + each tile destroys 1 random tile elsewhere.
@@ -109,7 +94,7 @@ Buffs/debuffs:
 
 ### .50 Cal
 - Behaviour: Deal 3 damage per tile.
-- Upgrade: +3 damage per tile per level
+- Upgrade: +2 damage per tile per level
 - Flavor: "Turns cover into a suggestion."
 
 ### Tombstone
@@ -122,10 +107,10 @@ Buffs/debuffs:
 - Upgrade: +1 heal per match total per level
 - Flavor: "Belly up to the bar. Drinks are on the house."
 
-### Wanted
+### Mace
 - Behaviour: Deal 2 damage per tile and apply 1 Vulnerable to the enemy with the highest current HP.
 - Upgrade: +2 damage to match total per level
-- Flavor: "Every hit paints a bigger target."
+- Flavor: "Tis but a scratch."
 
 ### Rattler
 - Behaviour: Deal 2 damage per tile and apply 1 Venom. Pierces block.
@@ -722,7 +707,7 @@ Trait level = number of artifacts held with that tag. Effects activate at breakp
 ### Tinker's Wrench
 - Tags: Tinker
 - Effect: Explosive tiles spawn from 3-matches (not just 4-matches).
-- Flavor: "Every match is a bomb waiting to happen."
+- Flavor: "Every match is an explosion waiting to happen."
 
 ### Clockwork Detonator
 - Tags: Tinker, Sapper

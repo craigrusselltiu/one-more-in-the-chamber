@@ -31,6 +31,8 @@ interface SpriteIconProps {
 
 /**
  * Renders a single 16x16 frame from the sprite sheet onto a canvas element.
+ * Always draws at an integer scale internally, then CSS-sizes to the desired
+ * display size. This keeps pixel art crisp at any fractional scale.
  */
 export const SpriteIcon = memo(function SpriteIcon({
   frame,
@@ -39,6 +41,11 @@ export const SpriteIcon = memo(function SpriteIcon({
   title,
 }: SpriteIconProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  // Internal canvas uses the next integer scale up for crisp pixel art
+  const intScale = Math.max(1, Math.ceil(scale));
+  const displaySize = FRAME_SIZE * scale;
+  const canvasSize = FRAME_SIZE * intScale;
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -56,19 +63,23 @@ export const SpriteIcon = memo(function SpriteIcon({
       ctx.drawImage(
         img,
         col * FRAME_SIZE, row * FRAME_SIZE, FRAME_SIZE, FRAME_SIZE,
-        0, 0, FRAME_SIZE * scale, FRAME_SIZE * scale,
+        0, 0, canvasSize, canvasSize,
       );
     });
-  }, [frame, scale]);
+  }, [frame, intScale, canvasSize]);
 
   return (
     <canvas
       ref={canvasRef}
-      width={FRAME_SIZE * scale}
-      height={FRAME_SIZE * scale}
+      width={canvasSize}
+      height={canvasSize}
       className={className}
       title={title}
-      style={{ imageRendering: 'pixelated' }}
+      style={{
+        width: displaySize,
+        height: displaySize,
+        imageRendering: 'pixelated',
+      }}
     />
   );
 });

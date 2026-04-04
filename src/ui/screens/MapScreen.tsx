@@ -103,11 +103,12 @@ export const MapScreen = memo(function MapScreen({ readonly }: { readonly?: bool
 
           ctx.strokeStyle = node.visited ? '#6b7280' : '#374151';
           ctx.lineWidth = 2;
+          ctx.setLineDash([4, 4]);
           ctx.beginPath();
           ctx.moveTo(from.x, from.y);
-          const midX = (from.x + to.x) / 2;
-          ctx.bezierCurveTo(midX, from.y, midX, to.y, to.x, to.y);
+          ctx.lineTo(to.x, to.y);
           ctx.stroke();
+          ctx.setLineDash([]);
         }
       }
 

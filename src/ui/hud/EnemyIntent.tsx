@@ -34,7 +34,7 @@ export const EnemyIntent = memo(function EnemyIntent({ intent }: EnemyIntentProp
 
   return (
     <div
-      className="text-[8px] font-bold text-center leading-none px-1 py-px"
+      className="text-[8px] font-bold text-center leading-none px-1 py-px whitespace-nowrap"
       style={{ color }}
     >
       {intent.description}

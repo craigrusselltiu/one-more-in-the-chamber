@@ -222,6 +222,55 @@ export function generateMap(seed: string, act: Act): MapState {
     }
   }
 
+  // Uncross paths: for each row pair, sort edges by parent col and
+  // bubble-sort target cols so no two edges cross.
+  for (let row = 0; row < totalRows - 1; row++) {
+    // Collect all edges for this row pair
+    const edges: { parent: MapNode; childId: string; childCol: number }[] = [];
+    for (const id of rowNodes[row]) {
+      const parent = nodes.find((n) => n.id === id)!;
+      for (const cid of parent.connections) {
+        const child = nodes.find((n) => n.id === cid)!;
+        edges.push({ parent, childId: cid, childCol: child.col });
+      }
+    }
+
+    // Sort by parent column (stable)
+    edges.sort((a, b) => a.parent.col - b.parent.col);
+
+    // Bubble-sort child columns to remove crossings
+    let swapped = true;
+    while (swapped) {
+      swapped = false;
+      for (let i = 0; i < edges.length - 1; i++) {
+        if (edges[i].childCol > edges[i + 1].childCol) {
+          // Swap targets between the two edges
+          const tmpId = edges[i].childId;
+          const tmpCol = edges[i].childCol;
+          edges[i].childId = edges[i + 1].childId;
+          edges[i].childCol = edges[i + 1].childCol;
+          edges[i + 1].childId = tmpId;
+          edges[i + 1].childCol = tmpCol;
+          swapped = true;
+        }
+      }
+    }
+
+    // Write back: rebuild each parent's connections for this row pair
+    for (const id of rowNodes[row]) {
+      const parent = nodes.find((n) => n.id === id)!;
+      // Keep connections to rows other than row+1, replace row+1 connections
+      const otherConns = parent.connections.filter((cid) => {
+        const c = nodes.find((n) => n.id === cid)!;
+        return c.row !== row + 1;
+      });
+      const newConns = edges
+        .filter((e) => e.parent.id === id)
+        .map((e) => e.childId);
+      parent.connections = [...otherConns, ...newConns];
+    }
+  }
+
   return {
     act,
     nodes,

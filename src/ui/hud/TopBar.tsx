@@ -7,6 +7,7 @@ import { CombatSettingsPopup } from '../screens/SettingsScreen';
 import { ConsumableSlots } from './ConsumableSlots';
 import { SpriteIcon } from '../components/SpriteIcon';
 import { Tooltip } from '../components/Tooltip';
+import { colorizeKeywords, KeywordSubTooltips, getReferencedKeywords } from '../components/KeywordText';
 import { TILE_DEFINITIONS } from '../../data/tiles';
 import { TILE_FRAMES, UI_FRAMES } from '../../data/spriteConfig';
 import type { Act, MapNodeType } from '../../types/game';
@@ -90,7 +91,7 @@ export const TopBar = memo(function TopBar({ mapDisabled }: { showMapButton?: bo
 
   return (
     <>
-      <div className="flex justify-between items-center px-2 bg-black/50 text-[8px] pointer-events-auto" style={{ height: 28 }}>
+      <div className="relative z-10 flex justify-between items-center px-2 bg-black/50 text-[8px] pointer-events-auto" style={{ height: 28 }}>
         <div className="flex items-center gap-3">
           <span className="text-amber-400 font-bold">
             Act {act} - {getActName(act)}
@@ -205,14 +206,16 @@ function TilesPopup({
             const tooltipContent = (
               <div className="flex flex-col gap-0.5">
                 <div className="font-bold text-amber-400" style={{ fontSize: '10px' }}>{def.label}</div>
-                <div className="text-stone-200 whitespace-nowrap" style={{ fontSize: '9px' }}>{def.description}</div>
+                <div className="text-stone-200 whitespace-nowrap" style={{ fontSize: '9px' }}>{colorizeKeywords(def.description)}</div>
                 {def.flavor && (
                   <div className="text-stone-500 italic whitespace-nowrap" style={{ fontSize: '8px' }}>"{def.flavor}"</div>
                 )}
               </div>
             );
+            const hasKeywords = getReferencedKeywords(def.description).length > 0;
+            const keywordTooltip = hasKeywords ? <KeywordSubTooltips text={def.description} /> : undefined;
             return (
-              <Tooltip key={tileType} content={tooltipContent} position="bottom">
+              <Tooltip key={tileType} content={tooltipContent} secondContent={keywordTooltip} position="bottom">
                 <div className="flex items-center gap-2">
                   <SpriteIcon frame={TILE_FRAMES[tileType]} scale={1} />
                   <span className="text-stone-200 text-xs font-bold">{def.label}</span>

@@ -3,6 +3,7 @@ import type { RunState, TileType, ArtifactInstance, ConsumableInstance, Act, Map
 import { generateMap } from '../game/map/MapGenerator';
 import { useMetaStore } from './metaStore';
 import { ARTIFACTS } from '../data/artifacts';
+import { CHARACTER_TILES } from '../data/tiles';
 import { deleteRun as deleteRunFromDB, clearCombatSnapshot } from '../services/localSave';
 
 interface PendingNewGame {
@@ -19,7 +20,7 @@ interface RunStore {
   clearRun: () => Promise<void>;
   /** Set pending new game config (character + ascension) before tile select. */
   setPendingNewGame: (config: PendingNewGame) => void;
-  startRun: (seed: string, starterTile: TileType, ascensionLevel?: number) => void;
+  startRun: (seed: string, ascensionLevel?: number) => void;
   updateHealth: (delta: number) => void;
   updateGold: (delta: number) => void;
   syncHealth: (current: number, max: number) => void;
@@ -60,7 +61,7 @@ export const useRunStore = create<RunStore>((set, get) => ({
 
   setPendingNewGame: (config) => set({ pendingNewGame: config }),
 
-  startRun: (seed, starterTile, ascensionLevel = 0) => {
+  startRun: (seed, ascensionLevel = 0) => {
     const pending = get().pendingNewGame;
     const character = pending?.character ?? 'red_panda';
     const mapState = generateMap(seed, 1);
@@ -88,10 +89,8 @@ export const useRunStore = create<RunStore>((set, get) => ({
       consumables.push({ id: 'smoke_bomb' }, { id: 'signal_flare' });
     }
 
-    // Character-specific core tiles
-    const coreTiles: TileType[] = character === 'reno'
-      ? ['bullet', 'iron', 'gold', 'chip', starterTile]
-      : ['bullet', 'iron', 'gold', 'bounty', starterTile];
+    // Character-specific starting tiles (5th tile chosen after 3rd node)
+    const coreTiles: TileType[] = [...CHARACTER_TILES[character]];
 
     set({
       pendingNewGame: null,

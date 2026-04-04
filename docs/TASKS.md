@@ -17,3 +17,12 @@
 ### Pacing & Tempo
 - **Tile weighting per encounter** - Certain enemies could flood the board with a specific type (e.g. a poison enemy makes venom tiles spawn 2x as often). Doesn't add types but changes the feel of every fight.
 - **Mirrored tiles** - Two tiles on the board are linked. Matching one also triggers the other (could be good or bad depending on what's adjacent).
+
+need to implement and flesh out:
+- crit system
+
+future ideas:
+- artifact combine
+- upgrading tile
+- dusty dan tumble weed deals damage to you when fighting him
+- add bullet holes for deadeye on shoot

@@ -8,8 +8,8 @@ import { CutsceneScene } from './scenes/CutsceneScene';
  * Larger than the React UI overlay (960x540 / 2 = 480x270) so the board
  * (8x32 = 256px) takes proportionally less space while keeping 2x sprites.
  */
-export const GAME_WIDTH = 560;
-export const GAME_HEIGHT = 315;
+export const GAME_WIDTH = 640;
+export const GAME_HEIGHT = 360;
 
 export const gameConfig: Phaser.Types.Core.GameConfig = {
   type: Phaser.AUTO,

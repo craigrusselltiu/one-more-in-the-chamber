@@ -38,6 +38,7 @@ const CHARACTERS: CharacterInfo[] = [
 
 export const CharacterSelectScreen = memo(function CharacterSelectScreen() {
   const setPendingNewGame = useRunStore((s) => s.setPendingNewGame);
+  const startRun = useRunStore((s) => s.startRun);
   const highestCleared = useMetaStore((s) => s.meta.highestAscensionCleared);
   const [selectedCharacter, setSelectedCharacter] = useState<CharacterId>('red_panda');
   const [ascensionLevel, setAscensionLevel] = useState(0);
@@ -45,9 +46,10 @@ export const CharacterSelectScreen = memo(function CharacterSelectScreen() {
   const maxSelectable = Math.min(highestCleared + 1, MAX_ASCENSION);
 
   const handleConfirm = () => {
-
     setPendingNewGame({ character: selectedCharacter, ascensionLevel });
-    EventBus.emit(GameEvent.SCREEN_CHANGE, 'tile-select' satisfies Screen);
+    const seed = Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+    startRun(seed, ascensionLevel);
+    EventBus.emit(GameEvent.SCREEN_CHANGE, 'map' satisfies Screen);
   };
 
   const handleBack = () => {

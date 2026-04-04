@@ -83,6 +83,9 @@ export const GameEvent = {
 
   // Mid-combat save
   COMBAT_SAVE_REQUESTED: 'combat:save-requested',
+
+  // Music control
+  MUSIC_FADE_OUT: 'music:fade-out',
 } as const;
 
 /**

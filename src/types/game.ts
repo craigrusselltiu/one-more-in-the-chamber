@@ -50,7 +50,7 @@ export type TileType =
   | 'fifty_cal'
   | 'tombstone'
   | 'saloon'
-  | 'wanted'
+  | 'mace'
   | 'rattler'
   | 'barricade'
   | 'cavalry'

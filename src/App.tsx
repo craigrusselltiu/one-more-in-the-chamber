@@ -100,6 +100,9 @@ export default function App() {
   const [screen, setScreen] = useState<Screen>('main-menu');
   const [ready, setReady] = useState(false);
   const prevScreenRef = useRef<Screen>('main-menu');
+  const [wipePhase, setWipePhase] = useState<'none' | 'in' | 'out'>('none');
+  const pendingScreenRef = useRef<Screen | null>(null);
+  const applyScreenChangeRef = useRef<((next: Screen) => void) | null>(null);
 
   // Restore persisted run from IndexedDB and start auto-save subscription
   useEffect(() => {
@@ -123,8 +126,7 @@ export default function App() {
 
     const NON_COMBAT_NODE_SCREENS: Set<Screen> = new Set(['shop', 'rest-site', 'event', 'treasure']);
 
-    const handleScreenChange = (...args: unknown[]) => {
-      const next = args[0] as Screen;
+    applyScreenChangeRef.current = (next: Screen) => {
       const prev = prevScreenRef.current;
 
       // Mark non-combat nodes completed when returning to map
@@ -136,11 +138,31 @@ export default function App() {
 
       setScreen(next);
 
-      // Show dust storm notification at the start of Act 2 map
       if (next === 'map') {
         const run = useRunStore.getState().run;
+        const store = useRunStore.getState();
+
+        // Act 1 milestones after 3rd completed node
+        if (run && run.currentAct === 1) {
+          const completed = run.mapState?.nodes.filter((n) => n.completed).length ?? 0;
+
+          // 5th tile selection
+          if (completed >= 3 && run.activeTileTypes.length <= 4) {
+            setScreen('tile-select');
+            return;
+          }
+
+          // Dust storm rolls in after treasure node (7th node)
+          if (completed >= 7 && !run.activeTileTypes.includes('tumbleweed')) {
+            store.addTileType('tumbleweed');
+            setTimeout(() => {
+              EventBus.emit('game:notification', { text: 'A dust storm rolls in...' });
+            }, 500);
+          }
+        }
+
+        // Act 2: show settled notification on first visit
         if (run && run.currentAct === 2 && !run.activeTileTypes.includes('tumbleweed')) {
-          // Only show once: check if we just entered Act 2 (tumbleweed was removed)
           const visited = run.mapState?.nodes.filter((n) => n.visited).length ?? 0;
           if (visited === 0) {
             setTimeout(() => {
@@ -149,6 +171,13 @@ export default function App() {
           }
         }
       }
+    };
+
+    const handleScreenChange = (...args: unknown[]) => {
+      const next = args[0] as Screen;
+      // Start wipe-in, store pending screen
+      pendingScreenRef.current = next;
+      setWipePhase('in');
     };
 
     EventBus.on(GameEvent.SCREEN_CHANGE, handleScreenChange);
@@ -268,18 +297,6 @@ export default function App() {
         const currentRun = store.run;
         const currentNode = currentRun?.mapState?.nodes.find((n) => n.id === currentRun?.currentNodeId);
 
-        // Tumbleweed: add after 3 visited nodes in Act 1 (dust storm)
-        if (currentRun?.currentAct === 1) {
-          const visited = currentRun.mapState?.nodes.filter((n) => n.visited).length ?? 0;
-          const hasTumbleweed = currentRun.activeTileTypes.includes('tumbleweed');
-          if (visited >= 3 && !hasTumbleweed) {
-            store.addTileType('tumbleweed');
-            setTimeout(() => {
-              EventBus.emit('game:notification', { text: 'A dust storm rolls in...' });
-            }, 500);
-          }
-        }
-
         if (currentNode && currentNode.type === 'boss') {
           // Remove tumbleweed after Act 1 boss (notification shows on Act 2 map)
           if (currentRun!.currentAct === 1) {
@@ -294,6 +311,9 @@ export default function App() {
             // Between-act: pick a new tile before advancing
             EventBus.emit(GameEvent.SCREEN_CHANGE, 'tile-select');
           }
+        } else if (currentNode && currentNode.type === 'elite') {
+          // Elite victory: artifact reward before returning to map
+          EventBus.emit(GameEvent.SCREEN_CHANGE, 'treasure');
         } else {
           EventBus.emit(GameEvent.SCREEN_CHANGE, 'map');
         }
@@ -358,7 +378,7 @@ export default function App() {
 
   // Screens that show the unified TopBar + ArtifactBar (all in-run screens)
   const IN_RUN_SCREENS: Set<Screen> = new Set([
-    'combat', 'map', 'shop', 'rest-site', 'event', 'treasure',
+    'combat', 'map', 'shop', 'rest-site', 'event', 'treasure', 'tile-select',
   ]);
   const showTopBar = IN_RUN_SCREENS.has(screen);
 
@@ -382,6 +402,18 @@ export default function App() {
       >
         <GameNotification />
 
+        {/* Full-area screens rendered behind TopBar */}
+        {screen === 'treasure' && (
+          <div className="absolute inset-0">
+            <TreasureScreen />
+          </div>
+        )}
+        {screen === 'tile-select' && (
+          <div className="absolute inset-0">
+            <TileSelectScreen />
+          </div>
+        )}
+
         {/* Unified TopBar + ArtifactBar for all in-run screens */}
         {showTopBar && (
           <>
@@ -397,21 +429,39 @@ export default function App() {
         {screen === 'combat' && <CombatHUD />}
 
         {/* Non-combat screen content fills remaining space below TopBar */}
-        {screen !== 'combat' && (
+        {screen !== 'combat' && screen !== 'treasure' && screen !== 'tile-select' && (
           <div className={showTopBar ? 'flex-1 overflow-hidden' : 'h-full'}>
             {screen === 'main-menu' && <MainMenu />}
             {screen === 'character-select' && <CharacterSelectScreen />}
-            {screen === 'tile-select' && <TileSelectScreen />}
             {screen === 'map' && <MapScreen />}
             {screen === 'shop' && <ShopScreen />}
             {screen === 'rest-site' && <RestSiteScreen />}
             {screen === 'event' && <EventScreen />}
             {screen === 'score' && <ScoreScreen />}
-            {screen === 'treasure' && <TreasureScreen />}
             {screen === 'reputation-shop' && <ReputationShopScreen />}
             {screen === 'leaderboard' && <LeaderboardScreen />}
             {screen === 'settings' && <SettingsScreen />}
           </div>
+        )}
+
+        {/* Screen transition wipe overlay */}
+        {wipePhase !== 'none' && (
+          <div
+            className={`absolute inset-0 bg-black z-[100] ${wipePhase === 'in' ? 'screen-wipe-in' : 'screen-wipe-out'}`}
+            onAnimationEnd={() => {
+              if (wipePhase === 'in') {
+                // Screen is covered -- swap content
+                if (pendingScreenRef.current && applyScreenChangeRef.current) {
+                  applyScreenChangeRef.current(pendingScreenRef.current);
+                  pendingScreenRef.current = null;
+                }
+                setWipePhase('out');
+              } else {
+                // Wipe finished
+                setWipePhase('none');
+              }
+            }}
+          />
         )}
       </div>
     </div>

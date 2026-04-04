@@ -29,7 +29,7 @@ export interface ResourceOutput {
 
 /** Tiles where upgrade scales per tile (not flat per match). */
 const PER_TILE_UPGRADE: Set<TileType> = new Set([
-  'buckshot', 'fifty_cal', 'barricade',
+  'buckshot', 'fifty_cal', 'barricade', 'chip',
 ]);
 
 /**
@@ -145,7 +145,7 @@ export class ResourceResolver {
         output.damage = total;
         break;
 
-      case 'wanted':
+      case 'mace':
         output.damage = total;
         output.vulnerableStacks = 1;
         output.targetsHighestHp = true;
@@ -226,16 +226,18 @@ export class ResourceResolver {
         output.venomStacks = count + Math.round(upgradeBonus);
         break;
 
-      // --- Bounty (per 3-match; +1 per extra tile) ---
-      case 'bounty':
-        output.bountyStacks = Math.max(0, count - 2) + Math.round(upgradeBonus);
+      // --- Bounty (2 stacks per 3-match; +1 per extra tile beyond 3) ---
+      case 'bounty': {
+        const base3 = count >= 3 ? 2 : 0;
+        const extra = Math.max(0, count - 3);
+        output.bountyStacks = base3 + extra + Math.round(upgradeBonus);
         break;
+      }
 
-      // --- Chip (50/50 gamble: 10 + upgrade damage, or 0) ---
+      // --- Chip (50/50 gamble: per-tile damage or 0) ---
       case 'chip': {
-        const chipDamage = 10 + Math.round(upgradeBonus);
         const hit = Math.random() < 0.5;
-        output.damage = hit ? chipDamage : 0;
+        output.damage = hit ? total : 0;
         output.chipHit = hit;
         break;
       }

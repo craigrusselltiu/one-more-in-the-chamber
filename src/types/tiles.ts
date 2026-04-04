@@ -9,7 +9,7 @@ export interface TileDefinition {
   color: string;
   baseValue: number;
   upgradeValue: number;
-  pool: 'core' | 'starter' | 'additional' | 'special';
+  pool: 'exclusive' | 'starter' | 'additional' | 'special';
   description: string;
   flavor?: string;
   /** Upgrade description shown in campfire. Tiles without this can't be upgraded. */

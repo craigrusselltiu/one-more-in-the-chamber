@@ -5,6 +5,8 @@ interface TooltipProps {
   text?: string;
   /** Rich tooltip content (ReactNode). Takes precedence over text. */
   content?: ReactNode;
+  /** Second tooltip rendered below the first (only when position='bottom'). */
+  secondContent?: ReactNode;
   children: ReactNode;
   /** Position relative to the element. Default 'top'. */
   position?: 'top' | 'bottom';
@@ -18,7 +20,7 @@ interface TooltipProps {
  *   <Tooltip text="Block: 5"><BlockBadge /></Tooltip>
  *   <Tooltip content={<div>Rich <b>content</b></div>}><Icon /></Tooltip>
  */
-export const Tooltip = memo(function Tooltip({ text, content, children, position = 'top' }: TooltipProps) {
+export const Tooltip = memo(function Tooltip({ text, content, secondContent, children, position = 'top' }: TooltipProps) {
   const [visible, setVisible] = useState(false);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const tooltipRef = useRef<HTMLDivElement>(null);
@@ -56,7 +58,7 @@ export const Tooltip = memo(function Tooltip({ text, content, children, position
       tip.style.right = '0';
       tip.style.transform = 'none';
     }
-  }, [visible, text, content]);
+  }, [visible, text, content, secondContent]);
 
   return (
     <div
@@ -66,19 +68,33 @@ export const Tooltip = memo(function Tooltip({ text, content, children, position
       onMouseLeave={hide}
     >
       {children}
-      {visible && tooltipBody && (
+      {visible && (tooltipBody || secondContent) && (
         <div
           ref={tooltipRef}
-          className={`absolute left-1/2 z-50 pointer-events-none bg-stone-900/95 border border-stone-600 px-1.5 py-0.5 text-stone-200 ${content ? '' : 'whitespace-nowrap'}`}
+          className="absolute left-1/2 z-50 pointer-events-none flex flex-col gap-1"
           style={{
-            fontSize: '9px',
             transform: 'translateX(-50%)',
             ...(position === 'top'
               ? { bottom: '100%', marginBottom: 4 }
               : { top: '100%', marginTop: 4 }),
           }}
         >
-          {tooltipBody}
+          {tooltipBody && (
+            <div
+              className={`bg-stone-900/95 border border-stone-600 px-1.5 py-0.5 text-stone-200 ${content ? '' : 'whitespace-nowrap'}`}
+              style={{ fontSize: '9px' }}
+            >
+              {tooltipBody}
+            </div>
+          )}
+          {secondContent && (
+            <div
+              className="bg-stone-900/95 border border-stone-600 px-1.5 py-0.5 text-stone-200"
+              style={{ fontSize: '9px' }}
+            >
+              {secondContent}
+            </div>
+          )}
         </div>
       )}
     </div>

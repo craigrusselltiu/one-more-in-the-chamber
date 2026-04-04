@@ -41,22 +41,21 @@ Reno starts with 4 core tiles (other characters start with 3):
 
 | Tile | Per-tile | Upgrade | Description |
 |------|----------|---------|-------------|
-| Bullet | 1 damage | +2 damage/level | Standard damage tile. |
-| Iron | 1 block | +2 block/level | Standard block tile. |
+| Bullet | 2 damage | +2 damage/level | Standard damage tile. |
+| Iron | 2 block | +2 block/level | Standard block tile. |
 | Gold | 1 gold | +2 gold/level | Standard gold tile. |
-| **Chip** | 10 or 0 damage | +5 damage/level | 50% chance to deal 10 damage; 50% chance to deal 0. |
+| **Chip** | 2 or 0 damage | +1 damage/tile/level | 50% chance to deal 2 damage per tile; 50% chance to deal 0. |
 
-**Chip** flavor: *"Heads or tails. Either way, the coin's in the air."*
+**Chip** flavor: *"What's the most you ever lost on a coin toss?"*
 
 Act 1 has 5 tile types (4 core + 1 starter) instead of 4. Board dilution starts earlier, but the character-specific tile gives Reno a unique strategic identity.
 
 ### Chip Mechanic
 
 - Each Chip match rolls a 50/50: hit or miss
-- Hit: deal 10 + upgrade bonus damage to the targeted enemy
+- Hit: deal 2 damage per tile (+ upgrade bonus per tile) to the targeted enemy
 - Miss: deal 0 damage
-- Match length does not affect the outcome (flat per match)
-- Upgrades add +5 damage per level to the hit value
+- Upgrades add +1 damage per tile per level
 
 ## Ability -- Shuffle the Deck
 

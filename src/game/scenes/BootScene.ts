@@ -21,6 +21,8 @@ export class BootScene extends Phaser.Scene {
   private currentKey = '';
   private targetVolume = 0.5;
   private fadeTween: Phaser.Tweens.Tween | null = null;
+  /** Sound currently being faded out (so it can be cleaned up if interrupted). */
+  private fadingOutSound: Phaser.Sound.BaseSound | null = null;
 
   constructor() {
     super({ key: 'BootScene' });
@@ -45,7 +47,8 @@ export class BootScene extends Phaser.Scene {
     this.load.audio('sfx_match2', `${base}assets/audio/sfx/match2.wav`);
     this.load.audio('sfx_match3', `${base}assets/audio/sfx/match3.wav`);
     this.load.audio('sfx_match_pitch', `${base}assets/audio/sfx/match_pitch.wav`);
-    this.load.audio('sfx_gunshot', `${base}assets/audio/sfx/gunshot.wav`);
+    // gunshot.wav not yet created -- use match_pitch as placeholder
+    this.load.audio('sfx_gunshot', `${base}assets/audio/sfx/match_pitch.wav`);
     // Backgrounds
     this.load.image('act1_bg', `${base}assets/act1_bg.png`);
     this.load.image('dusty_bg', `${base}assets/dusty_bg.png`);
@@ -142,6 +145,12 @@ export class BootScene extends Phaser.Scene {
           break;
       }
     });
+
+    // Explicit music fade-out (e.g. before async navigation)
+    EventBus.on(GameEvent.MUSIC_FADE_OUT, () => {
+      desiredTrack = '';
+      if (audioUnlocked) this.fadeOut();
+    });
   }
 
   // ---------------------------------------------------------------------------
@@ -186,10 +195,15 @@ export class BootScene extends Phaser.Scene {
 
   /** Fade out current music. Calls onComplete when done. */
   private fadeOut(onComplete?: () => void): void {
-    // Cancel any running fade
+    // Cancel any running fade and immediately clean up the sound it was fading
     if (this.fadeTween) {
       this.fadeTween.stop();
       this.fadeTween = null;
+    }
+    if (this.fadingOutSound) {
+      try { this.fadingOutSound.stop(); } catch { /* ignore */ }
+      try { this.fadingOutSound.destroy(); } catch { /* ignore */ }
+      this.fadingOutSound = null;
     }
 
     const music = this.currentMusic;
@@ -209,6 +223,7 @@ export class BootScene extends Phaser.Scene {
       currentVol = 0.5;
     }
 
+    this.fadingOutSound = music;
     const proxy = { vol: currentVol };
     this.fadeTween = this.tweens.add({
       targets: proxy,
@@ -217,6 +232,7 @@ export class BootScene extends Phaser.Scene {
       onUpdate: () => this.safeSetVolume(music, proxy.vol),
       onComplete: () => {
         this.fadeTween = null;
+        this.fadingOutSound = null;
         try { music.stop(); } catch { /* ignore */ }
         try { music.destroy(); } catch { /* ignore */ }
         onComplete?.();

@@ -12,3 +12,19 @@
 .ability-segment-ready {
   animation: ability-pulse 1.2s ease-in-out infinite;
 }
+
+/* Screen transition: black wipe left-to-right */
+@keyframes wipe-in {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(0%); }
+}
+@keyframes wipe-out {
+  from { transform: translateX(0%); }
+  to { transform: translateX(100%); }
+}
+.screen-wipe-in {
+  animation: wipe-in 0.25s ease-in forwards;
+}
+.screen-wipe-out {
+  animation: wipe-out 0.25s ease-out forwards;
+}

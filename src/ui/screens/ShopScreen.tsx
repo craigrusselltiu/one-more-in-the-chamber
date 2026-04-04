@@ -7,6 +7,7 @@ import { ADDITIONAL_POOL, STARTER_POOL, TILE_DEFINITIONS } from '../../data/tile
 import { TILE_FRAMES } from '../../data/spriteConfig';
 import { SpriteIcon } from '../components/SpriteIcon';
 import { Tooltip } from '../components/Tooltip';
+import { colorizeKeywords, KeywordSubTooltips, getReferencedKeywords } from '../components/KeywordText';
 import type { TileType } from '../../types/game';
 import type { Screen } from '../../App';
 import { getAscensionModifiers } from '../../data/ascension';
@@ -214,12 +215,14 @@ export const ShopScreen = memo(function ShopScreen() {
                 const tooltipContent = (
                   <div className="flex flex-col gap-0.5">
                     <div className="font-bold text-amber-400" style={{ fontSize: '10px' }}>{def.label}</div>
-                    <div className="text-stone-200 whitespace-nowrap" style={{ fontSize: '9px' }}>{def.description}</div>
+                    <div className="text-stone-200 whitespace-nowrap" style={{ fontSize: '9px' }}>{colorizeKeywords(def.description)}</div>
                     {def.flavor && <div className="text-stone-500 italic whitespace-nowrap" style={{ fontSize: '8px' }}>"{def.flavor}"</div>}
                   </div>
                 );
+                const hasKeywords = getReferencedKeywords(def.description).length > 0;
+                const keywordTooltip = hasKeywords ? <KeywordSubTooltips text={def.description} /> : undefined;
                 return (
-                  <Tooltip key={tile} content={tooltipContent} position="bottom">
+                  <Tooltip key={tile} content={tooltipContent} secondContent={keywordTooltip} position="bottom">
                     <button
                       onClick={() => handleSwapConfirm(tile)}
                       className="flex items-center gap-2 p-2 border border-stone-600 bg-stone-800/50 hover:border-amber-600 hover:bg-stone-700/50 text-left w-full"

@@ -88,6 +88,8 @@ export const MainMenu = memo(function MainMenu() {
   };
 
   const handleContinue = async () => {
+    // Stop main menu music immediately (before async IndexedDB check)
+    EventBus.emit(GameEvent.MUSIC_FADE_OUT);
 
     // Check for mid-combat save first -- if found, resume combat
     const hasCombatSave = await checkForCombatResume();

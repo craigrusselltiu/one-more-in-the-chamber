@@ -9,10 +9,10 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="OMITC" />
     <title>One More In The Chamber</title>
-    <link rel="manifest" href="/one-more-in-the-chamber/manifest.webmanifest" />
-    <link rel="icon" type="image/png" sizes="32x32" href="/one-more-in-the-chamber/icons/favicon-32x32.png" />
-    <link rel="icon" type="image/png" sizes="16x16" href="/one-more-in-the-chamber/icons/favicon-16x16.png" />
-    <link rel="apple-touch-icon" sizes="180x180" href="/one-more-in-the-chamber/icons/apple-touch-icon.png" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32x32.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/icons/favicon-16x16.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/icons/apple-touch-icon.png" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
@@ -38,7 +38,7 @@
       // Only register service worker in production (not dev server)
       if ('serviceWorker' in navigator && !window.location.port) {
         window.addEventListener('load', () => {
-          navigator.serviceWorker.register('/one-more-in-the-chamber/sw.js')
+          navigator.serviceWorker.register('/sw.js')
             .then((reg) => {
               // Check for updates periodically (every 30 min)
               setInterval(() => reg.update(), 30 * 60 * 1000);

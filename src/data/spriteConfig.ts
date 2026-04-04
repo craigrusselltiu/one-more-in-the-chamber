@@ -12,8 +12,8 @@ export const TILE_FRAMES: Record<TileType, number> = {
   bullet: 1244,
   iron: 565,
   gold: 1158,
-  bounty: 650,
-  chip: 1012,
+  bounty: 1245,
+  chip: 1246,
   // Starter
   ricochet: 907,
   stampede: 268,
@@ -29,7 +29,7 @@ export const TILE_FRAMES: Record<TileType, number> = {
   fifty_cal: 906,
   tombstone: 824,
   saloon: 715,
-  wanted: 648,
+  mace: 133,
   rattler: 1241,
   barricade: 198,
   cavalry: 786,
@@ -61,20 +61,20 @@ export const STATUS_FRAMES: Record<string, number> = {
   crit: 1080,
   thorns: 1006,
   venom: 828,
-  vulnerable: 770,
-  cracked_ground: 649,
-  bounty: 650,
+  vulnerable: 1178,
+  cracked_ground: 770,
+  bounty: 1245,
 };
 
 /** Map node type icons. */
 export const NODE_FRAMES: Record<string, number> = {
   combat: 1166,
-  elite: 1167,
+  elite: 206,
   shop: 1159,
   rest: 720,
   event: 629,
   treasure: 691,
-  boss: 206,
+  boss: 873,
 };
 
 /** Trait icons (by trait ID). */
