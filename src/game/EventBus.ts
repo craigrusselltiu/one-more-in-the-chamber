@@ -72,6 +72,8 @@ export const GameEvent = {
   // Board input -> CombatManager
   SWAP_REQUESTED: 'board:swap-requested',
   DEADEYE_SHOOT: 'board:deadeye-shoot',
+  /** Enhanced VFX for a Deadeye shot: (x, y, tileColorHex) */
+  DEADEYE_SHOT_VFX: 'vfx:deadeye-shot',
 
   // Map / run flow
   NODE_SELECTED: 'map:node-selected',

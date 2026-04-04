@@ -4,20 +4,23 @@ import { useCombatStore } from '../../store/combatStore';
 import { Tooltip } from '../components/Tooltip';
 
 /**
- * AbilityMeter: Deadeye charge bar below player.
- * Fills left-to-right, glows gold when ready.
- * Click to activate when charged.
+ * AbilityMeter: Deadeye charge bar spanning the full board width.
+ *
+ * 10 segments (one per charge threshold):
+ *   - Charging: filled segments RED, unfilled dark gray
+ *   - Ready (10/10): all segments YELLOW with pulsing glow
+ *   - Active Deadeye: shows shots remaining as gold indicator dots
  */
 export const AbilityMeter = memo(function AbilityMeter() {
   const charge = useCombatStore((s) => s.abilityCharge);
   const threshold = useCombatStore((s) => s.abilityThreshold);
   const isActive = useCombatStore((s) => s.isDeadeyeActive);
   const shotsLeft = useCombatStore((s) => s.deadeyeShotsRemaining);
+  const maxShots = useCombatStore((s) => s.deadeyeMaxShots);
   const phase = useCombatStore((s) => s.phase);
 
-  const pct = threshold > 0 ? Math.min(1, charge / threshold) : 0;
   const ready = charge >= threshold && !isActive;
-  const canActivate = ready && phase === 'swap-phase';
+  const canActivate = ready && (phase === 'swap-phase' || phase === 'consumable-window');
 
   const handleActivate = useCallback(() => {
     if (canActivate) {
@@ -25,7 +28,7 @@ export const AbilityMeter = memo(function AbilityMeter() {
     }
   }, [canActivate]);
 
-  // During Deadeye, show shots remaining
+  // During Deadeye, show shots remaining as gold dots
   if (isActive) {
     return (
       <div className="mt-1">
@@ -33,7 +36,7 @@ export const AbilityMeter = memo(function AbilityMeter() {
           DEADEYE
         </div>
         <div className="flex gap-px justify-center mt-px">
-          {Array.from({ length: 3 }, (_, i) => (
+          {Array.from({ length: maxShots }, (_, i) => (
             <div
               key={i}
               className="rounded-full"
@@ -50,36 +53,53 @@ export const AbilityMeter = memo(function AbilityMeter() {
     );
   }
 
+  // 10-segment charge bar
+  const segments = threshold;
+  const filledCount = Math.min(charge, segments);
+
   return (
-    <Tooltip text={ready ? 'Activate Deadeye' : `${charge}/${threshold} charges`} position="top">
-    <button
-      className="mt-1 pointer-events-auto"
-      onClick={handleActivate}
-      disabled={!canActivate}
-    >
-      <div
-        className="relative bg-stone-800 border"
-        style={{
-          width: 80,
-          height: 6,
-          borderColor: ready ? '#FFD700' : '#555',
-        }}
+    <Tooltip text={ready ? 'Activate Deadeye (Space)' : `${charge}/${threshold} charges`} position="top">
+      <button
+        className="mt-1 pointer-events-auto"
+        onClick={handleActivate}
+        disabled={!canActivate}
       >
+        <div className="flex gap-px" style={{ width: 8 * 32 }}>
+          {Array.from({ length: segments }, (_, i) => {
+            const filled = i < filledCount;
+            let bgColor: string;
+            let extraClass = '';
+
+            if (ready) {
+              bgColor = '#FFD700';
+              extraClass = 'ability-segment-ready';
+            } else if (filled) {
+              bgColor = '#C04050';
+            } else {
+              bgColor = '#2a2a2a';
+            }
+
+            return (
+              <div
+                key={i}
+                className={extraClass}
+                style={{
+                  flex: 1,
+                  height: 6,
+                  backgroundColor: bgColor,
+                  borderRadius: 1,
+                }}
+              />
+            );
+          })}
+        </div>
         <div
-          className="absolute inset-y-0 left-0"
-          style={{
-            width: `${pct * 100}%`,
-            backgroundColor: ready ? '#FFD700' : '#D06080',
-          }}
-        />
-      </div>
-      <div
-        className="text-[7px] text-center leading-none mt-px"
-        style={{ color: ready ? '#FFD700' : '#888' }}
-      >
-        {ready ? 'READY' : `${charge}/${threshold}`}
-      </div>
-    </button>
+          className="text-[7px] text-center leading-none mt-px"
+          style={{ color: ready ? '#FFD700' : '#888' }}
+        >
+          {ready ? 'READY' : `${charge}/${threshold}`}
+        </div>
+      </button>
     </Tooltip>
   );
 });

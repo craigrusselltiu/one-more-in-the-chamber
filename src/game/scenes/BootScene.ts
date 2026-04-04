@@ -45,6 +45,7 @@ export class BootScene extends Phaser.Scene {
     this.load.audio('sfx_match2', `${base}assets/audio/sfx/match2.wav`);
     this.load.audio('sfx_match3', `${base}assets/audio/sfx/match3.wav`);
     this.load.audio('sfx_match_pitch', `${base}assets/audio/sfx/match_pitch.wav`);
+    this.load.audio('sfx_gunshot', `${base}assets/audio/sfx/gunshot.wav`);
     // Backgrounds
     this.load.image('act1_bg', `${base}assets/act1_bg.png`);
     this.load.image('dusty_bg', `${base}assets/dusty_bg.png`);

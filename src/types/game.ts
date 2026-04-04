@@ -33,6 +33,7 @@ export type TileType =
   | 'bullet'
   | 'iron'
   | 'gold'
+  | 'bounty'
   // Starter
   | 'ricochet'
   | 'stampede'

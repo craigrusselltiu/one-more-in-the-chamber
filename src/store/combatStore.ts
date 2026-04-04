@@ -22,6 +22,7 @@ interface CombatStore {
   abilityThreshold: number;
   isDeadeyeActive: boolean;
   deadeyeShotsRemaining: number;
+  deadeyeMaxShots: number;
 
   // Resources
   gold: number;
@@ -65,6 +66,7 @@ const initialState = {
   abilityThreshold: 10,
   isDeadeyeActive: false,
   deadeyeShotsRemaining: 0,
+  deadeyeMaxShots: 3,
   gold: 0,
   swapsRemaining: 2,
   swapsPerTurn: 2,
@@ -93,6 +95,7 @@ export const useCombatStore = create<CombatStore>((set) => ({
       abilityThreshold: state.abilityThreshold,
       isDeadeyeActive: state.isDeadeyeActive,
       deadeyeShotsRemaining: state.deadeyeShotsRemaining,
+      deadeyeMaxShots: state.deadeyeMaxShots,
       swapsRemaining: state.swapsRemaining,
       swapsPerTurn: state.swapsPerTurn,
       enemies: state.enemies,
@@ -141,5 +144,6 @@ export function getEnemyStatusEffects(enemy: EnemyState): EnemyStatusEffect[] {
   if (enemy.venomStacks > 0) effects.push({ type: 'venom', value: enemy.venomStacks });
   if (enemy.vulnerable > 0) effects.push({ type: 'vulnerable', value: enemy.vulnerable });
   if (enemy.crackedGround > 0) effects.push({ type: 'cracked_ground', value: enemy.crackedGround });
+  if (enemy.bountyStacks > 0) effects.push({ type: 'bounty', value: enemy.bountyStacks });
   return effects;
 }

@@ -3,3 +3,12 @@
 * {
   font-family: 'Inter', sans-serif;
 }
+
+/* Deadeye ability bar: pulsing glow when ready */
+@keyframes ability-pulse {
+  0%, 100% { box-shadow: 0 0 2px #FFD700, 0 0 4px #FFD70080; opacity: 1; }
+  50% { box-shadow: 0 0 4px #FFD700, 0 0 8px #FFD700AA; opacity: 0.8; }
+}
+.ability-segment-ready {
+  animation: ability-pulse 1.2s ease-in-out infinite;
+}

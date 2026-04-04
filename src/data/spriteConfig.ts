@@ -12,6 +12,7 @@ export const TILE_FRAMES: Record<TileType, number> = {
   bullet: 1244,
   iron: 565,
   gold: 1158,
+  bounty: 650,
   // Starter
   ricochet: 907,
   stampede: 268,
@@ -61,6 +62,7 @@ export const STATUS_FRAMES: Record<string, number> = {
   venom: 828,
   vulnerable: 770,
   cracked_ground: 649,
+  bounty: 650,
 };
 
 /** Map node type icons. */

@@ -20,6 +20,7 @@ export interface CombatState {
   abilityThreshold: number;
   isDeadeyeActive: boolean;
   deadeyeShotsRemaining: number;
+  deadeyeMaxShots: number;
   /** Turn limit for timed encounters (e.g. Mine Cart). 0 = no limit. */
   turnLimit: number;
   /** Tile types currently suppressed by warrants (produce no output when matched). */
@@ -44,6 +45,7 @@ export interface EnemyState {
   venomStacks: number;
   vulnerable: number;
   crackedGround: number;
+  bountyStacks: number;
   intent: EnemyIntent;
   isDead: boolean;
 }
@@ -73,7 +75,8 @@ export type EnemyStatusEffect =
   | { type: 'block'; value: number }
   | { type: 'venom'; value: number }
   | { type: 'vulnerable'; value: number }
-  | { type: 'cracked_ground'; value: number };
+  | { type: 'cracked_ground'; value: number }
+  | { type: 'bounty'; value: number };
 
 export interface MatchResult {
   tiles: GridPosition[];

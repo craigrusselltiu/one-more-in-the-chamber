@@ -171,13 +171,31 @@ When an enemy is blocking, consider matching gold or setting up instead of wasti
 
 **Charge:** +1 per player turn taken. Dynamite tiles add charges when cleared. Requires **10 charges** to activate. **Meter carries over between fights.**
 
-**Activation:** Crosshair cursor appears. Select **3 tiles** anywhere on the board. Each selected tile is destroyed and generates its resource. Gravity + cascades resolve after all 3 are destroyed.
+**Activation:** Crosshair cursor appears. Select **3 tiles** anywhere on the board (6 with Fully Loaded). Each selected tile is destroyed and generates its resource. Gravity + cascades resolve after each shot.
 
 **Deadeye + Showdown:** Shooting a Showdown tile clears all tiles of a **random** type on the board.
 
-**Animation:** Draw gun, point at enemy, each click fires (muzzle flash, tile shatters).
+**Deadeye + Explosive:** Shooting an explosive tile detonates its 3x3 area.
+
+**Deadeye + Bounty:** Each shot consumes Bounty stacks on the targeted enemy for bonus damage.
 
 **"Fully Loaded"** — red panda-exclusive artifact. 3 shots become 6. Six chambers. The title of the game.
+
+#### Ability Bar
+
+The ability bar spans the full width of the board at the bottom, split into 10 segments (one per charge threshold).
+
+- **Charging:** Filled segments are RED. Unfilled segments are dark gray.
+- **Ready (10/10):** All segments turn YELLOW with a pulsing glow VFX.
+- **Active Deadeye:** Shows shots remaining as gold indicator dots.
+
+#### Shot VFX & SFX
+
+Each Deadeye shot:
+- Plays a gunshot sound effect
+- Triggers an enhanced particle explosion (bigger and more particles than standard tile clears, mix of tile color + white)
+- Leaves a bullet hole at the tile position that fades away after ~1 second
+- Light screen shake on impact
 
 ### Character Animations
 

@@ -4,7 +4,7 @@ need to implement and flesh out:
 future ideas:
 - artifact combine
 - upgrading tile
-- dusty dan tumbleed deals damage to you when fighting him
+- dusty dan tumble weed deals damage to you when fighting him
 - add bullet holes for deadeye on shoot
 
 # Tiles
@@ -18,6 +18,13 @@ Buffs/debuffs:
 - Barricade - at the end of the turn, if you did not take damage, retain block and decrease stacks by 1
 - Vulnerable - take 50% extra damage from attacks, decrease stacks by 1 at the end of your turn
 - Venom - at the start of your turn, take damage equal to the number of stacks and decrease stacks by 1
+- Bounty - upon applying this or taking damage, if HP is lower than Bounty stacks, die
+
+### Bounty
+- Russ exclusive
+- Behaviour: Apply 1 stack of bounty per 3-match; +1 per extra tile.
+- Upgrade: +2 stacks to match total per level
+- Flavor: "Everyone's got a number."
 
 ### Bullet
 - Behaviour: Deal 1 damage per tile.
@@ -33,6 +40,12 @@ Buffs/debuffs:
 - Behaviour: Earn 1 gold per tile.
 - Upgrade: +2 gold to match total per level
 - Flavor: "Makes the world go 'round."
+
+### Bounty
+- Russ exclusive
+- Behaviour: Apply 1 stack of Bounty per 3-match; +1 per extra tile.
+- Upgrade: +2 stacks to match total per level
+- Flavor: "Everyone's got a number."
 
 ## Starter Tiles
 
@@ -74,8 +87,8 @@ Buffs/debuffs:
 - Flavor: "Links in the chain. More you match, harder they hit."
 
 ### Whiskey
-- Behaviour: Heals 1 HP per tile.
-- Upgrade: +2 heal to match total per level
+- Behaviour: Heals 1 HP per 3-match; +1 per extra tile.
+- Upgrade: +1 heal to match total per level
 - Flavor: "The cowboy's medicine."
 
 ### Ace
@@ -99,8 +112,8 @@ Buffs/debuffs:
 - Flavor: "Dead men pay debts."
 
 ### Saloon
-- Behaviour: Heal 1 HP per tile. Generate the resources of adjacent tiles.
-- Upgrade: +2 heal per tile per level
+- Behaviour: Heal 1 HP per 3-match; +1 per extra tile. Generate the resources of adjacent tiles.
+- Upgrade: +1 heal per match total per level
 - Flavor: "Belly up to the bar. Drinks are on the house."
 
 ### Wanted
@@ -736,7 +749,7 @@ Trait level = number of artifacts held with that tag. Effects activate at breakp
 
 ### Fully Loaded
 - Tags: --
-- Effect: Red panda only. Deadeye: 3 shots become 6.
+- Effect: Russ only. Deadeye: 3 shots become 6.
 - Flavor: "Six in the chamber. No reloads."
 
 ### Dusty Canteen

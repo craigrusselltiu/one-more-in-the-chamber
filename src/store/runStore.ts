@@ -98,7 +98,7 @@ export const useRunStore = create<RunStore>((set, get) => ({
         health: 100,
         maxHealth: 100,
         gold,
-        activeTileTypes: ['bullet', 'iron', 'gold', starterTile],
+        activeTileTypes: ['bullet', 'iron', 'gold', 'bounty', starterTile],
         tileUpgrades: {},
         artifacts,
         traitCounts,

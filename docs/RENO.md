@@ -7,7 +7,25 @@
 **Archetype:** Card sharp / gambler
 **Sprite:** 64x64 pixel art
 
-A raccoon card sharp in a silk vest and bowler hat. Where the red panda is a scrappy gunslinger who aims true, Reno is a smooth-talking gambler who stacks the odds. He doesn't fight fair -- he fights lucky.
+A raccoon card sharp in a silk vest and bowler hat. Where Russ is a scrappy gunslinger who aims true, Reno is a smooth-talking gambler who stacks the odds. He doesn't fight fair -- he fights lucky.
+
+## Backstory
+
+Reno ran the best poker table in the territory -- not because he was good at cards, but because nobody ever realized he wasn't playing cards at all. He was playing *them*. Rigged decks, loaded dice, a grin that made you feel like you were winning right up until you checked your pockets.
+
+He made a lot of money. Then he made the mistake of running a game on "Copperhead" Cassidy.
+
+Cassidy didn't lose gracefully. She doesn't lose at all. When she figured out the raccoon in the silk vest had been dealing from the bottom for three straight hours, she didn't flip the table -- she smiled, bought him a drink, and told him exactly how much he now owed her. The number was not small. The interest was worse.
+
+Reno skipped town that night. He's been skipping towns ever since. Every time he stops long enough to breathe, one of Cassidy's collectors shows up with a polite reminder and an impolite weapon. The debt follows him like a shadow with teeth.
+
+So he heads deeper into the Frontier, figuring the one place Cassidy's reach might not extend is past her own front door. If he can get to her and settle the debt -- hustle enough gold, win the right game, talk his way out one more time -- maybe the running stops.
+
+But when Reno finally reaches Cassidy, she laughs. The money he stole? It was never hers. She was holding the table for someone else -- running the game on behalf of "Iron Eye" Isabella. The debt Reno's been running from belongs to the most powerful animal in the Frontier, and Cassidy was just the middleman. Settling up with Copperhead doesn't clear a thing.
+
+Now the running stops and the real game starts. Reno has to get to the Town, get to Isabella, and somehow talk his way out of a debt to someone who holds grudges like other people hold cards -- tight and forever. Isabella doesn't forgive. Not because she can't, but because she won't. He's been improvising his whole life. This is the last hand.
+
+*"I don't cheat. I just play a different game than everyone else. It's not my fault they don't read the rules."*
 
 ## Pixel Art Personality
 
@@ -135,7 +153,7 @@ Softens the crash after shuffling. You still lose the 4-damage peak, but 3 damag
 
 **Contrast with Deadeye:**
 
-| | Deadeye (Red Panda) | Shuffle the Deck (Reno) |
+| | Deadeye (Russ) | Shuffle the Deck (Reno) |
 |---|---|---|
 | Charge | +1/turn, threshold 10 | +1/turn, threshold 7 |
 | Value type | Direct (destroy tiles = immediate resources) | Setup (rearrange board = create opportunities) |

@@ -34,3 +34,8 @@ export function playMatch(comboStep: number): void {
   const pitchRate = 1.0 + (comboStep - 1) * 0.15; // goes up with combo
   play('sfx_match_pitch', 0.3, Math.min(pitchRate, 2.5));
 }
+
+export function playDeadeyeShot(): void {
+  // Gunshot SFX for Deadeye shots (lower pitch match as fallback until gunshot.wav is added)
+  play('sfx_gunshot', 0.5);
+}

@@ -27,6 +27,7 @@ export class Enemy {
       venomStacks: 0,
       vulnerable: 0,
       crackedGround: 0,
+      bountyStacks: 0,
       intent: { type: 'attack', value: 0, description: '' },
       isDead: false,
     };
@@ -168,6 +169,20 @@ export class Enemy {
 
   addVulnerable(stacks: number): void {
     this.state.vulnerable += stacks;
+  }
+
+  addBounty(stacks: number): void {
+    this.state.bountyStacks += stacks;
+  }
+
+  /** Check if bounty kill threshold is met: HP <= bountyStacks. */
+  checkBountyKill(): boolean {
+    if (this.state.bountyStacks > 0 && this.state.health <= this.state.bountyStacks && !this.state.isDead) {
+      this.state.health = 0;
+      this.state.isDead = true;
+      return true;
+    }
+    return false;
   }
 
   /** Execute this enemy's announced intent. Returns the attack damage value (0 if not attacking). */

@@ -35,6 +35,7 @@ export class CombatScene extends Phaser.Scene {
   private boundOnFlashLineToEnemy: (...args: unknown[]) => void;
   private boundOnScreenShake: (...args: unknown[]) => void;
   private boundOnTileParticles: (...args: unknown[]) => void;
+  private boundOnDeadeyeShotVfx: (...args: unknown[]) => void;
 
   constructor() {
     super({ key: 'CombatScene' });
@@ -43,6 +44,7 @@ export class CombatScene extends Phaser.Scene {
     this.boundOnFlashLineToEnemy = this.onFlashLineToEnemy.bind(this);
     this.boundOnScreenShake = this.onScreenShake.bind(this);
     this.boundOnTileParticles = this.onTileParticles.bind(this);
+    this.boundOnDeadeyeShotVfx = this.onDeadeyeShotVfx.bind(this);
   }
 
   create(data?: { config?: CombatConfig; snapshot?: CombatSnapshot }): void {
@@ -70,6 +72,7 @@ export class CombatScene extends Phaser.Scene {
     EventBus.on(GameEvent.FLASH_LINE_TO_ENEMY, this.boundOnFlashLineToEnemy);
     EventBus.on(GameEvent.SCREEN_SHAKE, this.boundOnScreenShake);
     EventBus.on(GameEvent.TILE_PARTICLES, this.boundOnTileParticles);
+    EventBus.on(GameEvent.DEADEYE_SHOT_VFX, this.boundOnDeadeyeShotVfx);
 
     // Spacebar activates deadeye ability.
     // Also prevent default so space doesn't trigger focused UI buttons.
@@ -293,6 +296,63 @@ export class CombatScene extends Phaser.Scene {
     }
   }
 
+  /**
+   * Enhanced VFX for a Deadeye shot:
+   *  - Bigger particle burst (more particles, mix of tile color + white)
+   *  - Bullet hole at tile position that fades after ~1s
+   *  - Light screen shake
+   */
+  private onDeadeyeShotVfx(...args: unknown[]): void {
+    if (!useSettingsStore.getState().juiceAnimationsEnabled) return;
+    const x = args[0] as number;
+    const y = args[1] as number;
+    const colorHex = args[2] as string;
+    const color = parseInt(colorHex.replace('#', ''), 16);
+
+    // Enhanced particle burst: 10-14 particles (vs 4-6 for standard clears)
+    const count = 10 + Math.floor(Math.random() * 5);
+    for (let i = 0; i < count; i++) {
+      // Alternate between tile color and white for the "mix" effect
+      const useWhite = i % 3 === 0;
+      const particleColor = useWhite ? 0xffffff : color;
+      const size = 1 + Math.floor(Math.random() * 3); // 1-3px (bigger than standard 1-2px)
+      const particle = this.add
+        .rectangle(Math.round(x), Math.round(y), size, size, particleColor, 1)
+        .setDepth(5);
+
+      const angle = (Math.PI * 2 * i) / count + (Math.random() - 0.5) * 0.8;
+      const dist = 12 + Math.random() * 16; // farther spread than standard (8-18 -> 12-28)
+      const targetX = Math.round(x + Math.cos(angle) * dist);
+      const targetY = Math.round(y + Math.sin(angle) * dist);
+
+      this.tweens.add({
+        targets: particle,
+        x: targetX,
+        y: targetY,
+        alpha: 0,
+        duration: 250 + Math.random() * 200,
+        ease: 'Quad.easeOut',
+        onComplete: () => particle.destroy(),
+      });
+    }
+
+    // Bullet hole: dark circle that fades after ~1s
+    const hole = this.add
+      .circle(Math.round(x), Math.round(y), 3, 0x222222, 0.8)
+      .setDepth(4);
+    this.tweens.add({
+      targets: hole,
+      alpha: 0,
+      duration: 1000,
+      delay: 200,
+      ease: 'Power2',
+      onComplete: () => hole.destroy(),
+    });
+
+    // Light screen shake
+    this.screenShake.shake('light');
+  }
+
   // Floating numbers are rendered by React (FloatingNumbers component in CombatHUD)
 
   shutdown(): void {
@@ -301,6 +361,7 @@ export class CombatScene extends Phaser.Scene {
     EventBus.off(GameEvent.FLASH_LINE_TO_ENEMY, this.boundOnFlashLineToEnemy);
     EventBus.off(GameEvent.SCREEN_SHAKE, this.boundOnScreenShake);
     EventBus.off(GameEvent.TILE_PARTICLES, this.boundOnTileParticles);
+    EventBus.off(GameEvent.DEADEYE_SHOT_VFX, this.boundOnDeadeyeShotVfx);
     this.screenShake?.destroy();
     this.combatManager?.destroy();
     this.board?.destroy();

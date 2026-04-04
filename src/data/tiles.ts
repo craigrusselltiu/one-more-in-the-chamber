@@ -9,6 +9,7 @@ export const TILE_COLORS: Record<TileType, string> = {
   bullet: '#D4A030',
   iron: '#6888A0',
   gold: '#FFD700',
+  bounty: '#C04040',
   ricochet: '#D06080',
   stampede: '#8B6030',
   buckshot: '#C05030',
@@ -72,6 +73,19 @@ export const TILE_DEFINITIONS: Record<TileType, TileDefinition> = {
     description: 'Earn 1 gold per tile.',
     flavor: "Makes the world go 'round.",
     upgradeText: '+2 gold to match total per level',
+  },
+
+  bounty: {
+    type: 'bounty',
+    label: 'Bounty',
+    abbreviation: 'By',
+    color: TILE_COLORS.bounty,
+    baseValue: 1,
+    upgradeValue: 2,
+    pool: 'core',
+    description: 'Apply 1 Bounty stack per 3-match; +1 per extra tile. If enemy HP <= Bounty stacks, enemy dies.',
+    flavor: "Everyone's got a number.",
+    upgradeText: '+2 stacks to match total per level',
   },
 
   // --- Starter ---
@@ -354,7 +368,7 @@ export const TILE_DEFINITIONS: Record<TileType, TileDefinition> = {
   },
 };
 
-export const CORE_TILES: TileType[] = ['bullet', 'iron', 'gold'];
+export const CORE_TILES: TileType[] = ['bullet', 'iron', 'gold', 'bounty'];
 
 export const STARTER_POOL: TileType[] = [
   'ricochet', 'stampede', 'buckshot', 'battery', 'venom', 'prairie_fire',

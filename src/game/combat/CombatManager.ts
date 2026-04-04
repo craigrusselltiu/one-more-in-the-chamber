@@ -11,6 +11,7 @@ import { TraitSystem } from './TraitSystem';
 import { ArtifactSystem } from './ArtifactSystem';
 import type { ResourceOutput } from './ResourceResolver';
 import { BoardHazardManager } from '../board/BoardHazardManager';
+import { TILE_COLORS } from '../../data/tiles';
 import { chooseEnemyIntent, chooseMineCartTimedIntent, executeBoardManipulation } from './EnemyAI';
 import { BossController } from './BossController';
 import {
@@ -19,7 +20,7 @@ import {
   ELITE_MODIFIERS,
 } from './EliteModifiers';
 import type { EliteModifierId, EliteModifier } from './EliteModifiers';
-import { playSwapFail, playMatch } from '../../services/sfx';
+import { playSwapFail, playMatch, playDeadeyeShot } from '../../services/sfx';
 
 export interface CombatConfig {
   enemies: EnemyDefinition[];
@@ -681,6 +682,12 @@ export class CombatManager {
 
     const type = tile.type;
 
+    // Deadeye shot VFX + SFX
+    playDeadeyeShot();
+    const center = tile.getWorldCenter();
+    const colorHex = TILE_COLORS[type] ?? '#ffffff';
+    EventBus.emit(GameEvent.DEADEYE_SHOT_VFX, center.x, center.y, colorHex);
+
     this.board.setIsResolving(true);
 
     // Handle special tiles
@@ -1173,6 +1180,10 @@ export class CombatManager {
       this.damageDealtThisFight += enemy.takeDamage(damage);
     }
     this.floatOnEnemy(enemy, `-${damage}`, '#ff4444');
+    // Bounty kill check: if HP dropped to or below bounty stacks, execute
+    if (enemy.checkBountyKill()) {
+      this.floatOnEnemy(enemy, 'COLLECTED', '#FFD700');
+    }
   }
 
   private applyResourceOutput(output: ResourceOutput): void {
@@ -1246,6 +1257,19 @@ export class CombatManager {
       if (target) {
         target.addVulnerable(output.vulnerableStacks);
         this.floatOnEnemy(target, `+${output.vulnerableStacks} VUL`, '#C070D0');
+      }
+    }
+
+    // Bounty stacks
+    if (output.bountyStacks > 0) {
+      const target = this.getTargetedAliveEnemy();
+      if (target) {
+        target.addBounty(output.bountyStacks);
+        this.floatOnEnemy(target, `+${output.bountyStacks} BTY`, '#C04040');
+        if (target.checkBountyKill()) {
+          this.floatOnEnemy(target, 'COLLECTED', '#FFD700');
+          this.emitEnemyHpChanges();
+        }
       }
     }
 
@@ -1327,6 +1351,9 @@ export class CombatManager {
         this.damageDealtThisFight += venomDamage;
         this.floatOnEnemy(enemy, `-${venomDamage}`, '#60A040');
         EventBus.emit(GameEvent.ENEMY_HP_CHANGE, { ...enemy.state });
+        if (enemy.checkBountyKill()) {
+          this.floatOnEnemy(enemy, 'COLLECTED', '#FFD700');
+        }
       }
       // Vulnerable decreases by 1 at end of turn
       if (enemy.state.vulnerable > 0) {
@@ -1615,6 +1642,7 @@ export class CombatManager {
       abilityThreshold: this.player.abilityThreshold,
       isDeadeyeActive: this.isDeadeyeActive,
       deadeyeShotsRemaining: this.deadeyeShotsRemaining,
+      deadeyeMaxShots: this.deadeyeMaxShots,
       turnLimit: this.turnLimit,
       suppressedTileTypes: this.hazardManager.getSuppressedTypes(),
     };

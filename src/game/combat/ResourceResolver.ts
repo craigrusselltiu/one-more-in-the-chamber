@@ -13,6 +13,7 @@ export interface ResourceOutput {
   luckyStacks: number;
   barricadeStacks: number;
   vulnerableStacks: number;
+  bountyStacks: number;
   isAoE: boolean;
   /** If true, damage pierces block. */
   piercesBlock: boolean;
@@ -221,6 +222,11 @@ export class ResourceResolver {
         output.venomStacks = count + Math.round(upgradeBonus);
         break;
 
+      // --- Bounty (per 3-match; +1 per extra tile) ---
+      case 'bounty':
+        output.bountyStacks = Math.max(0, count - 2) + Math.round(upgradeBonus);
+        break;
+
       // --- Special ---
       case 'mirage':
       case 'showdown':
@@ -245,6 +251,7 @@ export class ResourceResolver {
       luckyStacks: 0,
       barricadeStacks: 0,
       vulnerableStacks: 0,
+      bountyStacks: 0,
       isAoE: false,
       piercesBlock: false,
       targetsHighestHp: false,
