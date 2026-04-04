@@ -24,7 +24,7 @@ export interface RunState {
   status: 'active' | 'completed' | 'abandoned';
 }
 
-export type CharacterId = 'red_panda';
+export type CharacterId = 'red_panda' | 'reno';
 
 export type Act = 1 | 2 | 3;
 
@@ -34,6 +34,7 @@ export type TileType =
   | 'iron'
   | 'gold'
   | 'bounty'
+  | 'chip'
   // Starter
   | 'ricochet'
   | 'stampede'

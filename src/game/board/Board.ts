@@ -104,10 +104,80 @@ export class Board {
 
   /** Whether deadeye targeting mode is active (clicks shoot instead of swap). */
   private deadeyeMode = false;
+  /** Whether shuffle hold mode is active (clicks toggle hold). */
+  private shuffleHoldMode = false;
+  /** Set of held position keys ("row,col") during Shuffle the Deck. */
+  private shuffleHeldKeys = new Set<string>();
 
   setDeadeyeMode(active: boolean): void {
     this.deadeyeMode = active;
     if (active) this.clearSelection();
+  }
+
+  setShuffleHoldMode(active: boolean): void {
+    this.shuffleHoldMode = active;
+    if (!active) {
+      // Clear held tile visuals
+      for (const key of this.shuffleHeldKeys) {
+        const [r, c] = key.split(',').map(Number);
+        const tile = this.grid[r]?.[c];
+        if (tile) tile.clearTint();
+      }
+      this.shuffleHeldKeys.clear();
+    }
+    if (active) this.clearSelection();
+  }
+
+  /** Toggle hold on a tile during Shuffle the Deck. Returns new held count. */
+  toggleShuffleHold(row: number, col: number): number {
+    const key = `${row},${col}`;
+    const tile = this.grid[row]?.[col];
+    if (this.shuffleHeldKeys.has(key)) {
+      this.shuffleHeldKeys.delete(key);
+      if (tile) tile.clearTint();
+    } else {
+      this.shuffleHeldKeys.add(key);
+      if (tile) tile.setTint(0xffd700); // Gold tint for held tiles
+    }
+    return this.shuffleHeldKeys.size;
+  }
+
+  /** Shuffle all non-held tiles to random positions. */
+  shuffleNonHeld(): void {
+    const nonHeldPositions: GridPosition[] = [];
+    const nonHeldTypes: TileType[] = [];
+
+    for (let row = 0; row < BOARD_SIZE; row++) {
+      for (let col = 0; col < BOARD_SIZE; col++) {
+        const key = `${row},${col}`;
+        const tile = this.grid[row]?.[col];
+        if (!tile) continue;
+        if (this.shuffleHeldKeys.has(key)) continue;
+        nonHeldPositions.push({ row, col });
+        nonHeldTypes.push(tile.type);
+      }
+    }
+
+    // Fisher-Yates shuffle of types
+    for (let i = nonHeldTypes.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [nonHeldTypes[i], nonHeldTypes[j]] = [nonHeldTypes[j], nonHeldTypes[i]];
+    }
+
+    // Reassign types to positions
+    for (let i = 0; i < nonHeldPositions.length; i++) {
+      const pos = nonHeldPositions[i];
+      const tile = this.grid[pos.row]?.[pos.col];
+      if (tile) tile.setType(nonHeldTypes[i]);
+    }
+
+    // Clear held visuals
+    for (const key of this.shuffleHeldKeys) {
+      const [r, c] = key.split(',').map(Number);
+      const t = this.grid[r]?.[c];
+      if (t) t.clearTint();
+    }
+    this.shuffleHeldKeys.clear();
   }
 
   private setupInput(): void {
@@ -115,6 +185,12 @@ export class Board {
       if (!this.inputEnabled || this.isResolving) return;
       const pos = this.pointerToGrid(pointer);
       if (!pos) return;
+
+      // Shuffle hold mode: click to toggle hold on tile
+      if (this.shuffleHoldMode) {
+        EventBus.emit(GameEvent.SHUFFLE_HOLD_TOGGLE, pos.row, pos.col);
+        return;
+      }
 
       // Deadeye mode: click to shoot a tile
       if (this.deadeyeMode) {

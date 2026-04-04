@@ -13,6 +13,7 @@ export const TILE_FRAMES: Record<TileType, number> = {
   iron: 565,
   gold: 1158,
   bounty: 650,
+  chip: 1012,
   // Starter
   ricochet: 907,
   stampede: 268,

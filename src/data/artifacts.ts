@@ -206,6 +206,13 @@ export const ARTIFACTS: ArtifactDefinition[] = [
     tags: [],
     effect: 'Red panda only. Deadeye: 3 shots become 6.',
   },
+  {
+    id: 'double_down',
+    name: 'Double Down',
+    description: 'The stakes just got higher.',
+    tags: [],
+    effect: 'Reno only. Chip damage doubled. Miss: lose HP (increases by 1 per miss).',
+  },
 
   // --- Batch 2: Outlaw / Sheriff / Prospector focus ---
 

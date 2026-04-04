@@ -17,7 +17,7 @@ export class Player {
   gold = 0;
   goldThisFight = 0;
   abilityCharge: number;
-  readonly abilityThreshold = 10;
+  readonly abilityThreshold: number;
   deadeyeShots = 3;
   activeTileTypes: TileType[];
   tileUpgrades: Partial<Record<TileType, number>>;
@@ -28,6 +28,7 @@ export class Player {
     health: number,
     maxHealth: number,
     abilityCharge: number,
+    abilityThreshold: number,
     activeTileTypes: TileType[],
     tileUpgrades: Partial<Record<TileType, number>>,
     gold: number,
@@ -35,6 +36,7 @@ export class Player {
     this.health = health;
     this.maxHealth = maxHealth;
     this.abilityCharge = abilityCharge;
+    this.abilityThreshold = abilityThreshold;
     this.activeTileTypes = activeTileTypes;
     this.tileUpgrades = tileUpgrades;
     this.gold = gold;

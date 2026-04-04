@@ -61,6 +61,8 @@ export const useRunStore = create<RunStore>((set, get) => ({
   setPendingNewGame: (config) => set({ pendingNewGame: config }),
 
   startRun: (seed, starterTile, ascensionLevel = 0) => {
+    const pending = get().pendingNewGame;
+    const character = pending?.character ?? 'red_panda';
     const mapState = generateMap(seed, 1);
     const loadouts = useMetaStore.getState().meta.unlockedLoadouts;
 
@@ -86,11 +88,16 @@ export const useRunStore = create<RunStore>((set, get) => ({
       consumables.push({ id: 'smoke_bomb' }, { id: 'signal_flare' });
     }
 
+    // Character-specific core tiles
+    const coreTiles: TileType[] = character === 'reno'
+      ? ['bullet', 'iron', 'gold', 'chip', starterTile]
+      : ['bullet', 'iron', 'gold', 'bounty', starterTile];
+
     set({
       pendingNewGame: null,
       run: {
         id: crypto.randomUUID(),
-        character: 'red_panda',
+        character,
         seed,
         ascensionLevel,
         currentAct: 1,
@@ -98,7 +105,7 @@ export const useRunStore = create<RunStore>((set, get) => ({
         health: 100,
         maxHealth: 100,
         gold,
-        activeTileTypes: ['bullet', 'iron', 'gold', 'bounty', starterTile],
+        activeTileTypes: coreTiles,
         tileUpgrades: {},
         artifacts,
         traitCounts,

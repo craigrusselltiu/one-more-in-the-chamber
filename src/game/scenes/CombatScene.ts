@@ -91,6 +91,7 @@ export class CombatScene extends Phaser.Scene {
   /** Normal combat start: init board, run intro animation, start turn 1. */
   private startFresh(config?: CombatConfig): void {
     const combatConfig: CombatConfig = config ?? {
+      character: 'red_panda',
       enemies: [ACT1_ENEMIES.coyote],
       playerHealth: 100,
       playerMaxHealth: 100,
@@ -143,6 +144,7 @@ export class CombatScene extends Phaser.Scene {
 
     // Create combat manager with a minimal config (state will be overwritten)
     const config: CombatConfig = {
+      character: snapshot.character ?? 'red_panda',
       enemies: snapshot.enemies.map((e) => e.definition),
       playerHealth: snapshot.player.health,
       playerMaxHealth: snapshot.player.maxHealth,

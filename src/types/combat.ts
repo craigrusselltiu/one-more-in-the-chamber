@@ -1,8 +1,9 @@
-import type { TileType } from './game';
+import type { TileType, CharacterId } from './game';
 
 /** Combat-specific types. */
 
 export interface CombatState {
+  character: CharacterId;
   turnNumber: number;
   swapsRemaining: number;
   swapsPerTurn: number;
@@ -21,6 +22,11 @@ export interface CombatState {
   isDeadeyeActive: boolean;
   deadeyeShotsRemaining: number;
   deadeyeMaxShots: number;
+  /** Shuffle the Deck (Reno): hold mode is active. */
+  isShuffleHoldMode: boolean;
+  /** Number of holds remaining during Shuffle the Deck. */
+  shuffleHoldsRemaining: number;
+  shuffleMaxHolds: number;
   /** Turn limit for timed encounters (e.g. Mine Cart). 0 = no limit. */
   turnLimit: number;
   /** Tile types currently suppressed by warrants (produce no output when matched). */

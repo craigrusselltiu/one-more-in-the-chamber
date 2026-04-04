@@ -77,6 +77,14 @@ export class Tile {
     this.updateOverlay();
   }
 
+  setTint(color: number): void {
+    this.sprite.setTint(color);
+  }
+
+  clearTint(): void {
+    this.sprite.clearTint();
+  }
+
   setExplosive(value: boolean): void {
     this.isExplosive = value;
     this.isShowdown = false;

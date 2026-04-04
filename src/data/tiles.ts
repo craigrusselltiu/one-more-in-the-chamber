@@ -10,6 +10,7 @@ export const TILE_COLORS: Record<TileType, string> = {
   iron: '#6888A0',
   gold: '#FFD700',
   bounty: '#C04040',
+  chip: '#B060D0',
   ricochet: '#D06080',
   stampede: '#8B6030',
   buckshot: '#C05030',
@@ -86,6 +87,19 @@ export const TILE_DEFINITIONS: Record<TileType, TileDefinition> = {
     description: 'Apply 1 Bounty stack per 3-match; +1 per extra tile. If enemy HP <= Bounty stacks, enemy dies.',
     flavor: "Everyone's got a number.",
     upgradeText: '+2 stacks to match total per level',
+  },
+
+  chip: {
+    type: 'chip',
+    label: 'Chip',
+    abbreviation: 'Cp',
+    color: TILE_COLORS.chip,
+    baseValue: 10,
+    upgradeValue: 5,
+    pool: 'core',
+    description: '50% chance to deal 10 damage; 50% chance to deal 0.',
+    flavor: "Heads or tails. Either way, the coin's in the air.",
+    upgradeText: '+5 damage per level',
   },
 
   // --- Starter ---

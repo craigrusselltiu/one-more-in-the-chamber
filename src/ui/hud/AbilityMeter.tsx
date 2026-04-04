@@ -4,23 +4,26 @@ import { useCombatStore } from '../../store/combatStore';
 import { Tooltip } from '../components/Tooltip';
 
 /**
- * AbilityMeter: Deadeye charge bar spanning the full board width.
+ * AbilityMeter: charge bar spanning the full board width.
  *
- * 10 segments (one per charge threshold):
- *   - Charging: filled segments RED, unfilled dark gray
- *   - Ready (10/10): all segments YELLOW with pulsing glow
- *   - Active Deadeye: shows shots remaining as gold indicator dots
+ * Russ (Deadeye): 10-segment bar, shots remaining as gold dots when active.
+ * Reno (Shuffle the Deck): 7-segment bar, hold count when active.
  */
 export const AbilityMeter = memo(function AbilityMeter() {
+  const character = useCombatStore((s) => s.character);
   const charge = useCombatStore((s) => s.abilityCharge);
   const threshold = useCombatStore((s) => s.abilityThreshold);
-  const isActive = useCombatStore((s) => s.isDeadeyeActive);
+  const isDeadeyeActive = useCombatStore((s) => s.isDeadeyeActive);
   const shotsLeft = useCombatStore((s) => s.deadeyeShotsRemaining);
   const maxShots = useCombatStore((s) => s.deadeyeMaxShots);
+  const isShuffleHoldMode = useCombatStore((s) => s.isShuffleHoldMode);
+  const shuffleHoldsRemaining = useCombatStore((s) => s.shuffleHoldsRemaining);
+  const shuffleMaxHolds = useCombatStore((s) => s.shuffleMaxHolds);
   const phase = useCombatStore((s) => s.phase);
 
+  const isActive = isDeadeyeActive || isShuffleHoldMode;
   const ready = charge >= threshold && !isActive;
-  const canActivate = ready && (phase === 'swap-phase' || phase === 'consumable-window');
+  const canActivate = (ready || isShuffleHoldMode) && (phase === 'swap-phase' || phase === 'consumable-window');
 
   const handleActivate = useCallback(() => {
     if (canActivate) {
@@ -28,8 +31,11 @@ export const AbilityMeter = memo(function AbilityMeter() {
     }
   }, [canActivate]);
 
+  const isReno = character === 'reno';
+  const abilityName = isReno ? 'Shuffle the Deck' : 'Deadeye';
+
   // During Deadeye, show shots remaining as gold dots
-  if (isActive) {
+  if (isDeadeyeActive) {
     return (
       <div className="mt-1">
         <div className="text-[7px] text-yellow-400 font-bold text-center leading-none">
@@ -53,12 +59,46 @@ export const AbilityMeter = memo(function AbilityMeter() {
     );
   }
 
-  // 10-segment charge bar
+  // During Shuffle hold mode, show holds remaining
+  if (isShuffleHoldMode) {
+    const holdsUsed = shuffleMaxHolds - shuffleHoldsRemaining;
+    return (
+      <div className="mt-1">
+        <div className="text-[7px] text-yellow-400 font-bold text-center leading-none">
+          HOLD TILES ({holdsUsed}/{shuffleMaxHolds})
+        </div>
+        <div className="flex gap-px justify-center mt-px">
+          {Array.from({ length: shuffleMaxHolds }, (_, i) => (
+            <div
+              key={i}
+              className="rounded-full"
+              style={{
+                width: 6,
+                height: 6,
+                backgroundColor: i < holdsUsed ? '#FFD700' : '#333',
+                border: '1px solid #FFD700',
+              }}
+            />
+          ))}
+        </div>
+        <Tooltip text="Confirm shuffle (Space)" position="top">
+          <button
+            className="mt-0.5 px-2 py-px text-[7px] text-amber-300 bg-amber-900/60 border border-amber-700 hover:bg-amber-800/60 pointer-events-auto"
+            onClick={handleActivate}
+          >
+            SHUFFLE
+          </button>
+        </Tooltip>
+      </div>
+    );
+  }
+
+  // Charge bar
   const segments = threshold;
   const filledCount = Math.min(charge, segments);
 
   return (
-    <Tooltip text={ready ? 'Activate Deadeye (Space)' : `${charge}/${threshold} charges`} position="top">
+    <Tooltip text={ready ? `Activate ${abilityName} (Space)` : `${charge}/${threshold} charges`} position="top">
       <button
         className="mt-1 pointer-events-auto"
         onClick={handleActivate}
@@ -74,7 +114,7 @@ export const AbilityMeter = memo(function AbilityMeter() {
               bgColor = '#FFD700';
               extraClass = 'ability-segment-ready';
             } else if (filled) {
-              bgColor = '#C04050';
+              bgColor = isReno ? '#B060D0' : '#C04050';
             } else {
               bgColor = '#2a2a2a';
             }

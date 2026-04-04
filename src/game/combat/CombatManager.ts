@@ -1,6 +1,6 @@
 import type { Board, SwapResult } from '../board/Board';
 import type { CombatState, CombatPhase, MatchResult, EnemyDefinition } from '../../types/combat';
-import type { TileType, ArtifactInstance, TraitId } from '../../types/game';
+import type { TileType, ArtifactInstance, TraitId, CharacterId } from '../../types/game';
 import type { CombatSnapshot, SerializedEnemy } from '../../types/combatSnapshot';
 import { SNAPSHOT_VERSION } from '../../types/combatSnapshot';
 import { EventBus, GameEvent } from '../EventBus';
@@ -23,6 +23,7 @@ import type { EliteModifierId, EliteModifier } from './EliteModifiers';
 import { playSwapFail, playMatch, playDeadeyeShot } from '../../services/sfx';
 
 export interface CombatConfig {
+  character: CharacterId;
   enemies: EnemyDefinition[];
   playerHealth: number;
   playerMaxHealth: number;
@@ -76,6 +77,7 @@ export interface CombatResult {
 export class CombatManager {
   private board: Board;
   private player: Player;
+  private character: CharacterId;
   private enemies: Enemy[] = [];
   private resolver: ResourceResolver;
   private traits: TraitSystem;
@@ -91,6 +93,11 @@ export class CombatManager {
   private isDeadeyeActive = false;
   private deadeyeShotsRemaining = 0;
   private deadeyeMaxShots: number;
+  /** Shuffle the Deck (Reno): hold mode active. */
+  private isShuffleHoldMode = false;
+  /** Positions held during Shuffle the Deck. */
+  private shuffleHeldPositions: import('../../types/combat').GridPosition[] = [];
+  private shuffleMaxHolds = 3;
   private isBoss: boolean;
   /** Turn limit for timed encounters. 0 = unlimited. */
   private turnLimit: number;
@@ -117,6 +124,7 @@ export class CombatManager {
 
   constructor(board: Board, config: CombatConfig) {
     this.board = board;
+    this.character = config.character;
     this.resolver = new ResourceResolver();
     this.hazardManager = new BoardHazardManager(board);
     this.isBoss = config.isBoss ?? false;
@@ -135,11 +143,15 @@ export class CombatManager {
     // Deadeye shots: 3 base, 6 with Fully Loaded, or explicit override
     this.deadeyeMaxShots = config.deadeyeShots ?? this.artifacts.getDeadeyeShots();
 
+    // Character-specific ability threshold
+    const abilityThreshold = config.character === 'reno' ? 7 : 10;
+
     // Initialize player from run state
     this.player = new Player(
       config.playerHealth,
       config.playerMaxHealth,
       config.abilityCharge,
+      abilityThreshold,
       config.activeTileTypes,
       config.tileUpgrades,
       config.playerGold,
@@ -221,7 +233,19 @@ export class CombatManager {
     });
 
     on(GameEvent.ACTIVATE_ABILITY, () => {
-      this.activateDeadeye();
+      if (this.isShuffleHoldMode) {
+        // Second press during hold mode: confirm shuffle
+        this.confirmShuffle();
+      } else if (this.character === 'reno') {
+        this.activateShuffle();
+      } else {
+        this.activateDeadeye();
+      }
+    });
+
+    on(GameEvent.SHUFFLE_HOLD_TOGGLE, (...args: unknown[]) => {
+      const [row, col] = args as number[];
+      this.toggleShuffleHold(row, col);
     });
 
     on(GameEvent.END_TURN_EARLY, () => {
@@ -303,6 +327,7 @@ export class CombatManager {
       version: SNAPSHOT_VERSION,
       runId,
       timestamp: Date.now(),
+      character: this.character,
       board: this.board.serialize(),
       turnNumber: this.turnNumber,
       swapsRemaining: this.swapsRemaining,
@@ -359,10 +384,12 @@ export class CombatManager {
 
     // Restore player
     const sp = snapshot.player;
+    const threshold = (snapshot.character ?? this.character) === 'reno' ? 7 : 10;
     this.player = new Player(
       sp.health,
       sp.maxHealth,
       sp.abilityCharge,
+      threshold,
       sp.activeTileTypes,
       sp.tileUpgrades,
       sp.gold,
@@ -796,6 +823,79 @@ export class CombatManager {
     this.board.setDeadeyeMode(false);
     document.body.classList.remove('cursor-crosshair');
     EventBus.emit(GameEvent.ABILITY_CHARGE_CHANGE, this.player.abilityCharge, this.player.abilityThreshold);
+    this.emitFullState();
+  }
+
+  // ---------------------------------------------------------------------------
+  // Shuffle the Deck Ability (Reno)
+  // ---------------------------------------------------------------------------
+
+  /**
+   * Activate Shuffle the Deck: enter hold mode (select up to 3 tiles to keep).
+   */
+  private activateShuffle(): boolean {
+    if (this.phase !== 'swap-phase' && this.phase !== 'consumable-window') return false;
+    if (!this.player.isDeadeyeReady()) return false; // reuses same charge check
+    this.player.activateDeadeye(); // consume charges
+
+    this.isShuffleHoldMode = true;
+    this.shuffleHeldPositions = [];
+    this.board.setShuffleHoldMode(true);
+    this.emitFullState();
+    EventBus.emit(GameEvent.ABILITY_CHARGE_CHANGE, this.player.abilityCharge, this.player.abilityThreshold);
+    return true;
+  }
+
+  private toggleShuffleHold(row: number, col: number): void {
+    if (!this.isShuffleHoldMode) return;
+
+    const idx = this.shuffleHeldPositions.findIndex(p => p.row === row && p.col === col);
+    if (idx >= 0) {
+      // Un-hold
+      this.shuffleHeldPositions.splice(idx, 1);
+      this.board.toggleShuffleHold(row, col);
+    } else if (this.shuffleHeldPositions.length < this.shuffleMaxHolds) {
+      // Hold
+      this.shuffleHeldPositions.push({ row, col });
+      this.board.toggleShuffleHold(row, col);
+    }
+    // else: at max holds, ignore
+    this.emitFullState();
+  }
+
+  /**
+   * Confirm the shuffle: randomize all non-held tiles, then cascade.
+   */
+  private async confirmShuffle(): Promise<void> {
+    if (!this.isShuffleHoldMode) return;
+
+    this.board.shuffleNonHeld();
+    this.isShuffleHoldMode = false;
+    this.board.setShuffleHoldMode(false);
+    this.emitFullState();
+
+    // Resolve cascades from the shuffle
+    this.board.setIsResolving(true);
+    this.ricochetTriggeredThisResolution = false;
+    let cascadeSteps = 0;
+    const onCascadeStep = this.makeCascadeStepHandler(() => ++cascadeSteps);
+
+    await this.board.resolveMatchesFull(onCascadeStep);
+
+    while (this.ricochetTriggeredThisResolution) {
+      this.ricochetTriggeredThisResolution = false;
+      await this.board.applyGravityAnimated();
+      await this.board.fillEmptyTilesAnimated();
+      await this.board.resolveMatchesFull(onCascadeStep);
+    }
+
+    this.board.setIsResolving(false);
+    EventBus.emit(GameEvent.COMBO_UPDATE, 0);
+
+    if (this.isCombatOver()) {
+      this.endCombat();
+    }
+
     this.emitFullState();
   }
 
@@ -1292,6 +1392,21 @@ export class CombatManager {
       EventBus.emit(GameEvent.SWAPS_CHANGE, this.swapsRemaining, this.swapsPerTurn);
     }
 
+    // Chip miss/hit feedback
+    if (output.chipHit === true) {
+      this.floatOnPlayer('HIT', '#B060D0');
+    } else if (output.chipHit === false) {
+      this.floatOnPlayer('MISS', '#666');
+    }
+
+    // Double Down: self-damage on chip miss
+    if (output.doubleDownPenalty && output.doubleDownPenalty > 0) {
+      this.player.health = Math.max(0, this.player.health - output.doubleDownPenalty);
+      this.floatOnPlayer(`-${output.doubleDownPenalty}`, '#ff4444');
+      EventBus.emit(GameEvent.PLAYER_HP_CHANGE, this.player.health, this.player.maxHealth);
+      if (this.player.health <= 0) this.playerTookDamageThisFight = true;
+    }
+
     EventBus.emit(GameEvent.STATUS_EFFECT_CHANGE);
   }
 
@@ -1625,6 +1740,7 @@ export class CombatManager {
       : 0;
 
     return {
+      character: this.character,
       turnNumber: this.turnNumber,
       swapsRemaining: this.swapsRemaining,
       swapsPerTurn: this.swapsPerTurn,
@@ -1643,6 +1759,9 @@ export class CombatManager {
       isDeadeyeActive: this.isDeadeyeActive,
       deadeyeShotsRemaining: this.deadeyeShotsRemaining,
       deadeyeMaxShots: this.deadeyeMaxShots,
+      isShuffleHoldMode: this.isShuffleHoldMode,
+      shuffleHoldsRemaining: this.shuffleMaxHolds - this.shuffleHeldPositions.length,
+      shuffleMaxHolds: this.shuffleMaxHolds,
       turnLimit: this.turnLimit,
       suppressedTileTypes: this.hazardManager.getSuppressedTypes(),
     };

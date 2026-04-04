@@ -26,6 +26,12 @@ Buffs/debuffs:
 - Upgrade: +2 stacks to match total per level
 - Flavor: "Everyone's got a number."
 
+### Chip
+- Reno exclusive
+- Behaviour: 50% chance to deal 10 damage; 50% chance to deal 0.
+- Upgrade: +5 damage per level
+- Flavor: "Heads or tails. Either way, the coin's in the air."
+
 ### Bullet
 - Behaviour: Deal 1 damage per tile.
 - Upgrade: +2 damage to match total per level
@@ -751,6 +757,11 @@ Trait level = number of artifacts held with that tag. Effects activate at breakp
 - Tags: --
 - Effect: Russ only. Deadeye: 3 shots become 6.
 - Flavor: "Six in the chamber. No reloads."
+
+### Double Down
+- Tags: --
+- Effect: Reno only. Chip damage doubled. Miss: lose HP (increases by 1 per miss permanently).
+- Flavor: "The stakes just got higher."
 
 ### Dusty Canteen
 - Tags: --

@@ -5,7 +5,7 @@
  * resumed exactly where it left off.
  */
 
-import type { TileType, TraitId, ArtifactInstance } from './game';
+import type { TileType, TraitId, ArtifactInstance, CharacterId } from './game';
 import type { CombatPhase, EnemyState, EnemyDefinition } from './combat';
 import type { TileHazardState } from './tiles';
 import type { GravityDirection } from '../game/board/CascadeResolver';
@@ -73,6 +73,7 @@ export interface CombatSnapshot {
   version: number;
   runId: string;
   timestamp: number;
+  character: CharacterId;
 
   // Board
   board: SerializedBoard;

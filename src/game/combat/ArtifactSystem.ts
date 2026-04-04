@@ -25,6 +25,8 @@ export class ArtifactSystem {
   private lassoUsedThisFight = false;
   /** Motherlode Map: once/fight 4+ gold match converts adjacent tiles. */
   private motherlodeUsedThisFight = false;
+  /** Double Down: HP lost on chip miss, increases by 1 per miss. Persists across fights. */
+  doubleDownMissPenalty = 1;
 
   constructor(artifacts: ArtifactInstance[]) {
     this.artifactIds = new Set(artifacts.map((a) => a.id));
@@ -240,6 +242,16 @@ export class ArtifactSystem {
     // Envenomed Ammo: Bullet matches apply 1 venom stack to target
     if (this.has('envenomed_ammo') && match.tileType === 'bullet') {
       modified.venomStacks += 1;
+    }
+
+    // Double Down: chip damage doubled on hit, self-damage on miss
+    if (this.has('double_down') && match.tileType === 'chip') {
+      if (modified.chipHit) {
+        modified.damage *= 2;
+      } else {
+        modified.doubleDownPenalty = this.doubleDownMissPenalty;
+        this.doubleDownMissPenalty++;
+      }
     }
 
     return modified;

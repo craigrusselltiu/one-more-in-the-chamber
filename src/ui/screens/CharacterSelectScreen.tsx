@@ -20,11 +20,19 @@ interface CharacterInfo {
 const CHARACTERS: CharacterInfo[] = [
   {
     id: 'red_panda',
-    name: 'Red Panda',
+    name: 'Russ',
     hp: 100,
     ability: 'Deadeye',
     abilityDescription:
       'Charge by matching tiles. When full, activate to fire 3 targeted shots that destroy individual tiles of your choice.',
+  },
+  {
+    id: 'reno',
+    name: 'Reno',
+    hp: 100,
+    ability: 'Shuffle the Deck',
+    abilityDescription:
+      'Charges faster (7 turns). Hold up to 3 tiles, then shuffle the rest of the board. Cascades resolve normally.',
   },
 ];
 

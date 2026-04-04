@@ -1,11 +1,14 @@
 import { create } from 'zustand';
 import type { CombatState, EnemyState, PlayerStatusEffect, EnemyStatusEffect, CombatPhase } from '../types/combat';
+import type { CharacterId } from '../types/game';
 
 /**
  * Combat store: reactive state for React HUD components.
  * Updated by EventBus listeners bridging Phaser -> React.
  */
 interface CombatStore {
+  character: CharacterId;
+
   // Player
   playerHealth: number;
   playerMaxHealth: number;
@@ -23,6 +26,9 @@ interface CombatStore {
   isDeadeyeActive: boolean;
   deadeyeShotsRemaining: number;
   deadeyeMaxShots: number;
+  isShuffleHoldMode: boolean;
+  shuffleHoldsRemaining: number;
+  shuffleMaxHolds: number;
 
   // Resources
   gold: number;
@@ -53,6 +59,7 @@ interface CombatStore {
 }
 
 const initialState = {
+  character: 'red_panda' as CharacterId,
   playerHealth: 100,
   playerMaxHealth: 100,
   playerBlock: 0,
@@ -67,6 +74,9 @@ const initialState = {
   isDeadeyeActive: false,
   deadeyeShotsRemaining: 0,
   deadeyeMaxShots: 3,
+  isShuffleHoldMode: false,
+  shuffleHoldsRemaining: 0,
+  shuffleMaxHolds: 3,
   gold: 0,
   swapsRemaining: 2,
   swapsPerTurn: 2,
@@ -84,6 +94,7 @@ export const useCombatStore = create<CombatStore>((set) => ({
 
   syncFromCombatState: (state: CombatState) =>
     set({
+      character: state.character,
       playerBlock: state.playerBlock,
       aceStacks: state.aceStacks,
       aceMultiplier: state.aceMultiplier,
@@ -96,6 +107,9 @@ export const useCombatStore = create<CombatStore>((set) => ({
       isDeadeyeActive: state.isDeadeyeActive,
       deadeyeShotsRemaining: state.deadeyeShotsRemaining,
       deadeyeMaxShots: state.deadeyeMaxShots,
+      isShuffleHoldMode: state.isShuffleHoldMode,
+      shuffleHoldsRemaining: state.shuffleHoldsRemaining,
+      shuffleMaxHolds: state.shuffleMaxHolds,
       swapsRemaining: state.swapsRemaining,
       swapsPerTurn: state.swapsPerTurn,
       enemies: state.enemies,

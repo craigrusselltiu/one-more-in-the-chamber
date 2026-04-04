@@ -187,6 +187,7 @@ export default function App() {
           const ascMods = getAscensionModifiers(run.ascensionLevel);
 
           const combatConfig: CombatConfig = {
+            character: run.character,
             enemies: encounter.enemies,
             playerHealth: run.health,
             playerMaxHealth: run.maxHealth,

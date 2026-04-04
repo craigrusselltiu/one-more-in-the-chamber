@@ -72,6 +72,7 @@ export const GameEvent = {
   // Board input -> CombatManager
   SWAP_REQUESTED: 'board:swap-requested',
   DEADEYE_SHOOT: 'board:deadeye-shoot',
+  SHUFFLE_HOLD_TOGGLE: 'board:shuffle-hold-toggle',
   /** Enhanced VFX for a Deadeye shot: (x, y, tileColorHex) */
   DEADEYE_SHOT_VFX: 'vfx:deadeye-shot',
 

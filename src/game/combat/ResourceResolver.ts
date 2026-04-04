@@ -14,6 +14,10 @@ export interface ResourceOutput {
   barricadeStacks: number;
   vulnerableStacks: number;
   bountyStacks: number;
+  /** Whether a Chip tile hit (true) or missed (false). Undefined for non-chip tiles. */
+  chipHit?: boolean;
+  /** Double Down artifact: HP penalty on chip miss. */
+  doubleDownPenalty?: number;
   isAoE: boolean;
   /** If true, damage pierces block. */
   piercesBlock: boolean;
@@ -226,6 +230,15 @@ export class ResourceResolver {
       case 'bounty':
         output.bountyStacks = Math.max(0, count - 2) + Math.round(upgradeBonus);
         break;
+
+      // --- Chip (50/50 gamble: 10 + upgrade damage, or 0) ---
+      case 'chip': {
+        const chipDamage = 10 + Math.round(upgradeBonus);
+        const hit = Math.random() < 0.5;
+        output.damage = hit ? chipDamage : 0;
+        output.chipHit = hit;
+        break;
+      }
 
       // --- Special ---
       case 'mirage':
