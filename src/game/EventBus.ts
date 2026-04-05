@@ -81,6 +81,9 @@ export const GameEvent = {
   RUN_STARTED: 'run:started',
   RUN_ENDED: 'run:ended',
 
+  // Boot
+  BOOT_COMPLETE: 'boot:complete',
+
   // Mid-combat save
   COMBAT_SAVE_REQUESTED: 'combat:save-requested',
 

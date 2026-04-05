@@ -101,6 +101,7 @@ export default function App() {
   const gameRef = useRef<Phaser.Game | null>(null);
   const [screen, setScreen] = useState<Screen>('main-menu');
   const [ready, setReady] = useState(false);
+  const [bootComplete, setBootComplete] = useState(false);
   const prevScreenRef = useRef<Screen>('main-menu');
   const [wipePhase, setWipePhase] = useState<'none' | 'in' | 'out'>('none');
   const pendingScreenRef = useRef<Screen | null>(null);
@@ -125,6 +126,9 @@ export default function App() {
 
     gameRef.current = new Phaser.Game(config);
     initSfx(gameRef.current);
+
+    // Wait for BootScene to finish loading all assets
+    EventBus.on(GameEvent.BOOT_COMPLETE, () => setBootComplete(true));
 
     const NON_COMBAT_NODE_SCREENS: Set<Screen> = new Set(['shop', 'rest-site', 'event', 'treasure']);
 
@@ -195,7 +199,7 @@ export default function App() {
   // Start/stop CombatScene based on screen transitions
   useEffect(() => {
     const game = gameRef.current;
-    if (!game) return;
+    if (!game || !bootComplete) return;
 
     if (screen === 'combat' && prevScreenRef.current !== 'combat') {
       // Check if we have a pending snapshot to restore (mid-combat resume)
@@ -251,7 +255,7 @@ export default function App() {
     }
 
     prevScreenRef.current = screen;
-  }, [screen]);
+  }, [screen, bootComplete]);
 
   // Handle combat end: sync results to run store and return to map
   useEffect(() => {

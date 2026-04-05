@@ -63,6 +63,8 @@ export class BootScene extends Phaser.Scene {
 
   create(): void {
     this.cameras.main.setRoundPixels(true);
+    // Signal that all assets are loaded and ready
+    EventBus.emit(GameEvent.BOOT_COMPLETE);
 
     // Live volume: apply musicVolume changes to currently playing music
     useSettingsStore.subscribe((state, prev) => {
