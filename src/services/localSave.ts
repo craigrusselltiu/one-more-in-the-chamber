@@ -10,6 +10,8 @@ const STORE_META = 'meta';
 const STORE_SCORES = 'scores';
 const STORE_COMBAT = 'combat_snapshots';
 
+const REQUIRED_STORES = [STORE_RUN, STORE_META, STORE_SCORES, STORE_COMBAT];
+
 function openDB(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
     const request = indexedDB.open(DB_NAME, DB_VERSION);
@@ -28,7 +30,19 @@ function openDB(): Promise<IDBDatabase> {
         db.createObjectStore(STORE_COMBAT, { keyPath: 'runId' });
       }
     };
-    request.onsuccess = () => resolve(request.result);
+    request.onsuccess = () => {
+      const db = request.result;
+      // If DB is corrupt (version matches but stores are missing), delete and retry
+      const missing = REQUIRED_STORES.some((s) => !db.objectStoreNames.contains(s));
+      if (missing) {
+        db.close();
+        const del = indexedDB.deleteDatabase(DB_NAME);
+        del.onsuccess = () => openDB().then(resolve, reject);
+        del.onerror = () => reject(new Error('Failed to delete corrupt DB'));
+        return;
+      }
+      resolve(db);
+    };
     request.onerror = () => reject(request.error);
   });
 }

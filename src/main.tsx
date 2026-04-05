@@ -33,22 +33,10 @@ document.addEventListener('click', (e) => {
   }
 }, true);
 
-// Recover from WebGL context loss or browser tab throttling.
-// Game state is in IndexedDB so reload is safe.
+// Recover from WebGL context loss (rare, but happens on some devices).
 document.addEventListener('webglcontextlost', () => {
   window.location.reload();
 }, true);
-
-// Detect frozen game loop: if the tab was suspended for >30s, reload
-// to restore textures and game state cleanly.
-let lastTick = Date.now();
-setInterval(() => {
-  const now = Date.now();
-  if (now - lastTick > 30000) {
-    window.location.reload();
-  }
-  lastTick = now;
-}, 2000);
 
 // Initialize Supabase auth listener (no-op when env vars are missing)
 initAuth().catch(console.error);
