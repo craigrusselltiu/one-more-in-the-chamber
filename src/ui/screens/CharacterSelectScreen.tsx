@@ -3,6 +3,7 @@ import { EventBus, GameEvent } from '../../game/EventBus';
 import { useRunStore } from '../../store/runStore';
 import { useMetaStore } from '../../store/metaStore';
 import { getAscensionModifiers } from '../../data/ascension';
+import { installGameSeed } from '../../utils/seededRandom';
 
 import type { CharacterId } from '../../types/game';
 import type { Screen } from '../../App';
@@ -45,12 +46,14 @@ export const CharacterSelectScreen = memo(function CharacterSelectScreen() {
   const highestCleared = useMetaStore((s) => s.meta.highestAscensionCleared);
   const [selectedCharacter, setSelectedCharacter] = useState<CharacterId>('red_panda');
   const [ascensionLevel, setAscensionLevel] = useState(0);
+  const [customSeed, setCustomSeed] = useState('');
 
   const maxSelectable = Math.min(highestCleared + 1, MAX_ASCENSION);
 
   const handleConfirm = () => {
     setPendingNewGame({ character: selectedCharacter, ascensionLevel });
-    const seed = Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+    const seed = (customSeed.trim() || Date.now().toString(36) + Math.random().toString(36).slice(2, 6)).toUpperCase();
+    installGameSeed(seed);
     startRun(seed, ascensionLevel);
     EventBus.emit(GameEvent.SCREEN_CHANGE, 'map' satisfies Screen);
   };
@@ -122,8 +125,20 @@ export const CharacterSelectScreen = memo(function CharacterSelectScreen() {
         />
       )}
 
+      {/* Seed input */}
+      <div className="flex items-center gap-2 mt-4">
+        <span className="text-stone-500 text-xs">Seed:</span>
+        <input
+          type="text"
+          value={customSeed}
+          onChange={(e) => setCustomSeed(e.target.value)}
+          placeholder="random"
+          className="bg-stone-800/60 border border-stone-600 text-stone-300 text-xs px-2 py-1 w-36 outline-none focus:border-amber-600"
+        />
+      </div>
+
       {/* Buttons */}
-      <div className="flex gap-3 mt-5">
+      <div className="flex gap-3 mt-3">
         <button
           onClick={handleBack}
           className="px-4 py-1.5 text-xs bg-stone-800/50 text-stone-400 border border-stone-700 hover:bg-stone-700/50"

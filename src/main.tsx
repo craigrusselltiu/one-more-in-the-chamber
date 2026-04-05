@@ -10,7 +10,7 @@ const style = document.createElement('style');
 style.textContent = `
   html, body { cursor: url('${base}assets/cursors/pointer.png'), auto; }
   body.cursor-crosshair, body.cursor-crosshair * {
-    cursor: url('${base}assets/cursors/crosshair_2x.png') 31 31, crosshair !important;
+    cursor: url('${base}assets/cursors/crosshair.png') 64 64, crosshair !important;
   }
 `;
 document.head.appendChild(style);
@@ -18,7 +18,7 @@ document.head.appendChild(style);
 // Global click SFX: any button click plays the click sound
 document.addEventListener('click', (e) => {
   const target = e.target as HTMLElement;
-  if (target.closest('button')) {
+  if (target.closest('button') && !target.closest('[data-no-click-sfx]')) {
     import('./services/sfx').then(({ playClick }) => playClick());
   }
 }, true);

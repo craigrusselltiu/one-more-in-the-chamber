@@ -92,10 +92,41 @@ export const MapScreen = memo(function MapScreen({ readonly }: { readonly?: bool
         SPRITE_FRAME_SIZE, SPRITE_FRAME_SIZE,
         0, 0, INT_SIZE, INT_SIZE,
       );
-      // Draw buffer to main canvas with smooth scaling for breathing
-      ctx.imageSmoothingEnabled = size !== INT_SIZE;
+      // Draw buffer to main canvas. Use nearest-neighbor for integer multiples
+      // of INT_SIZE (e.g. boss at 64px = 2x buffer), smooth only for breathing.
+      const isCleanMultiple = size % INT_SIZE === 0;
+      ctx.imageSmoothingEnabled = !isCleanMultiple && size !== INT_SIZE;
       ctx.drawImage(buffer, x - size / 2, y - size / 2, size, size);
       ctx.imageSmoothingEnabled = false;
+    }
+
+    // Pre-render dimmed sprite buffer once (avoids per-frame ctx.filter)
+    const dimBuffer = document.createElement('canvas');
+    dimBuffer.width = INT_SIZE;
+    dimBuffer.height = INT_SIZE;
+    const dimCtx = dimBuffer.getContext('2d')!;
+    dimCtx.imageSmoothingEnabled = false;
+
+    // Build node lookup for O(1) connection resolution
+    const nodeMap = new Map<string, MapNode>();
+    for (const n of nodes) nodeMap.set(n.id, n);
+
+    // Cache reachable set for O(1) lookup
+    const reachableSet = new Set(reachable);
+
+    function drawDimmedSprite(ctx: CanvasRenderingContext2D, frame: number, x: number, y: number, size: number) {
+      const img = spriteRef.current;
+      if (!img) return;
+      const col = frame % SPRITE_SHEET_COLS;
+      const row = Math.floor(frame / SPRITE_SHEET_COLS);
+      dimCtx.clearRect(0, 0, INT_SIZE, INT_SIZE);
+      dimCtx.drawImage(img, col * SPRITE_FRAME_SIZE, row * SPRITE_FRAME_SIZE, SPRITE_FRAME_SIZE, SPRITE_FRAME_SIZE, 0, 0, INT_SIZE, INT_SIZE);
+      // Darken by drawing a semi-transparent black overlay
+      dimCtx.globalCompositeOperation = 'source-atop';
+      dimCtx.fillStyle = 'rgba(0,0,0,0.5)';
+      dimCtx.fillRect(0, 0, INT_SIZE, INT_SIZE);
+      dimCtx.globalCompositeOperation = 'source-over';
+      ctx.drawImage(dimBuffer, x - size / 2, y - size / 2, size, size);
     }
 
     function draw() {
@@ -110,13 +141,11 @@ export const MapScreen = memo(function MapScreen({ readonly }: { readonly?: bool
       for (const node of nodes) {
         const from = getNodePos(node);
         for (const connId of node.connections) {
-          const target = nodes.find((n) => n.id === connId);
+          const target = nodeMap.get(connId);
           if (!target) continue;
           const to = getNodePos(target);
 
-          // White path for taken route, default grey for untaken
           const onPath = node.visited && target.visited;
-
           ctx.strokeStyle = onPath ? '#ffffff' : '#374151';
           ctx.lineWidth = 2;
           ctx.globalAlpha = onPath ? 0.6 : 1;
@@ -133,24 +162,27 @@ export const MapScreen = memo(function MapScreen({ readonly }: { readonly?: bool
       // Draw nodes as sprite icons
       for (const node of nodes) {
         const pos = getNodePos(node);
-        const isReachable = reachable.includes(node.id);
+        const isReachable = reachableSet.has(node.id);
         const isCurrent = node.id === mapState!.currentNodeId;
         const frame = NODE_FRAMES[node.type];
         if (frame == null) continue;
 
-        const spriteSize = isReachable && !isCurrent ? breathSize : 32;
+        const isBoss = node.type === 'boss';
+        const baseSize = isBoss ? 64 : 32;
+        const spriteSize = isReachable && !isCurrent ? (isBoss ? breathSize * 2 : breathSize) : baseSize;
 
-        // Visited nodes stay opaque, dim unreachable future nodes
-        if (!isReachable && !isCurrent && !node.visited) ctx.globalAlpha = 0.5;
+        const greyOut = !isReachable && !isCurrent && !node.visited;
 
-        // Gold glow for current node
         if (isCurrent) {
           ctx.shadowColor = '#f59e0b';
           ctx.shadowBlur = 8;
         }
 
-        drawSpriteFrame(ctx, frame, pos.x, pos.y, spriteSize);
-        ctx.globalAlpha = 1.0;
+        if (greyOut) {
+          drawDimmedSprite(ctx, frame, pos.x, pos.y, spriteSize);
+        } else {
+          drawSpriteFrame(ctx, frame, pos.x, pos.y, spriteSize);
+        }
         ctx.shadowBlur = 0;
       }
 

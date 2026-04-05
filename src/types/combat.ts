@@ -113,6 +113,12 @@ export interface GridPosition {
   col: number;
 }
 
+export interface DestroyedTileInfo {
+  type: TileType;
+  row: number;
+  col: number;
+}
+
 export interface BoardHazard {
   position: GridPosition;
   type: 'lock' | 'hardened_lock' | 'poison' | 'bomb' | 'sand' | 'fools_gold';

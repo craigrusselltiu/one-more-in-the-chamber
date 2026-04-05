@@ -18,7 +18,11 @@ function play(key: string, volume = 0.5, rate = 1.0): void {
 }
 
 export function playClick(): void {
-  play('sfx_click', 0.3);
+  play('sfx_click', 0.5);
+}
+
+export function playHover(): void {
+  play('sfx_hover', 0.4);
 }
 
 export function playSwapFail(): void {
@@ -35,7 +39,15 @@ export function playMatch(comboStep: number): void {
   play('sfx_match_pitch', 0.3, Math.min(pitchRate, 2.5));
 }
 
+export function playCampfire(): void {
+  play('sfx_campfire', 0.5);
+}
+
+export function playTreasure(): void {
+  play('sfx_treasure', 0.5);
+}
+
 export function playDeadeyeShot(): void {
   // Gunshot SFX for Deadeye shots (lower pitch match as fallback until gunshot.wav is added)
-  play('sfx_gunshot', 0.5);
+  play('sfx_gunshot', 0.3);
 }

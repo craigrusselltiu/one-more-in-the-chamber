@@ -258,8 +258,8 @@ export class CombatManager {
     });
 
     on(GameEvent.DEADEYE_SHOOT, (...args: unknown[]) => {
-      const [row, col] = args as number[];
-      this.deadeyeShoot(row, col);
+      const [row, col, pointerX, pointerY] = args as number[];
+      this.deadeyeShoot(row, col, pointerX, pointerY);
     });
   }
 
@@ -715,9 +715,10 @@ export class CombatManager {
    * Fire a Deadeye shot at a specific tile position.
    * Destroys the tile and generates its resource.
    * Each shot waits for cascading to finish before allowing the next.
-   * Deadeye + Showdown: shooting a showdown tile clears all tiles of a random type.
+   * Special tiles trigger automatically: explosive chain-detonates,
+   * showdown clears a random type.
    */
-  async deadeyeShoot(row: number, col: number): Promise<void> {
+  async deadeyeShoot(row: number, col: number, pointerX?: number, pointerY?: number): Promise<void> {
     if (!this.isDeadeyeActive || this.deadeyeShotsRemaining <= 0) return;
     if (this.board.getIsResolving()) return;
 
@@ -726,73 +727,29 @@ export class CombatManager {
 
     const type = tile.type;
 
-    // Deadeye shot VFX + SFX
+    // Deadeye shot VFX + SFX — use pointer position for bullet hole
     playDeadeyeShot();
     const center = tile.getWorldCenter();
+    const vfxX = pointerX ?? center.x;
+    const vfxY = pointerY ?? center.y;
     const colorHex = TILE_COLORS[type] ?? '#ffffff';
-    EventBus.emit(GameEvent.DEADEYE_SHOT_VFX, center.x, center.y, colorHex);
+    EventBus.emit(GameEvent.DEADEYE_SHOT_VFX, vfxX, vfxY, colorHex);
 
     this.board.setIsResolving(true);
 
-    // Handle special tiles
-    if (tile.isShowdown || tile.type === 'showdown') {
-      // Showdown: animate the showdown tile clear, then clear all tiles of a random type
-      const grid = this.board.getGrid();
-      const showdownTile = grid[row][col]!;
-      grid[row][col] = null;
-      await this.board.animateTileClear([showdownTile]);
-
-      const types = this.board.getActiveTileTypes();
-      const randomType = types[Math.floor(Math.random() * types.length)];
-
-      // Animated clear with chain detonation of explosives
-      const clearedTypes = await this.board.clearAllOfTypeAnimated(randomType);
-      for (const tileType of clearedTypes) {
-        const upgradeLevel = this.player.getUpgradeLevel(tileType);
-        const output = this.resolver.resolveSingle(tileType, upgradeLevel);
-        this.applyResourceOutput(output);
-      }
-    } else if (tile.isExplosive) {
-      // Explosive: detonate 3x3 area with the same animation as cascade explosions.
-      // Collect tile refs and types before nulling grid, then animate clear.
-      const grid = this.board.getGrid();
-      const boardSize = this.board.getBoardSize();
-      const tileRefs: import('../board/Tile').Tile[] = [];
-      const tileTypes: TileType[] = [];
-      for (let dr = -1; dr <= 1; dr++) {
-        for (let dc = -1; dc <= 1; dc++) {
-          const r = row + dr;
-          const c = col + dc;
-          if (r < 0 || r >= boardSize || c < 0 || c >= boardSize) continue;
-          const t = grid[r]?.[c];
-          if (t) {
-            tileRefs.push(t);
-            tileTypes.push(t.type);
-            grid[r][c] = null;
-          }
-        }
-      }
-      // Animate clear (particles + pop + fade + destroy) — same as cascade
-      await this.board.animateTileClear(tileRefs);
-      // Generate resources for each cleared tile
-      for (const tileType of tileTypes) {
-        const upgradeLevel = this.player.getUpgradeLevel(tileType);
-        const output = this.resolver.resolveSingle(tileType, upgradeLevel);
-        this.applyResourceOutput(output);
-      }
-      EventBus.emit(GameEvent.SCREEN_SHAKE, 'medium');
-    } else {
-      // Normal tile: generate resource and destroy
-      const upgradeLevel = this.player.getUpgradeLevel(type);
-      const output = this.resolver.resolveSingle(type, upgradeLevel);
+    // Centralized destruction handles explosive chains and showdown triggers
+    const destroyed = await this.board.destroyTilesWithEffects([{ row, col }]);
+    for (const info of destroyed) {
+      const upgradeLevel = this.player.getUpgradeLevel(info.type);
+      const output = this.resolver.resolveSingle(info.type, upgradeLevel);
       this.applyResourceOutput(output);
-
-      const grid = this.board.getGrid();
-      grid[row][col]?.destroy();
-      grid[row][col] = null;
     }
 
     this.deadeyeShotsRemaining--;
+    if (this.deadeyeShotsRemaining <= 0) {
+      this.board.setDeadeyeMode(false);
+      document.body.classList.remove('cursor-crosshair');
+    }
     this.emitFullState();
     this.emitEnemyHpChanges();
     EventBus.emit(GameEvent.PLAYER_HP_CHANGE, this.player.health, this.player.maxHealth);
@@ -1002,69 +959,24 @@ export class CombatManager {
 
   private async resolveStickOfTNT(): Promise<void> {
     // Clear entire row (middle row for max impact).
-    // Special tiles trigger: explosives chain-detonate, showdown clears a type.
+    // Special tiles trigger automatically via destroyTilesWithEffects.
     const boardSize = this.board.getBoardSize();
     const targetRow = Math.floor(boardSize / 2);
-    const grid = this.board.getGrid();
 
-    // Collect tile refs and types, then null grid cells
-    const tileRefs: import('../board/Tile').Tile[] = [];
-    const tileTypes: TileType[] = [];
-    const explosivePositions: { row: number; col: number }[] = [];
-    let hasShowdown = false;
-
+    // Collect positions for the entire middle row
+    const positions: import('../../types/combat').GridPosition[] = [];
     for (let col = 0; col < boardSize; col++) {
-      const tile = grid[targetRow][col];
-      if (tile) {
-        tileRefs.push(tile);
-        tileTypes.push(tile.type);
-        if (tile.isExplosive) explosivePositions.push({ row: targetRow, col });
-        if (tile.isShowdown) hasShowdown = true;
-        grid[targetRow][col] = null;
+      if (this.board.getTileAt({ row: targetRow, col })) {
+        positions.push({ row: targetRow, col });
       }
     }
 
-    // Animate clear
-    await this.board.animateTileClear(tileRefs);
-
-    // Generate resources
-    for (const tileType of tileTypes) {
-      const upgradeLevel = this.player.getUpgradeLevel(tileType);
-      const output = this.resolver.resolveSingle(tileType, upgradeLevel);
+    // Centralized destruction handles explosive chains and showdown triggers
+    const destroyed = await this.board.destroyTilesWithEffects(positions);
+    for (const info of destroyed) {
+      const upgradeLevel = this.player.getUpgradeLevel(info.type);
+      const output = this.resolver.resolveSingle(info.type, upgradeLevel);
       this.applyResourceOutput(output);
-    }
-
-    // Chain-detonate explosives
-    for (const pos of explosivePositions) {
-      const blastTiles: import('../board/Tile').Tile[] = [];
-      for (let dr = -1; dr <= 1; dr++) {
-        for (let dc = -1; dc <= 1; dc++) {
-          const r = pos.row + dr;
-          const c = pos.col + dc;
-          if (r < 0 || r >= boardSize || c < 0 || c >= boardSize) continue;
-          const t = grid[r]?.[c];
-          if (t) {
-            const upgradeLevel = this.player.getUpgradeLevel(t.type);
-            const output = this.resolver.resolveSingle(t.type, upgradeLevel);
-            this.applyResourceOutput(output);
-            blastTiles.push(t);
-            grid[r][c] = null;
-          }
-        }
-      }
-      if (blastTiles.length > 0) await this.board.animateTileClear(blastTiles);
-    }
-
-    // Showdown: clear all tiles of a random type
-    if (hasShowdown) {
-      const types = this.board.getActiveTileTypes();
-      const randomType = types[Math.floor(Math.random() * types.length)];
-      const clearedTypes = await this.board.clearAllOfTypeAnimated(randomType);
-      for (const t of clearedTypes) {
-        const upgradeLevel = this.player.getUpgradeLevel(t);
-        const output = this.resolver.resolveSingle(t, upgradeLevel);
-        this.applyResourceOutput(output);
-      }
     }
 
     EventBus.emit(GameEvent.SCREEN_SHAKE, 'heavy');

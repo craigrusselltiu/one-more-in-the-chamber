@@ -6,7 +6,7 @@ NOTE: Observe the difference between +1 to match total and +1 per tile. The tile
 Buffs/debuffs:
 - Rageful - Deal 1 extra damage per stack. Decrease stacks by 1 at the end of the turn.
 - Sturdy - Gain 1 extra block per stack. Decrease stacks by 1 at the end of the turn.
-- Ace - Add x0.25 multiplier to the next non-Ace match.
+- Ace - Add x0.25 multiplier per stack to the next non-Ace match.
 - Lucky - 1% crit chance per stack, removed when crit occurs.
 - Barricade - At the end of the turn, retain block and decrease stacks by 1.
 - Vulnerable - Take 50% extra damage from attacks. Decrease stacks by 1 at the end of the turn.

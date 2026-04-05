@@ -8,6 +8,7 @@ import { TILE_FRAMES, UI_FRAMES } from '../../data/spriteConfig';
 import { SpriteIcon } from '../components/SpriteIcon';
 import { Tooltip } from '../components/Tooltip';
 import { KeywordSubTooltips, getReferencedKeywords, buildTileDescription } from '../components/KeywordText';
+import { createSeededRandom, seededShuffle } from '../../utils/seededRandom';
 import type { TileType } from '../../types/game';
 import type { Screen } from '../../App';
 import { getAscensionModifiers } from '../../data/ascension';
@@ -34,10 +35,11 @@ export const ShopScreen = memo(function ShopScreen() {
 
   const stock = useMemo(() => {
     if (!run) return { consumables: [] as ShopItem[], artifacts: [] as ShopItem[], tiles: [] as ShopItem[] };
+    const rand = createSeededRandom(`${run.seed}-shop-${run.currentNodeId}`);
     const priceMult = getAscensionModifiers(run.ascensionLevel).shopPriceMultiplier;
 
     const consumables: ShopItem[] = [];
-    const shuffledConsumables = [...CONSUMABLES].sort(() => Math.random() - 0.5);
+    const shuffledConsumables = seededShuffle(CONSUMABLES, rand);
     for (let i = 0; i < Math.min(3, shuffledConsumables.length); i++) {
       const c = shuffledConsumables[i];
       consumables.push({
@@ -45,14 +47,14 @@ export const ShopScreen = memo(function ShopScreen() {
         id: `cons-${c.id}`,
         name: c.name,
         description: c.effect,
-        price: Math.round((15 + Math.floor(Math.random() * 16)) * priceMult),
+        price: Math.round((15 + Math.floor(rand() * 16)) * priceMult),
       });
     }
 
     const artifacts: ShopItem[] = [];
     const ownedIds = new Set(run.artifacts.map((a) => a.id));
     const availableArtifacts = ARTIFACTS.filter((a) => !ownedIds.has(a.id));
-    const shuffledArtifacts = [...availableArtifacts].sort(() => Math.random() - 0.5);
+    const shuffledArtifacts = seededShuffle(availableArtifacts, rand);
     for (let i = 0; i < Math.min(3, shuffledArtifacts.length); i++) {
       const a = shuffledArtifacts[i];
       artifacts.push({
@@ -60,7 +62,7 @@ export const ShopScreen = memo(function ShopScreen() {
         id: `art-${a.id}`,
         name: a.name,
         description: a.effect,
-        price: Math.round((100 + Math.floor(Math.random() * 76)) * priceMult),
+        price: Math.round((100 + Math.floor(rand() * 76)) * priceMult),
       });
     }
 
@@ -71,17 +73,17 @@ export const ShopScreen = memo(function ShopScreen() {
     if (swappableTiles.length > 0) {
       const available = [...STARTER_POOL, ...ADDITIONAL_POOL].filter((t) => !run.activeTileTypes.includes(t));
       if (available.length > 0) {
-        const swapTile = available[Math.floor(Math.random() * available.length)];
+        const swapTile = seededShuffle(available, rand)[0];
         const def = TILE_DEFINITIONS[swapTile];
         let tileLevel = 0;
-        if (run.currentAct === 2) tileLevel = Math.random() < 0.8 ? 1 : 2;
-        else if (run.currentAct === 3) tileLevel = Math.random() < 0.8 ? 2 : 3;
+        if (run.currentAct === 2) tileLevel = rand() < 0.8 ? 1 : 2;
+        else if (run.currentAct === 3) tileLevel = rand() < 0.8 ? 2 : 3;
         tiles.push({
           type: 'tile_swap',
           id: `swap-${swapTile}`,
           name: def.label,
           description: def.description,
-          price: Math.round((50 + Math.floor(Math.random() * 26)) * priceMult),
+          price: Math.round((50 + Math.floor(rand() * 26)) * priceMult),
           tileLevel,
         });
       }
@@ -167,7 +169,7 @@ export const ShopScreen = memo(function ShopScreen() {
   const maxSlots = hasSaddlebag ? 4 : 3;
 
   return (
-    <div className="flex flex-col items-center justify-center h-full bg-[#1a1a2e]/95">
+    <div className="flex flex-col items-center justify-center h-full bg-[#1a1a2e]/95" style={{ padding: '24px 0' }}>
       <h2 className="text-xl text-amber-400 mb-4">General Store</h2>
 
       <div className="flex flex-col gap-4 px-2">

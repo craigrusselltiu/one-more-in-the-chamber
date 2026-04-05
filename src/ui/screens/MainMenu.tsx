@@ -4,6 +4,8 @@ import { useRunStore } from '../../store/runStore';
 import { useMetaStore } from '../../store/metaStore';
 import { checkForCombatResume } from '../../services/combatResume';
 import { calculateScore } from '../../utils/scoring';
+import { playHover } from '../../services/sfx';
+import { installGameSeed, uninstallGameSeed } from '../../utils/seededRandom';
 
 import type { Screen } from '../../App';
 
@@ -37,6 +39,7 @@ function MenuButton({
   return (
     <button
       onClick={onClick}
+      onMouseEnter={playHover}
       className="group relative text-left py-1 px-3 bg-transparent border-none outline-none"
       style={{
         fontSize: '18px',
@@ -49,14 +52,14 @@ function MenuButton({
     >
       {/* Hover highlight bar */}
       <span
-        className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none rounded"
+        className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-150 pointer-events-none rounded"
         style={{
           background:
             'linear-gradient(90deg, rgba(232,232,232,0.15) 0%, rgba(232,232,232,0.03) 70%, transparent 100%)',
         }}
       />
       {/* Text with shift animation */}
-      <span className="relative inline-block transition-transform duration-300 group-hover:translate-x-1.5">
+      <span className="relative inline-block transition-transform duration-150 group-hover:translate-x-1.5">
         {label}
       </span>
     </button>
@@ -64,6 +67,9 @@ function MenuButton({
 }
 
 export const MainMenu = memo(function MainMenu() {
+  // Uninstall seeded RNG when returning to main menu
+  uninstallGameSeed();
+
   const run = useRunStore((s) => s.run);
   const clearRun = useRunStore((s) => s.clearRun);
   const hasActiveRun = run && run.status === 'active';
@@ -97,12 +103,37 @@ export const MainMenu = memo(function MainMenu() {
   };
 
   const handleContinue = async () => {
+    // Reinstall seeded RNG for the active run
+    if (run) installGameSeed(run.seed);
+
     // Stop main menu music immediately (before async IndexedDB check)
     EventBus.emit(GameEvent.MUSIC_FADE_OUT);
 
     // Check for mid-combat save first -- if found, resume combat
     const hasCombatSave = await checkForCombatResume();
-    EventBus.emit(GameEvent.SCREEN_CHANGE, hasCombatSave ? 'combat' : 'map');
+    if (hasCombatSave) {
+      EventBus.emit(GameEvent.SCREEN_CHANGE, 'combat');
+      return;
+    }
+
+    // Check if player was at an incomplete non-combat node (e.g. shop, campfire)
+    const currentRun = useRunStore.getState().run;
+    const currentNode = currentRun?.mapState?.nodes.find((n) => n.id === currentRun?.currentNodeId);
+    if (currentNode && currentNode.visited && !currentNode.completed) {
+      const screenMap: Record<string, Screen> = {
+        shop: 'shop',
+        rest: 'rest-site',
+        event: 'event',
+        treasure: 'treasure',
+      };
+      const screen = screenMap[currentNode.type];
+      if (screen) {
+        EventBus.emit(GameEvent.SCREEN_CHANGE, screen);
+        return;
+      }
+    }
+
+    EventBus.emit(GameEvent.SCREEN_CHANGE, 'map');
   };
 
   const handleReputationShop = () => {

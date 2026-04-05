@@ -6,6 +6,7 @@ import { buildTileDescription, KeywordSubTooltips, getReferencedKeywords } from 
 import { TILE_FRAMES } from '../../data/spriteConfig';
 import { SpriteIcon } from '../components/SpriteIcon';
 import { Tooltip } from '../components/Tooltip';
+import { createSeededRandom, seededShuffle } from '../../utils/seededRandom';
 
 import type { TileType } from '../../types/game';
 import type { Screen } from '../../App';
@@ -37,7 +38,8 @@ export const TileSelectScreen = memo(function TileSelectScreen() {
       const backfill = otherPool.filter((t) => !owned.includes(t) && !available.includes(t));
       available = [...available, ...backfill];
     }
-    const shuffled = [...available].sort(() => Math.random() - 0.5);
+    const rand = createSeededRandom(`${run?.seed ?? ''}-tileselect-${run?.currentAct ?? 1}-${owned.length}`);
+    const shuffled = seededShuffle(available, rand);
     const result = shuffled.slice(0, 3);
     lockedRef.current = result;
     return result;

@@ -1,6 +1,7 @@
-import { memo, useState } from 'react';
+import { memo, useEffect, useState } from 'react';
 import { EventBus, GameEvent } from '../../game/EventBus';
 import { useRunStore } from '../../store/runStore';
+import { playCampfire } from '../../services/sfx';
 import { TILE_DEFINITIONS } from '../../data/tiles';
 import { TILE_FRAMES, UI_FRAMES, NODE_FRAMES } from '../../data/spriteConfig';
 import { SpriteIcon } from '../components/SpriteIcon';
@@ -18,6 +19,8 @@ export const RestSiteScreen = memo(function RestSiteScreen() {
   const upgradeTile = useRunStore((s) => s.upgradeTile);
   const [choice, setChoice] = useState<'none' | 'rest' | 'upgrade' | 'upgraded'>('none');
   const [selectedTile, setSelectedTile] = useState<TileType | null>(null);
+
+  useEffect(() => { playCampfire(); }, []);
 
   if (!run) return null;
 

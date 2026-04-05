@@ -58,6 +58,7 @@ export const TopBar = memo(function TopBar({ mapDisabled }: { showMapButton?: bo
   const [showMap, setShowMap] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [showTiles, setShowTiles] = useState(false);
+  const [seedCopied, setSeedCopied] = useState(false);
   const [elapsed, setElapsed] = useState(0);
   const endRun = useRunStore((s) => s.endRun);
 
@@ -89,6 +90,8 @@ export const TopBar = memo(function TopBar({ mapDisabled }: { showMapButton?: bo
     EventBus.emit(GameEvent.SCREEN_CHANGE, 'main-menu' satisfies Screen);
   };
 
+  const seed = run?.seed ?? '';
+
   return (
     <>
       <div className="relative z-20 flex justify-between items-center px-2 bg-black/50 text-[8px] pointer-events-auto" style={{ height: 28 }}>
@@ -106,13 +109,13 @@ export const TopBar = memo(function TopBar({ mapDisabled }: { showMapButton?: bo
         <div className="flex items-center gap-2">
           <span className="text-stone-500">{formatTimer(elapsed)}</span>
           <Tooltip text="Health" position="bottom">
-            <span className="text-red-400 flex items-center gap-0.5">
+            <span className="text-red-400 flex items-center gap-0.5 font-bold">
               <SpriteIcon frame={UI_FRAMES.health} scale={1} />
               {health}/{maxHealth}
             </span>
           </Tooltip>
           <Tooltip text="Gold" position="bottom">
-            <span className="text-yellow-300 flex items-center gap-0.5">
+            <span className="text-yellow-300 flex items-center gap-0.5 font-bold">
               <SpriteIcon frame={UI_FRAMES.gold} scale={1} />
               {gold}
             </span>
@@ -138,6 +141,24 @@ export const TopBar = memo(function TopBar({ mapDisabled }: { showMapButton?: bo
           </Tooltip>
         </div>
       </div>
+      {/* Seed indicator — absolute so it doesn't affect layout */}
+      {seed && (
+        <div className="absolute z-20 right-2 pointer-events-auto" style={{ top: 32, fontSize: '7px' }}>
+          <Tooltip text={seedCopied ? 'Copied!' : 'Copy seed'} position="bottom">
+            <button
+              className="text-white/40 hover:text-white/70"
+              data-no-click-sfx
+              onClick={() => {
+                navigator.clipboard.writeText(seed.toUpperCase());
+                setSeedCopied(true);
+                setTimeout(() => setSeedCopied(false), 2000);
+              }}
+            >
+              Seed: {seed.toUpperCase()}
+            </button>
+          </Tooltip>
+        </div>
+      )}
       {showTiles && run && (
         <TilesPopup
           activeTileTypes={run.activeTileTypes}

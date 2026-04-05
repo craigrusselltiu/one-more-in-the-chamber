@@ -75,6 +75,7 @@ const EnemySlot = memo(function EnemySlot({
   return (
     <button
       onClick={handleClick}
+      data-no-click-sfx
       className="flex flex-col items-center text-center px-1 py-0.5 pointer-events-auto"
       style={{
         width: 84,

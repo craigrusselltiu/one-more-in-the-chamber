@@ -1,18 +1,23 @@
-import { memo, useMemo, useState } from 'react';
+import { memo, useEffect, useMemo, useState } from 'react';
 import { EventBus, GameEvent } from '../../game/EventBus';
 import { useRunStore } from '../../store/runStore';
 import { ARTIFACTS } from '../../data/artifacts';
+import { playTreasure } from '../../services/sfx';
+import { createSeededRandom } from '../../utils/seededRandom';
 import type { Screen } from '../../App';
 
 export const TreasureScreen = memo(function TreasureScreen() {
   const run = useRunStore((s) => s.run);
   const addArtifact = useRunStore((s) => s.addArtifact);
 
+  useEffect(() => { playTreasure(); }, []);
+
   const artifact = useMemo(() => {
+    const rand = createSeededRandom(`${run?.seed ?? ''}-treasure-${run?.currentNodeId ?? ''}`);
     const ownedIds = new Set((run?.artifacts ?? []).map((a) => a.id));
     const available = ARTIFACTS.filter((a) => !ownedIds.has(a.id));
     const pool = available.length > 0 ? available : ARTIFACTS;
-    return pool[Math.floor(Math.random() * pool.length)];
+    return pool[Math.floor(rand() * pool.length)];
   }, []);
 
   const [taken, setTaken] = useState(false);

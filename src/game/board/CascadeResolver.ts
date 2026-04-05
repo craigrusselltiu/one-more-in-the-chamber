@@ -42,9 +42,41 @@ export class CascadeResolver {
     let isFirstStep = true;
 
     while (matches.length > 0) {
-      // Step 1: Collect tiles to clear and extra results, animate clear
-      const { extraResults, tilesToAnimate, firePositions, showdownQueue } = this.prepareClear(board, matches);
-      await board.animateTileClear(tilesToAnimate);
+      // Step 1: Collect positions and match metadata, then destroy with effects
+      const { allPositions, firePositions, matchMetadata } = this.prepareClear(board, matches);
+      const destroyed = await board.destroyTilesWithEffects(allPositions);
+
+      // Build extra match results from tiles destroyed by explosive/showdown chain
+      // (tiles not in the original match positions)
+      const matchPosKeys = new Set(allPositions.map(p => `${p.row},${p.col}`));
+      const extraByType = new Map<TileType, GridPosition[]>();
+      for (const info of destroyed) {
+        const key = `${info.row},${info.col}`;
+        if (!matchPosKeys.has(key)) {
+          const list = extraByType.get(info.type) ?? [];
+          list.push({ row: info.row, col: info.col });
+          extraByType.set(info.type, list);
+        }
+      }
+      const extraResults: MatchResult[] = [];
+      for (const [type, tiles] of extraByType) {
+        extraResults.push({
+          tiles,
+          tileType: type,
+          length: tiles.length,
+          isExplosive: false,
+          isShowdown: false,
+          isCross: false,
+          crossIntersections: [],
+          matchBonus: 1.0,
+        });
+      }
+
+      // Apply match metadata (fool's gold, poison counts) from prepareClear
+      for (const { matchIndex, foolsGoldCount, poisonCount } of matchMetadata) {
+        if (foolsGoldCount > 0) matches[matchIndex].foolsGoldCount = foolsGoldCount;
+        if (poisonCount > 0) matches[matchIndex].poisonCount = poisonCount;
+      }
 
       // Apply this step's effects immediately (damage, block, gold, etc.)
       const stepMatches = [...matches, ...extraResults];
@@ -59,41 +91,9 @@ export class CascadeResolver {
       this.spawnSpecials(board, matches, isFirstStep ? swapTarget : undefined);
       isFirstStep = false;
 
-      // Step 2.5: Prairie Fire spread — happens per match step, not at end.
+      // Step 2.5: Prairie Fire spread -- happens per match step, not at end.
       if (firePositions.length > 0) {
         this.applyFireSpread(board, firePositions);
-      }
-
-      // Step 2.6: Showdown triggers — process each queued showdown sequentially.
-      // Each clears all tiles of a random type with animation.
-      for (const _pos of showdownQueue) {
-        const types = board.getActiveTileTypes();
-        const randomType = types[Math.floor(Math.random() * types.length)];
-        const clearedTypes = await board.clearAllOfTypeAnimated(randomType);
-
-        // Build match results from the showdown clear
-        if (clearedTypes.length > 0) {
-          const byType = new Map<TileType, number>();
-          for (const t of clearedTypes) byType.set(t as TileType, (byType.get(t as TileType) ?? 0) + 1);
-          const showdownMatches: MatchResult[] = [];
-          for (const [tType, count] of byType) {
-            showdownMatches.push({
-              tiles: Array.from({ length: count }, (_, i) => ({ row: 0, col: i })),
-              tileType: tType,
-              length: count,
-              isExplosive: false,
-              isShowdown: true,
-              isCross: false,
-              crossIntersections: [],
-              matchBonus: 1.0,
-            });
-          }
-          allMatches.push(...showdownMatches);
-          if (onStep) {
-            onStep(showdownMatches);
-            await new Promise(r => setTimeout(r, Math.round(250 / getSpeedMultiplier())));
-          }
-        }
       }
 
       // Step 3: Apply gravity with animation
@@ -110,147 +110,69 @@ export class CascadeResolver {
   }
 
   /**
-   * Collect all tiles that need clearing, null their grid cells,
-   * and return the Tile objects for animation, any extra MatchResults,
-   * and positions of cleared ember tiles (for ember spread).
+   * Collect all positions that need clearing for the given matches,
+   * including cross-clear expansions. Tracks prairie_fire positions
+   * and fool's gold/poison metadata per match.
+   *
+   * Does NOT null grid cells or collect tile refs -- that's handled
+   * by Board.destroyTilesWithEffects().
    */
   private prepareClear(
     board: Board,
     matches: MatchResult[],
-  ): { extraResults: MatchResult[]; tilesToAnimate: Tile[]; firePositions: GridPosition[]; showdownQueue: GridPosition[] } {
+  ): {
+    allPositions: GridPosition[];
+    firePositions: GridPosition[];
+    matchMetadata: Array<{ matchIndex: number; foolsGoldCount: number; poisonCount: number }>;
+  } {
     const grid = board.getGrid();
     const size = board.getBoardSize();
     const posKey = (r: number, c: number) => `${r},${c}`;
 
-    // Phase 1: Collect all positions from original matches
-    const matchPositions = new Set<string>();
-    for (const match of matches) {
-      for (const pos of match.tiles) {
-        matchPositions.add(posKey(pos.row, pos.col));
-      }
-    }
+    // Collect all positions from original matches
+    const collected = new Set<string>();
+    const allPositions: GridPosition[] = [];
+    const firePositions: GridPosition[] = [];
+    const matchMetadata: Array<{ matchIndex: number; foolsGoldCount: number; poisonCount: number }> = [];
 
-    // Phase 2: Expand for cross clears and explosive detonations.
-    // Showdown tiles are NOT expanded here -- they're queued for sequential processing.
-    const extraTiles = new Map<string, TileType>();
-    const explosiveQueue: GridPosition[] = [];
-    const showdownQueue: GridPosition[] = [];
-
-    // Seed explosive queue and collect showdown tiles from matched tiles
-    for (const match of matches) {
-      for (const pos of match.tiles) {
-        const tile = grid[pos.row]?.[pos.col];
-        if (!tile) continue;
-        if (tile.isExplosive) explosiveQueue.push(pos);
-        if (tile.isShowdown || tile.type === 'showdown') {
-          showdownQueue.push(pos);
-        }
-      }
-    }
-
-    // Helper: add a tile to extraTiles and queue chain reactions
-    const addExtra = (r: number, c: number) => {
+    const addPos = (r: number, c: number) => {
       const key = posKey(r, c);
-      if (matchPositions.has(key) || extraTiles.has(key)) return;
+      if (collected.has(key)) return;
       const tile = grid[r]?.[c];
       if (!tile) return;
-      extraTiles.set(key, tile.type);
-      if (tile.isExplosive) explosiveQueue.push({ row: r, col: c });
-      if (tile.isShowdown || tile.type === 'showdown') {
-        showdownQueue.push({ row: r, col: c });
-      }
+      collected.add(key);
+      allPositions.push({ row: r, col: c });
+      if (tile.type === 'prairie_fire') firePositions.push({ row: r, col: c });
     };
+
+    // Add match positions and track hazard metadata
+    for (let i = 0; i < matches.length; i++) {
+      const match = matches[i];
+      let fgCount = 0;
+      let poisonCount = 0;
+      for (const pos of match.tiles) {
+        addPos(pos.row, pos.col);
+        const tile = grid[pos.row]?.[pos.col];
+        if (tile) {
+          if (tile.hazard?.type === 'fools_gold') fgCount++;
+          if (tile.hazard?.type === 'poison') poisonCount++;
+        }
+      }
+      if (fgCount > 0 || poisonCount > 0) {
+        matchMetadata.push({ matchIndex: i, foolsGoldCount: fgCount, poisonCount });
+      }
+    }
 
     // Cross clears: clear entire row + column at intersection points
     for (const match of matches) {
       if (!match.isCross || match.crossIntersections.length === 0) continue;
       for (const inter of match.crossIntersections) {
-        for (let c = 0; c < size; c++) addExtra(inter.row, c);
-        for (let r = 0; r < size; r++) addExtra(r, inter.col);
+        for (let c = 0; c < size; c++) addPos(inter.row, c);
+        for (let r = 0; r < size; r++) addPos(r, inter.col);
       }
     }
 
-    // Explosive chain detonation (BFS — each detonated explosive expands 3x3)
-    const detonated = new Set<string>();
-    while (explosiveQueue.length > 0) {
-      const pos = explosiveQueue.shift()!;
-      const dKey = posKey(pos.row, pos.col);
-      if (detonated.has(dKey)) continue;
-      detonated.add(dKey);
-
-      for (let dr = -1; dr <= 1; dr++) {
-        for (let dc = -1; dc <= 1; dc++) {
-          const r = pos.row + dr;
-          const c = pos.col + dc;
-          if (r < 0 || r >= size || c < 0 || c >= size) continue;
-          addExtra(r, c);
-        }
-      }
-    }
-
-    // Phase 3: Collect Tile references, track ember positions and fool's gold count,
-    // then null grid cells.
-    const tilesToAnimate: Tile[] = [];
-    const firePositions: GridPosition[] = [];
-
-    for (const match of matches) {
-      let fgCount = 0;
-      let poisonCount = 0;
-      for (const pos of match.tiles) {
-        const tile = grid[pos.row]?.[pos.col];
-        if (tile) {
-          if (tile.type === 'prairie_fire') {
-            firePositions.push({ row: pos.row, col: pos.col });
-          }
-          if (tile.hazard?.type === 'fools_gold') fgCount++;
-          if (tile.hazard?.type === 'poison') poisonCount++;
-          tilesToAnimate.push(tile);
-          grid[pos.row][pos.col] = null;
-        }
-      }
-      if (fgCount > 0) match.foolsGoldCount = fgCount;
-      if (poisonCount > 0) match.poisonCount = poisonCount;
-    }
-
-    for (const [key, type] of extraTiles) {
-      const parts = key.split(',');
-      const r = Number(parts[0]);
-      const c = Number(parts[1]);
-      const tile = grid[r]?.[c];
-      if (tile) {
-        if (type === 'prairie_fire') {
-          firePositions.push({ row: r, col: c });
-        }
-        tilesToAnimate.push(tile);
-        grid[r][c] = null;
-      }
-    }
-
-    // Phase 4: Group extra tiles by type into additional MatchResults
-    const byType = new Map<TileType, GridPosition[]>();
-    for (const [key, type] of extraTiles) {
-      const parts = key.split(',');
-      const pos: GridPosition = { row: Number(parts[0]), col: Number(parts[1]) };
-      const list = byType.get(type) ?? [];
-      list.push(pos);
-      byType.set(type, list);
-    }
-
-    const extraResults: MatchResult[] = [];
-    for (const [type, tiles] of byType) {
-      extraResults.push({
-        tiles,
-        tileType: type,
-        length: tiles.length,
-        isExplosive: false,
-        isShowdown: false,
-        isCross: false,
-        crossIntersections: [],
-        matchBonus: 1.0,
-      });
-    }
-
-    return { extraResults, tilesToAnimate, firePositions, showdownQueue };
+    return { allPositions, firePositions, matchMetadata };
   }
 
   /**

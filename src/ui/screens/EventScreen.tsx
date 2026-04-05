@@ -3,6 +3,7 @@ import { EventBus, GameEvent } from '../../game/EventBus';
 import { useRunStore } from '../../store/runStore';
 import { EVENTS, type EventDefinition, type EventChoice } from '../../data/events';
 import { ARTIFACTS, type ArtifactDefinition } from '../../data/artifacts';
+import { createSeededRandom } from '../../utils/seededRandom';
 import type { TraitId } from '../../types/game';
 import type { Screen } from '../../App';
 
@@ -34,7 +35,8 @@ export const EventScreen = memo(function EventScreen() {
   const [artifactHandled, setArtifactHandled] = useState(false);
 
   const event: EventDefinition = useMemo(() => {
-    return EVENTS[Math.floor(Math.random() * EVENTS.length)];
+    const rand = createSeededRandom(`${run?.seed ?? ''}-event-${run?.currentNodeId ?? ''}`);
+    return EVENTS[Math.floor(rand() * EVENTS.length)];
   }, []);
 
   const ownedIds = useMemo(() => {
