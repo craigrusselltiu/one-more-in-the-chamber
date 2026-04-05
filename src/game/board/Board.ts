@@ -120,6 +120,7 @@ export class Board {
   // -- Hint system --
   private hintTimer = 0;
   private hintTriggered = false;
+  private hintCachedPos: GridPosition | null = null;
   private static readonly HINT_INTERVAL = 15000; // 15 seconds
   private static readonly HINT_BREATHE_DURATION = 1500; // how long the hint breathes
   /** Whether shuffle hold mode is active (clicks toggle hold). */
@@ -1514,14 +1515,18 @@ export class Board {
     this.destroyAllTiles();
   }
 
-  /** Reset the hint timer (call at the start of each swap turn). */
+  /** Reset the hint timer and clear cached hint (call on swap or turn start). */
   resetHintTimer(): void {
     this.hintTimer = this.scene.time.now;
     this.hintTriggered = false;
+    this.hintCachedPos = null;
   }
 
-  /** Find a tile position involved in a valid move. */
+  /** Find a random tile position involved in a valid move. Caches result until swap. */
   private findHintMove(): GridPosition | null {
+    if (this.hintCachedPos) return this.hintCachedPos;
+
+    const candidates: GridPosition[] = [];
     for (let row = 0; row < BOARD_SIZE; row++) {
       for (let col = 0; col < BOARD_SIZE; col++) {
         const tileA = this.grid[row][col];
@@ -1538,7 +1543,7 @@ export class Board {
             this.swapTilesInGrid(a, b);
             const has = this.findMatches().length > 0;
             this.swapTilesInGrid(a, b);
-            if (has) return a;
+            if (has) candidates.push(a);
           }
         }
         if (row < BOARD_SIZE - 1) {
@@ -1550,12 +1555,15 @@ export class Board {
             this.swapTilesInGrid(a, b);
             const has = this.findMatches().length > 0;
             this.swapTilesInGrid(a, b);
-            if (has) return a;
+            if (has) candidates.push(a);
           }
         }
       }
     }
-    return null;
+
+    if (candidates.length === 0) return null;
+    this.hintCachedPos = candidates[Math.floor(Math.random() * candidates.length)];
+    return this.hintCachedPos;
   }
 
   update(): void {
