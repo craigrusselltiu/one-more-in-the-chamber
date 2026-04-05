@@ -337,7 +337,7 @@ export default function App() {
       const scene = game.scene.getScene('CombatScene') as
         | (Phaser.Scene & { combatManager?: { createSnapshot: (runId: string) => CombatSnapshot } })
         | null;
-      if (!scene?.combatManager) return;
+      if (!scene?.scene?.isActive() || !scene?.combatManager) return;
 
       const snapshot = scene.combatManager.createSnapshot(run.id);
       saveCombatSnapshot(snapshot).catch((err) => {
@@ -353,6 +353,7 @@ export default function App() {
   useEffect(() => {
     const handleVisibilityChange = () => {
       if (document.visibilityState !== 'hidden') return;
+      if (prevScreenRef.current !== 'combat') return; // Only save during combat
       const game = gameRef.current;
       const run = useRunStore.getState().run;
       if (!game || !run) return;
@@ -360,7 +361,7 @@ export default function App() {
       const scene = game.scene.getScene('CombatScene') as
         | (Phaser.Scene & { combatManager?: { createSnapshot: (runId: string) => CombatSnapshot } })
         | null;
-      if (!scene?.combatManager) return;
+      if (!scene?.scene?.isActive() || !scene?.combatManager) return;
 
       const snapshot = scene.combatManager.createSnapshot(run.id);
       saveCombatSnapshot(snapshot).catch(() => {});
