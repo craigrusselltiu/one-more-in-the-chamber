@@ -38,11 +38,14 @@
       // Only register service worker in production (not dev server)
       if ('serviceWorker' in navigator && !window.location.port) {
         window.addEventListener('load', () => {
-          navigator.serviceWorker.register('/sw.js')
+          // Use pathname to handle subpath deployments (e.g. GitHub Pages /repo-name/)
+          var path = window.location.pathname;
+          var base = path.endsWith('/') ? path : path.substring(0, path.lastIndexOf('/') + 1);
+          navigator.serviceWorker.register(base + 'sw.js')
             .then((reg) => {
-              // Check for updates periodically (every 30 min)
               setInterval(() => reg.update(), 30 * 60 * 1000);
-            });
+            })
+            .catch(() => {});
         });
       } else if ('serviceWorker' in navigator && window.location.port) {
         // Dev mode: unregister any existing service worker so it doesn't cache dev assets
