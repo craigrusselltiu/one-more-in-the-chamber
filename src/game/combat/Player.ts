@@ -12,6 +12,9 @@ export class Player {
   aceMultiplier = 1.0;
   luckyStacks = 0;
   barricadeStacks = 0;
+  ragefulStacks = 0;
+  sturdyStacks = 0;
+  venomousStacks = 0;
   critChance = 0;
   thorns = 0;
   gold = 0;
@@ -43,16 +46,17 @@ export class Player {
   }
 
   /**
-   * Apply incoming damage. Returns actual HP lost (after block/thorns).
+   * Apply incoming damage. Returns actual HP lost, block absorbed, and thorns.
    */
-  takeDamage(amount: number): { hpLost: number; thornsDamage: number } {
+  takeDamage(amount: number): { hpLost: number; blocked: number; thornsDamage: number } {
     let remaining = amount;
 
     // Block absorption
+    let blocked = 0;
     if (this.block > 0) {
-      const absorbed = Math.min(this.block, remaining);
-      this.block -= absorbed;
-      remaining -= absorbed;
+      blocked = Math.min(this.block, remaining);
+      this.block -= blocked;
+      remaining -= blocked;
     }
 
     // Apply damage to HP
@@ -66,7 +70,7 @@ export class Player {
       this.thorns = 0;
     }
 
-    return { hpLost: remaining, thornsDamage };
+    return { hpLost: remaining, blocked, thornsDamage };
   }
 
   heal(amount: number): number {
@@ -123,14 +127,16 @@ export class Player {
 
   /** End-of-turn effects. Block expires unless Barricade is active. */
   resetTurnEffects(): void {
-    // Barricade: if no damage taken this turn, retain block, decrement stacks
-    if (this.barricadeStacks > 0 && !this.tookDamageThisTurn) {
+    // Barricade: retain block, decrement stacks
+    if (this.barricadeStacks > 0) {
       this.barricadeStacks--;
       // Block persists (not reset)
     } else {
       this.block = 0;
-      this.barricadeStacks = 0;
     }
+    // Rageful/Sturdy: decrement stacks
+    if (this.ragefulStacks > 0) this.ragefulStacks--;
+    if (this.sturdyStacks > 0) this.sturdyStacks--;
     this.tookDamageThisTurn = false;
   }
 
@@ -140,6 +146,9 @@ export class Player {
     this.aceMultiplier = 1.0;
     this.luckyStacks = 0;
     this.barricadeStacks = 0;
+    this.ragefulStacks = 0;
+    this.sturdyStacks = 0;
+    this.venomousStacks = 0;
     this.critChance = 0;
     this.thorns = 0;
     this.goldThisFight = 0;

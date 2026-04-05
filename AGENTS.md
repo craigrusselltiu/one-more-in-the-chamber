@@ -15,10 +15,12 @@ Main Menu -> Character Select -> Tile Select -> Map -> [Combat/Shop/Event/Rest/T
 - Scene instances are singletons -- same instance reused on restart
 - A crash in any scene blocks all subsequent scenes (no error isolation)
 
-## Pixel Art Rendering
-- Board tiles: 16px source sprites at **integer 2x scale** (TILE_SIZE=32). Never use fractional sprite scales in Phaser -- causes distortion.
-- To make the board appear smaller, increase the Phaser internal resolution (GAME_WIDTH/GAME_HEIGHT) rather than changing TILE_SIZE. Board stays crisp at 2x.
-- React SpriteIcon: draws on canvas at integer scale (ceil), then CSS-sizes to desired display size with `imageRendering: pixelated`. Prevents blurry fractional scaling for trait icons etc.
+## Pixel Art Rendering -- CRITICAL
+- **NEVER use fractional scales on Phaser sprites.** Always use integer scales (1, 2, 3). This applies to ALL sprites: board tiles, overlays, hazard icons, status icons, everything. Fractional scales (0.75, 1.5, 1.25) cause visible pixel distortion. `setDisplaySize()` also causes fractional scaling internally -- do NOT use it.
+- Board tiles: 16px source at 2x scale (TILE_SIZE=32).
+- Hazard icons (lock, poison): use integer scale (1x = 16px, 2x = 32px).
+- To make the board appear smaller, increase Phaser resolution (GAME_WIDTH/GAME_HEIGHT), not TILE_SIZE.
+- React SpriteIcon: draws on canvas at integer scale (ceil), then CSS-sizes to desired display size with `imageRendering: pixelated`.
 
 ## Music
 - BootScene manages all music via `playTrack(key)` / `fadeOut()` with proxy tweens
@@ -32,10 +34,10 @@ Main Menu -> Character Select -> Tile Select -> Map -> [Combat/Shop/Event/Rest/T
 - `spawnSpecialTile(row, col, type, kind)`: kind='explosive' or kind='showdown'
 
 ## Characters
-- CharacterId: `'red_panda'` (Russ) or `'reno'`
+- CharacterId: `'red_panda'` (Rust) or `'reno'`
 - Character flows through: runStore -> CombatConfig -> CombatManager -> combatStore -> UI
-- Ability threshold: Russ=10 (Deadeye), Reno=7 (Shuffle the Deck)
-- Exclusive core tiles: Russ=bounty, Reno=chip. Added to activeTileTypes in runStore.startRun()
+- Ability threshold: Rust=10 (Deadeye), Reno=7 (Shuffle the Deck)
+- Exclusive core tiles: Rust=bounty, Reno=chip. Added to activeTileTypes in runStore.startRun()
 - Combat snapshots include character for proper restore
 
 ## Status Effects

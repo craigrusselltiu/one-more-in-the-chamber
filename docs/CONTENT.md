@@ -4,15 +4,18 @@
 NOTE: Observe the difference between +1 to match total and +1 per tile. The tile pool for Acts 2, 3, and also the shop should be the Starter Tiles AND the Additional Tiles. Act 1 should only be limited to Starter Tiles.
 
 Buffs/debuffs:
+- Rageful - Deal 1 extra damage per stack. Decrease stacks by 1 at the end of the turn.
+- Sturdy - Gain 1 extra block per stack. Decrease stacks by 1 at the end of the turn.
 - Ace - Add x0.25 multiplier to the next non-Ace match.
 - Lucky - 1% crit chance per stack, removed when crit occurs.
-- Barricade - At the end of the turn, if you did not take damage, retain block and decrease stacks by 1.
-- Vulnerable - Take 50% extra damage from attacks, decrease stacks by 1 at the end of the turn.
+- Barricade - At the end of the turn, retain block and decrease stacks by 1.
+- Vulnerable - Take 50% extra damage from attacks. Decrease stacks by 1 at the end of the turn.
 - Venom - At the start of the turn, take damage equal to the number of stacks and decrease stacks by 1.
 - Bounty - When applying this or taking damage, if HP is lower than Bounty stacks, die.
+- Summoned - Dies when all non-summoned enemies have died.
 
 ### Bounty
-- Russ exclusive
+- Rust exclusive
 - Behaviour: Apply 2 stacks of Bounty per 3-match; +1 per extra tile.
 - Upgrade: +2 stacks to match total per level
 - Flavor: "The S is silent."
@@ -42,7 +45,7 @@ Buffs/debuffs:
 
 ### Ricochet
 - Behaviour: Deal 2 damage per tile + each tile destroys 1 random tile elsewhere.
-- Upgrade: +1 to number of tiles destroyed on match
+- Upgrade: +1 to number of tiles destroyed on match per level
 - Flavor: "Bullets bounce. You never know what they'll hit."
 
 ### Stampede
@@ -93,7 +96,7 @@ Buffs/debuffs:
 - Flavor: "Luck favors the prepared."
 
 ### .50 Cal
-- Behaviour: Deal 3 damage per tile.
+- Behaviour: Deal 3 damage per tile. 5-match deals double damage.
 - Upgrade: +2 damage per tile per level
 - Flavor: "Turns cover into a suggestion."
 
@@ -107,10 +110,10 @@ Buffs/debuffs:
 - Upgrade: +1 heal per match total per level
 - Flavor: "Belly up to the bar. Drinks are on the house."
 
-### Mace
-- Behaviour: Deal 2 damage per tile and apply 1 Vulnerable to the enemy with the highest current HP.
+### Shank
+- Behaviour: Deal 1 damage per tile and apply 1 Vulnerable.
 - Upgrade: +2 damage to match total per level
-- Flavor: "Tis but a scratch."
+- Flavor: "That's not a knife."
 
 ### Rattler
 - Behaviour: Deal 2 damage per tile and apply 1 Venom. Pierces block.
@@ -164,8 +167,13 @@ Trait level = number of artifacts held with that tag. Effects activate at breakp
 
 ## Sheriff
 - Flavor: "The law is heavier than it looks."
-- 2 -- Iron matches +30% block. +2 block per turn.
-- 5 -- Block reflects 100% of absorbed damage back to attacker.
+- 2 -- The first time you gain block each turn is doubled.
+- 4 -- At the start of combat, gain 5 Sturdy.
+- 6 -- Block reflects 100% of absorbed damage back to attacker.
+
+## Sniper
+
+## Gambler
 
 ## Outlaw
 - Flavor: "Wanted: Alive. Preferably not."
@@ -740,7 +748,7 @@ Trait level = number of artifacts held with that tag. Effects activate at breakp
 
 ### Fully Loaded
 - Tags: --
-- Effect: Russ only. Deadeye: 3 shots become 6.
+- Effect: Rust only. Deadeye: 3 shots become 6.
 - Flavor: "Six in the chamber. No reloads."
 
 ### Double Down

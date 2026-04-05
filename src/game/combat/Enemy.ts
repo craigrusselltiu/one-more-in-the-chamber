@@ -28,6 +28,7 @@ export class Enemy {
       vulnerable: 0,
       crackedGround: 0,
       bountyStacks: 0,
+      summoned: false,
       intent: { type: 'attack', value: 0, description: '' },
       isDead: false,
     };
@@ -119,9 +120,9 @@ export class Enemy {
 
   /**
    * Apply damage to this enemy. Accounts for Vulnerable and Block.
-   * Returns actual HP damage dealt (after block).
+   * Returns { hpLost, blocked } for floating number display.
    */
-  takeDamage(amount: number): number {
+  takeDamage(amount: number): { hpLost: number; blocked: number } {
     let remaining = amount;
 
     // Vulnerable: +50% damage (stacks decrease at end of turn, not on hit)
@@ -130,17 +131,18 @@ export class Enemy {
     }
 
     // Block absorption
+    let blocked = 0;
     if (this.state.block > 0) {
-      const absorbed = Math.min(this.state.block, remaining);
-      this.state.block -= absorbed;
-      remaining -= absorbed;
+      blocked = Math.min(this.state.block, remaining);
+      this.state.block -= blocked;
+      remaining -= blocked;
     }
 
     this.state.health = Math.max(0, this.state.health - remaining);
     if (this.state.health <= 0) {
       this.state.isDead = true;
     }
-    return remaining;
+    return { hpLost: remaining, blocked };
   }
 
   /**

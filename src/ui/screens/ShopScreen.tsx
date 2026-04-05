@@ -212,6 +212,7 @@ export const ShopScreen = memo(function ShopScreen() {
             <div className="flex flex-col gap-2 mb-3">
               {swappableTiles.map((tile) => {
                 const def = TILE_DEFINITIONS[tile];
+                const level = run?.tileUpgrades[tile] ?? 0;
                 const tooltipContent = (
                   <div className="flex flex-col gap-0.5">
                     <div className="font-bold text-amber-400" style={{ fontSize: '10px' }}>{def.label}</div>
@@ -229,6 +230,7 @@ export const ShopScreen = memo(function ShopScreen() {
                     >
                       <SpriteIcon frame={TILE_FRAMES[tile]} scale={1} />
                       <span className="text-stone-200 text-sm">{def.label}</span>
+                      <span className="text-amber-400" style={{ fontSize: '10px' }}>Lv {level + 1}</span>
                     </button>
                   </Tooltip>
                 );

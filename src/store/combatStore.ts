@@ -17,6 +17,9 @@ interface CombatStore {
   aceMultiplier: number;
   luckyStacks: number;
   barricadeStacks: number;
+  ragefulStacks: number;
+  sturdyStacks: number;
+  venomousStacks: number;
   critChance: number;
   thorns: number;
 
@@ -67,6 +70,9 @@ const initialState = {
   aceMultiplier: 1.0,
   luckyStacks: 0,
   barricadeStacks: 0,
+  ragefulStacks: 0,
+  sturdyStacks: 0,
+  venomousStacks: 0,
   critChance: 0,
   thorns: 0,
   abilityCharge: 0,
@@ -100,6 +106,9 @@ export const useCombatStore = create<CombatStore>((set) => ({
       aceMultiplier: state.aceMultiplier,
       luckyStacks: state.luckyStacks,
       barricadeStacks: state.barricadeStacks,
+      ragefulStacks: state.ragefulStacks,
+      sturdyStacks: state.sturdyStacks,
+      venomousStacks: state.venomousStacks,
       critChance: state.critChance,
       thorns: state.thorns,
       abilityCharge: state.abilityCharge,
@@ -146,6 +155,9 @@ export function getPlayerStatusEffects(store: CombatStore): PlayerStatusEffect[]
   if (store.aceStacks > 0) effects.push({ type: 'ace', value: store.aceStacks });
   if (store.luckyStacks > 0) effects.push({ type: 'lucky', value: store.luckyStacks });
   if (store.barricadeStacks > 0) effects.push({ type: 'barricade', value: store.barricadeStacks });
+  if (store.ragefulStacks > 0) effects.push({ type: 'rageful', value: store.ragefulStacks });
+  if (store.sturdyStacks > 0) effects.push({ type: 'sturdy', value: store.sturdyStacks });
+  if (store.venomousStacks > 0) effects.push({ type: 'venomous', value: store.venomousStacks });
   if (store.critChance > 0) effects.push({ type: 'crit', value: store.critChance });
   if (store.thorns > 0) effects.push({ type: 'thorns', value: store.thorns });
   return effects;
@@ -159,5 +171,6 @@ export function getEnemyStatusEffects(enemy: EnemyState): EnemyStatusEffect[] {
   if (enemy.vulnerable > 0) effects.push({ type: 'vulnerable', value: enemy.vulnerable });
   if (enemy.crackedGround > 0) effects.push({ type: 'cracked_ground', value: enemy.crackedGround });
   if (enemy.bountyStacks > 0) effects.push({ type: 'bounty', value: enemy.bountyStacks });
+  if (enemy.summoned) effects.push({ type: 'summoned', value: 1 });
   return effects;
 }

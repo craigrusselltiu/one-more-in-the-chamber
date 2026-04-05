@@ -138,20 +138,21 @@ export default function App() {
 
       setScreen(next);
 
+      // Act 1: choose 5th tile before first map visit
+      if (next === 'map') {
+        const run = useRunStore.getState().run;
+        if (run && run.currentAct === 1 && run.activeTileTypes.length <= 4) {
+          setScreen('tile-select');
+          return;
+        }
+      }
+
       if (next === 'map') {
         const run = useRunStore.getState().run;
         const store = useRunStore.getState();
 
-        // Act 1 milestones after 3rd completed node
         if (run && run.currentAct === 1) {
           const completed = run.mapState?.nodes.filter((n) => n.completed).length ?? 0;
-
-          // 5th tile selection
-          if (completed >= 3 && run.activeTileTypes.length <= 4) {
-            setScreen('tile-select');
-            return;
-          }
-
           // Dust storm rolls in after treasure node (7th node)
           if (completed >= 7 && !run.activeTileTypes.includes('tumbleweed')) {
             store.addTileType('tumbleweed');
@@ -298,6 +299,8 @@ export default function App() {
         const currentNode = currentRun?.mapState?.nodes.find((n) => n.id === currentRun?.currentNodeId);
 
         if (currentNode && currentNode.type === 'boss') {
+          store.addBossDefeated();
+
           // Remove tumbleweed after Act 1 boss (notification shows on Act 2 map)
           if (currentRun!.currentAct === 1) {
             store.removeTileType('tumbleweed');

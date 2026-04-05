@@ -13,6 +13,7 @@ import type { ShakeIntensity } from '../effects/ScreenShake';
 import type { GridPosition } from '../../types/combat';
 import type { TileType } from '../../types/game';
 import { useSettingsStore } from '../../store/settingsStore';
+import { useCombatStore } from '../../store/combatStore';
 
 /**
  * CombatScene: the main combat loop.
@@ -79,6 +80,23 @@ export class CombatScene extends Phaser.Scene {
     this.input.keyboard?.on('keydown-SPACE', (event: KeyboardEvent) => {
       event.preventDefault();
       EventBus.emit(GameEvent.ACTIVATE_ABILITY);
+    });
+
+    // Tab cycles enemy targets
+    this.input.keyboard?.on('keydown-TAB', (event: KeyboardEvent) => {
+      event.preventDefault();
+      const store = useCombatStore.getState();
+      const alive = store.enemies.filter((e) => !e.isDead);
+      if (alive.length <= 1) return;
+      const currentIdx = store.targetedEnemyIndex;
+      const nextIdx = (currentIdx + 1) % store.enemies.length;
+      // Skip dead enemies
+      let idx = nextIdx;
+      for (let i = 0; i < store.enemies.length; i++) {
+        if (!store.enemies[idx]?.isDead) break;
+        idx = (idx + 1) % store.enemies.length;
+      }
+      EventBus.emit(GameEvent.TARGET_ENEMY, idx);
     });
 
     if (data?.snapshot) {

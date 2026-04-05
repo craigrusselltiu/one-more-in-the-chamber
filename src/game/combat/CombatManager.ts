@@ -144,7 +144,7 @@ export class CombatManager {
     this.deadeyeMaxShots = config.deadeyeShots ?? this.artifacts.getDeadeyeShots();
 
     // Character-specific ability threshold
-    const abilityThreshold = config.character === 'reno' ? 7 : 10;
+    const abilityThreshold = config.character === 'reno' ? 4 : 6;
 
     // Initialize player from run state
     this.player = new Player(
@@ -351,6 +351,9 @@ export class CombatManager {
         aceMultiplier: this.player.aceMultiplier,
         luckyStacks: this.player.luckyStacks,
         barricadeStacks: this.player.barricadeStacks,
+        ragefulStacks: this.player.ragefulStacks,
+        sturdyStacks: this.player.sturdyStacks,
+        venomousStacks: this.player.venomousStacks,
         critChance: this.player.critChance,
         thorns: this.player.thorns,
         gold: this.player.gold,
@@ -384,7 +387,7 @@ export class CombatManager {
 
     // Restore player
     const sp = snapshot.player;
-    const threshold = (snapshot.character ?? this.character) === 'reno' ? 7 : 10;
+    const threshold = (snapshot.character ?? this.character) === 'reno' ? 4 : 6;
     this.player = new Player(
       sp.health,
       sp.maxHealth,
@@ -399,6 +402,9 @@ export class CombatManager {
     this.player.aceMultiplier = sp.aceMultiplier;
     this.player.luckyStacks = sp.luckyStacks ?? 0;
     this.player.barricadeStacks = sp.barricadeStacks ?? 0;
+    this.player.ragefulStacks = sp.ragefulStacks ?? 0;
+    this.player.sturdyStacks = sp.sturdyStacks ?? 0;
+    this.player.venomousStacks = sp.venomousStacks ?? 0;
     this.player.critChance = sp.critChance;
     this.player.thorns = sp.thorns;
     this.player.goldThisFight = sp.goldThisFight;
@@ -408,6 +414,7 @@ export class CombatManager {
       const enemy = new Enemy(se.definition);
       enemy.state = { ...se.state, intent: { ...se.state.intent } };
       enemy.skipNextAction = se.skipNextAction;
+      enemy.summoned = se.state.summoned ?? false;
       return enemy;
     });
 
@@ -501,6 +508,16 @@ export class CombatManager {
 
     // Tick suppress (warrant) durations -- expires at start of player turn
     this.hazardManager.tickSuppressions();
+
+    // Venomous tick: player takes damage equal to stacks, stacks decrease by 1
+    if (this.player.venomousStacks > 0) {
+      const venomDmg = this.player.venomousStacks;
+      this.player.health = Math.max(0, this.player.health - venomDmg);
+      this.player.venomousStacks--;
+      this.floatOnPlayer(`-${venomDmg}`, '#40ff40');
+      EventBus.emit(GameEvent.PLAYER_HP_CHANGE, this.player.health, this.player.maxHealth);
+      if (this.player.health <= 0) this.playerTookDamageThisFight = true;
+    }
 
     // Per-turn: +1 ability charge
     this.player.abilityCharge++;
@@ -974,7 +991,7 @@ export class CombatManager {
       this.player.heal(15);
     } else if (roll < 0.5) {
       const target = this.getTargetedAliveEnemy();
-      if (target) this.damageDealtThisFight += target.takeDamage(15);
+      if (target) this.damageDealtThisFight += target.takeDamage(15).hpLost;
     } else if (roll < 0.75) {
       this.player.addGold(Math.max(1, Math.round(10 * this.goldMultiplier)));
     } else {
@@ -1082,6 +1099,12 @@ export class CombatManager {
 
       const upgradeLevel = this.player.getUpgradeLevel(match.tileType);
       let output = this.resolver.resolve(match, upgradeLevel);
+
+      // Poison tiles: apply venomous stacks to player
+      if (match.poisonCount && match.poisonCount > 0) {
+        this.player.venomousStacks += match.poisonCount;
+        this.floatOnPlayer(`+${match.poisonCount} VNM`, '#40ff40');
+      }
 
       // Fool's gold: reduce gold proportionally to how many tiles were fake
       if (match.foolsGoldCount && match.foolsGoldCount > 0) {
@@ -1275,11 +1298,15 @@ export class CombatManager {
       const hpBefore = enemy.state.health;
       enemy.state.health = Math.max(0, enemy.state.health - damage);
       if (enemy.state.health <= 0) enemy.state.isDead = true;
-      this.damageDealtThisFight += hpBefore - enemy.state.health;
+      const actual = hpBefore - enemy.state.health;
+      this.damageDealtThisFight += actual;
+      this.floatOnEnemy(enemy, `-${actual}`, '#ff4444');
     } else {
-      this.damageDealtThisFight += enemy.takeDamage(damage);
+      const { hpLost, blocked } = enemy.takeDamage(damage);
+      this.damageDealtThisFight += hpLost;
+      if (blocked > 0) this.floatOnEnemy(enemy, `-${blocked}`, '#6888A0');
+      if (hpLost > 0) this.floatOnEnemy(enemy, `-${hpLost}`, '#ff4444');
     }
-    this.floatOnEnemy(enemy, `-${damage}`, '#ff4444');
     // Bounty kill check: if HP dropped to or below bounty stacks, execute
     if (enemy.checkBountyKill()) {
       this.floatOnEnemy(enemy, 'COLLECTED', '#FFD700');
@@ -1287,29 +1314,34 @@ export class CombatManager {
   }
 
   private applyResourceOutput(output: ResourceOutput): void {
+    // Rageful: bonus damage per stack
+    const damage = output.damage > 0 ? output.damage + this.player.ragefulStacks : 0;
+    // Sturdy: bonus block per stack
+    const block = output.block > 0 ? output.block + this.player.sturdyStacks : 0;
+
     // Damage
-    if (output.damage > 0) {
+    if (damage > 0) {
       if (output.isAoE) {
         for (const enemy of this.aliveEnemies()) {
-          this.dealDamageToEnemy(enemy, output.damage, false);
+          this.dealDamageToEnemy(enemy, damage, false);
         }
       } else if (output.targetsHighestHp) {
         const target = this.getHighestHpEnemy();
-        if (target) this.dealDamageToEnemy(target, output.damage, output.piercesBlock);
+        if (target) this.dealDamageToEnemy(target, damage, output.piercesBlock);
       } else if (output.piercesBlock) {
         const target = this.getTargetedAliveEnemy();
-        if (target) this.dealDamageToEnemy(target, output.damage, true);
+        if (target) this.dealDamageToEnemy(target, damage, true);
       } else {
         const target = this.getTargetedAliveEnemy();
-        if (target) this.dealDamageToEnemy(target, output.damage, false);
+        if (target) this.dealDamageToEnemy(target, damage, false);
       }
       this.emitEnemyHpChanges();
     }
 
     // Block
-    if (output.block > 0) {
-      this.player.addBlock(output.block);
-      this.floatOnPlayer(`+${output.block}`, '#6888A0');
+    if (block > 0) {
+      this.player.addBlock(block);
+      this.floatOnPlayer(`+${block}`, '#6888A0');
     }
 
     // Barricade stacks
@@ -1383,6 +1415,18 @@ export class CombatManager {
     if (output.luckyStacks > 0) {
       this.player.addLuckyStacks(output.luckyStacks);
       this.floatOnPlayer(`+${output.luckyStacks}% LCK`, '#C8A040');
+    }
+
+    // Rageful stacks
+    if (output.ragefulStacks > 0) {
+      this.player.ragefulStacks += output.ragefulStacks;
+      this.floatOnPlayer(`+${output.ragefulStacks} RGF`, '#D04040');
+    }
+
+    // Sturdy stacks
+    if (output.sturdyStacks > 0) {
+      this.player.sturdyStacks += output.sturdyStacks;
+      this.floatOnPlayer(`+${output.sturdyStacks} STD`, '#6888A0');
     }
 
     // Bonus swaps (Cavalry 4+)
@@ -1509,9 +1553,10 @@ export class CombatManager {
       switch (action.type) {
         case 'attack': {
           if (action.value > 0) {
-            const { hpLost, thornsDamage } = this.player.takeDamage(action.value);
+            const { hpLost, blocked, thornsDamage } = this.player.takeDamage(action.value);
             if (hpLost > 0) this.playerTookDamageThisFight = true;
-            this.floatOnPlayer(`-${action.value}`, '#ff4444');
+            if (blocked > 0) this.floatOnPlayer(`-${blocked}`, '#6888A0');
+            if (hpLost > 0) this.floatOnPlayer(`-${hpLost}`, '#ff4444');
             EventBus.emit(
               GameEvent.PLAYER_HP_CHANGE,
               this.player.health,
@@ -1528,7 +1573,7 @@ export class CombatManager {
 
             // Thorns reflects damage back to the attacking enemy
             if (thornsDamage > 0) {
-              this.damageDealtThisFight += enemy.takeDamage(thornsDamage);
+              this.damageDealtThisFight += enemy.takeDamage(thornsDamage).hpLost;
               EventBus.emit(GameEvent.ENEMY_HP_CHANGE, { ...enemy.state });
             }
 
@@ -1579,6 +1624,7 @@ export class CombatManager {
       if (minionDef) {
         const bossMinion = new Enemy(minionDef);
         bossMinion.summoned = true;
+        bossMinion.state.summoned = true;
         this.enemies.push(bossMinion);
         this.emitFullState();
         return;
@@ -1597,6 +1643,7 @@ export class CombatManager {
     };
     const minion = new Enemy(minionDef);
     minion.summoned = true;
+    minion.state.summoned = true;
 
     // Coyote Pelt: summoned enemies take 5 damage immediately
     const hpBeforeSummon = minion.state.health;
@@ -1637,6 +1684,20 @@ export class CombatManager {
     }
 
     this.setPhase('combat-end');
+
+    // Victory gold reward from enemies (randomized around a base)
+    if (victory) {
+      let base: number;
+      let range: number;
+      if (this.isBoss) { base = 45; range = 10; }
+      else if (this.eliteModifier) { base = 25; range = 5; }
+      else { base = 10; range = 3; }
+      let goldReward = base + Math.floor(Math.random() * (range * 2 + 1)) - range;
+      goldReward = Math.max(1, Math.round(goldReward * this.goldMultiplier));
+      this.player.addGold(goldReward);
+      this.floatOnPlayer(`+${goldReward}`, '#FFD700');
+      EventBus.emit(GameEvent.GOLD_CHANGE, this.player.gold);
+    }
 
     // Reset per-fight effects
     this.player.resetFightEffects();
@@ -1749,6 +1810,9 @@ export class CombatManager {
       aceMultiplier: this.player.aceMultiplier,
       luckyStacks: this.player.luckyStacks,
       barricadeStacks: this.player.barricadeStacks,
+      ragefulStacks: this.player.ragefulStacks,
+      sturdyStacks: this.player.sturdyStacks,
+      venomousStacks: this.player.venomousStacks,
       critChance: this.player.critChance,
       thorns: this.player.thorns,
       enemies: this.enemies.map((e) => ({ ...e.state })),

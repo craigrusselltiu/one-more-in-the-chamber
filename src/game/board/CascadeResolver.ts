@@ -43,7 +43,7 @@ export class CascadeResolver {
 
     while (matches.length > 0) {
       // Step 1: Collect tiles to clear and extra results, animate clear
-      const { extraResults, tilesToAnimate, firePositions } = this.prepareClear(board, matches);
+      const { extraResults, tilesToAnimate, firePositions, showdownQueue } = this.prepareClear(board, matches);
       await board.animateTileClear(tilesToAnimate);
 
       // Apply this step's effects immediately (damage, block, gold, etc.)
@@ -60,9 +60,40 @@ export class CascadeResolver {
       isFirstStep = false;
 
       // Step 2.5: Prairie Fire spread — happens per match step, not at end.
-      // Spawned fire tiles can trigger new matches in the next iteration.
       if (firePositions.length > 0) {
         this.applyFireSpread(board, firePositions);
+      }
+
+      // Step 2.6: Showdown triggers — process each queued showdown sequentially.
+      // Each clears all tiles of a random type with animation.
+      for (const _pos of showdownQueue) {
+        const types = board.getActiveTileTypes();
+        const randomType = types[Math.floor(Math.random() * types.length)];
+        const clearedTypes = await board.clearAllOfTypeAnimated(randomType);
+
+        // Build match results from the showdown clear
+        if (clearedTypes.length > 0) {
+          const byType = new Map<TileType, number>();
+          for (const t of clearedTypes) byType.set(t as TileType, (byType.get(t as TileType) ?? 0) + 1);
+          const showdownMatches: MatchResult[] = [];
+          for (const [tType, count] of byType) {
+            showdownMatches.push({
+              tiles: Array.from({ length: count }, (_, i) => ({ row: 0, col: i })),
+              tileType: tType,
+              length: count,
+              isExplosive: false,
+              isShowdown: true,
+              isCross: false,
+              crossIntersections: [],
+              matchBonus: 1.0,
+            });
+          }
+          allMatches.push(...showdownMatches);
+          if (onStep) {
+            onStep(showdownMatches);
+            await new Promise(r => setTimeout(r, Math.round(250 / getSpeedMultiplier())));
+          }
+        }
       }
 
       // Step 3: Apply gravity with animation
@@ -86,7 +117,7 @@ export class CascadeResolver {
   private prepareClear(
     board: Board,
     matches: MatchResult[],
-  ): { extraResults: MatchResult[]; tilesToAnimate: Tile[]; firePositions: GridPosition[] } {
+  ): { extraResults: MatchResult[]; tilesToAnimate: Tile[]; firePositions: GridPosition[]; showdownQueue: GridPosition[] } {
     const grid = board.getGrid();
     const size = board.getBoardSize();
     const posKey = (r: number, c: number) => `${r},${c}`;
@@ -99,34 +130,20 @@ export class CascadeResolver {
       }
     }
 
-    // Phase 2: Expand for cross clears, explosive detonations, and chain reactions.
-    // Special tiles hit by AOE are triggered, not just cleared:
-    //   - Explosive tiles chain-detonate (3x3 around them)
-    //   - Showdown tiles clear all tiles of their type
+    // Phase 2: Expand for cross clears and explosive detonations.
+    // Showdown tiles are NOT expanded here -- they're queued for sequential processing.
     const extraTiles = new Map<string, TileType>();
     const explosiveQueue: GridPosition[] = [];
+    const showdownQueue: GridPosition[] = [];
 
-    // Seed explosive queue and trigger showdown tiles from matched tiles
+    // Seed explosive queue and collect showdown tiles from matched tiles
     for (const match of matches) {
       for (const pos of match.tiles) {
         const tile = grid[pos.row]?.[pos.col];
         if (!tile) continue;
         if (tile.isExplosive) explosiveQueue.push(pos);
-        if (tile.type === 'showdown') {
-          // Showdown tile matched in cascade: clear all tiles of a random active type
-          const types = board.getActiveTileTypes();
-          const randomType = types[Math.floor(Math.random() * types.length)];
-          for (let sr = 0; sr < size; sr++) {
-            for (let sc = 0; sc < size; sc++) {
-              const sKey = posKey(sr, sc);
-              if (matchPositions.has(sKey) || extraTiles.has(sKey)) continue;
-              const st = grid[sr]?.[sc];
-              if (st && st.type === randomType) {
-                extraTiles.set(sKey, st.type);
-                if (st.isExplosive) explosiveQueue.push({ row: sr, col: sc });
-              }
-            }
-          }
+        if (tile.isShowdown || tile.type === 'showdown') {
+          showdownQueue.push(pos);
         }
       }
     }
@@ -140,18 +157,7 @@ export class CascadeResolver {
       extraTiles.set(key, tile.type);
       if (tile.isExplosive) explosiveQueue.push({ row: r, col: c });
       if (tile.isShowdown || tile.type === 'showdown') {
-        // Showdown triggered by AOE: clear all tiles of its type
-        for (let sr = 0; sr < size; sr++) {
-          for (let sc = 0; sc < size; sc++) {
-            const sKey = posKey(sr, sc);
-            if (matchPositions.has(sKey) || extraTiles.has(sKey)) continue;
-            const st = grid[sr]?.[sc];
-            if (st && st.type === tile.type) {
-              extraTiles.set(sKey, st.type);
-              if (st.isExplosive) explosiveQueue.push({ row: sr, col: sc });
-            }
-          }
-        }
+        showdownQueue.push({ row: r, col: c });
       }
     };
 
@@ -189,6 +195,7 @@ export class CascadeResolver {
 
     for (const match of matches) {
       let fgCount = 0;
+      let poisonCount = 0;
       for (const pos of match.tiles) {
         const tile = grid[pos.row]?.[pos.col];
         if (tile) {
@@ -196,11 +203,13 @@ export class CascadeResolver {
             firePositions.push({ row: pos.row, col: pos.col });
           }
           if (tile.hazard?.type === 'fools_gold') fgCount++;
+          if (tile.hazard?.type === 'poison') poisonCount++;
           tilesToAnimate.push(tile);
           grid[pos.row][pos.col] = null;
         }
       }
       if (fgCount > 0) match.foolsGoldCount = fgCount;
+      if (poisonCount > 0) match.poisonCount = poisonCount;
     }
 
     for (const [key, type] of extraTiles) {
@@ -241,7 +250,7 @@ export class CascadeResolver {
       });
     }
 
-    return { extraResults, tilesToAnimate, firePositions };
+    return { extraResults, tilesToAnimate, firePositions, showdownQueue };
   }
 
   /**

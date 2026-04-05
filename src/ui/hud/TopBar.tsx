@@ -189,7 +189,7 @@ function TilesPopup({
     >
       <div className="bg-stone-900 border border-stone-600 p-3" style={{ minWidth: 140 }} onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between mb-3">
-          <span className="text-stone-200 text-sm font-bold">Active Tiles</span>
+          <span className="text-stone-200 text-sm font-bold">Tiles</span>
           <button
             onClick={onClose}
             className="w-4 h-4 flex items-center justify-center bg-stone-800/80 text-red-400 font-bold border border-red-900/50 hover:bg-red-900/40"

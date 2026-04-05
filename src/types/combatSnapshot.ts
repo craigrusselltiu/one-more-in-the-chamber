@@ -43,6 +43,9 @@ export interface SerializedPlayer {
   aceMultiplier: number;
   luckyStacks?: number;
   barricadeStacks?: number;
+  ragefulStacks?: number;
+  sturdyStacks?: number;
+  venomousStacks?: number;
   critChance: number;
   thorns: number;
   gold: number;

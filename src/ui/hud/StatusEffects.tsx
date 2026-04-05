@@ -1,8 +1,10 @@
-import { memo } from 'react';
+import { memo, type ReactNode } from 'react';
 import type { PlayerStatusEffect, EnemyStatusEffect } from '../../types/combat';
 import { SpriteIcon } from '../components/SpriteIcon';
 import { Tooltip } from '../components/Tooltip';
 import { STATUS_FRAMES } from '../../data/spriteConfig';
+import { KEYWORDS } from '../../data/keywords';
+import { KeywordLine } from '../components/KeywordText';
 
 interface StatusEffectsProps {
   effects: (PlayerStatusEffect | EnemyStatusEffect)[];
@@ -13,17 +15,42 @@ function formatValue(type: string, value: number): string {
   return String(value);
 }
 
-const STATUS_DESCRIPTIONS: Record<string, string> = {
-  ace: 'Ace: +0.25x multiplier on next non-Ace match per stack',
-  lucky: 'Lucky: +1% crit per stack, consumed on crit',
-  barricade: 'Barricade: retain block if no damage taken',
-  crit: 'Crit: chance to deal double damage',
-  thorns: 'Thorns: reflect damage to attackers',
-  venom: 'Venom: take damage equal to stacks per turn',
-  vulnerable: 'Vulnerable: take 50% extra damage',
-  cracked_ground: 'Cracked Ground: cascade damage is nullified',
-  bounty: 'Bounty: if HP <= stacks, enemy dies',
+/** Map status effect type to keyword name for lookup. */
+const STATUS_TO_KEYWORD: Record<string, string> = {
+  ace: 'Ace',
+  lucky: 'Lucky',
+  barricade: 'Barricade',
+  rageful: 'Rageful',
+  sturdy: 'Sturdy',
+  venomous: 'Venomous',
+  vulnerable: 'Vulnerable',
+  venom: 'Venom',
+  bounty: 'Bounty',
 };
+
+/** Descriptions for effects not in keywords.ts. */
+const EXTRA_DESCRIPTIONS: Record<string, { name: string; color: string; description: string }> = {
+  block: { name: 'Block', color: '#6888A0', description: 'Absorbs incoming damage.' },
+  crit: { name: 'Crit', color: '#D06080', description: 'Chance to deal double damage.' },
+  thorns: { name: 'Thorns', color: '#C04040', description: 'Reflect damage to attackers.' },
+  cracked_ground: { name: 'Cracked Ground', color: '#808080', description: 'Cascade damage is nullified.' },
+  summoned: { name: 'Summoned', color: '#E0C880', description: 'Dies when all non-summoned enemies have died.' },
+};
+
+function getStatusTooltip(type: string, value: number, hideValue: boolean): ReactNode {
+  const kwName = STATUS_TO_KEYWORD[type];
+  const kw = kwName ? KEYWORDS[kwName] : null;
+  const entry = kw
+    ? { name: kwName!, color: kw.color, description: kw.description }
+    : EXTRA_DESCRIPTIONS[type];
+  if (!entry) return type;
+  const suffix = hideValue ? '' : ` (${formatValue(type, value)})`;
+  return (
+    <span>
+      <KeywordLine name={entry.name} color={entry.color} description={entry.description + suffix} />
+    </span>
+  );
+}
 
 const OUTLINE_STYLE: React.CSSProperties = {
   WebkitTextStroke: '2px #000',
@@ -39,32 +66,38 @@ export const StatusEffects = memo(function StatusEffects({ effects }: StatusEffe
 
   return (
     <div className="flex gap-0.5 mt-0.5">
-      {effects.map((effect, i) => (
-        <Tooltip key={`${effect.type}-${i}`} text={`${STATUS_DESCRIPTIONS[effect.type] ?? effect.type} (${formatValue(effect.type, effect.value)})`}>
-        <div
-          className="relative"
-          style={{ width: 16, height: 16 }}
-        >
-          <SpriteIcon
-            frame={STATUS_FRAMES[effect.type] ?? 0}
-            scale={1}
-          />
-          <span
-            className="absolute font-bold"
-            style={{
-              bottom: -2,
-              right: -2,
-              fontSize: '7px',
-              color: '#fff',
-              lineHeight: 1,
-              ...OUTLINE_STYLE,
-            }}
+      {effects.map((effect, i) => {
+        const hideValue = effect.type === 'summoned';
+        const tooltipContent = getStatusTooltip(effect.type, effect.value, hideValue);
+        return (
+          <Tooltip key={`${effect.type}-${i}`} content={tooltipContent} position="bottom">
+          <div
+            className="relative"
+            style={{ width: 16, height: 16 }}
           >
-            {formatValue(effect.type, effect.value)}
-          </span>
-        </div>
-        </Tooltip>
-      ))}
+            <SpriteIcon
+              frame={STATUS_FRAMES[effect.type] ?? 0}
+              scale={1}
+            />
+            {!hideValue && (
+              <span
+                className="absolute font-bold"
+                style={{
+                  bottom: -2,
+                  right: -2,
+                  fontSize: '7px',
+                  color: '#fff',
+                  lineHeight: 1,
+                  ...OUTLINE_STYLE,
+                }}
+              >
+                {formatValue(effect.type, effect.value)}
+              </span>
+            )}
+          </div>
+          </Tooltip>
+        );
+      })}
     </div>
   );
 });

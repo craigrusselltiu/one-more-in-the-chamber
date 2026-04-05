@@ -20,6 +20,7 @@ export interface RunState {
   runStartedAt: number;
   longestCascade: number;
   flawlessFights: number;
+  bossesDefeated: number;
   mapState: MapState | null;
   status: 'active' | 'completed' | 'abandoned';
 }
@@ -50,7 +51,7 @@ export type TileType =
   | 'fifty_cal'
   | 'tombstone'
   | 'saloon'
-  | 'mace'
+  | 'shank'
   | 'rattler'
   | 'barricade'
   | 'cavalry'

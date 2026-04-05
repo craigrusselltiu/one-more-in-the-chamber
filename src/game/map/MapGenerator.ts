@@ -25,90 +25,87 @@ const ACT_NAMES: Record<Act, string> = {
   3: 'The Town',
 };
 
-const ROWS_PER_ACT = 13;
+const ROWS_PER_ACT = 15;
 const COLS = 7;
 
-/** Protected node types that should never be overwritten. */
-const PROTECTED_TYPES: Set<MapNodeType> = new Set(['boss', 'treasure']);
-
 /**
- * Ensure a minimum number of a given node type exists on the map.
- * Converts random combat nodes to the target type if needed.
- * Never touches row 0 (start), last row (boss), second-to-last (pre-boss rest),
- * or midpoint (treasure).
+ * Assign node types to a grid of pre-placed nodes.
+ *
+ * Fixed rows:
+ *   Row 0 = combat, Row 6 (midpoint) = treasure,
+ *   Row 11 (pre-boss) = rest, Row 12 = boss.
+ *
+ * Target counts (excluding fixed rows):
+ *   rest: 3-4, elite: 3-4, shop: 2-3, event: 3-6
+ *   Remainder = combat.
+ *
+ * Constraints:
+ *   - No elite/shop/rest in rows 1-2 (first 2 rows after start).
+ *   - No consecutive (same row or adjacent rows) elite, shop, or rest.
  */
-function ensureMinCount(
+function assignNodeTypes(
   nodes: MapNode[],
-  targetType: MapNodeType,
-  min: number,
-  max: number,
-  rng: () => number,
   totalRows: number,
+  rng: () => number,
 ): void {
-  const midRow = Math.floor(totalRows / 2);
-  const protectedRows = new Set([0, totalRows - 1, totalRows - 2, midRow]);
+  const treasureRow = 6; // 7th node (0-indexed)
+  const fixedRows = new Set([0, treasureRow, totalRows - 2, totalRows - 1]);
 
-  const current = nodes.filter((n) => n.type === targetType && !protectedRows.has(n.row)).length;
-  const target = min + Math.floor(rng() * (max - min + 1));
+  // 1. Set fixed rows
+  for (const node of nodes) {
+    if (node.row === 0) node.type = 'combat';
+    else if (node.row === treasureRow) node.type = 'treasure';
+    else if (node.row === totalRows - 2) node.type = 'rest';
+    else if (node.row === totalRows - 1) node.type = 'boss';
+    else node.type = 'combat'; // default, will be overwritten
+  }
 
-  if (current >= target) return;
-
-  // Find combat nodes we can convert (not in protected rows)
-  const candidates = nodes.filter(
-    (n) => n.type === 'combat' && !protectedRows.has(n.row) && !PROTECTED_TYPES.has(n.type),
-  );
-
-  // Shuffle candidates
-  for (let i = candidates.length - 1; i > 0; i--) {
+  // 2. Collect assignable nodes (not in fixed rows)
+  const assignable = nodes.filter((n) => !fixedRows.has(n.row));
+  // Shuffle so placement is random
+  for (let i = assignable.length - 1; i > 0; i--) {
     const j = Math.floor(rng() * (i + 1));
-    [candidates[i], candidates[j]] = [candidates[j], candidates[i]];
+    [assignable[i], assignable[j]] = [assignable[j], assignable[i]];
   }
 
-  const needed = target - current;
-  for (let i = 0; i < needed && i < candidates.length; i++) {
-    candidates[i].type = targetType;
+  // 3. Determine target counts
+  const pick = (min: number, max: number) => min + Math.floor(rng() * (max - min + 1));
+  const targets: { type: MapNodeType; count: number }[] = [
+    { type: 'elite', count: pick(3, 4) },
+    { type: 'shop', count: pick(2, 3) },
+    { type: 'rest', count: pick(3, 4) },
+    { type: 'event', count: pick(3, 6) },
+  ];
+
+  // 4. Check if placing a type at a node violates constraints
+  const NO_CONSECUTIVE: Set<MapNodeType> = new Set(['rest', 'shop', 'elite']);
+  const canPlace = (node: MapNode, type: MapNodeType): boolean => {
+    // Row restriction: no elite/rest in first 2 rows (shops allowed)
+    if ((type === 'elite' || type === 'rest') && node.row <= 2) return false;
+    // No consecutive: check same row, prev row, next row
+    if (NO_CONSECUTIVE.has(type)) {
+      for (const other of nodes) {
+        if (other === node || other.type !== type) continue;
+        if (other.row === node.row) return false;           // same row
+        if (other.row === node.row - 1) return false;       // prev row
+        if (other.row === node.row + 1) return false;       // next row
+      }
+    }
+    return true;
+  };
+
+  // 5. Place each type greedily
+  for (const { type, count } of targets) {
+    let placed = 0;
+    for (const node of assignable) {
+      if (placed >= count) break;
+      if (node.type !== 'combat') continue; // already assigned
+      if (!canPlace(node, type)) continue;
+      node.type = type;
+      placed++;
+    }
   }
-}
-
-/** Node type distribution weights per row position. */
-function pickNodeType(
-  row: number,
-  totalRows: number,
-  rng: () => number,
-  prevRowTypes?: MapNodeType[],
-): MapNodeType {
-  // Row 0 is always start combat
-  if (row === 0) return 'combat';
-  // Last row is always boss
-  if (row === totalRows - 1) return 'boss';
-  // Second-to-last is always rest site (pre-boss campfire)
-  if (row === totalRows - 2) return 'rest';
-  // Halfway point is always treasure (guaranteed)
-  const midRow = Math.floor(totalRows / 2);
-  if (row === midRow) return 'treasure';
-
-  // First 3 rows (1-3): no events or rest sites
-  const earlyRow = row <= 3;
-  // No consecutive rest sites or shops
-  const prevHadRest = prevRowTypes?.includes('rest') ?? false;
-  const prevHadShop = prevRowTypes?.includes('shop') ?? false;
-
-  let type: MapNodeType;
-  do {
-    const roll = rng();
-    if (roll < 0.40) type = 'combat';
-    else if (roll < 0.55) type = 'elite';
-    else if (roll < 0.70) type = 'event';
-    else if (roll < 0.80) type = 'shop';
-    else if (roll < 0.90) type = 'rest';
-    else type = 'combat';
-  } while (
-    (earlyRow && (type === 'event' || type === 'rest')) ||
-    (prevHadRest && type === 'rest') ||
-    (prevHadShop && type === 'shop')
-  );
-
-  return type;
+  // Remaining assignable nodes stay as 'combat'
 }
 
 export function generateMap(seed: string, act: Act): MapState {
@@ -123,7 +120,6 @@ export function generateMap(seed: string, act: Act): MapState {
     const isFirst = row === 0;
     const isLast = row === totalRows - 1;
 
-    // First row: 2-3 starting paths. Last row: 1 boss.
     let count: number;
     if (isFirst) {
       count = 2 + Math.floor(rng() * 2); // 2-3
@@ -132,26 +128,18 @@ export function generateMap(seed: string, act: Act): MapState {
     } else if (row === totalRows - 2) {
       count = 2; // pre-boss rest sites
     } else {
-      count = 2 + Math.floor(rng() * 3); // 2-4
+      count = 2 + Math.floor(rng() * 2); // 2-3
     }
 
     const ids: string[] = [];
-    // Spread nodes across columns
     const positions = spreadColumns(count, COLS, rng);
-
-    // Collect previous row's node types for consecutive-rest prevention
-    const prevRowTypes = row > 0
-      ? nodes.filter((n) => n.row === row - 1).map((n) => n.type)
-      : [];
 
     for (let i = 0; i < count; i++) {
       const col = positions[i];
-      const type = pickNodeType(row, totalRows, rng, prevRowTypes);
-
       const id = `${act}-${row}-${col}`;
       nodes.push({
         id,
-        type,
+        type: 'combat', // placeholder, assigned below
         row,
         col,
         connections: [],
@@ -162,11 +150,8 @@ export function generateMap(seed: string, act: Act): MapState {
     rowNodes.push(ids);
   }
 
-  // Post-generation: ensure minimum counts for shops, campfires, and elites.
-  // Target: 2-3 shops, 3-4 rest sites (excl pre-boss), 3-4 elites.
-  ensureMinCount(nodes, 'shop', 2, 3, rng, totalRows);
-  ensureMinCount(nodes, 'rest', 3, 4, rng, totalRows);
-  ensureMinCount(nodes, 'elite', 3, 4, rng, totalRows);
+  // Assign types with strict constraint enforcement
+  assignNodeTypes(nodes, totalRows, rng);
 
   // Build connections: each node connects to 1-2 nodes in the next row
   for (let row = 0; row < totalRows - 1; row++) {

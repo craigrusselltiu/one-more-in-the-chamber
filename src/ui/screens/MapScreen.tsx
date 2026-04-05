@@ -45,8 +45,8 @@ export const MapScreen = memo(function MapScreen({ readonly }: { readonly?: bool
   const nodes = mapState?.nodes ?? [];
   const reachable = mapState ? getReachableNodes(mapState) : [];
 
-  // 13 floors horizontal, 7 paths vertical
-  const canvasWidth = PADDING_LEFT + 12 * FLOOR_SPACING + 40;
+  // 15 floors horizontal, 7 paths vertical
+  const canvasWidth = PADDING_LEFT + 14 * FLOOR_SPACING + 40;
   const canvasHeight = PADDING_TOP + 6 * PATH_SPACING + 24;
 
   // Load sprite sheet for node icons
@@ -69,29 +69,42 @@ export const MapScreen = memo(function MapScreen({ readonly }: { readonly?: bool
     let animId: number;
     const hasReachable = reachable.length > 0;
 
+    // Draw sprite at integer 2x into offscreen buffer, then scale to
+    // display size on main canvas. With imageRendering: pixelated on the
+    // canvas element, fractional sizes stay crisp.
+    const INT_SIZE = SPRITE_FRAME_SIZE * 2;
+    const buffer = document.createElement('canvas');
+    buffer.width = INT_SIZE;
+    buffer.height = INT_SIZE;
+    const bufCtx = buffer.getContext('2d')!;
+    bufCtx.imageSmoothingEnabled = false;
+
     function drawSpriteFrame(ctx: CanvasRenderingContext2D, frame: number, x: number, y: number, size: number) {
       const img = spriteRef.current;
       if (!img) return;
       const col = frame % SPRITE_SHEET_COLS;
       const row = Math.floor(frame / SPRITE_SHEET_COLS);
-      ctx.imageSmoothingEnabled = false;
-      ctx.drawImage(
+      // Draw source at crisp integer 2x into buffer
+      bufCtx.clearRect(0, 0, INT_SIZE, INT_SIZE);
+      bufCtx.drawImage(
         img,
         col * SPRITE_FRAME_SIZE, row * SPRITE_FRAME_SIZE,
         SPRITE_FRAME_SIZE, SPRITE_FRAME_SIZE,
-        x - size / 2, y - size / 2,
-        size, size,
+        0, 0, INT_SIZE, INT_SIZE,
       );
+      // Draw buffer to main canvas with smooth scaling for breathing
+      ctx.imageSmoothingEnabled = size !== INT_SIZE;
+      ctx.drawImage(buffer, x - size / 2, y - size / 2, size, size);
+      ctx.imageSmoothingEnabled = false;
     }
 
     function draw() {
       const ctx = ctxInit!;
       ctx.clearRect(0, 0, canvas!.width, canvas!.height);
 
-      // Breathing scale: oscillate between 1.0 and 1.08 over ~1.5s
-      const breathScale = hasReachable
-        ? 1.0 + 0.08 * (0.5 + 0.5 * Math.sin((performance.now() / 750) * Math.PI))
-        : 1.0;
+      // Breathing: size oscillation (32-38px) for reachable nodes
+      const breathT = 0.5 + 0.5 * Math.sin((performance.now() / 750) * Math.PI);
+      const breathSize = hasReachable ? 32 + 3 * breathT : 32;
 
       // Draw connections
       for (const node of nodes) {
@@ -101,43 +114,44 @@ export const MapScreen = memo(function MapScreen({ readonly }: { readonly?: bool
           if (!target) continue;
           const to = getNodePos(target);
 
-          ctx.strokeStyle = node.visited ? '#6b7280' : '#374151';
+          // White path for taken route, default grey for untaken
+          const onPath = node.visited && target.visited;
+
+          ctx.strokeStyle = onPath ? '#ffffff' : '#374151';
           ctx.lineWidth = 2;
+          ctx.globalAlpha = onPath ? 0.6 : 1;
           ctx.setLineDash([4, 4]);
           ctx.beginPath();
           ctx.moveTo(from.x, from.y);
           ctx.lineTo(to.x, to.y);
           ctx.stroke();
           ctx.setLineDash([]);
+          ctx.globalAlpha = 1;
         }
       }
 
-      // Draw nodes as sprite icons (no circles)
+      // Draw nodes as sprite icons
       for (const node of nodes) {
         const pos = getNodePos(node);
         const isReachable = reachable.includes(node.id);
         const isCurrent = node.id === mapState!.currentNodeId;
-
         const frame = NODE_FRAMES[node.type];
         if (frame == null) continue;
 
-        // Breathing scale for reachable nodes
-        const spriteSize = isReachable && !isCurrent ? Math.round(24 * breathScale) : 24;
+        const spriteSize = isReachable && !isCurrent ? breathSize : 32;
 
-        // Dim visited nodes, full opacity for current/reachable
-        if (node.visited && !isCurrent) ctx.globalAlpha = 0.4;
-        else if (!isReachable && !isCurrent) ctx.globalAlpha = 0.5;
+        // Visited nodes stay opaque, dim unreachable future nodes
+        if (!isReachable && !isCurrent && !node.visited) ctx.globalAlpha = 0.5;
 
-        drawSpriteFrame(ctx, frame, pos.x, pos.y, spriteSize);
-        ctx.globalAlpha = 1.0;
-
-        // Gold glow for current node (no box outline)
+        // Gold glow for current node
         if (isCurrent) {
           ctx.shadowColor = '#f59e0b';
           ctx.shadowBlur = 8;
-          drawSpriteFrame(ctx, frame, pos.x, pos.y, spriteSize);
-          ctx.shadowBlur = 0;
         }
+
+        drawSpriteFrame(ctx, frame, pos.x, pos.y, spriteSize);
+        ctx.globalAlpha = 1.0;
+        ctx.shadowBlur = 0;
       }
 
       if (hasReachable) {
@@ -247,6 +261,7 @@ export const MapScreen = memo(function MapScreen({ readonly }: { readonly?: bool
           onMouseMove={handleCanvasHover}
           onMouseLeave={() => setTooltip(null)}
           className={readonly ? 'shrink-0' : 'cursor-pointer shrink-0'}
+          style={{ imageRendering: 'auto' }}
         />
       </div>
 

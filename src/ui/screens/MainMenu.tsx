@@ -1,7 +1,9 @@
 import { memo, useState } from 'react';
 import { EventBus, GameEvent } from '../../game/EventBus';
 import { useRunStore } from '../../store/runStore';
+import { useMetaStore } from '../../store/metaStore';
 import { checkForCombatResume } from '../../services/combatResume';
+import { calculateScore } from '../../utils/scoring';
 
 import type { Screen } from '../../App';
 
@@ -76,8 +78,15 @@ export const MainMenu = memo(function MainMenu() {
     }
   };
 
-  const handleConfirmNewGame = async () => {
+  const addReputation = useMetaStore((s) => s.addReputation);
 
+  const handleConfirmNewGame = async () => {
+    // Award reputation for the abandoned run
+    if (run) {
+      const finalScore = calculateScore(run);
+      const rep = Math.max(10, Math.floor(finalScore / 10));
+      addReputation(rep);
+    }
     await clearRun();
     setShowConfirm(false);
     EventBus.emit(GameEvent.SCREEN_CHANGE, 'character-select' satisfies Screen);

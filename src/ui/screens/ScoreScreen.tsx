@@ -48,7 +48,7 @@ export const ScoreScreen = memo(function ScoreScreen() {
     const nodesCompleted = run.mapState?.nodes.filter((n) => n.completed).length ?? 0;
     const combatNodes = run.mapState?.nodes.filter((n) => n.completed && n.type === 'combat').length ?? 0;
     const eliteNodes = run.mapState?.nodes.filter((n) => n.completed && n.type === 'elite').length ?? 0;
-    const bossNodes = run.mapState?.nodes.filter((n) => n.completed && n.type === 'boss').length ?? 0;
+    const bossNodes = run.bossesDefeated ?? 0;
 
     const baseCombat = combatNodes * 100;
     const baseElite = eliteNodes * 200;

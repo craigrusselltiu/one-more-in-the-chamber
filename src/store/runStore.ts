@@ -36,6 +36,7 @@ interface RunStore {
   addDamageDealt: (amount: number) => void;
   updateLongestCascade: (steps: number) => void;
   addFlawlessFight: () => void;
+  addBossDefeated: () => void;
   setCurrentNode: (nodeId: string) => void;
   markNodeVisited: (nodeId: string) => void;
   markNodeCompleted: (nodeId: string) => void;
@@ -68,7 +69,7 @@ export const useRunStore = create<RunStore>((set, get) => ({
     const loadouts = useMetaStore.getState().meta.unlockedLoadouts;
 
     // Apply loadout bonuses
-    let gold = 0;
+    let gold = 100;
     const consumables: ConsumableInstance[] = [];
     const artifacts: ArtifactInstance[] = [];
     const traitCounts: Partial<Record<string, number>> = {};
@@ -114,6 +115,7 @@ export const useRunStore = create<RunStore>((set, get) => ({
         runStartedAt: Date.now(),
         longestCascade: 0,
         flawlessFights: 0,
+        bossesDefeated: 0,
         mapState,
         status: 'active',
       },
@@ -226,6 +228,12 @@ export const useRunStore = create<RunStore>((set, get) => ({
     set((state) => {
       if (!state.run) return state;
       return { run: { ...state.run, flawlessFights: state.run.flawlessFights + 1 } };
+    }),
+
+  addBossDefeated: () =>
+    set((state) => {
+      if (!state.run) return state;
+      return { run: { ...state.run, bossesDefeated: state.run.bossesDefeated + 1 } };
     }),
 
   setCurrentNode: (nodeId) =>

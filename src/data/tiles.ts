@@ -24,7 +24,7 @@ export const TILE_COLORS: Record<TileType, string> = {
   fifty_cal: '#7090B8',
   tombstone: '#808080',
   saloon: '#D4A870',
-  mace: '#D04040',
+  shank: '#D04040',
   rattler: '#40A060',
   barricade: '#8B7355',
   cavalry: '#D0A040',
@@ -84,7 +84,7 @@ export const TILE_DEFINITIONS: Record<TileType, TileDefinition> = {
     baseValue: 1,
     upgradeValue: 2,
     pool: 'exclusive',
-    description: 'Apply 2 Bounty stacks per 3-match; +1 per extra tile. If enemy HP <= Bounty stacks, enemy dies.',
+    description: 'Apply 2 Bounty stacks per 3-match; +1 per extra tile.',
     flavor: 'The S is silent.',
     upgradeText: '+2 stacks to match total per level',
   },
@@ -113,7 +113,7 @@ export const TILE_DEFINITIONS: Record<TileType, TileDefinition> = {
     pool: 'starter',
     description: 'Deal 2 damage per tile + each tile destroys 1 random tile elsewhere.',
     flavor: "Bullets bounce. You never know what they'll hit.",
-    upgradeText: '+1 to number of tiles destroyed on match',
+    upgradeText: '+1 to number of tiles destroyed on match per level',
   },
   stampede: {
     type: 'stampede',
@@ -231,11 +231,11 @@ export const TILE_DEFINITIONS: Record<TileType, TileDefinition> = {
     abbreviation: '.50',
     color: TILE_COLORS.fifty_cal,
     baseValue: 3,
-    upgradeValue: 3,
+    upgradeValue: 2,
     pool: 'additional',
-    description: 'Deal 3 damage per tile.',
+    description: 'Deal 3 damage per tile. 5-match deals double damage.',
     flavor: 'Turns cover into a suggestion.',
-    upgradeText: '+3 damage per tile per level',
+    upgradeText: '+2 damage per tile per level',
   },
   tombstone: {
     type: 'tombstone',
@@ -261,16 +261,16 @@ export const TILE_DEFINITIONS: Record<TileType, TileDefinition> = {
     flavor: 'Belly up to the bar. Drinks are on the house.',
     upgradeText: '+1 heal per match total per level',
   },
-  mace: {
-    type: 'mace',
-    label: 'Mace',
-    abbreviation: 'Ma',
-    color: TILE_COLORS.mace,
-    baseValue: 2,
+  shank: {
+    type: 'shank',
+    label: 'Shank',
+    abbreviation: 'Sh',
+    color: TILE_COLORS.shank,
+    baseValue: 1,
     upgradeValue: 2,
     pool: 'starter',
-    description: 'Deal 2 damage per tile and apply 1 Vulnerable to the enemy with the highest current HP.',
-    flavor: 'Tis but a scratch.',
+    description: 'Deal 1 damage per tile and apply 1 Vulnerable.',
+    flavor: "That's not a knife.",
     upgradeText: '+2 damage to match total per level',
   },
   rattler: {
@@ -384,14 +384,14 @@ export const TILE_DEFINITIONS: Record<TileType, TileDefinition> = {
 
 /** Per-character starting tiles (before starter tile selection). */
 export const CHARACTER_TILES: Record<import('../types/game').CharacterId, TileType[]> = {
-  red_panda: ['bullet', 'iron', 'mace', 'bounty'],
+  red_panda: ['bullet', 'iron', 'shank', 'bounty'],
   reno: ['ace', 'iron', 'gold', 'chip'],
 };
 
 export const STARTER_POOL: TileType[] = [
   'bullet', 'iron', 'gold',
   'ricochet', 'stampede', 'buckshot', 'battery', 'venom', 'prairie_fire',
-  'ace', 'mace',
+  'ace', 'shank',
 ];
 
 export const ADDITIONAL_POOL: TileType[] = [

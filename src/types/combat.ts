@@ -12,6 +12,9 @@ export interface CombatState {
   aceMultiplier: number;
   luckyStacks: number;
   barricadeStacks: number;
+  ragefulStacks: number;
+  sturdyStacks: number;
+  venomousStacks: number;
   critChance: number;
   thorns: number;
   enemies: EnemyState[];
@@ -52,6 +55,7 @@ export interface EnemyState {
   vulnerable: number;
   crackedGround: number;
   bountyStacks: number;
+  summoned: boolean;
   intent: EnemyIntent;
   isDead: boolean;
 }
@@ -74,6 +78,9 @@ export type PlayerStatusEffect =
   | { type: 'ace'; value: number }
   | { type: 'lucky'; value: number }
   | { type: 'barricade'; value: number }
+  | { type: 'rageful'; value: number }
+  | { type: 'sturdy'; value: number }
+  | { type: 'venomous'; value: number }
   | { type: 'crit'; value: number }
   | { type: 'thorns'; value: number };
 
@@ -82,7 +89,8 @@ export type EnemyStatusEffect =
   | { type: 'venom'; value: number }
   | { type: 'vulnerable'; value: number }
   | { type: 'cracked_ground'; value: number }
-  | { type: 'bounty'; value: number };
+  | { type: 'bounty'; value: number }
+  | { type: 'summoned'; value: number };
 
 export interface MatchResult {
   tiles: GridPosition[];
@@ -96,6 +104,8 @@ export interface MatchResult {
   matchBonus: number;
   /** Number of fool's gold tiles in this match (set by CascadeResolver before clearing). */
   foolsGoldCount?: number;
+  /** Number of poison tiles in this match (each applies 1 venomous stack to player). */
+  poisonCount?: number;
 }
 
 export interface GridPosition {

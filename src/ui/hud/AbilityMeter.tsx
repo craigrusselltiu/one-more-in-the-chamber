@@ -6,7 +6,7 @@ import { Tooltip } from '../components/Tooltip';
 /**
  * AbilityMeter: charge bar spanning the full board width.
  *
- * Russ (Deadeye): 10-segment bar, shots remaining as gold dots when active.
+ * Rust (Deadeye): 10-segment bar, shots remaining as gold dots when active.
  * Reno (Shuffle the Deck): 7-segment bar, hold count when active.
  */
 export const AbilityMeter = memo(function AbilityMeter() {

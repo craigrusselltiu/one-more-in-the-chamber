@@ -75,6 +75,19 @@ export const KeywordText = memo(function KeywordText({
 });
 
 /**
+ * Render a single keyword line: colored name + description.
+ * Used by both KeywordSubTooltips and StatusEffects.
+ */
+export function KeywordLine({ name, color, description }: { name: string; color: string; description: string }) {
+  return (
+    <div className="whitespace-nowrap" style={{ fontSize: '8px', lineHeight: 1.3 }}>
+      <span style={{ color, fontWeight: 'bold' }}>{name}</span>
+      <span className="text-stone-400"> - {description}</span>
+    </div>
+  );
+}
+
+/**
  * KeywordSubTooltips: renders sub-tooltip entries for referenced keywords.
  */
 export const KeywordSubTooltips = memo(function KeywordSubTooltips({
@@ -86,12 +99,9 @@ export const KeywordSubTooltips = memo(function KeywordSubTooltips({
   if (keywords.length === 0) return null;
 
   return (
-    <div className="flex flex-col gap-0.5 mt-1 pt-1 border-t border-stone-700">
+    <div className="flex flex-col gap-0.5">
       {keywords.map((kw) => (
-        <div key={kw.name} style={{ fontSize: '8px', lineHeight: 1.3 }}>
-          <span style={{ color: kw.color, fontWeight: 'bold' }}>{kw.name}</span>
-          <span className="text-stone-400"> - {kw.description}</span>
-        </div>
+        <KeywordLine key={kw.name} name={kw.name} color={kw.color} description={kw.description} />
       ))}
     </div>
   );

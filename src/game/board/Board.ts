@@ -37,6 +37,9 @@ export class Board {
   private selectedTile: GridPosition | null = null;
   private inputEnabled = true;
 
+  /** Mask graphics that clips tiles to the board bounds. */
+  private boardMask: Phaser.Display.Masks.GeometryMask;
+
   constructor(scene: Phaser.Scene, x: number, y: number, tileTypes?: TileType[]) {
     this.scene = scene;
     this.originX = x;
@@ -44,25 +47,33 @@ export class Board {
     this.matchDetector = new MatchDetector();
     this.cascadeResolver = new CascadeResolver();
     if (tileTypes) this.activeTileTypes = tileTypes;
+
+    // Create a rectangle mask so tiles outside the board bounds are clipped
+    const maskShape = scene.add.graphics();
+    maskShape.fillStyle(0xffffff);
+    maskShape.fillRect(x, y, BOARD_SIZE * TILE_SIZE, BOARD_SIZE * TILE_SIZE);
+    maskShape.setVisible(false);
+    this.boardMask = new Phaser.Display.Masks.GeometryMask(scene, maskShape);
+
     this.initGrid();
     this.setupInput();
   }
 
   // -- Grid initialization --
 
+  /** Create a tile and apply the board mask to it. */
+  private createTile(x: number, y: number, type: TileType, row: number, col: number): Tile {
+    const tile = new Tile(this.scene, x, y, type, row, col);
+    tile.setMask(this.boardMask);
+    return tile;
+  }
+
   private initGrid(): void {
     for (let row = 0; row < BOARD_SIZE; row++) {
       this.grid[row] = [];
       for (let col = 0; col < BOARD_SIZE; col++) {
         const tileType = this.randomTileType();
-        const tile = new Tile(
-          this.scene,
-          this.tileX(col),
-          this.tileY(row),
-          tileType,
-          row,
-          col,
-        );
+        const tile = this.createTile(this.tileX(col), this.tileY(row), tileType, row, col);
         this.grid[row][col] = tile;
       }
     }
@@ -329,6 +340,22 @@ export class Board {
       return { valid: false, matches: [] };
     }
 
+    // Special combo swaps between showdown and/or explosive tiles
+    const aShowdown = tileA.isShowdown || tileA.type === 'showdown';
+    const bShowdown = tileB.isShowdown || tileB.type === 'showdown';
+    const aExplosive = tileA.isExplosive;
+    const bExplosive = tileB.isExplosive;
+
+    if (aShowdown && bShowdown) {
+      return this.resolveDoubleShowdownSwap(from, to, onCascadeStep);
+    }
+    if (aExplosive && bExplosive) {
+      return this.resolveDoubleExplosiveSwap(from, to, onCascadeStep);
+    }
+    if ((aShowdown && bExplosive) || (aExplosive && bShowdown)) {
+      return this.resolveShowdownExplosiveSwap(from, to, onCascadeStep);
+    }
+
     // Handle showdown tile swap: destroy all tiles of the adjacent type
     if (tileA.type === 'showdown' || tileB.type === 'showdown') {
       return this.resolveShowdownSwap(from, to, onCascadeStep);
@@ -476,6 +503,243 @@ export class Board {
     return { valid: true, matches: allMatches };
   }
 
+  // -- Special combo swaps --
+
+  /**
+   * Double showdown: clear every tile on the board left-to-right, top-to-bottom.
+   */
+  private async resolveDoubleShowdownSwap(
+    from: GridPosition,
+    to: GridPosition,
+    onCascadeStep?: (matches: MatchResult[]) => void,
+  ): Promise<SwapResult> {
+    this.isResolving = true;
+
+    // Destroy both showdown tiles first
+    this.grid[from.row][from.col]?.destroy();
+    this.grid[from.row][from.col] = null;
+    this.grid[to.row][to.col]?.destroy();
+    this.grid[to.row][to.col] = null;
+
+    EventBus.emit(GameEvent.SCREEN_SHAKE, 'heavy');
+
+    // Collect all remaining tiles L-to-R, T-to-B
+    const allTiles: { tile: Tile; row: number; col: number; type: TileType }[] = [];
+    for (let row = 0; row < BOARD_SIZE; row++) {
+      for (let col = 0; col < BOARD_SIZE; col++) {
+        const tile = this.grid[row][col];
+        if (tile) allTiles.push({ tile, row, col, type: tile.type });
+      }
+    }
+
+    // Clear all tiles with animation
+    const tilesToAnimate = allTiles.map((t) => t.tile);
+    for (const { row, col } of allTiles) this.grid[row][col] = null;
+    await this.animateTileClear(tilesToAnimate);
+
+    // Build match results grouped by type
+    const byType = new Map<TileType, number>();
+    for (const { type } of allTiles) byType.set(type, (byType.get(type) ?? 0) + 1);
+    const matchResults: MatchResult[] = [];
+    for (const [tType, count] of byType) {
+      matchResults.push({
+        tiles: Array.from({ length: count }, (_, i) => ({ row: 0, col: i })),
+        tileType: tType,
+        length: count,
+        isExplosive: false,
+        isShowdown: true,
+        isCross: false,
+        crossIntersections: [],
+        matchBonus: 1.0,
+      });
+    }
+
+    if (onCascadeStep) onCascadeStep(matchResults);
+
+    // Gravity + fill + cascade
+    const gravMoves = this.cascadeResolver.applyGravityTracked(this);
+    await this.animateGravityDrop(gravMoves);
+    await this.fillEmptyTilesAnimated();
+    const cascadeMatches = await this.cascadeResolver.resolve(this, onCascadeStep);
+
+    if (!this.hasValidMoves()) this.reshuffle();
+    this.isResolving = false;
+    return { valid: true, matches: [...matchResults, ...cascadeMatches] };
+  }
+
+  /**
+   * Double explosive: both tiles explode at 5x5 radius instead of 3x3.
+   */
+  private async resolveDoubleExplosiveSwap(
+    from: GridPosition,
+    to: GridPosition,
+    onCascadeStep?: (matches: MatchResult[]) => void,
+  ): Promise<SwapResult> {
+    this.isResolving = true;
+
+    EventBus.emit(GameEvent.SCREEN_SHAKE, 'heavy');
+
+    // Collect all tiles in 5x5 radius around both positions (deduped)
+    const cleared = new Map<string, { tile: Tile; row: number; col: number }>();
+    for (const center of [from, to]) {
+      for (let dr = -2; dr <= 2; dr++) {
+        for (let dc = -2; dc <= 2; dc++) {
+          const r = center.row + dr;
+          const c = center.col + dc;
+          if (r < 0 || r >= BOARD_SIZE || c < 0 || c >= BOARD_SIZE) continue;
+          const key = `${r},${c}`;
+          const tile = this.grid[r]?.[c];
+          if (tile && !cleared.has(key)) {
+            cleared.set(key, { tile, row: r, col: c });
+          }
+        }
+      }
+    }
+
+    // Null grid cells and animate
+    const entries = Array.from(cleared.values());
+    for (const { row, col } of entries) this.grid[row][col] = null;
+    await this.animateTileClear(entries.map((e) => e.tile));
+
+    // Build match results grouped by type
+    const byType = new Map<TileType, number>();
+    for (const { tile } of entries) byType.set(tile.type, (byType.get(tile.type) ?? 0) + 1);
+    const matchResults: MatchResult[] = [];
+    for (const [tType, count] of byType) {
+      matchResults.push({
+        tiles: Array.from({ length: count }, (_, i) => ({ row: 0, col: i })),
+        tileType: tType,
+        length: count,
+        isExplosive: false,
+        isShowdown: false,
+        isCross: false,
+        crossIntersections: [],
+        matchBonus: 1.0,
+      });
+    }
+
+    if (onCascadeStep) onCascadeStep(matchResults);
+
+    const gravMoves = this.cascadeResolver.applyGravityTracked(this);
+    await this.animateGravityDrop(gravMoves);
+    await this.fillEmptyTilesAnimated();
+    const cascadeMatches = await this.cascadeResolver.resolve(this, onCascadeStep);
+
+    if (!this.hasValidMoves()) this.reshuffle();
+    this.isResolving = false;
+    return { valid: true, matches: [...matchResults, ...cascadeMatches] };
+  }
+
+  /**
+   * Showdown + Explosive: convert all tiles of the explosive's type into
+   * explosive tiles, then detonate them all (3x3 each, chained).
+   */
+  private async resolveShowdownExplosiveSwap(
+    from: GridPosition,
+    to: GridPosition,
+    onCascadeStep?: (matches: MatchResult[]) => void,
+  ): Promise<SwapResult> {
+    const tileA = this.grid[from.row][from.col]!;
+    const tileB = this.grid[to.row][to.col]!;
+
+    const isAShowdown = tileA.isShowdown || tileA.type === 'showdown';
+    const explosiveTile = isAShowdown ? tileB : tileA;
+    const targetType = explosiveTile.type;
+
+    this.isResolving = true;
+
+    // Destroy both swapped tiles
+    this.grid[from.row][from.col]?.destroy();
+    this.grid[from.row][from.col] = null;
+    this.grid[to.row][to.col]?.destroy();
+    this.grid[to.row][to.col] = null;
+
+    // Convert tiles of the explosive's type one by one (showdown style)
+    const targets: GridPosition[] = [];
+    for (let row = 0; row < BOARD_SIZE; row++) {
+      for (let col = 0; col < BOARD_SIZE; col++) {
+        const tile = this.grid[row][col];
+        if (tile && tile.type === targetType) {
+          targets.push({ row, col });
+        }
+      }
+    }
+
+    // Staggered conversion: each tile becomes explosive with a brief delay
+    for (const pos of targets) {
+      const tile = this.grid[pos.row]?.[pos.col];
+      if (tile) {
+        tile.setExplosive(true);
+        const center = tile.getWorldCenter();
+        EventBus.emit(GameEvent.TILE_PARTICLES, center.x, center.y, TILE_COLORS[targetType] ?? '#ffffff');
+      }
+      await new Promise((r) => setTimeout(r, 100));
+    }
+
+    // Brief pause after all conversions before detonation
+    await new Promise((r) => setTimeout(r, 150));
+    EventBus.emit(GameEvent.SCREEN_SHAKE, 'heavy');
+
+    // Detonate all: collect 3x3 around each target (BFS chain)
+    const cleared = new Map<string, { tile: Tile; row: number; col: number }>();
+    const queue = [...targets];
+    const detonated = new Set<string>();
+
+    while (queue.length > 0) {
+      const pos = queue.shift()!;
+      const dKey = `${pos.row},${pos.col}`;
+      if (detonated.has(dKey)) continue;
+      detonated.add(dKey);
+
+      for (let dr = -1; dr <= 1; dr++) {
+        for (let dc = -1; dc <= 1; dc++) {
+          const r = pos.row + dr;
+          const c = pos.col + dc;
+          if (r < 0 || r >= BOARD_SIZE || c < 0 || c >= BOARD_SIZE) continue;
+          const key = `${r},${c}`;
+          const tile = this.grid[r]?.[c];
+          if (tile && !cleared.has(key)) {
+            cleared.set(key, { tile, row: r, col: c });
+            if (tile.isExplosive) queue.push({ row: r, col: c });
+          }
+        }
+      }
+    }
+
+    // Null grid cells and animate
+    const entries = Array.from(cleared.values());
+    for (const { row, col } of entries) this.grid[row][col] = null;
+    await this.animateTileClear(entries.map((e) => e.tile));
+
+    // Build match results grouped by type
+    const byType = new Map<TileType, number>();
+    for (const { tile } of entries) byType.set(tile.type, (byType.get(tile.type) ?? 0) + 1);
+    const matchResults: MatchResult[] = [];
+    for (const [tType, count] of byType) {
+      matchResults.push({
+        tiles: Array.from({ length: count }, (_, i) => ({ row: 0, col: i })),
+        tileType: tType,
+        length: count,
+        isExplosive: false,
+        isShowdown: true,
+        isCross: false,
+        crossIntersections: [],
+        matchBonus: 1.0,
+      });
+    }
+
+    if (onCascadeStep) onCascadeStep(matchResults);
+
+    const gravMoves = this.cascadeResolver.applyGravityTracked(this);
+    await this.animateGravityDrop(gravMoves);
+    await this.fillEmptyTilesAnimated();
+    const cascadeMatches = await this.cascadeResolver.resolve(this, onCascadeStep);
+
+    if (!this.hasValidMoves()) this.reshuffle();
+    this.isResolving = false;
+    return { valid: true, matches: [...matchResults, ...cascadeMatches] };
+  }
+
   // -- Explosive tile detonation --
 
   /**
@@ -518,14 +782,7 @@ export class Board {
     const existing = this.grid[row][col];
     if (existing) existing.destroy();
 
-    const tile = new Tile(
-      this.scene,
-      this.tileX(col),
-      this.tileY(row),
-      type,
-      row,
-      col,
-    );
+    const tile = this.createTile(this.tileX(col), this.tileY(row), type, row, col);
 
     if (kind === 'explosive') {
       tile.setExplosive(true);
@@ -543,14 +800,7 @@ export class Board {
       for (let row = 0; row < BOARD_SIZE; row++) {
         if (this.grid[row][col] === null) {
           const type = this.randomTileType();
-          const tile = new Tile(
-            this.scene,
-            this.tileX(col),
-            this.tileY(row),
-            type,
-            row,
-            col,
-          );
+          const tile = this.createTile(this.tileX(col), this.tileY(row), type, row, col);
           this.grid[row][col] = tile;
         }
       }
@@ -578,7 +828,7 @@ export class Board {
           if (this.grid[row][col] === null) {
             const type = this.randomTileType();
             const startX = this.originX + BOARD_SIZE * TILE_SIZE + (emptyCount - spawnIndex) * TILE_SIZE;
-            const tile = new Tile(this.scene, startX, this.tileY(row), type, row, col);
+            const tile = this.createTile(startX, this.tileY(row), type, row, col);
             this.grid[row][col] = tile;
             tweens.push(tile.tweenToPosition(this.tileX(col), this.tileY(row), 200, globalIndex * 25, true));
             spawnIndex++;
@@ -598,7 +848,7 @@ export class Board {
           if (this.grid[row][col] === null) {
             const type = this.randomTileType();
             const startX = this.originX - (emptyCount - spawnIndex) * TILE_SIZE;
-            const tile = new Tile(this.scene, startX, this.tileY(row), type, row, col);
+            const tile = this.createTile(startX, this.tileY(row), type, row, col);
             this.grid[row][col] = tile;
             tweens.push(tile.tweenToPosition(this.tileX(col), this.tileY(row), 200, globalIndex * 25, true));
             spawnIndex++;
@@ -618,7 +868,7 @@ export class Board {
           if (this.grid[row][col] === null) {
             const type = this.randomTileType();
             const startY = this.originY + BOARD_SIZE * TILE_SIZE + (emptyCount - spawnIndex) * TILE_SIZE;
-            const tile = new Tile(this.scene, this.tileX(col), startY, type, row, col);
+            const tile = this.createTile(this.tileX(col), startY, type, row, col);
             this.grid[row][col] = tile;
             tweens.push(tile.tweenToPosition(this.tileX(col), this.tileY(row), 200, globalIndex * 25, true));
             spawnIndex++;
@@ -639,7 +889,7 @@ export class Board {
           if (this.grid[row][col] === null) {
             const type = this.randomTileType();
             const startY = this.originY - (emptyCount - spawnIndex) * TILE_SIZE;
-            const tile = new Tile(this.scene, this.tileX(col), startY, type, row, col);
+            const tile = this.createTile(this.tileX(col), startY, type, row, col);
             this.grid[row][col] = tile;
             tweens.push(tile.tweenToPosition(this.tileX(col), this.tileY(row), 200, globalIndex * 25, true));
             spawnIndex++;
@@ -1043,6 +1293,64 @@ export class Board {
 
   setGravityDirection(direction: GravityDirection): void {
     this.cascadeResolver.setGravityDirection(direction);
+    this.showGravityArrow(direction);
+  }
+
+  /** Show a large translucent arrow that slides across the board twice in the gravity direction. */
+  private showGravityArrow(direction: GravityDirection): void {
+    const boardW = BOARD_SIZE * TILE_SIZE;
+    const boardH = BOARD_SIZE * TILE_SIZE;
+    const centerX = this.originX + boardW / 2;
+    const centerY = this.originY + boardH / 2;
+    const margin = 60; // extra margin so arrow fully enters/exits the masked area
+
+    const arrowChars: Record<string, string> = {
+      down: '\u25BC', left: '\u25C0', up: '\u25B2', right: '\u25B6',
+    };
+
+    // Start and end positions: from one edge to the opposite, with margin
+    const isH = direction === 'left' || direction === 'right';
+    const sign = direction === 'right' || direction === 'down' ? 1 : -1;
+    const half = (isH ? boardW : boardH) / 2 + margin;
+
+    const startX = isH ? centerX - sign * half : centerX;
+    const startY = isH ? centerY : centerY - sign * half;
+    const endX = isH ? centerX + sign * half : centerX;
+    const endY = isH ? centerY : centerY + sign * half;
+
+    const arrow = this.scene.add
+      .text(startX, startY, arrowChars[direction], {
+        fontSize: '80px',
+        color: '#ffffff',
+      })
+      .setOrigin(0.5)
+      .setAlpha(0.6)
+      .setDepth(10);
+    if (this.boardMask) arrow.setMask(this.boardMask);
+
+    // Slide across twice, fading on the second pass
+    const slideDuration = 800;
+    this.scene.tweens.add({
+      targets: arrow,
+      x: endX,
+      y: endY,
+      duration: slideDuration,
+      ease: 'Linear',
+      onComplete: () => {
+        // Reset to start for second pass, same opacity
+        arrow.setPosition(startX, startY);
+        arrow.setAlpha(0.6);
+        this.scene.tweens.add({
+          targets: arrow,
+          x: endX,
+          y: endY,
+          alpha: 0.6,
+          duration: slideDuration,
+          ease: 'Linear',
+          onComplete: () => arrow.destroy(),
+        });
+      },
+    });
   }
 
   getGravityDirection(): GravityDirection {
@@ -1139,14 +1447,7 @@ export class Board {
       for (let col = 0; col < BOARD_SIZE; col++) {
         const data = snapshot.tiles[row]?.[col];
         if (data) {
-          const tile = new Tile(
-            this.scene,
-            this.tileX(col),
-            this.tileY(row),
-            data.type,
-            row,
-            col,
-          );
+          const tile = this.createTile(this.tileX(col), this.tileY(row), data.type, row, col);
           if (data.isExplosive) tile.setExplosive(true);
           if (data.isShowdown) tile.setShowdown(true);
           if (data.hazard) tile.hazard = { ...data.hazard };

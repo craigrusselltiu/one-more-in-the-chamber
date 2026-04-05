@@ -14,6 +14,8 @@ export interface ResourceOutput {
   barricadeStacks: number;
   vulnerableStacks: number;
   bountyStacks: number;
+  ragefulStacks: number;
+  sturdyStacks: number;
   /** Whether a Chip tile hit (true) or missed (false). Undefined for non-chip tiles. */
   chipHit?: boolean;
   /** Double Down artifact: HP penalty on chip miss. */
@@ -122,7 +124,7 @@ export class ResourceResolver {
         break;
 
       case 'fifty_cal':
-        output.damage = total;
+        output.damage = count >= 5 ? total * 2 : total;
         break;
 
       case 'stampede':
@@ -145,10 +147,9 @@ export class ResourceResolver {
         output.damage = total;
         break;
 
-      case 'mace':
+      case 'shank':
         output.damage = total;
         output.vulnerableStacks = 1;
-        output.targetsHighestHp = true;
         break;
 
       case 'rattler':
@@ -267,6 +268,8 @@ export class ResourceResolver {
       barricadeStacks: 0,
       vulnerableStacks: 0,
       bountyStacks: 0,
+      ragefulStacks: 0,
+      sturdyStacks: 0,
       isAoE: false,
       piercesBlock: false,
       targetsHighestHp: false,

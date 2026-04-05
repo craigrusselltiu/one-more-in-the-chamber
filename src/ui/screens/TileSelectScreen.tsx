@@ -67,10 +67,13 @@ export const TileSelectScreen = memo(function TileSelectScreen() {
           const def = TILE_DEFINITIONS[tileType];
           const isSelected = selected === tileType;
           const hasKeywords = getReferencedKeywords(def.description).length > 0;
-          const keywordTooltip = hasKeywords ? <KeywordSubTooltips text={def.description} /> : undefined;
+          const keywordTooltip = hasKeywords ? (
+            <KeywordSubTooltips text={def.description} />
+          ) : undefined;
           const upgradeTooltip = def.upgradeText ? (
-            <div style={{ fontSize: '9px' }}>
-              <span className="text-stone-400">Upgrade: </span>
+            <div className="whitespace-nowrap" style={{ fontSize: '8px', lineHeight: 1.3 }}>
+              <span className="text-stone-400 font-bold">Upgrade</span>
+              <span className="text-stone-400"> - </span>
               <span className="text-amber-300">{def.upgradeText}</span>
             </div>
           ) : undefined;

@@ -15,16 +15,18 @@ interface CharacterInfo {
   hp: number;
   ability: string;
   abilityDescription: string;
+  sprite: string;
 }
 
 const CHARACTERS: CharacterInfo[] = [
   {
     id: 'red_panda',
-    name: 'Russ',
+    name: 'Rust',
     hp: 100,
     ability: 'Deadeye',
     abilityDescription:
       'Charge by matching tiles. When full, activate to fire 3 targeted shots that destroy individual tiles of your choice.',
+    sprite: 'rust.png',
   },
   {
     id: 'reno',
@@ -33,6 +35,7 @@ const CHARACTERS: CharacterInfo[] = [
     ability: 'Shuffle the Deck',
     abilityDescription:
       'Charges faster (7 turns). Hold up to 3 tiles, then shuffle the rest of the board. Cascades resolve normally.',
+    sprite: 'reno.png',
   },
 ];
 
@@ -84,6 +87,12 @@ export const CharacterSelectScreen = memo(function CharacterSelectScreen() {
                 transition: 'all 0.15s',
               }}
             >
+              <img
+                src={`${import.meta.env.BASE_URL}assets/sprites/${char.sprite}`}
+                alt={char.name}
+                style={{ width: 64, height: 64, imageRendering: 'pixelated', objectFit: 'cover' }}
+                className="mb-1"
+              />
               <span className="text-amber-300 text-sm font-bold mb-2">
                 {char.name}
               </span>

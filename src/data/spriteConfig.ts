@@ -8,20 +8,17 @@ import type { TileType } from '../types/game';
 
 /** Tile sprite frames (from items_sheet.png). */
 export const TILE_FRAMES: Record<TileType, number> = {
-  // Core
   bullet: 1244,
   iron: 565,
   gold: 1158,
   bounty: 1245,
   chip: 1246,
-  // Starter
   ricochet: 907,
   stampede: 268,
   buckshot: 908,
   battery: 945,
   venom: 762,
   prairie_fire: 719,
-  // Additional
   chain: 730,
   whiskey: 666,
   ace: 792,
@@ -29,14 +26,13 @@ export const TILE_FRAMES: Record<TileType, number> = {
   fifty_cal: 906,
   tombstone: 824,
   saloon: 715,
-  mace: 133,
+  shank: 707,
   rattler: 1241,
   barricade: 198,
   cavalry: 786,
   duel: 211,
   mirage: 1004,
   boulder: 198,
-  // Special
   showdown: 819,
   tumbleweed: 1098,
   fools_gold: 1155,
@@ -63,7 +59,11 @@ export const STATUS_FRAMES: Record<string, number> = {
   venom: 828,
   vulnerable: 1178,
   cracked_ground: 770,
+  rageful: 814,
+  sturdy: 298,
+  venomous: 828,
   bounty: 1245,
+  summoned: 704,
 };
 
 /** Map node type icons. */
@@ -79,13 +79,13 @@ export const NODE_FRAMES: Record<string, number> = {
 
 /** Trait icons (by trait ID). */
 export const TRAIT_FRAMES: Record<string, number> = {
-  outlaw: 1244,
-  sheriff: 565,
-  rattlesnake: 762,
-  prospector: 1158,
-  sapper: 722,
-  mustang: 268,
-  gunslinger: 906,
+  outlaw: 303,
+  sheriff: 610,
+  rattlesnake: 1241,
+  prospector: 656,
+  sapper: 938,
+  mustang: 266,
+  gunslinger: 1244,
 };
 
 /** Trait breakpoint thresholds (in order). */
@@ -97,6 +97,12 @@ export const TRAIT_BREAKPOINTS: Record<string, number[]> = {
   sapper: [1, 2, 3],
   mustang: [4],
   gunslinger: [2, 4],
+};
+
+/** Tile hazard overlay icons. */
+export const HAZARD_FRAMES: Record<string, number> = {
+  lock: 738,
+  poison: 828,
 };
 
 /** UI button icons for the top bar. */

@@ -7,7 +7,7 @@
 **Archetype:** Card sharp / gambler
 **Sprite:** 64x64 pixel art
 
-A raccoon card sharp in a silk vest and bowler hat. Where Russ is a scrappy gunslinger who aims true, Reno is a smooth-talking gambler who stacks the odds. He doesn't fight fair -- he fights lucky.
+A raccoon card sharp in a silk vest and bowler hat. Where Rust is a scrappy gunslinger who aims true, Reno is a smooth-talking gambler who stacks the odds. He doesn't fight fair -- he fights lucky.
 
 ## Backstory
 
@@ -83,7 +83,7 @@ The ability bar spans the full width of the board at the bottom, split into 7 se
 
 ### Contrast with Deadeye
 
-| | Deadeye (Russ) | Shuffle the Deck (Reno) |
+| | Deadeye (Rust) | Shuffle the Deck (Reno) |
 |---|---|---|
 | Charge | +1/turn, threshold 10 | +1/turn, threshold 7 |
 | Value type | Direct (destroy tiles = immediate resources) | Setup (rearrange board = create opportunities) |

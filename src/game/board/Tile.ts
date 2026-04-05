@@ -1,7 +1,7 @@
 import Phaser from 'phaser';
 import type { TileType } from '../../types/game';
 import type { TileHazardState } from '../../types/tiles';
-import { TILE_FRAMES } from '../../data/spriteConfig';
+import { TILE_FRAMES, HAZARD_FRAMES } from '../../data/spriteConfig';
 import { useSettingsStore, getSpeedMultiplier } from '../../store/settingsStore';
 
 /** Grid spacing = sprite size (2x of 16px source). No overlap. */
@@ -14,7 +14,7 @@ const STATUS_OFFSET = 12;
  *
  * Effect overlays:
  *   - Showdown tile: rainbow breathing overlay
- *   - Explosive (4-match special tile): yellow breathing overlay
+ *   - Explosive (4-match special tile): orange breathing overlay
  *   - Bomb hazard: red breathing overlay + countdown number
  */
 export class Tile {
@@ -30,12 +30,19 @@ export class Tile {
   private highlight: Phaser.GameObjects.Rectangle | null = null;
   /** Tinted sprite copy that only covers non-transparent pixels. */
   private overlay: Phaser.GameObjects.Image | null = null;
+  /** Offset sprite copies forming a thick outline with VFX. */
+  private outlineSprites: Phaser.GameObjects.Image[] = [];
   /** Countdown label for bomb hazards (centered on tile). */
   private bombLabel: Phaser.GameObjects.Text | null = null;
   /** Status indicators for non-bomb hazards. */
   private statusDot: Phaser.GameObjects.Rectangle | null = null;
   private statusLabel: Phaser.GameObjects.Text | null = null;
+  /** Lock icon displayed on top of the sprite. */
+  private lockIcon: Phaser.GameObjects.Image | null = null;
+  /** Poison icon displayed at bottom-right corner. */
+  private poisonIcon: Phaser.GameObjects.Image | null = null;
   private destroyed = false;
+  private _mask: Phaser.Display.Masks.GeometryMask | null = null;
 
   get hazard(): TileHazardState | null {
     return this._hazard;
@@ -72,8 +79,10 @@ export class Tile {
 
   setType(newType: TileType): void {
     this.type = newType;
-    this.sprite.setFrame(TILE_FRAMES[this.type]);
-    if (this.overlay) this.overlay.setFrame(TILE_FRAMES[this.type]);
+    const frame = TILE_FRAMES[this.type];
+    this.sprite.setFrame(frame);
+    if (this.overlay) this.overlay.setFrame(frame);
+    for (const s of this.outlineSprites) s.setFrame(frame);
     this.updateOverlay();
   }
 
@@ -83,6 +92,13 @@ export class Tile {
 
   clearTint(): void {
     this.sprite.clearTint();
+  }
+
+  setMask(mask: Phaser.Display.Masks.GeometryMask): void {
+    this._mask = mask;
+    this.sprite.setMask(mask);
+    if (this.overlay) this.overlay.setMask(mask);
+    for (const s of this.outlineSprites) s.setMask(mask);
   }
 
   setExplosive(value: boolean): void {
@@ -114,42 +130,87 @@ export class Tile {
 
     const breath = 0.5 + 0.5 * Math.sin(time / 400);
 
+    let tint = 0;
+    let overlayAlpha = 0;
+    let outlineAlpha = 0;
+
     if (this.isShowdown) {
-      // Rainbow: cycle hue over time
       const hue = (time / 20) % 360;
       const color = Phaser.Display.Color.HSLToColor(hue / 360, 0.8, 0.5);
-      this.overlay.setTintFill(color.color);
-      this.overlay.setAlpha(0.2 + breath * 0.25);
+      tint = color.color;
+      overlayAlpha = 0.2 + breath * 0.25;
+      outlineAlpha = 0.6 + breath * 0.4;
     } else if (this.isExplosive) {
-      // Yellow breathing
-      this.overlay.setTintFill(0xffff00);
-      this.overlay.setAlpha(0.15 + breath * 0.2);
+      tint = 0xff8800;
+      overlayAlpha = 0.15 + breath * 0.2;
+      outlineAlpha = 0.5 + breath * 0.4;
     } else if (this._hazard?.type === 'bomb') {
-      // Red breathing
-      this.overlay.setTintFill(0xff2020);
-      this.overlay.setAlpha(0.15 + breath * 0.25);
+      tint = 0xff2020;
+      overlayAlpha = 0.15 + breath * 0.25;
+      outlineAlpha = 0.5 + breath * 0.4;
+    } else if (this._hazard?.type === 'poison') {
+      tint = 0x40ff40;
+      overlayAlpha = 0.15 + breath * 0.25;
+      outlineAlpha = 0.5 + breath * 0.4;
+    }
+
+    if (tint) {
+      this.overlay.setTintFill(tint);
+      this.overlay.setAlpha(overlayAlpha);
+      for (const s of this.outlineSprites) {
+        s.setTintFill(tint);
+        s.setAlpha(outlineAlpha);
+      }
     }
   }
 
+  private static readonly OUTLINE_OFFSETS: [number, number][] = [
+    [-2, -2], [0, -2], [2, -2],
+    [-2,  0],          [2,  0],
+    [-2,  2], [0,  2], [2,  2],
+  ];
+
   private updateOverlay(): void {
-    const needsOverlay = this.isShowdown || this.isExplosive || this._hazard?.type === 'bomb';
+    const needsOverlay = this.isShowdown || this.isExplosive || this._hazard?.type === 'bomb' || this._hazard?.type === 'poison';
     const cx = this.sprite.x;
     const cy = this.sprite.y;
+    const frame = TILE_FRAMES[this.type];
 
     if (needsOverlay) {
       if (!this.overlay) {
         // Duplicate the sprite as a tinted overlay - only covers non-transparent pixels
         this.overlay = this.scene.add
-          .image(cx, cy, 'items_sheet', TILE_FRAMES[this.type])
+          .image(cx, cy, 'items_sheet', frame)
           .setScale(2)
           .setDepth(1)
           .setAlpha(0);
+        if (this._mask) this.overlay.setMask(this._mask);
       } else {
         this.overlay.setPosition(cx, cy);
-        this.overlay.setFrame(TILE_FRAMES[this.type]);
+        this.overlay.setFrame(frame);
+      }
+
+      // Create outline sprites (offset copies rendered behind the main sprite)
+      if (this.outlineSprites.length === 0) {
+        for (const [dx, dy] of Tile.OUTLINE_OFFSETS) {
+          const s = this.scene.add
+            .image(cx + dx, cy + dy, 'items_sheet', frame)
+            .setScale(2)
+            .setDepth(0)
+            .setAlpha(0);
+          if (this._mask) s.setMask(this._mask);
+          this.outlineSprites.push(s);
+        }
+      } else {
+        for (let i = 0; i < this.outlineSprites.length; i++) {
+          const [dx, dy] = Tile.OUTLINE_OFFSETS[i];
+          this.outlineSprites[i].setPosition(cx + dx, cy + dy);
+          this.outlineSprites[i].setFrame(frame);
+        }
       }
     } else {
       this.destroyOverlay();
+      this.destroyOutline();
     }
 
     // Bomb hazard: centered countdown number
@@ -182,6 +243,11 @@ export class Tile {
     }
   }
 
+  private destroyOutline(): void {
+    for (const s of this.outlineSprites) s.destroy();
+    this.outlineSprites.length = 0;
+  }
+
   private destroyBombLabel(): void {
     if (this.bombLabel) {
       this.bombLabel.destroy();
@@ -193,17 +259,88 @@ export class Tile {
   // Non-bomb hazard indicators (lock, poison, sand, etc.)
   // ---------------------------------------------------------------------------
 
+
+
   private updateStatusIndicator(): void {
     const cx = this.sprite.x;
     const cy = this.sprite.y;
     const ix = Math.round(cx + STATUS_OFFSET);
     const iy = Math.round(cy + STATUS_OFFSET);
 
-    // Bomb hazards use the overlay + centered label, not the corner indicator
+    // No hazard or types handled elsewhere: clean up
     if (this._hazard === null || this._hazard.type === 'fools_gold' || this._hazard.type === 'bomb') {
       this.destroyStatusIndicator();
+      this.destroyLockIcon();
+      this.destroyPoisonIcon();
+      this.sprite.clearTint();
       return;
     }
+
+    // Lock / Hardened Lock: grey out sprite + lock icon centered on tile
+    if (this._hazard.type === 'lock' || this._hazard.type === 'hardened_lock') {
+      this.destroyStatusIndicator();
+      this.destroyPoisonIcon();
+      this.sprite.setTint(0x666666);
+
+      if (!this.lockIcon) {
+        // Integer 1x scale (16px). For larger, use 2x (32px) or swap to a
+        // different sprite. Fractional scales distort pixel art -- there is
+        // no clean size between 16 and 32 for a 16px source sprite.
+        this.lockIcon = this.scene.add
+          .image(cx, cy, 'items_sheet', HAZARD_FRAMES.lock)
+          .setScale(1)
+          .setDepth(3)
+          .setAlpha(0.9);
+      } else {
+        this.lockIcon.setPosition(cx, cy);
+      }
+
+      // For hardened lock, show hit count below the icon
+      if (this._hazard.type === 'hardened_lock') {
+        const text = String(this._hazard.hits);
+        if (!this.statusLabel) {
+          this.statusLabel = this.scene.add
+            .text(cx, Math.round(cy + 10), text, {
+              fontSize: '8px',
+              color: '#ffffff',
+              fontFamily: 'Inter, sans-serif',
+              fontStyle: 'bold',
+            })
+            .setOrigin(0.5)
+            .setDepth(4)
+            .setStroke('#000000', 3);
+        } else {
+          this.statusLabel.setPosition(cx, Math.round(cy + 10));
+          this.statusLabel.setText(text);
+        }
+      } else {
+        if (this.statusLabel) { this.statusLabel.destroy(); this.statusLabel = null; }
+      }
+      return;
+    }
+
+    // Poison: neon green overlay (handled by updateOverlay) + small icon bottom-right
+    if (this._hazard.type === 'poison') {
+      this.destroyStatusIndicator();
+      this.destroyLockIcon();
+      this.sprite.clearTint();
+
+      if (!this.poisonIcon) {
+        this.poisonIcon = this.scene.add
+          .image(ix, iy, 'items_sheet', HAZARD_FRAMES.poison)
+          .setScale(1)
+          .setDepth(3);
+        if (this._mask) this.poisonIcon.setMask(this._mask);
+      } else {
+        this.poisonIcon.setPosition(ix, iy);
+      }
+      return;
+    }
+
+    // Sand and other hazards: corner dot + text
+    this.destroyLockIcon();
+    this.destroyPoisonIcon();
+    this.sprite.clearTint();
 
     const { dotColor, text } = this.hazardStyle(this._hazard);
 
@@ -233,12 +370,22 @@ export class Tile {
 
   private hazardStyle(hazard: TileHazardState): { dotColor: number; text: string } {
     switch (hazard.type) {
-      case 'lock':           return { dotColor: 0xaaaaaa, text: 'L' };
-      case 'hardened_lock':  return { dotColor: 0x666666, text: String(hazard.hits) };
-      case 'poison':         return { dotColor: 0x40d840, text: 'P' };
-      case 'bomb':           return { dotColor: 0xff4040, text: '' }; // handled by overlay
       case 'sand':           return { dotColor: 0xe8c170, text: '?' };
-      case 'fools_gold':     return { dotColor: 0xffd700, text: '' };
+      default:               return { dotColor: 0xaaaaaa, text: '' };
+    }
+  }
+
+  private destroyLockIcon(): void {
+    if (this.lockIcon) {
+      this.lockIcon.destroy();
+      this.lockIcon = null;
+    }
+  }
+
+  private destroyPoisonIcon(): void {
+    if (this.poisonIcon) {
+      this.poisonIcon.destroy();
+      this.poisonIcon = null;
     }
   }
 
@@ -262,14 +409,21 @@ export class Tile {
     const cy = Math.round(y + TILE_SIZE / 2);
     this.sprite.setPosition(cx, cy);
     if (this.overlay) this.overlay.setPosition(cx, cy);
+    for (let i = 0; i < this.outlineSprites.length; i++) {
+      const [dx, dy] = Tile.OUTLINE_OFFSETS[i];
+      this.outlineSprites[i].setPosition(cx + dx, cy + dy);
+    }
     if (this.bombLabel) this.bombLabel.setPosition(cx, cy);
     if (this.highlight) this.highlight.setPosition(cx, cy);
     if (this.statusDot) {
       this.statusDot.setPosition(Math.round(cx + STATUS_OFFSET), Math.round(cy + STATUS_OFFSET));
     }
     if (this.statusLabel) {
-      this.statusLabel.setPosition(Math.round(cx + STATUS_OFFSET), Math.round(cy + STATUS_OFFSET));
+      const labelY = this.lockIcon ? Math.round(cy + 10) : Math.round(cy + STATUS_OFFSET);
+      this.statusLabel.setPosition(Math.round(cx + STATUS_OFFSET), labelY);
     }
+    if (this.lockIcon) this.lockIcon.setPosition(cx, cy);
+    if (this.poisonIcon) this.poisonIcon.setPosition(Math.round(cx + STATUS_OFFSET), Math.round(cy + STATUS_OFFSET));
   }
 
   setSelected(selected: boolean): void {
@@ -310,14 +464,35 @@ export class Tile {
     const ease = bounce ? 'Bounce.easeOut' : 'Cubic.easeIn';
 
     return new Promise((resolve) => {
+      // Main targets tween to center of the new cell
       const targets: Phaser.GameObjects.GameObject[] = [this.sprite];
       if (this.overlay) targets.push(this.overlay);
       if (this.highlight) targets.push(this.highlight);
       if (this.bombLabel) targets.push(this.bombLabel);
+      if (this.lockIcon) targets.push(this.lockIcon);
 
-      if (this.statusDot) {
+      // Outline sprites tween individually (each has its own offset)
+      for (let i = 0; i < this.outlineSprites.length; i++) {
+        const [dx, dy] = Tile.OUTLINE_OFFSETS[i];
         this.scene.tweens.add({
-          targets: this.statusDot,
+          targets: this.outlineSprites[i],
+          x: targetX + dx,
+          y: targetY + dy,
+          duration,
+          delay,
+          ease,
+        });
+      }
+
+      // Corner-offset targets (status dot, label, poison icon)
+      const cornerTargets: Phaser.GameObjects.GameObject[] = [];
+      if (this.statusDot) cornerTargets.push(this.statusDot);
+      if (this.statusLabel && !this.lockIcon) cornerTargets.push(this.statusLabel);
+      if (this.poisonIcon) cornerTargets.push(this.poisonIcon);
+
+      if (cornerTargets.length > 0) {
+        this.scene.tweens.add({
+          targets: cornerTargets,
           x: Math.round(targetX + STATUS_OFFSET),
           y: Math.round(targetY + STATUS_OFFSET),
           duration,
@@ -325,11 +500,13 @@ export class Tile {
           ease,
         });
       }
-      if (this.statusLabel) {
+
+      // Hardened lock label follows the lock icon (centered, offset down)
+      if (this.statusLabel && this.lockIcon) {
         this.scene.tweens.add({
           targets: this.statusLabel,
-          x: Math.round(targetX + STATUS_OFFSET),
-          y: Math.round(targetY + STATUS_OFFSET),
+          x: targetX,
+          y: Math.round(targetY + 10),
           duration,
           delay,
           ease,
@@ -360,10 +537,13 @@ export class Tile {
     return new Promise((resolve) => {
       const targets: Phaser.GameObjects.GameObject[] = [this.sprite];
       if (this.overlay) targets.push(this.overlay);
+      targets.push(...this.outlineSprites);
       if (this.bombLabel) targets.push(this.bombLabel);
       if (this.highlight) targets.push(this.highlight);
       if (this.statusDot) targets.push(this.statusDot);
       if (this.statusLabel) targets.push(this.statusLabel);
+      if (this.lockIcon) targets.push(this.lockIcon);
+      if (this.poisonIcon) targets.push(this.poisonIcon);
 
       const popDuration = Math.round(duration * 0.3);
       const fadeDuration = Math.round(duration * 0.7);
@@ -399,11 +579,14 @@ export class Tile {
     this.destroyed = true;
     this.sprite.destroy();
     this.destroyOverlay();
+    this.destroyOutline();
     this.destroyBombLabel();
     if (this.highlight) {
       this.highlight.destroy();
       this.highlight = null;
     }
     this.destroyStatusIndicator();
+    this.destroyLockIcon();
+    this.destroyPoisonIcon();
   }
 }

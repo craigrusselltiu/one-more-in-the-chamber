@@ -10,7 +10,13 @@ import { TraitDisplay } from './TraitDisplay';
  * Shows: sprite placeholder, HP bar, status effects.
  * Ability meter is rendered under the board in CombatHUD.
  */
+const CHARACTER_SPRITES: Record<string, string> = {
+  red_panda: 'rust.png',
+  reno: 'reno.png',
+};
+
 export const PlayerPanel = memo(function PlayerPanel() {
+  const character = useCombatStore((s) => s.character);
   const health = useCombatStore((s) => s.playerHealth);
   const maxHealth = useCombatStore((s) => s.playerMaxHealth);
   const block = useCombatStore((s) => s.playerBlock);
@@ -18,11 +24,13 @@ export const PlayerPanel = memo(function PlayerPanel() {
   const effects = getPlayerStatusEffects(store);
   const nonBlockEffects = useMemo(() => effects.filter((e) => e.type !== 'block'), [effects]);
 
+  const spriteFile = CHARACTER_SPRITES[character] ?? 'rust.png';
+
   return (
     <div className="flex flex-col items-center">
       {/* Character sprite */}
       <img
-        src={`${import.meta.env.BASE_URL}assets/sprites/panda.png`}
+        src={`${import.meta.env.BASE_URL}assets/sprites/${spriteFile}`}
         alt="Player"
         className="mb-1"
         style={{ width: 96, height: 96, imageRendering: 'pixelated', objectFit: 'cover' }}

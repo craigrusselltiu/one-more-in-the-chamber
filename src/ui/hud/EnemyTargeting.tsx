@@ -106,7 +106,7 @@ const EnemySlot = memo(function EnemySlot({
 
       {/* HP bar centered, block badge overlaid to the left */}
       <div className="relative">
-        <div className="absolute right-full top-0 mr-0.5 flex items-center" style={{ height: '100%' }}>
+        <div className="absolute right-full top-0 mr-1.5 flex items-center" style={{ height: '100%' }}>
           {enemy.block > 0 && <BlockBadge value={enemy.block} />}
         </div>
         <HealthBar

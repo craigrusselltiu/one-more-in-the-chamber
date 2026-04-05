@@ -71,7 +71,7 @@ export const Tooltip = memo(function Tooltip({ text, content, secondContent, chi
       {visible && (tooltipBody || secondContent) && (
         <div
           ref={tooltipRef}
-          className="absolute left-1/2 z-50 pointer-events-none flex flex-col gap-1"
+          className="absolute left-1/2 z-50 pointer-events-none flex flex-col items-start gap-1"
           style={{
             transform: 'translateX(-50%)',
             ...(position === 'top'
@@ -89,7 +89,7 @@ export const Tooltip = memo(function Tooltip({ text, content, secondContent, chi
           )}
           {secondContent && (
             <div
-              className="bg-stone-900/95 border border-stone-600 px-1.5 py-0.5 text-stone-200"
+              className="bg-stone-900/95 border border-stone-600 px-1.5 py-0.5 text-stone-200 whitespace-nowrap"
               style={{ fontSize: '9px' }}
             >
               {secondContent}
