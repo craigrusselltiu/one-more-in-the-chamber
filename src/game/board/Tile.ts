@@ -24,6 +24,8 @@ export class Tile {
   col: number;
   isExplosive = false;
   isShowdown = false;
+  /** Timestamp when the hint effect expires. 0 = no hint. */
+  hintUntil = 0;
 
   private _hazard: TileHazardState | null = null;
   private sprite: Phaser.GameObjects.Image;
@@ -153,6 +155,20 @@ export class Tile {
       tint = 0x40ff40;
       overlayAlpha = 0.15 + breath * 0.25;
       outlineAlpha = 0.5 + breath * 0.4;
+    } else if (this.hintUntil > 0 && time < this.hintUntil) {
+      // Hint: white fast breathing (4x speed)
+      const fastBreath = 0.5 + 0.5 * Math.sin(time / 100);
+      tint = 0xffffff;
+      overlayAlpha = 0.1 + fastBreath * 0.2;
+      outlineAlpha = 0.3 + fastBreath * 0.5;
+    }
+
+    if (this.hintUntil > 0 && time >= this.hintUntil) {
+      this.hintUntil = 0;
+      if (!this.isShowdown && !this.isExplosive && this._hazard?.type !== 'bomb' && this._hazard?.type !== 'poison') {
+        this.destroyOverlay();
+        this.destroyOutline();
+      }
     }
 
     if (tint) {
@@ -171,8 +187,17 @@ export class Tile {
     [-2,  2], [0,  2], [2,  2],
   ];
 
+  /** Start a hint effect that lasts for `durationMs` milliseconds. */
+  startHint(durationMs: number): void {
+    this.hintUntil = this.scene.time.now + durationMs;
+    // Ensure overlay + outline exist for the hint effect
+    if (!this.overlay || this.outlineSprites.length === 0) {
+      this.updateOverlay();
+    }
+  }
+
   private updateOverlay(): void {
-    const needsOverlay = this.isShowdown || this.isExplosive || this._hazard?.type === 'bomb' || this._hazard?.type === 'poison';
+    const needsOverlay = this.isShowdown || this.isExplosive || this._hazard?.type === 'bomb' || this._hazard?.type === 'poison' || this.hintUntil > 0;
     const cx = this.sprite.x;
     const cy = this.sprite.y;
     const frame = TILE_FRAMES[this.type];

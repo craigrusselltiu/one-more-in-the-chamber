@@ -119,13 +119,9 @@ export class Board {
 
   // -- Hint system --
   private hintTimer = 0;
-  private hintFlashCount = 0;
-  private hintFlashTarget: GridPosition | null = null;
-  private hintOverlays: Phaser.GameObjects.Rectangle[] = [];
+  private hintTriggered = false;
   private static readonly HINT_INTERVAL = 15000; // 15 seconds
-  private static readonly HINT_FLASH_DURATION = 200;
-  private static readonly HINT_FLASH_GAP = 150;
-  private static readonly HINT_FLASH_TOTAL = 3;
+  private static readonly HINT_BREATHE_DURATION = 1500; // how long the hint breathes
   /** Whether shuffle hold mode is active (clicks toggle hold). */
   private shuffleHoldMode = false;
   /** Set of held position keys ("row,col") during Shuffle the Deck. */
@@ -1521,9 +1517,7 @@ export class Board {
   /** Reset the hint timer (call at the start of each swap turn). */
   resetHintTimer(): void {
     this.hintTimer = this.scene.time.now;
-    this.hintFlashCount = 0;
-    this.hintFlashTarget = null;
-    this.clearHintOverlays();
+    this.hintTriggered = false;
   }
 
   /** Find a tile position involved in a valid move. */
@@ -1564,36 +1558,6 @@ export class Board {
     return null;
   }
 
-  private flashHintTile(pos: GridPosition): void {
-    const tile = this.grid[pos.row]?.[pos.col];
-    if (!tile) return;
-    const center = tile.getWorldCenter();
-
-    const rect = this.scene.add
-      .rectangle(center.x, center.y, TILE_SIZE - 2, TILE_SIZE - 2)
-      .setStrokeStyle(2, 0xffffff)
-      .setFillStyle(0xffffff, 0.2)
-      .setDepth(5);
-
-    this.hintOverlays.push(rect);
-
-    this.scene.tweens.add({
-      targets: rect,
-      alpha: 0,
-      duration: Board.HINT_FLASH_DURATION,
-      ease: 'Quad.easeOut',
-      onComplete: () => {
-        rect.destroy();
-        this.hintOverlays = this.hintOverlays.filter((r) => r !== rect);
-      },
-    });
-  }
-
-  private clearHintOverlays(): void {
-    for (const r of this.hintOverlays) r.destroy();
-    this.hintOverlays = [];
-  }
-
   update(): void {
     // Drive tile effect overlays (breathing animations)
     const time = this.scene.time.now;
@@ -1603,33 +1567,19 @@ export class Board {
       }
     }
 
-    // Hint system: flash a valid move tile every 15 seconds
+    // Hint system: after 15s of inactivity, breathe-flash a valid move tile
     if (!this.isResolving && this.inputEnabled && !this.deadeyeMode && !this.shuffleHoldMode) {
       const elapsed = time - this.hintTimer;
-      if (elapsed >= Board.HINT_INTERVAL) {
-        // Time for a hint — find target if not already found
-        if (!this.hintFlashTarget) {
-          this.hintFlashTarget = this.findHintMove();
-          this.hintFlashCount = 0;
+      if (elapsed >= Board.HINT_INTERVAL && !this.hintTriggered) {
+        this.hintTriggered = true;
+        const pos = this.findHintMove();
+        if (pos) {
+          const tile = this.grid[pos.row]?.[pos.col];
+          if (tile) tile.startHint(Board.HINT_BREATHE_DURATION);
         }
-
-        if (this.hintFlashTarget && this.hintFlashCount < Board.HINT_FLASH_TOTAL) {
-          const flashInterval = Board.HINT_FLASH_DURATION + Board.HINT_FLASH_GAP;
-          const flashElapsed = elapsed - Board.HINT_INTERVAL;
-          const expectedFlashes = Math.floor(flashElapsed / flashInterval) + 1;
-          if (expectedFlashes > this.hintFlashCount) {
-            this.flashHintTile(this.hintFlashTarget);
-            this.hintFlashCount++;
-          }
-        }
-
-        // After all flashes done, reset for next cycle
-        const totalFlashTime = Board.HINT_FLASH_TOTAL * (Board.HINT_FLASH_DURATION + Board.HINT_FLASH_GAP);
-        if (elapsed >= Board.HINT_INTERVAL + totalFlashTime) {
-          this.hintTimer = time;
-          this.hintFlashCount = 0;
-          this.hintFlashTarget = null;
-        }
+        // Reset timer for next hint cycle
+        this.hintTimer = time;
+        this.hintTriggered = false;
       }
     }
   }
