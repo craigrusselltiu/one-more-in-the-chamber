@@ -1232,7 +1232,7 @@ export class CombatManager {
       this.floatOnEnemy(enemy, 'COLLECTED', '#FFD700');
       if (!enemy.summoned) {
         this.player.addGold(10);
-        this.floatOnEnemy(enemy, '+10g', '#FFD700');
+        this.floatOnPlayer('+10g', '#FFD700');
         EventBus.emit(GameEvent.GOLD_CHANGE, this.player.gold);
       }
       return true;
