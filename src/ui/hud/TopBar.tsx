@@ -143,7 +143,7 @@ export const TopBar = memo(function TopBar({ mapDisabled }: { showMapButton?: bo
       </div>
       {/* Seed indicator — absolute so it doesn't affect layout */}
       {seed && (
-        <div className="absolute z-20 right-2 pointer-events-auto" style={{ top: 32, fontSize: '7px' }}>
+        <div className="absolute z-0 right-2 pointer-events-auto" style={{ top: 32, fontSize: '7px' }}>
           <Tooltip text={seedCopied ? 'Copied!' : 'Copy seed'} position="bottom">
             <button
               className="text-white/40 hover:text-white/70"
