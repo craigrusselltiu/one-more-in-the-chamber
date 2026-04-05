@@ -1,7 +1,7 @@
 import { memo, useEffect, useState } from 'react';
 import { EventBus, GameEvent } from '../../game/EventBus';
 import { useRunStore } from '../../store/runStore';
-import { playCampfire, stopCampfire } from '../../services/sfx';
+import { playCampfire, stopCampfire, playUpgrade } from '../../services/sfx';
 import { TILE_DEFINITIONS } from '../../data/tiles';
 import { TILE_FRAMES, UI_FRAMES, NODE_FRAMES } from '../../data/spriteConfig';
 import { SpriteIcon } from '../components/SpriteIcon';
@@ -39,6 +39,7 @@ export const RestSiteScreen = memo(function RestSiteScreen() {
   const handleConfirmUpgrade = () => {
     if (!selectedTile) return;
     upgradeTile(selectedTile);
+    playUpgrade();
     setChoice('upgraded');
   };
 

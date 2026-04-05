@@ -82,6 +82,10 @@ export function playShop(): void {
   play('sfx_shop', 0.5);
 }
 
+export function playUpgrade(): void {
+  play('sfx_upgrade', 0.5);
+}
+
 export function playDeadeyeShot(): void {
   // Gunshot SFX for Deadeye shots (lower pitch match as fallback until gunshot.wav is added)
   play('sfx_gunshot', 0.3);

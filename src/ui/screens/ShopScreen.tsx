@@ -1,5 +1,5 @@
 import { memo, useEffect, useMemo, useState } from 'react';
-import { playShop } from '../../services/sfx';
+import { playShop, playUpgrade } from '../../services/sfx';
 import { EventBus, GameEvent } from '../../game/EventBus';
 import { useRunStore } from '../../store/runStore';
 import { ARTIFACTS } from '../../data/artifacts';
@@ -158,6 +158,7 @@ export const ShopScreen = memo(function ShopScreen() {
     if (!upgradeItem || run.gold < upgradeItem.price) return;
     updateGold(-upgradeItem.price);
     upgradeTile(tileType);
+    playUpgrade();
     setPurchased((prev) => new Set([...prev, 'upgrade']));
     setUpgradeMode(false);
   };
