@@ -341,9 +341,9 @@ export const TILE_DEFINITIONS: Record<TileType, TileDefinition> = {
     baseValue: 1,
     upgradeValue: 1,
     pool: 'additional',
-    description: 'Deal 1 damage per block.',
+    description: 'Deal 1 damage per tile, plus 1 damage per block.',
     flavor: 'Gravity does the rest.',
-    upgradeText: '+1 damage to match total per level',
+    upgradeText: '+1 damage per tile per level',
   },
 
   // --- Special ---

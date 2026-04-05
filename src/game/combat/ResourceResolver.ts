@@ -33,7 +33,7 @@ export interface ResourceOutput {
 
 /** Tiles where upgrade scales per tile (not flat per match). */
 const PER_TILE_UPGRADE: Set<TileType> = new Set([
-  'buckshot', 'fifty_cal', 'barricade', 'chip',
+  'buckshot', 'fifty_cal', 'barricade', 'chip', 'boulder',
 ]);
 
 /**
@@ -175,8 +175,8 @@ export class ResourceResolver {
         break;
 
       case 'boulder':
-        // Base damage from upgrades only. CombatManager adds player.block as bonus.
-        output.damage = Math.round(upgradeBonus);
+        // Per-tile damage. CombatManager adds player.block as bonus.
+        output.damage = total;
         break;
 
       case 'chain': {

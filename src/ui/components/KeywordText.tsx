@@ -244,8 +244,14 @@ export function buildTileDescription(type: TileType, upgradeLevel: number): Reac
       return [...seg('1 damage per tile', false), ...flatBonus(upgradeLevel, uv), ...seg('. If 4+ matched, +1 swap this turn (max 1 per turn).', false)];
     case 'duel':
       return [...seg('Deal 4 damage per tile', false), ...flatBonus(upgradeLevel, uv), ...seg(' but ONLY if exactly 4 matched. 3 or 5+ matches deal no damage.', false)];
-    case 'boulder':
-      return [...seg('Deal 1 damage per block', false), ...flatBonus(upgradeLevel, uv), ...seg('.', false)];
+    case 'boulder': {
+      const v = def.baseValue + bonus;
+      return [
+        ...seg('Deal ', false),
+        ...seg(`${v}`, upgraded),
+        ...seg(' damage per tile, plus 1 damage per block.', false),
+      ];
+    }
 
     // --- No upgrade / special ---
     default:
