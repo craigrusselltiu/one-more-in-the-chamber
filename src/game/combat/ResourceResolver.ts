@@ -230,9 +230,9 @@ export class ResourceResolver {
         output.venomStacks = count + Math.round(upgradeBonus);
         break;
 
-      // --- Bounty (2 stacks per 3-match; +1 per extra tile beyond 3) ---
+      // --- Bounty (2 stacks per 3-match; +1 per extra tile beyond 3; 1 stack if single) ---
       case 'bounty': {
-        const base3 = count >= 3 ? 2 : 0;
+        const base3 = count >= 3 ? 2 : count;
         const extra = Math.max(0, count - 3);
         output.bountyStacks = base3 + extra + Math.round(upgradeBonus);
         break;
