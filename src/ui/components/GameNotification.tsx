@@ -21,9 +21,9 @@ export const GameNotification = memo(function GameNotification() {
       // Trigger fade-in on next frame so the transition fires
       requestAnimationFrame(() => setVisible(true));
 
-      const hold = payload.duration ?? 3000;
+      const hold = payload.duration ?? 4000;
       setTimeout(() => setVisible(false), hold);
-      setTimeout(() => setMessage(null), hold + 800);
+      setTimeout(() => setMessage(null), hold + 1000);
     };
 
     EventBus.on('game:notification', handler);
@@ -34,7 +34,7 @@ export const GameNotification = memo(function GameNotification() {
 
   return (
     <div
-      className="absolute left-0 right-0 flex justify-center pointer-events-none z-40"
+      className="absolute left-0 right-0 flex justify-center pointer-events-none z-[110]"
       style={{ top: 40 }}
     >
       <div
@@ -42,7 +42,7 @@ export const GameNotification = memo(function GameNotification() {
         style={{
           fontSize: '10px',
           opacity: visible ? 1 : 0,
-          transition: 'opacity 0.6s ease-in-out',
+          transition: 'opacity 0.8s ease-in-out',
         }}
       >
         {message}

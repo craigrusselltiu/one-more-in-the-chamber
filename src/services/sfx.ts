@@ -39,27 +39,39 @@ export function playMatch(comboStep: number): void {
   play('sfx_match_pitch', 0.3, Math.min(pitchRate, 2.5));
 }
 
+let campfireSound: Phaser.Sound.BaseSound | null = null;
+
 export function playCampfire(): void {
+  stopCampfire();
   if (!game) return;
   const sfxVol = useSettingsStore.getState().sfxVolume;
   try {
-    const sound = game.sound.add('sfx_campfire', { volume: 0.5 * sfxVol });
+    const sound = game.sound.add('sfx_campfire', { volume: 0.25 * sfxVol });
+    campfireSound = sound;
     sound.play();
     // Fade out over the last 2 seconds
     const fadeStart = Math.max(0, (sound.duration - 2) * 1000);
     setTimeout(() => {
-      if (!game) return;
+      if (!game || campfireSound !== sound) return;
       const scene = game.scene.getScenes(true)[0];
       if (scene) {
         scene.tweens.add({
           targets: sound,
           volume: 0,
           duration: 2000,
-          onComplete: () => sound.destroy(),
+          onComplete: () => { sound.destroy(); if (campfireSound === sound) campfireSound = null; },
         });
       }
     }, fadeStart);
+    sound.once('complete', () => { if (campfireSound === sound) campfireSound = null; });
   } catch { /* ignore */ }
+}
+
+export function stopCampfire(): void {
+  if (campfireSound) {
+    try { campfireSound.destroy(); } catch { /* ignore */ }
+    campfireSound = null;
+  }
 }
 
 export function playTreasure(): void {

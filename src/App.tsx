@@ -165,7 +165,7 @@ export default function App() {
             store.addTileType('tumbleweed');
             setTimeout(() => {
               EventBus.emit('game:notification', { text: 'A dust storm rolls in...' });
-            }, 500);
+            }, 1000);
           }
         }
 
@@ -175,7 +175,7 @@ export default function App() {
           if (visited === 0) {
             setTimeout(() => {
               EventBus.emit('game:notification', { text: 'The dust storm has settled.' });
-            }, 500);
+            }, 1000);
           }
         }
       }
