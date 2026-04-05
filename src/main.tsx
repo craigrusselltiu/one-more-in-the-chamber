@@ -33,6 +33,16 @@ document.addEventListener('click', (e) => {
   }
 }, true);
 
+// Recover from WebGL context loss (e.g. tab backgrounded for a long time)
+// Detect via the Phaser canvas once it exists
+let contextLost = false;
+document.addEventListener('webglcontextlost', () => { contextLost = true; }, true);
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible' && contextLost) {
+    window.location.reload();
+  }
+});
+
 // Initialize Supabase auth listener (no-op when env vars are missing)
 initAuth().catch(console.error);
 
