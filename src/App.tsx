@@ -24,7 +24,7 @@ import { useCombatStore } from './store/combatStore';
 import { useGameScale, UI_WIDTH, UI_HEIGHT } from './ui/hooks/useGameScale';
 import type { CombatConfig, CombatResult } from './game/combat/CombatManager';
 import type { CombatSnapshot } from './types/combatSnapshot';
-import { saveCombatSnapshot, clearCombatSnapshot } from './services/localSave';
+import { saveCombatSnapshot, clearCombatSnapshot, purgeCorruptSnapshots } from './services/localSave';
 import { initSfx } from './services/sfx';
 import { consumePendingSnapshot } from './services/combatResume';
 import { loadPersistedRun, startRunPersistence } from './services/runPersistence';
@@ -109,7 +109,7 @@ export default function App() {
 
   // Restore persisted run from IndexedDB and start auto-save subscription
   useEffect(() => {
-    loadPersistedRun().finally(() => {
+    purgeCorruptSnapshots().then(() => loadPersistedRun()).finally(() => {
       startRunPersistence();
       setReady(true);
     });

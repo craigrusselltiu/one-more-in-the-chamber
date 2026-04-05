@@ -177,3 +177,33 @@ export async function clearCombatSnapshot(runId: string): Promise<void> {
     tx.onerror = () => reject(tx.error);
   });
 }
+
+/** Remove all combat snapshots with empty boards (corrupt saves). */
+export async function purgeCorruptSnapshots(): Promise<number> {
+  try {
+    const db = await openDB();
+    const tx = db.transaction(STORE_COMBAT, 'readwrite');
+    const store = tx.objectStore(STORE_COMBAT);
+    const getAll = store.getAll();
+    return new Promise((resolve) => {
+      getAll.onsuccess = () => {
+        let purged = 0;
+        for (const snap of getAll.result) {
+          const tiles = snap?.board?.tiles;
+          if (!tiles) { store.delete(snap.runId); purged++; continue; }
+          // Check if all tiles are null (corrupt)
+          let hasAnyTile = false;
+          for (let r = 0; r < tiles.length && !hasAnyTile; r++) {
+            for (let c = 0; tiles[r] && c < tiles[r].length; c++) {
+              if (tiles[r][c]) { hasAnyTile = true; break; }
+            }
+          }
+          if (!hasAnyTile) { store.delete(snap.runId); purged++; }
+        }
+        tx.oncomplete = () => resolve(purged);
+        tx.onerror = () => resolve(purged);
+      };
+      getAll.onerror = () => resolve(0);
+    });
+  } catch { return 0; }
+}
