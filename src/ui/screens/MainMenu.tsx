@@ -227,7 +227,7 @@ export const MainMenu = memo(function MainMenu() {
             color: 'rgba(255,255,255,0.3)',
           }}
         >
-          v0.1.0
+          v0.2.0
         </span>
       </div>
 
