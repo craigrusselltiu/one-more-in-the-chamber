@@ -116,6 +116,16 @@ export class Board {
 
   /** Whether deadeye targeting mode is active (clicks shoot instead of swap). */
   private deadeyeMode = false;
+
+  // -- Hint system --
+  private hintTimer = 0;
+  private hintFlashCount = 0;
+  private hintFlashTarget: GridPosition | null = null;
+  private hintOverlays: Phaser.GameObjects.Rectangle[] = [];
+  private static readonly HINT_INTERVAL = 15000; // 15 seconds
+  private static readonly HINT_FLASH_DURATION = 200;
+  private static readonly HINT_FLASH_GAP = 150;
+  private static readonly HINT_FLASH_TOTAL = 3;
   /** Whether shuffle hold mode is active (clicks toggle hold). */
   private shuffleHoldMode = false;
   /** Set of held position keys ("row,col") during Shuffle the Deck. */
@@ -329,6 +339,7 @@ export class Board {
     onCascadeStep?: (matches: MatchResult[]) => void,
   ): Promise<SwapResult> {
     if (this.isResolving) return { valid: false, matches: [] };
+    this.resetHintTimer();
 
     const tileA = this.grid[from.row]?.[from.col];
     const tileB = this.grid[to.row]?.[to.col];
@@ -1054,23 +1065,37 @@ export class Board {
   hasValidMoves(): boolean {
     for (let row = 0; row < BOARD_SIZE; row++) {
       for (let col = 0; col < BOARD_SIZE; col++) {
+        const tileA = this.grid[row][col];
+        if (!tileA) continue;
+        // Locked tiles can't be swapped
+        const aLocked = tileA.hazard?.type === 'lock' || tileA.hazard?.type === 'hardened_lock';
+        if (aLocked) continue;
+
         // Check right neighbor
         if (col < BOARD_SIZE - 1) {
-          const a: GridPosition = { row, col };
-          const b: GridPosition = { row, col: col + 1 };
-          this.swapTilesInGrid(a, b);
-          const has = this.findMatches().length > 0;
-          this.swapTilesInGrid(a, b); // revert
-          if (has) return true;
+          const tileB = this.grid[row][col + 1];
+          const bLocked = tileB?.hazard?.type === 'lock' || tileB?.hazard?.type === 'hardened_lock';
+          if (!bLocked) {
+            const a: GridPosition = { row, col };
+            const b: GridPosition = { row, col: col + 1 };
+            this.swapTilesInGrid(a, b);
+            const has = this.findMatches().length > 0;
+            this.swapTilesInGrid(a, b);
+            if (has) return true;
+          }
         }
         // Check bottom neighbor
         if (row < BOARD_SIZE - 1) {
-          const a: GridPosition = { row, col };
-          const b: GridPosition = { row: row + 1, col };
-          this.swapTilesInGrid(a, b);
-          const has = this.findMatches().length > 0;
-          this.swapTilesInGrid(a, b); // revert
-          if (has) return true;
+          const tileB = this.grid[row + 1][col];
+          const bLocked = tileB?.hazard?.type === 'lock' || tileB?.hazard?.type === 'hardened_lock';
+          if (!bLocked) {
+            const a: GridPosition = { row, col };
+            const b: GridPosition = { row: row + 1, col };
+            this.swapTilesInGrid(a, b);
+            const has = this.findMatches().length > 0;
+            this.swapTilesInGrid(a, b);
+            if (has) return true;
+          }
         }
       }
     }
@@ -1082,12 +1107,18 @@ export class Board {
    * Preserves tile types but randomizes positions. Avoids initial matches.
    */
   reshuffle(): void {
-    // Collect all current tile types (preserve distribution)
+    // Collect types from unlocked tiles only (locked tiles stay in place)
     const types: TileType[] = [];
+    const unlocked: GridPosition[] = [];
     for (let row = 0; row < BOARD_SIZE; row++) {
       for (let col = 0; col < BOARD_SIZE; col++) {
         const tile = this.grid[row][col];
-        if (tile) types.push(tile.type);
+        if (!tile) continue;
+        const isLocked = tile.hazard?.type === 'lock' || tile.hazard?.type === 'hardened_lock';
+        if (!isLocked) {
+          types.push(tile.type);
+          unlocked.push({ row, col });
+        }
       }
     }
 
@@ -1095,30 +1126,24 @@ export class Board {
     const maxAttempts = 100;
 
     do {
-      // Fisher-Yates shuffle
+      // Fisher-Yates shuffle (only unlocked tile types)
       for (let i = types.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
         [types[i], types[j]] = [types[j], types[i]];
       }
 
-      // Reassign types to grid
-      let idx = 0;
-      for (let row = 0; row < BOARD_SIZE; row++) {
-        for (let col = 0; col < BOARD_SIZE; col++) {
-          const tile = this.grid[row][col];
-          if (tile && idx < types.length) {
-            tile.setType(types[idx]);
-            idx++;
-          }
+      // Reassign shuffled types to unlocked positions
+      for (let i = 0; i < unlocked.length; i++) {
+        const tile = this.grid[unlocked[i].row][unlocked[i].col];
+        if (tile && i < types.length) {
+          tile.setType(types[i]);
         }
       }
 
-      // Remove any initial matches
       this.removeInitialMatches();
       attempts++;
     } while (!this.hasValidMoves() && attempts < maxAttempts);
 
-    // If we still have no valid moves after max attempts, regenerate the grid
     if (!this.hasValidMoves()) {
       this.destroyAllTiles();
       this.initGrid();
@@ -1404,6 +1429,7 @@ export class Board {
   setInputEnabled(enabled: boolean): void {
     this.inputEnabled = enabled;
     if (!enabled) this.clearSelection();
+    if (enabled) this.resetHintTimer();
   }
 
   getSelectedTile(): GridPosition | null {
@@ -1492,12 +1518,118 @@ export class Board {
     this.destroyAllTiles();
   }
 
+  /** Reset the hint timer (call at the start of each swap turn). */
+  resetHintTimer(): void {
+    this.hintTimer = this.scene.time.now;
+    this.hintFlashCount = 0;
+    this.hintFlashTarget = null;
+    this.clearHintOverlays();
+  }
+
+  /** Find a tile position involved in a valid move. */
+  private findHintMove(): GridPosition | null {
+    for (let row = 0; row < BOARD_SIZE; row++) {
+      for (let col = 0; col < BOARD_SIZE; col++) {
+        const tileA = this.grid[row][col];
+        if (!tileA) continue;
+        const aLocked = tileA.hazard?.type === 'lock' || tileA.hazard?.type === 'hardened_lock';
+        if (aLocked) continue;
+
+        if (col < BOARD_SIZE - 1) {
+          const tileB = this.grid[row][col + 1];
+          const bLocked = tileB?.hazard?.type === 'lock' || tileB?.hazard?.type === 'hardened_lock';
+          if (!bLocked) {
+            const a: GridPosition = { row, col };
+            const b: GridPosition = { row, col: col + 1 };
+            this.swapTilesInGrid(a, b);
+            const has = this.findMatches().length > 0;
+            this.swapTilesInGrid(a, b);
+            if (has) return a;
+          }
+        }
+        if (row < BOARD_SIZE - 1) {
+          const tileB = this.grid[row + 1][col];
+          const bLocked = tileB?.hazard?.type === 'lock' || tileB?.hazard?.type === 'hardened_lock';
+          if (!bLocked) {
+            const a: GridPosition = { row, col };
+            const b: GridPosition = { row: row + 1, col };
+            this.swapTilesInGrid(a, b);
+            const has = this.findMatches().length > 0;
+            this.swapTilesInGrid(a, b);
+            if (has) return a;
+          }
+        }
+      }
+    }
+    return null;
+  }
+
+  private flashHintTile(pos: GridPosition): void {
+    const tile = this.grid[pos.row]?.[pos.col];
+    if (!tile) return;
+    const center = tile.getWorldCenter();
+
+    const rect = this.scene.add
+      .rectangle(center.x, center.y, TILE_SIZE - 2, TILE_SIZE - 2)
+      .setStrokeStyle(2, 0xffffff)
+      .setFillStyle(0xffffff, 0.2)
+      .setDepth(5);
+
+    this.hintOverlays.push(rect);
+
+    this.scene.tweens.add({
+      targets: rect,
+      alpha: 0,
+      duration: Board.HINT_FLASH_DURATION,
+      ease: 'Quad.easeOut',
+      onComplete: () => {
+        rect.destroy();
+        this.hintOverlays = this.hintOverlays.filter((r) => r !== rect);
+      },
+    });
+  }
+
+  private clearHintOverlays(): void {
+    for (const r of this.hintOverlays) r.destroy();
+    this.hintOverlays = [];
+  }
+
   update(): void {
     // Drive tile effect overlays (breathing animations)
     const time = this.scene.time.now;
     for (let row = 0; row < BOARD_SIZE; row++) {
       for (let col = 0; col < BOARD_SIZE; col++) {
         this.grid[row][col]?.updateEffects(time);
+      }
+    }
+
+    // Hint system: flash a valid move tile every 15 seconds
+    if (!this.isResolving && this.inputEnabled && !this.deadeyeMode && !this.shuffleHoldMode) {
+      const elapsed = time - this.hintTimer;
+      if (elapsed >= Board.HINT_INTERVAL) {
+        // Time for a hint — find target if not already found
+        if (!this.hintFlashTarget) {
+          this.hintFlashTarget = this.findHintMove();
+          this.hintFlashCount = 0;
+        }
+
+        if (this.hintFlashTarget && this.hintFlashCount < Board.HINT_FLASH_TOTAL) {
+          const flashInterval = Board.HINT_FLASH_DURATION + Board.HINT_FLASH_GAP;
+          const flashElapsed = elapsed - Board.HINT_INTERVAL;
+          const expectedFlashes = Math.floor(flashElapsed / flashInterval) + 1;
+          if (expectedFlashes > this.hintFlashCount) {
+            this.flashHintTile(this.hintFlashTarget);
+            this.hintFlashCount++;
+          }
+        }
+
+        // After all flashes done, reset for next cycle
+        const totalFlashTime = Board.HINT_FLASH_TOTAL * (Board.HINT_FLASH_DURATION + Board.HINT_FLASH_GAP);
+        if (elapsed >= Board.HINT_INTERVAL + totalFlashTime) {
+          this.hintTimer = time;
+          this.hintFlashCount = 0;
+          this.hintFlashTarget = null;
+        }
       }
     }
   }
