@@ -15,7 +15,6 @@ export interface CombatState {
   ragefulStacks: number;
   sturdyStacks: number;
   venomousStacks: number;
-  critChance: number;
   thorns: number;
   enemies: EnemyState[];
   targetedEnemyIndex: number;

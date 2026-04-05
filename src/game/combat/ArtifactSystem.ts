@@ -114,9 +114,9 @@ export class ArtifactSystem {
       }
     }
 
-    // Lucky Bullet: +10% crit chance at fight start
+    // Lucky Bullet: +10 Lucky stacks at fight start
     if (this.has('lucky_bullet')) {
-      player.critChance += 10;
+      player.luckyStacks += 10;
     }
 
     // Fully Loaded: Deadeye 3 shots -> 6

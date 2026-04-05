@@ -354,7 +354,7 @@ export class CombatManager {
         ragefulStacks: this.player.ragefulStacks,
         sturdyStacks: this.player.sturdyStacks,
         venomousStacks: this.player.venomousStacks,
-        critChance: this.player.critChance,
+        critChance: 0, // deprecated, kept for snapshot compat
         thorns: this.player.thorns,
         gold: this.player.gold,
         goldThisFight: this.player.goldThisFight,
@@ -405,7 +405,7 @@ export class CombatManager {
     this.player.ragefulStacks = sp.ragefulStacks ?? 0;
     this.player.sturdyStacks = sp.sturdyStacks ?? 0;
     this.player.venomousStacks = sp.venomousStacks ?? 0;
-    this.player.critChance = sp.critChance;
+    // critChance deprecated — Lucky stacks are the crit chance now
     this.player.thorns = sp.thorns;
     this.player.goldThisFight = sp.goldThisFight;
 
@@ -1036,8 +1036,8 @@ export class CombatManager {
         match, output, this.player, targetEnemy, this.aliveEnemies(),
       );
 
-      // Crit check (with trait/artifact modifications)
-      const effectiveCritChance = this.player.critChance + this.artifacts.getSwapCritBonus()
+      // Crit check: Lucky stacks = crit chance (1% per stack)
+      const effectiveCritChance = this.player.luckyStacks + this.artifacts.getSwapCritBonus()
         + (this.isBoss ? this.artifacts.getBossCritBonus() : 0);
       const isCrit = Math.random() * 100 < effectiveCritChance;
       let multiplier = 1.0;
@@ -1051,14 +1051,11 @@ export class CombatManager {
           output.damage += critConfig.bonusFlatDamage;
         }
 
-        // Lucky stacks consumed on crit
-        this.player.consumeLucky();
-
-        // Reset or halve crit chance based on Gunslinger(4)
+        // Reset or halve Lucky stacks on crit
         if (critConfig.halveOnTrigger) {
-          this.player.critChance = Math.floor(this.player.critChance / 2);
+          this.player.luckyStacks = Math.floor(this.player.luckyStacks / 2);
         } else {
-          this.player.critChance = 0;
+          this.player.consumeLucky();
         }
 
         // Artifact crit effects (Dead Man's Hand, Rigged Deck)
@@ -1740,7 +1737,6 @@ export class CombatManager {
       ragefulStacks: this.player.ragefulStacks,
       sturdyStacks: this.player.sturdyStacks,
       venomousStacks: this.player.venomousStacks,
-      critChance: this.player.critChance,
       thorns: this.player.thorns,
       enemies: this.enemies.map((e) => ({ ...e.state })),
       targetedEnemyIndex: fullListIndex,

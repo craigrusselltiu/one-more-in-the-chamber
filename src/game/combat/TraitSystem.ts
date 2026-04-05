@@ -53,9 +53,9 @@ export class TraitSystem {
   onFightStart(player: Player): void {
     this.matchCountThisFight = 0;
 
-    // Gunslinger(2): Start each fight with 15% crit chance
+    // Gunslinger(2): Start each fight with 15 Lucky stacks
     if (this.isActive('gunslinger', 2)) {
-      player.critChance += 15;
+      player.luckyStacks += 15;
     }
   }
 

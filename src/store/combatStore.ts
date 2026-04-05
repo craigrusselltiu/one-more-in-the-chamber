@@ -20,7 +20,6 @@ interface CombatStore {
   ragefulStacks: number;
   sturdyStacks: number;
   venomousStacks: number;
-  critChance: number;
   thorns: number;
 
   // Ability
@@ -73,7 +72,6 @@ const initialState = {
   ragefulStacks: 0,
   sturdyStacks: 0,
   venomousStacks: 0,
-  critChance: 0,
   thorns: 0,
   abilityCharge: 0,
   abilityThreshold: 10,
@@ -109,7 +107,6 @@ export const useCombatStore = create<CombatStore>((set) => ({
       ragefulStacks: state.ragefulStacks,
       sturdyStacks: state.sturdyStacks,
       venomousStacks: state.venomousStacks,
-      critChance: state.critChance,
       thorns: state.thorns,
       abilityCharge: state.abilityCharge,
       abilityThreshold: state.abilityThreshold,
@@ -158,7 +155,6 @@ export function getPlayerStatusEffects(store: CombatStore): PlayerStatusEffect[]
   if (store.ragefulStacks > 0) effects.push({ type: 'rageful', value: store.ragefulStacks });
   if (store.sturdyStacks > 0) effects.push({ type: 'sturdy', value: store.sturdyStacks });
   if (store.venomousStacks > 0) effects.push({ type: 'venomous', value: store.venomousStacks });
-  if (store.critChance > 0) effects.push({ type: 'crit', value: store.critChance });
   if (store.thorns > 0) effects.push({ type: 'thorns', value: store.thorns });
   return effects;
 }

@@ -15,7 +15,6 @@ export class Player {
   ragefulStacks = 0;
   sturdyStacks = 0;
   venomousStacks = 0;
-  critChance = 0;
   thorns = 0;
   gold = 0;
   goldThisFight = 0;
@@ -106,12 +105,10 @@ export class Player {
   /** Add Lucky stacks. Each stack = +1% crit. Removed when crit occurs. */
   addLuckyStacks(stacks: number): void {
     this.luckyStacks += stacks;
-    this.critChance += stacks;
   }
 
   /** Consume Lucky stacks when crit occurs. */
   consumeLucky(): void {
-    this.critChance -= this.luckyStacks;
     this.luckyStacks = 0;
   }
 
@@ -149,7 +146,6 @@ export class Player {
     this.ragefulStacks = 0;
     this.sturdyStacks = 0;
     this.venomousStacks = 0;
-    this.critChance = 0;
     this.thorns = 0;
     this.goldThisFight = 0;
   }
