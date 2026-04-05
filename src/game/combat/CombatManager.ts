@@ -637,12 +637,14 @@ export class CombatManager {
       EventBus.emit(GameEvent.SWAPS_CHANGE, this.swapsRemaining, this.swapsPerTurn);
     }
 
-    // Tick bomb countdowns per swap (not per turn)
-    const bombResult = this.hazardManager.tickBombs();
-    if (bombResult.totalDamage > 0) {
-      if (this.player.takeDamage(bombResult.totalDamage).hpLost > 0) this.playerTookDamageThisFight = true;
-      EventBus.emit(GameEvent.PLAYER_HP_CHANGE, this.player.health, this.player.maxHealth);
-      EventBus.emit(GameEvent.SCREEN_SHAKE, bombResult.detonations.length > 1 ? 'heavy' : 'medium');
+    // Tick bomb countdowns per swap (not per turn) — skip if combat already won
+    if (!this.isCombatOver()) {
+      const bombResult = this.hazardManager.tickBombs();
+      if (bombResult.totalDamage > 0) {
+        if (this.player.takeDamage(bombResult.totalDamage).hpLost > 0) this.playerTookDamageThisFight = true;
+        EventBus.emit(GameEvent.PLAYER_HP_CHANGE, this.player.health, this.player.maxHealth);
+        EventBus.emit(GameEvent.SCREEN_SHAKE, bombResult.detonations.length > 1 ? 'heavy' : 'medium');
+      }
     }
 
     // Auto-retarget if targeted enemy died during cascade
