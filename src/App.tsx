@@ -455,7 +455,7 @@ export default function App() {
             className={`absolute inset-0 bg-black z-[200] flex items-end justify-end p-4 ${bootComplete ? 'screen-wipe-out' : ''}`}
             onAnimationEnd={() => setLoadingDismissed(true)}
           >
-            {!bootComplete && <span className="text-stone-500 text-xs tracking-widest">LOADING</span>}
+            {!bootComplete && <span className="text-stone-500 text-xs tracking-widest font-bold animate-welcome-breathe">LOADING</span>}
           </div>
         )}
 
