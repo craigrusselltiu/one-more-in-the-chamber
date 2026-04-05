@@ -232,7 +232,7 @@ export class ResourceResolver {
 
       // --- Bounty (2 stacks per 3-match; +1 per extra tile beyond 3; 1 stack if single) ---
       case 'bounty': {
-        const base3 = count >= 3 ? 2 : count;
+        const base3 = count >= 3 ? 2 : 1;
         const extra = Math.max(0, count - 3);
         output.bountyStacks = base3 + extra + Math.round(upgradeBonus);
         break;
