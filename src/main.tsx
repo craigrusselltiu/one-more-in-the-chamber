@@ -8,10 +8,17 @@ import './styles.css';
 const base = import.meta.env.BASE_URL;
 const style = document.createElement('style');
 style.textContent = `
+  html {
+    background-color: #1a1a2e;
+    background-image: url('${base}assets/blur.png');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    background-attachment: fixed;
+    min-height: 100%;
+  }
   html, body {
     cursor: url('${base}assets/cursors/pointer.png'), auto;
-    background: url('${base}assets/blur.png') center / cover no-repeat fixed;
-    background-color: #1a1a2e;
   }
   body.cursor-crosshair, body.cursor-crosshair * {
     cursor: url('${base}assets/cursors/crosshair.png') 64 64, crosshair !important;
