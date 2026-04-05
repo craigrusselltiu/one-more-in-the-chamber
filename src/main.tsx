@@ -13,11 +13,11 @@ style.textContent = `
     margin: 0;
     padding: 0;
     height: 100%;
-    background-color: #1a1a2e;
-    background-image: url('${base}assets/blur.png');
-    background-size: cover;
-    background-position: center;
-    background-repeat: no-repeat;
+    background-color: #1a1a2e !important;
+    background-image: url('${base}assets/blur.png') !important;
+    background-size: cover !important;
+    background-position: center !important;
+    background-repeat: no-repeat !important;
   }
   body.cursor-crosshair, body.cursor-crosshair * {
     cursor: url('${base}assets/cursors/crosshair.png') 64 64, crosshair !important;
