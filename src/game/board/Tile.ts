@@ -157,17 +157,17 @@ export class Tile {
       overlayAlpha = 0.15 + breath * 0.25;
       outlineAlpha = 0.5 + breath * 0.4;
     } else if (this.hintUntil > 0 && time < this.hintUntil) {
-      // Hint: white fast breathing with fade in/out envelope
+      // Hint: 3 fade in/out pulses over the duration
       const duration = this.hintUntil - this.hintStart;
       const elapsed = time - this.hintStart;
-      const progress = elapsed / duration; // 0→1
-      const fadeIn = Math.min(1, progress * 4);       // 0→1 over first 25%
-      const fadeOut = Math.min(1, (1 - progress) * 4); // 1→0 over last 25%
-      const envelope = fadeIn * fadeOut;
-      const fastBreath = 0.5 + 0.5 * Math.sin(time / 100);
+      const progress = elapsed / duration;
+      // 3 pulses: use a triangle wave over 3 cycles
+      const pulse = progress * 3; // 0→3
+      const frac = pulse - Math.floor(pulse); // 0→1 within each pulse
+      const triangle = frac < 0.5 ? frac * 2 : (1 - frac) * 2; // 0→1→0
       tint = 0xffffff;
-      overlayAlpha = (0.1 + fastBreath * 0.2) * envelope;
-      outlineAlpha = (0.3 + fastBreath * 0.5) * envelope;
+      overlayAlpha = 0.25 * triangle;
+      outlineAlpha = 0.7 * triangle;
     }
 
     if (this.hintUntil > 0 && time >= this.hintUntil) {
