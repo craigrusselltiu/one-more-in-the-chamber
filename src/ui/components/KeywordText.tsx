@@ -85,9 +85,11 @@ export function KeywordLine({ name, color, description }: { name: string; color:
     <div style={{ fontSize: '8px', lineHeight: 1.3 }}>
       {description.includes('\n') ? (
         <>
-          <span style={{ color, fontWeight: 'bold' }}>{name}</span>
           {description.split('\n').map((line, i) => (
-            <div key={i} className="text-stone-400 whitespace-nowrap">{i === 0 ? ` - ${line}` : line}</div>
+            <div key={i} className="whitespace-nowrap">
+              {i === 0 && <span style={{ color, fontWeight: 'bold' }}>{name}</span>}
+              <span className="text-stone-400">{i === 0 ? ` - ${line}` : line}</span>
+            </div>
           ))}
         </>
       ) : (
