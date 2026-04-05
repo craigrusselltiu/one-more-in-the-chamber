@@ -31,8 +31,8 @@
 
 /* Welcome text: gentle size breathing + slight angle */
 @keyframes welcome-breathe {
-  0%, 100% { transform: scale(1) rotate(-2deg); }
-  50% { transform: scale(1.03) rotate(2deg); }
+  0%, 100% { transform: scale(1) rotate(-5deg); }
+  50% { transform: scale(1.03) rotate(-5deg); }
 }
 .animate-welcome-breathe {
   animation: welcome-breathe 3s ease-in-out infinite;
