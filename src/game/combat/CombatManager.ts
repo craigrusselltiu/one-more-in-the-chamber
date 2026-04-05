@@ -1222,10 +1222,22 @@ export class CombatManager {
       if (blocked > 0) this.floatOnEnemy(enemy, `-${blocked}`, '#6888A0');
       if (hpLost > 0) this.floatOnEnemy(enemy, `-${hpLost}`, '#ff4444');
     }
-    // Bounty kill check: if HP dropped to or below bounty stacks, execute
+    // Bounty kill check after damage
+    this.handleBountyKill(enemy);
+  }
+
+  /** Check and handle bounty kill: execute + 10 gold if non-summoned. Returns true if killed. */
+  private handleBountyKill(enemy: Enemy): boolean {
     if (enemy.checkBountyKill()) {
       this.floatOnEnemy(enemy, 'COLLECTED', '#FFD700');
+      if (!enemy.summoned) {
+        this.player.addGold(10);
+        this.floatOnEnemy(enemy, '+10g', '#FFD700');
+        EventBus.emit(GameEvent.GOLD_CHANGE, this.player.gold);
+      }
+      return true;
     }
+    return false;
   }
 
   private applyResourceOutput(output: ResourceOutput): void {
@@ -1324,8 +1336,7 @@ export class CombatManager {
       if (target) {
         target.addBounty(output.bountyStacks);
         this.floatOnEnemy(target, `+${output.bountyStacks} BTY`, '#C04040');
-        if (target.checkBountyKill()) {
-          this.floatOnEnemy(target, 'COLLECTED', '#FFD700');
+        if (this.handleBountyKill(target)) {
           this.emitEnemyHpChanges();
         }
       }
@@ -1436,9 +1447,7 @@ export class CombatManager {
         this.damageDealtThisFight += venomDamage;
         this.floatOnEnemy(enemy, `-${venomDamage}`, '#60A040');
         EventBus.emit(GameEvent.ENEMY_HP_CHANGE, { ...enemy.state });
-        if (enemy.checkBountyKill()) {
-          this.floatOnEnemy(enemy, 'COLLECTED', '#FFD700');
-        }
+        this.handleBountyKill(enemy);
       }
       // Vulnerable decreases by 1 at end of turn
       if (enemy.state.vulnerable > 0) {
