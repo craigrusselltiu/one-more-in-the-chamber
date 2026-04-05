@@ -1,4 +1,5 @@
-import { memo, useMemo, useState } from 'react';
+import { memo, useEffect, useMemo, useState } from 'react';
+import { playShop } from '../../services/sfx';
 import { EventBus, GameEvent } from '../../game/EventBus';
 import { useRunStore } from '../../store/runStore';
 import { ARTIFACTS } from '../../data/artifacts';
@@ -32,6 +33,8 @@ export const ShopScreen = memo(function ShopScreen() {
   const [purchased, setPurchased] = useState<Set<string>>(new Set());
   const [swapPending, setSwapPending] = useState<ShopItem | null>(null);
   const [upgradeMode, setUpgradeMode] = useState(false);
+
+  useEffect(() => { playShop(); }, []);
 
   const stock = useMemo(() => {
     if (!run) return { consumables: [] as ShopItem[], artifacts: [] as ShopItem[], tiles: [] as ShopItem[] };
@@ -201,18 +204,30 @@ export const ShopScreen = memo(function ShopScreen() {
               const isSold = purchased.has(tileItem.id);
               const canAfford = run.gold >= tileItem.price;
               const tileType = tileItem.id.replace('swap-', '') as TileType;
+              const def = TILE_DEFINITIONS[tileType];
               const level = tileItem.tileLevel ?? 0;
+              const tooltipContent = (
+                <div className="flex flex-col gap-0.5">
+                  <div className="font-bold text-amber-400" style={{ fontSize: '10px' }}>{def.label}</div>
+                  <div className="text-stone-200 whitespace-nowrap" style={{ fontSize: '9px' }}>{buildTileDescription(tileType, level)}</div>
+                  {def.flavor && <div className="text-stone-500 italic whitespace-nowrap" style={{ fontSize: '8px' }}>"{def.flavor}"</div>}
+                </div>
+              );
+              const hasKeywords = getReferencedKeywords(def.description).length > 0;
+              const keywordTooltip = hasKeywords ? <KeywordSubTooltips text={def.description} /> : undefined;
               return (
-                <ShopCard
-                  icon={<SpriteIcon frame={TILE_FRAMES[tileType]} scale={2} />}
-                  name={tileItem.name}
-                  subtitle={level > 0 ? `Lv ${level + 1}` : undefined}
-                  description={<>{buildTileDescription(tileType, level)}</>}
-                  price={tileItem.price}
+                <Tooltip content={tooltipContent} secondContent={keywordTooltip} position="bottom">
+                  <ShopCard
+                    icon={<SpriteIcon frame={TILE_FRAMES[tileType]} scale={2} />}
+                    name={tileItem.name}
+                    subtitle={level > 0 ? `Lv ${level + 1}` : undefined}
+                    description={<>{buildTileDescription(tileType, level)}</>}
+                    price={tileItem.price}
                   sold={isSold}
                   disabled={isSold || !canAfford}
-                  onClick={() => handleBuy(tileItem)}
-                />
+                    onClick={() => handleBuy(tileItem)}
+                  />
+                </Tooltip>
               );
             })()}
           </Section>

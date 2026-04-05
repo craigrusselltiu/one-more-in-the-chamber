@@ -102,6 +102,7 @@ export default function App() {
   const [screen, setScreen] = useState<Screen>('main-menu');
   const [ready, setReady] = useState(false);
   const [bootComplete, setBootComplete] = useState(false);
+  const [loadingDismissed, setLoadingDismissed] = useState(false);
   const prevScreenRef = useRef<Screen>('main-menu');
   const [wipePhase, setWipePhase] = useState<'none' | 'in' | 'out'>('none');
   const pendingScreenRef = useRef<Screen | null>(null);
@@ -445,6 +446,16 @@ export default function App() {
             {screen === 'reputation-shop' && <ReputationShopScreen />}
             {screen === 'leaderboard' && <LeaderboardScreen />}
             {screen === 'settings' && <SettingsScreen />}
+          </div>
+        )}
+
+        {/* Loading screen -- shown until assets are loaded, then slides left */}
+        {!loadingDismissed && (
+          <div
+            className={`absolute inset-0 bg-black z-[200] flex items-end justify-end p-4 ${bootComplete ? 'screen-wipe-out' : ''}`}
+            onAnimationEnd={() => setLoadingDismissed(true)}
+          >
+            {!bootComplete && <span className="text-stone-500 text-xs tracking-widest">LOADING</span>}
           </div>
         )}
 

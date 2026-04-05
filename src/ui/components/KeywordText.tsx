@@ -82,9 +82,20 @@ export const KeywordText = memo(function KeywordText({
  */
 export function KeywordLine({ name, color, description }: { name: string; color: string; description: string }) {
   return (
-    <div className="whitespace-pre-line" style={{ fontSize: '8px', lineHeight: 1.3 }}>
-      <span style={{ color, fontWeight: 'bold' }}>{name}</span>
-      <span className="text-stone-400"> - {description}</span>
+    <div style={{ fontSize: '8px', lineHeight: 1.3 }}>
+      {description.includes('\n') ? (
+        <>
+          <span style={{ color, fontWeight: 'bold' }}>{name}</span>
+          {description.split('\n').map((line, i) => (
+            <div key={i} className="text-stone-400 whitespace-nowrap">{i === 0 ? ` - ${line}` : line}</div>
+          ))}
+        </>
+      ) : (
+        <span className="whitespace-nowrap">
+          <span style={{ color, fontWeight: 'bold' }}>{name}</span>
+          <span className="text-stone-400"> - {description}</span>
+        </span>
+      )}
     </div>
   );
 }

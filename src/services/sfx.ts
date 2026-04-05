@@ -40,11 +40,34 @@ export function playMatch(comboStep: number): void {
 }
 
 export function playCampfire(): void {
-  play('sfx_campfire', 0.5);
+  if (!game) return;
+  const sfxVol = useSettingsStore.getState().sfxVolume;
+  try {
+    const sound = game.sound.add('sfx_campfire', { volume: 0.5 * sfxVol });
+    sound.play();
+    // Fade out over the last 2 seconds
+    const fadeStart = Math.max(0, (sound.duration - 2) * 1000);
+    setTimeout(() => {
+      if (!game) return;
+      const scene = game.scene.getScenes(true)[0];
+      if (scene) {
+        scene.tweens.add({
+          targets: sound,
+          volume: 0,
+          duration: 2000,
+          onComplete: () => sound.destroy(),
+        });
+      }
+    }, fadeStart);
+  } catch { /* ignore */ }
 }
 
 export function playTreasure(): void {
   play('sfx_treasure', 0.5);
+}
+
+export function playShop(): void {
+  play('sfx_shop', 0.5);
 }
 
 export function playDeadeyeShot(): void {
