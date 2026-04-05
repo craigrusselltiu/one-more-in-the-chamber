@@ -82,7 +82,7 @@ export const KeywordText = memo(function KeywordText({
  */
 export function KeywordLine({ name, color, description }: { name: string; color: string; description: string }) {
   return (
-    <div className="whitespace-nowrap" style={{ fontSize: '8px', lineHeight: 1.3 }}>
+    <div className="whitespace-pre-line" style={{ fontSize: '8px', lineHeight: 1.3 }}>
       <span style={{ color, fontWeight: 'bold' }}>{name}</span>
       <span className="text-stone-400"> - {description}</span>
     </div>

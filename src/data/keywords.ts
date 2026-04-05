@@ -43,6 +43,6 @@ export const KEYWORDS: Record<string, KeywordDefinition> = {
   },
   Bounty: {
     color: '#C04040',
-    description: 'When applying this or taking damage, if HP is lower than Bounty stacks, die. Non-summoned kills grant 10 gold.',
+    description: 'If HP is lower than Bounty stacks, die.\nNon-summoned kills grant 10 gold.',
   },
 };
