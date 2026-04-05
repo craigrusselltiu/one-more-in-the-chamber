@@ -28,3 +28,12 @@
 .screen-wipe-out {
   animation: wipe-out 0.25s ease-out forwards;
 }
+
+/* Welcome text: gentle size breathing + slight angle */
+@keyframes welcome-breathe {
+  0%, 100% { transform: scale(1) rotate(-2deg); }
+  50% { transform: scale(1.03) rotate(2deg); }
+}
+.animate-welcome-breathe {
+  animation: welcome-breathe 3s ease-in-out infinite;
+}

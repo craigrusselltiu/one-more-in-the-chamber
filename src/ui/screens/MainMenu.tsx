@@ -169,7 +169,7 @@ export const MainMenu = memo(function MainMenu() {
 
       {/* Welcome text -- just under the title image */}
       {playerName && (
-        <div className="absolute left-13" style={{ top: 175 }}>
+        <div className="absolute left-13 animate-welcome-breathe" style={{ top: 175, transformOrigin: 'left center' }}>
           <span
             style={{
               fontSize: '12px',
