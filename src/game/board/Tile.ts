@@ -4,8 +4,8 @@ import type { TileHazardState } from '../../types/tiles';
 import { TILE_FRAMES, HAZARD_FRAMES } from '../../data/spriteConfig';
 import { useSettingsStore, getSpeedMultiplier } from '../../store/settingsStore';
 
-/** Grid spacing = sprite size (2x of 16px source). No overlap. */
-export const TILE_SIZE = 32;
+/** Grid spacing. Larger than sprite (32px) to leave room for VFX outlines. */
+export const TILE_SIZE = 38;
 const STATUS_OFFSET = 12;
 
 /**
@@ -39,6 +39,7 @@ export class Tile {
   private statusLabel: Phaser.GameObjects.Text | null = null;
   /** Lock icon displayed on top of the sprite. */
   private lockIcon: Phaser.GameObjects.Image | null = null;
+  private lockOutline: Phaser.GameObjects.Image[] = [];
   /** Poison icon displayed at bottom-right corner. */
   private poisonIcon: Phaser.GameObjects.Image | null = null;
   private destroyed = false;
@@ -196,7 +197,7 @@ export class Tile {
           const s = this.scene.add
             .image(cx + dx, cy + dy, 'items_sheet', frame)
             .setScale(2)
-            .setDepth(0)
+            .setDepth(-1)
             .setAlpha(0);
           if (this._mask) s.setMask(this._mask);
           this.outlineSprites.push(s);
@@ -283,16 +284,38 @@ export class Tile {
       this.sprite.setTint(0x666666);
 
       if (!this.lockIcon) {
-        // Integer 1x scale (16px). For larger, use 2x (32px) or swap to a
-        // different sprite. Fractional scales distort pixel art -- there is
-        // no clean size between 16 and 32 for a 16px source sprite.
+        // Crisp 1x lock (16px) with dark outline copies to increase
+        // visual footprint to ~20px without any fractional scaling.
+        const frame = HAZARD_FRAMES.lock;
+        const offsets: [number, number][] = [
+          [-2, -2], [0, -2], [2, -2],
+          [-2,  0],          [2,  0],
+          [-2,  2], [0,  2], [2,  2],
+        ];
+        for (const [dx, dy] of offsets) {
+          const s = this.scene.add
+            .image(cx + dx, cy + dy, 'items_sheet', frame)
+            .setScale(1)
+            .setDepth(2)
+            .setTintFill(0x000000)
+            .setAlpha(0.8);
+          this.lockOutline.push(s);
+        }
         this.lockIcon = this.scene.add
-          .image(cx, cy, 'items_sheet', HAZARD_FRAMES.lock)
+          .image(cx, cy, 'items_sheet', frame)
           .setScale(1)
-          .setDepth(3)
-          .setAlpha(0.9);
+          .setDepth(3);
       } else {
         this.lockIcon.setPosition(cx, cy);
+        const offsets: [number, number][] = [
+          [-2, -2], [0, -2], [2, -2],
+          [-2,  0],          [2,  0],
+          [-2,  2], [0,  2], [2,  2],
+        ];
+        for (let i = 0; i < this.lockOutline.length; i++) {
+          const [dx, dy] = offsets[i];
+          this.lockOutline[i].setPosition(cx + dx, cy + dy);
+        }
       }
 
       // For hardened lock, show hit count below the icon
@@ -319,21 +342,12 @@ export class Tile {
       return;
     }
 
-    // Poison: neon green overlay (handled by updateOverlay) + small icon bottom-right
+    // Poison: overlay effect only (no icon)
     if (this._hazard.type === 'poison') {
       this.destroyStatusIndicator();
       this.destroyLockIcon();
+      this.destroyPoisonIcon();
       this.sprite.clearTint();
-
-      if (!this.poisonIcon) {
-        this.poisonIcon = this.scene.add
-          .image(ix, iy, 'items_sheet', HAZARD_FRAMES.poison)
-          .setScale(1)
-          .setDepth(3);
-        if (this._mask) this.poisonIcon.setMask(this._mask);
-      } else {
-        this.poisonIcon.setPosition(ix, iy);
-      }
       return;
     }
 
@@ -376,6 +390,8 @@ export class Tile {
   }
 
   private destroyLockIcon(): void {
+    for (const s of this.lockOutline) s.destroy();
+    this.lockOutline.length = 0;
     if (this.lockIcon) {
       this.lockIcon.destroy();
       this.lockIcon = null;
@@ -471,6 +487,26 @@ export class Tile {
       if (this.bombLabel) targets.push(this.bombLabel);
       if (this.lockIcon) targets.push(this.lockIcon);
 
+      // Lock outline sprites tween individually (each has its own offset)
+      {
+        const offsets: [number, number][] = [
+          [-2, -2], [0, -2], [2, -2],
+          [-2,  0],          [2,  0],
+          [-2,  2], [0,  2], [2,  2],
+        ];
+        for (let i = 0; i < this.lockOutline.length; i++) {
+          const [dx, dy] = offsets[i];
+          this.scene.tweens.add({
+            targets: this.lockOutline[i],
+            x: targetX + dx,
+            y: targetY + dy,
+            duration,
+            delay,
+            ease,
+          });
+        }
+      }
+
       // Outline sprites tween individually (each has its own offset)
       for (let i = 0; i < this.outlineSprites.length; i++) {
         const [dx, dy] = Tile.OUTLINE_OFFSETS[i];
@@ -538,6 +574,7 @@ export class Tile {
       const targets: Phaser.GameObjects.GameObject[] = [this.sprite];
       if (this.overlay) targets.push(this.overlay);
       targets.push(...this.outlineSprites);
+      targets.push(...this.lockOutline);
       if (this.bombLabel) targets.push(this.bombLabel);
       if (this.highlight) targets.push(this.highlight);
       if (this.statusDot) targets.push(this.statusDot);

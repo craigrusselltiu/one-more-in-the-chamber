@@ -131,6 +131,15 @@ export const MainMenu = memo(function MainMenu() {
         backgroundPosition: 'center',
       }}
     >
+      {/* Title logo -- top left */}
+      <img
+        src={`${import.meta.env.BASE_URL}assets/title.png`}
+        alt="One More in the Chamber"
+        className="absolute left-11 top-6"
+        style={{ width: 280, imageRendering: 'auto' }}
+        draggable={false}
+      />
+
       {/* Menu items -- bottom left */}
       <div className="absolute left-8 bottom-10 flex flex-col gap-0.5">
         {hasActiveRun && (

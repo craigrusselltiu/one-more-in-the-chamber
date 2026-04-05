@@ -4,45 +4,43 @@ import { useRunStore } from '../../store/runStore';
 import { ARTIFACTS } from '../../data/artifacts';
 import { CONSUMABLES } from '../../data/consumables';
 import { ADDITIONAL_POOL, STARTER_POOL, TILE_DEFINITIONS } from '../../data/tiles';
-import { TILE_FRAMES } from '../../data/spriteConfig';
+import { TILE_FRAMES, UI_FRAMES } from '../../data/spriteConfig';
 import { SpriteIcon } from '../components/SpriteIcon';
 import { Tooltip } from '../components/Tooltip';
-import { colorizeKeywords, KeywordSubTooltips, getReferencedKeywords } from '../components/KeywordText';
+import { KeywordSubTooltips, getReferencedKeywords, buildTileDescription } from '../components/KeywordText';
 import type { TileType } from '../../types/game';
 import type { Screen } from '../../App';
 import { getAscensionModifiers } from '../../data/ascension';
 
 interface ShopItem {
-  type: 'artifact' | 'consumable' | 'tile_swap';
+  type: 'artifact' | 'consumable' | 'tile_swap' | 'upgrade';
   id: string;
   name: string;
   description: string;
   price: number;
+  tileLevel?: number;
 }
 
-/**
- * ShopScreen: buy artifacts, consumables, or swap tiles.
- * Pricing from SPEC: consumables 15-30g, tile swap 50-75g, artifacts 100-175g.
- */
 export const ShopScreen = memo(function ShopScreen() {
   const run = useRunStore((s) => s.run);
   const updateGold = useRunStore((s) => s.updateGold);
   const addArtifact = useRunStore((s) => s.addArtifact);
   const addConsumable = useRunStore((s) => s.addConsumable);
   const swapTileType = useRunStore((s) => s.swapTileType);
+  const upgradeTile = useRunStore((s) => s.upgradeTile);
   const [purchased, setPurchased] = useState<Set<string>>(new Set());
   const [swapPending, setSwapPending] = useState<ShopItem | null>(null);
+  const [upgradeMode, setUpgradeMode] = useState(false);
 
   const stock = useMemo(() => {
-    if (!run) return [];
-    const items: ShopItem[] = [];
+    if (!run) return { consumables: [] as ShopItem[], artifacts: [] as ShopItem[], tiles: [] as ShopItem[] };
     const priceMult = getAscensionModifiers(run.ascensionLevel).shopPriceMultiplier;
 
-    // 3 consumables (random, 15-30 gold base, inflated by ascension)
+    const consumables: ShopItem[] = [];
     const shuffledConsumables = [...CONSUMABLES].sort(() => Math.random() - 0.5);
-    for (let i = 0; i < 3; i++) {
+    for (let i = 0; i < Math.min(3, shuffledConsumables.length); i++) {
       const c = shuffledConsumables[i];
-      items.push({
+      consumables.push({
         type: 'consumable',
         id: `cons-${c.id}`,
         name: c.name,
@@ -51,13 +49,13 @@ export const ShopScreen = memo(function ShopScreen() {
       });
     }
 
-    // 2 artifacts (random, not owned, 100-175 gold base, inflated by ascension)
+    const artifacts: ShopItem[] = [];
     const ownedIds = new Set(run.artifacts.map((a) => a.id));
     const availableArtifacts = ARTIFACTS.filter((a) => !ownedIds.has(a.id));
     const shuffledArtifacts = [...availableArtifacts].sort(() => Math.random() - 0.5);
-    for (let i = 0; i < Math.min(2, shuffledArtifacts.length); i++) {
+    for (let i = 0; i < Math.min(3, shuffledArtifacts.length); i++) {
       const a = shuffledArtifacts[i];
-      items.push({
+      artifacts.push({
         type: 'artifact',
         id: `art-${a.id}`,
         name: a.name,
@@ -66,7 +64,7 @@ export const ShopScreen = memo(function ShopScreen() {
       });
     }
 
-    // 1 tile swap (50-75 gold base, inflated by ascension)
+    const tiles: ShopItem[] = [];
     const swappableTiles = run.activeTileTypes.filter(
       (t) => t !== 'tumbleweed' && t !== 'showdown' && t !== 'fools_gold',
     );
@@ -75,21 +73,37 @@ export const ShopScreen = memo(function ShopScreen() {
       if (available.length > 0) {
         const swapTile = available[Math.floor(Math.random() * available.length)];
         const def = TILE_DEFINITIONS[swapTile];
-        items.push({
+        let tileLevel = 0;
+        if (run.currentAct === 2) tileLevel = Math.random() < 0.8 ? 1 : 2;
+        else if (run.currentAct === 3) tileLevel = Math.random() < 0.8 ? 2 : 3;
+        tiles.push({
           type: 'tile_swap',
           id: `swap-${swapTile}`,
-          name: `Swap for ${def.label}`,
+          name: def.label,
           description: def.description,
           price: Math.round((50 + Math.floor(Math.random() * 26)) * priceMult),
+          tileLevel,
         });
       }
     }
 
-    return items;
+    // Upgrade card (250g, once per shop)
+    const upgradePrice = Math.round(250 * priceMult);
+    const hasUpgradeableTiles = run.activeTileTypes.some((t) => TILE_DEFINITIONS[t]?.upgradeText);
+    if (hasUpgradeableTiles) {
+      tiles.push({
+        type: 'upgrade',
+        id: 'upgrade',
+        name: 'Upgrade',
+        description: 'Upgrade a tile permanently.',
+        price: upgradePrice,
+      });
+    }
+
+    return { consumables, artifacts, tiles };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  /** Tiles the player can swap away (any non-special tile). */
   const swappableTiles = useMemo(() => {
     if (!run) return [];
     return run.activeTileTypes.filter(
@@ -101,8 +115,12 @@ export const ShopScreen = memo(function ShopScreen() {
     if (!run || run.gold < item.price || purchased.has(item.id)) return;
 
     if (item.type === 'tile_swap') {
-      // Open the tile picker instead of buying immediately
       setSwapPending(item);
+      return;
+    }
+
+    if (item.type === 'upgrade') {
+      setUpgradeMode(true);
       return;
     }
 
@@ -111,9 +129,7 @@ export const ShopScreen = memo(function ShopScreen() {
     if (item.type === 'artifact') {
       const artifactId = item.id.replace('art-', '');
       const def = ARTIFACTS.find((a) => a.id === artifactId);
-      if (def) {
-        addArtifact({ id: def.id, tags: def.tags });
-      }
+      if (def) addArtifact({ id: def.id, tags: def.tags });
     } else if (item.type === 'consumable') {
       const consumableId = item.id.replace('cons-', '');
       addConsumable({ id: consumableId });
@@ -126,9 +142,19 @@ export const ShopScreen = memo(function ShopScreen() {
     if (!swapPending || !run) return;
     const newTile = swapPending.id.replace('swap-', '') as TileType;
     updateGold(-swapPending.price);
-    swapTileType(oldTile, newTile);
+    swapTileType(oldTile, newTile, swapPending.tileLevel);
     setPurchased((prev) => new Set([...prev, swapPending.id]));
     setSwapPending(null);
+  };
+
+  const handleUpgradeConfirm = (tileType: TileType) => {
+    if (!run) return;
+    const upgradeItem = stock.tiles.find((t) => t.type === 'upgrade');
+    if (!upgradeItem || run.gold < upgradeItem.price) return;
+    updateGold(-upgradeItem.price);
+    upgradeTile(tileType);
+    setPurchased((prev) => new Set([...prev, 'upgrade']));
+    setUpgradeMode(false);
   };
 
   const handleLeave = () => {
@@ -137,57 +163,101 @@ export const ShopScreen = memo(function ShopScreen() {
 
   if (!run) return null;
 
+  const hasSaddlebag = run.artifacts.some((a) => a.id === 'saddlebag');
+  const maxSlots = hasSaddlebag ? 4 : 3;
+
   return (
     <div className="flex flex-col items-center justify-center h-full bg-[#1a1a2e]/95">
-      <h2 className="text-xl text-amber-400 mb-1">General Store</h2>
-      <p className="text-xs text-stone-400 mb-4">
-        Gold: <span className="text-yellow-400">{run.gold}</span>
-      </p>
+      <h2 className="text-xl text-amber-400 mb-4">General Store</h2>
 
-      <div className="flex flex-col gap-2 w-80 max-h-[60vh] overflow-y-auto px-2">
-        {stock.map((item) => {
-          const isSold = purchased.has(item.id);
-          const canAfford = run.gold >= item.price;
-          const hasSaddlebag = run.artifacts.some((a) => a.id === 'saddlebag');
-          const maxSlots = hasSaddlebag ? 4 : 3;
-          const consumablesFull = item.type === 'consumable' && run.consumables.length >= maxSlots;
-          const disabled = isSold || !canAfford || consumablesFull;
+      <div className="flex flex-col gap-4 px-2">
+        {/* Row 1: Artifacts | Tile */}
+        <div className="flex gap-2">
+          <Section title="Artifacts">
+            {stock.artifacts.map((item) => {
+              const isSold = purchased.has(item.id);
+              const canAfford = run.gold >= item.price;
+              return (
+                <ShopCard
+                  key={item.id}
+                  icon={<span className="text-lg text-purple-400">{'\u2726'}</span>}
+                  name={item.name}
+                  description={item.description}
+                  price={item.price}
+                  sold={isSold}
+                  disabled={isSold || !canAfford}
+                  onClick={() => handleBuy(item)}
+                />
+              );
+            })}
+          </Section>
 
-          return (
-            <button
-              key={item.id}
-              onClick={() => handleBuy(item)}
-              disabled={disabled}
-              className={`flex items-center justify-between p-3 border text-left ${
-                isSold
-                  ? 'border-stone-700 bg-stone-800/30 opacity-50'
-                  : canAfford
-                    ? 'border-stone-600 bg-stone-800/50 hover:border-amber-600 hover:bg-stone-700/50'
-                    : 'border-stone-700 bg-stone-800/30 opacity-60 cursor-not-allowed'
-              }`}
-            >
-              <div className="flex-1 mr-3">
-                <div className="flex items-center gap-2">
-                  {item.type === 'tile_swap' ? (
-                    <SpriteIcon frame={TILE_FRAMES[item.id.replace('swap-', '') as TileType]} scale={1} />
-                  ) : (
-                    <span className="w-4 h-4 flex items-center justify-center rounded text-[8px] font-bold" style={{
-                      backgroundColor: item.type === 'artifact' ? 'rgba(168,85,247,0.3)' : 'rgba(74,222,128,0.3)',
-                      color: item.type === 'artifact' ? '#c084fc' : '#86efac',
-                    }}>
-                      {item.type === 'artifact' ? 'A' : 'C'}
-                    </span>
-                  )}
-                  <span className="text-stone-200 text-sm">{item.name}</span>
-                </div>
-                <p className="text-stone-400 text-xs mt-1">{item.description}</p>
-              </div>
-              <span className="text-yellow-400 text-sm font-bold whitespace-nowrap">
-                {isSold ? 'SOLD' : `${item.price}g`}
-              </span>
-            </button>
-          );
-        })}
+          <Section title="Tile">
+            {(() => {
+              const tileItem = stock.tiles.find((t) => t.type === 'tile_swap');
+              if (!tileItem) return null;
+              const isSold = purchased.has(tileItem.id);
+              const canAfford = run.gold >= tileItem.price;
+              const tileType = tileItem.id.replace('swap-', '') as TileType;
+              const level = tileItem.tileLevel ?? 0;
+              return (
+                <ShopCard
+                  icon={<SpriteIcon frame={TILE_FRAMES[tileType]} scale={2} />}
+                  name={tileItem.name}
+                  subtitle={level > 0 ? `Lv ${level + 1}` : undefined}
+                  description={<>{buildTileDescription(tileType, level)}</>}
+                  price={tileItem.price}
+                  sold={isSold}
+                  disabled={isSold || !canAfford}
+                  onClick={() => handleBuy(tileItem)}
+                />
+              );
+            })()}
+          </Section>
+        </div>
+
+        {/* Row 2: Consumables | Upgrade */}
+        <div className="flex gap-2">
+          <Section title="Consumables">
+            {stock.consumables.map((item) => {
+              const isSold = purchased.has(item.id);
+              const canAfford = run.gold >= item.price;
+              const full = run.consumables.length >= maxSlots;
+              return (
+                <ShopCard
+                  key={item.id}
+                  icon={<span className="text-lg text-green-400">{'\u2764'}</span>}
+                  name={item.name}
+                  description={item.description}
+                  price={item.price}
+                  sold={isSold}
+                  disabled={isSold || !canAfford || full}
+                  onClick={() => handleBuy(item)}
+                />
+              );
+            })}
+          </Section>
+
+          <Section title="Upgrade">
+            {(() => {
+              const upgradeItem = stock.tiles.find((t) => t.type === 'upgrade');
+              if (!upgradeItem) return null;
+              const isSold = purchased.has(upgradeItem.id);
+              const canAfford = run.gold >= upgradeItem.price;
+              return (
+                <ShopCard
+                  icon={<SpriteIcon frame={UI_FRAMES.upgrade} scale={2} />}
+                  name={upgradeItem.name}
+                  description={upgradeItem.description}
+                  price={upgradeItem.price}
+                  sold={isSold}
+                  disabled={isSold || !canAfford}
+                  onClick={() => handleBuy(upgradeItem)}
+                />
+              );
+            })()}
+          </Section>
+        </div>
       </div>
 
       <button
@@ -216,7 +286,7 @@ export const ShopScreen = memo(function ShopScreen() {
                 const tooltipContent = (
                   <div className="flex flex-col gap-0.5">
                     <div className="font-bold text-amber-400" style={{ fontSize: '10px' }}>{def.label}</div>
-                    <div className="text-stone-200 whitespace-nowrap" style={{ fontSize: '9px' }}>{colorizeKeywords(def.description)}</div>
+                    <div className="text-stone-200 whitespace-nowrap" style={{ fontSize: '9px' }}>{buildTileDescription(tile, level)}</div>
                     {def.flavor && <div className="text-stone-500 italic whitespace-nowrap" style={{ fontSize: '8px' }}>"{def.flavor}"</div>}
                   </div>
                 );
@@ -245,6 +315,108 @@ export const ShopScreen = memo(function ShopScreen() {
           </div>
         </div>
       )}
+
+      {/* Upgrade picker overlay */}
+      {upgradeMode && (
+        <div className="absolute inset-0 flex items-center justify-center bg-black/70 z-10">
+          <div className="bg-[#1a1a2e] border border-stone-600 p-4 w-80">
+            <h3 className="text-sm text-amber-400 mb-1">Choose a tile to upgrade</h3>
+            <p className="text-xs text-stone-400 mb-3">Permanent +1 tier for the rest of the run</p>
+            <div className="flex flex-wrap justify-center gap-2 mb-3">
+              {run.activeTileTypes
+                .filter((t) => TILE_DEFINITIONS[t]?.upgradeText)
+                .map((tileType) => {
+                  const def = TILE_DEFINITIONS[tileType];
+                  const currentLevel = run.tileUpgrades[tileType] ?? 0;
+                  const tooltipContent = (
+                    <div className="flex flex-col gap-0.5">
+                      <div className="font-bold text-amber-400" style={{ fontSize: '10px' }}>{def.label}</div>
+                      <div className="text-stone-200 whitespace-nowrap" style={{ fontSize: '9px' }}>{buildTileDescription(tileType, currentLevel)}</div>
+                      {def.flavor && <div className="text-stone-500 italic whitespace-nowrap" style={{ fontSize: '8px' }}>"{def.flavor}"</div>}
+                    </div>
+                  );
+                  const hasKeywords = getReferencedKeywords(def.description).length > 0;
+                  const keywordTooltip = hasKeywords ? <KeywordSubTooltips text={def.description} /> : undefined;
+                  return (
+                    <Tooltip key={tileType} content={tooltipContent} secondContent={keywordTooltip} position="bottom">
+                      <button
+                        onClick={() => handleUpgradeConfirm(tileType)}
+                        className="flex flex-col items-center p-2 w-20 border border-stone-600 bg-stone-800/50 hover:border-amber-400 hover:bg-stone-700/50"
+                      >
+                        <SpriteIcon frame={TILE_FRAMES[tileType]} scale={2} className="mb-1" />
+                        <span className="text-amber-300 text-xs font-bold">{def.label}</span>
+                        <span className="text-stone-400" style={{ fontSize: '9px' }}>
+                          Lv {currentLevel + 1} {'\u2192'} {currentLevel + 2}
+                        </span>
+                      </button>
+                    </Tooltip>
+                  );
+                })}
+            </div>
+            <button
+              onClick={() => setUpgradeMode(false)}
+              className="w-full px-4 py-1.5 bg-stone-700/50 text-stone-400 text-xs border border-stone-600 hover:bg-stone-600/50"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 });
+
+function Section({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <div>
+      <h3 className="text-xs text-stone-500 uppercase tracking-wider mb-1.5">{title}</h3>
+      <div className="flex gap-2">{children}</div>
+    </div>
+  );
+}
+
+function ShopCard({
+  icon,
+  name,
+  subtitle,
+  description,
+  price,
+  sold,
+  disabled,
+  onClick,
+}: {
+  icon: React.ReactNode;
+  name: string;
+  subtitle?: string;
+  description: React.ReactNode;
+  price: number;
+  sold: boolean;
+  disabled: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      disabled={disabled}
+      className={`relative flex flex-col items-center justify-center p-3 w-36 h-40 border-2 text-center transition-colors ${
+        sold
+          ? 'border-stone-700 bg-stone-800/30 opacity-40'
+          : disabled
+            ? 'border-stone-700 bg-stone-800/30 opacity-60 cursor-not-allowed'
+            : 'border-stone-600 bg-stone-800/50 hover:border-amber-600 hover:bg-stone-700/50'
+      }`}
+    >
+      <span className="absolute top-1 right-1.5 text-yellow-400 font-bold" style={{ fontSize: '10px' }}>
+        {sold ? 'SOLD' : `${price}g`}
+      </span>
+      <div className="mb-1.5">{icon}</div>
+      <span className="text-amber-300 text-xs font-bold">{name}</span>
+      {subtitle && (
+        <span className="text-amber-400" style={{ fontSize: '10px' }}>{subtitle}</span>
+      )}
+      <span className="text-stone-400 text-center mt-1 leading-tight" style={{ fontSize: '9px' }}>
+        {description}
+      </span>
+    </button>
+  );
+}

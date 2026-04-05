@@ -1203,9 +1203,13 @@ export class CombatManager {
         EventBus.emit(GameEvent.FLASH_LINE_TO_ENEMY, mid, match.tileType, fullIdx, this.enemies.length);
       }
 
-      // Ricochet: after the match resolves, trigger one random remaining tile
+      // Ricochet: destroy (1 + upgradeLevel) random tiles per ricochet tile matched
       if (match.tileType === 'ricochet') {
-        this.triggerRandomTileForRicochet(match);
+        const ricoLevel = this.player.getUpgradeLevel('ricochet');
+        const destroyCount = (1 + ricoLevel) * match.tiles.length;
+        for (let i = 0; i < destroyCount; i++) {
+          this.triggerRandomTileForRicochet(match);
+        }
       }
 
       // Saloon: generate resources of adjacent tiles on the board
@@ -1321,7 +1325,18 @@ export class CombatManager {
 
     // Damage
     if (damage > 0) {
-      if (output.isAoE) {
+      if (output.buckshotHits > 0) {
+        // Each hit targets a random alive enemy independently
+        const alive = this.aliveEnemies();
+        if (alive.length > 0) {
+          for (let i = 0; i < output.buckshotHits; i++) {
+            const current = this.aliveEnemies();
+            if (current.length === 0) break;
+            const target = current[Math.floor(Math.random() * current.length)];
+            this.dealDamageToEnemy(target, damage, false);
+          }
+        }
+      } else if (output.isAoE) {
         for (const enemy of this.aliveEnemies()) {
           this.dealDamageToEnemy(enemy, damage, false);
         }

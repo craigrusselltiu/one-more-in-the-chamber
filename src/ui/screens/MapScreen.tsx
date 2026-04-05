@@ -13,7 +13,7 @@ const NODE_LABELS: Record<MapNodeType, string> = {
   combat: 'Combat',
   elite: 'Elite',
   shop: 'Shop',
-  rest: 'Rest',
+  rest: 'Campfire',
   event: 'Event',
   treasure: 'Treasure',
   boss: 'Boss',

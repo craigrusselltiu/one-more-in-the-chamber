@@ -27,6 +27,8 @@ export interface ResourceOutput {
   targetsHighestHp: boolean;
   /** Extra swaps to grant this turn. */
   bonusSwaps: number;
+  /** Buckshot: number of individual hits, each targeting a random enemy. */
+  buckshotHits: number;
 }
 
 /** Tiles where upgrade scales per tile (not flat per match). */
@@ -119,8 +121,9 @@ export class ResourceResolver {
         break;
 
       case 'buckshot':
-        output.damage = total;
-        // Target is randomized by CombatManager, not here
+        // Each tile hits a random enemy independently
+        output.buckshotHits = count;
+        output.damage = Math.round(total / count); // damage per hit
         break;
 
       case 'fifty_cal':
@@ -133,8 +136,8 @@ export class ResourceResolver {
         break;
 
       case 'ricochet':
-        output.damage = total;
-        // Ricochet random tile destruction handled by CombatManager
+        // Damage is fixed at 1 per tile (upgrades affect destroyed tile count, not damage)
+        output.damage = count;
         break;
 
       case 'prairie_fire':
@@ -274,6 +277,7 @@ export class ResourceResolver {
       piercesBlock: false,
       targetsHighestHp: false,
       bonusSwaps: 0,
+      buckshotHits: 0,
     };
   }
 }

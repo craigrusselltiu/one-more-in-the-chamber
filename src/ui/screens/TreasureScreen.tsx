@@ -1,4 +1,4 @@
-import { memo, useMemo } from 'react';
+import { memo, useMemo, useState } from 'react';
 import { EventBus, GameEvent } from '../../game/EventBus';
 import { useRunStore } from '../../store/runStore';
 import { ARTIFACTS } from '../../data/artifacts';
@@ -15,13 +15,35 @@ export const TreasureScreen = memo(function TreasureScreen() {
     return pool[Math.floor(Math.random() * pool.length)];
   }, []);
 
+  const [taken, setTaken] = useState(false);
+
+  // Determine where to go after treasure based on current node
+  const currentNode = run?.mapState?.nodes.find((n) => n.id === run?.currentNodeId);
+  const isBossReward = currentNode?.type === 'boss';
+
+  const getNextScreen = (): Screen => {
+    if (!isBossReward) return 'map';
+    // Final boss -> score, otherwise -> tile-select
+    return (run?.currentAct ?? 1) >= 3 ? 'score' : 'tile-select';
+  };
+
   const handleTake = () => {
+    if (taken) return;
+    setTaken(true);
     addArtifact({ id: artifact.id, tags: artifact.tags });
-    EventBus.emit(GameEvent.SCREEN_CHANGE, 'map' satisfies Screen);
+    const next = getNextScreen();
+    if (next === 'score') {
+      useRunStore.getState().endRun(true);
+    }
+    EventBus.emit(GameEvent.SCREEN_CHANGE, next);
   };
 
   const handleSkip = () => {
-    EventBus.emit(GameEvent.SCREEN_CHANGE, 'map' satisfies Screen);
+    const next = getNextScreen();
+    if (next === 'score') {
+      useRunStore.getState().endRun(true);
+    }
+    EventBus.emit(GameEvent.SCREEN_CHANGE, next);
   };
 
   return (

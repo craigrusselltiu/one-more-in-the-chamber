@@ -7,7 +7,7 @@ import { CombatSettingsPopup } from '../screens/SettingsScreen';
 import { ConsumableSlots } from './ConsumableSlots';
 import { SpriteIcon } from '../components/SpriteIcon';
 import { Tooltip } from '../components/Tooltip';
-import { colorizeKeywords, KeywordSubTooltips, getReferencedKeywords } from '../components/KeywordText';
+import { KeywordSubTooltips, getReferencedKeywords, buildTileDescription } from '../components/KeywordText';
 import { TILE_DEFINITIONS } from '../../data/tiles';
 import { TILE_FRAMES, UI_FRAMES } from '../../data/spriteConfig';
 import type { Act, MapNodeType } from '../../types/game';
@@ -28,7 +28,7 @@ const NODE_TYPE_LABELS: Record<MapNodeType, string> = {
   combat: 'Combat',
   elite: 'Elite',
   shop: 'Shop',
-  rest: 'Rest',
+  rest: 'Campfire',
   event: 'Event',
   treasure: 'Treasure',
   boss: 'Boss',
@@ -91,7 +91,7 @@ export const TopBar = memo(function TopBar({ mapDisabled }: { showMapButton?: bo
 
   return (
     <>
-      <div className="relative z-10 flex justify-between items-center px-2 bg-black/50 text-[8px] pointer-events-auto" style={{ height: 28 }}>
+      <div className="relative z-20 flex justify-between items-center px-2 bg-black/50 text-[8px] pointer-events-auto" style={{ height: 28 }}>
         <div className="flex items-center gap-3">
           <span className="text-amber-400 font-bold">
             Act {act} - {getActName(act)}
@@ -184,7 +184,7 @@ function TilesPopup({
 }) {
   return (
     <div
-      className="absolute inset-0 z-50 flex items-center justify-center pointer-events-auto"
+      className="absolute inset-0 z-50 flex items-center justify-center bg-black/60 pointer-events-auto"
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
       <div className="bg-stone-900 border border-stone-600 p-3" style={{ minWidth: 140 }} onClick={(e) => e.stopPropagation()}>
@@ -206,7 +206,7 @@ function TilesPopup({
             const tooltipContent = (
               <div className="flex flex-col gap-0.5">
                 <div className="font-bold text-amber-400" style={{ fontSize: '10px' }}>{def.label}</div>
-                <div className="text-stone-200 whitespace-nowrap" style={{ fontSize: '9px' }}>{colorizeKeywords(def.description)}</div>
+                <div className="text-stone-200 whitespace-nowrap" style={{ fontSize: '9px' }}>{buildTileDescription(tileType, level)}</div>
                 {def.flavor && (
                   <div className="text-stone-500 italic whitespace-nowrap" style={{ fontSize: '8px' }}>"{def.flavor}"</div>
                 )}

@@ -32,7 +32,7 @@ export const TILE_FRAMES: Record<TileType, number> = {
   cavalry: 786,
   duel: 211,
   mirage: 1004,
-  boulder: 198,
+  boulder: 1126,
   showdown: 819,
   tumbleweed: 1098,
   fools_gold: 1155,
@@ -60,7 +60,7 @@ export const STATUS_FRAMES: Record<string, number> = {
   vulnerable: 1178,
   cracked_ground: 770,
   rageful: 814,
-  sturdy: 298,
+  sturdy: 223,
   venomous: 828,
   bounty: 1245,
   summoned: 704,
@@ -72,6 +72,7 @@ export const NODE_FRAMES: Record<string, number> = {
   elite: 206,
   shop: 1159,
   rest: 720,
+  campfire: 720,
   event: 629,
   treasure: 691,
   boss: 873,
@@ -102,7 +103,7 @@ export const TRAIT_BREAKPOINTS: Record<string, number[]> = {
 /** Tile hazard overlay icons. */
 export const HAZARD_FRAMES: Record<string, number> = {
   lock: 738,
-  poison: 828,
+  poison: 1190,
 };
 
 /** UI button icons for the top bar. */
@@ -112,4 +113,6 @@ export const UI_FRAMES: Record<string, number> = {
   settings: 933,
   health: 687,
   gold: 1162,
+  upgrade: 746,
+  rest: 687,
 };

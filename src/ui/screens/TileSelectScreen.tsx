@@ -2,7 +2,7 @@ import { memo, useMemo, useState, useRef } from 'react';
 import { EventBus, GameEvent } from '../../game/EventBus';
 import { useRunStore } from '../../store/runStore';
 import { STARTER_POOL, ADDITIONAL_POOL, TILE_DEFINITIONS } from '../../data/tiles';
-import { colorizeKeywords, KeywordSubTooltips, getReferencedKeywords } from '../components/KeywordText';
+import { buildTileDescription, KeywordSubTooltips, getReferencedKeywords } from '../components/KeywordText';
 import { TILE_FRAMES } from '../../data/spriteConfig';
 import { SpriteIcon } from '../components/SpriteIcon';
 import { Tooltip } from '../components/Tooltip';
@@ -44,10 +44,14 @@ export const TileSelectScreen = memo(function TileSelectScreen() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  const setTileUpgrade = useRunStore((s) => s.setTileUpgrade);
+
   const handleConfirm = () => {
     if (!selected) return;
 
     addTileType(selected);
+    // Tiles chosen in Act 3 start at Lv 2
+    if (run?.currentAct === 3) setTileUpgrade(selected, 1);
     if (isBossReward) advanceAct();
     EventBus.emit(GameEvent.SCREEN_CHANGE, 'map' satisfies Screen);
   };
@@ -99,7 +103,7 @@ export const TileSelectScreen = memo(function TileSelectScreen() {
                   {def.label}
                 </span>
                 <span className="text-stone-300 text-center mt-1 leading-tight" style={{ fontSize: '9px' }}>
-                  {colorizeKeywords(def.description)}
+                  {buildTileDescription(tileType, 0)}
                 </span>
                 {def.flavor && (
                   <span className="text-stone-600 text-center mt-1 leading-tight italic" style={{ fontSize: '8px' }}>

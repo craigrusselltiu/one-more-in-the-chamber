@@ -2,8 +2,10 @@ import { memo, useState } from 'react';
 import { EventBus, GameEvent } from '../../game/EventBus';
 import { useRunStore } from '../../store/runStore';
 import { TILE_DEFINITIONS } from '../../data/tiles';
-import { TILE_FRAMES } from '../../data/spriteConfig';
+import { TILE_FRAMES, UI_FRAMES, NODE_FRAMES } from '../../data/spriteConfig';
 import { SpriteIcon } from '../components/SpriteIcon';
+import { Tooltip } from '../components/Tooltip';
+import { KeywordSubTooltips, getReferencedKeywords, buildTileDescription } from '../components/KeywordText';
 import type { TileType } from '../../types/game';
 import type { Screen } from '../../App';
 
@@ -45,7 +47,7 @@ export const RestSiteScreen = memo(function RestSiteScreen() {
   if (choice === 'rest') {
     return (
       <div className="flex flex-col h-full bg-[#1a1a2e]/95"><div className="flex-1 flex flex-col items-center justify-center">
-        <div className="text-3xl mb-4">{'\u2618'}</div>
+        <div className="mb-4"><SpriteIcon frame={NODE_FRAMES.campfire} scale={3} /></div>
         <h2 className="text-xl text-amber-400 mb-2">Rested</h2>
         <p className="text-stone-300 text-sm mb-4">
           You rest by the fire. Healed {healAmount} HP.
@@ -68,7 +70,7 @@ export const RestSiteScreen = memo(function RestSiteScreen() {
     const tileDef = selectedTile ? TILE_DEFINITIONS[selectedTile] : null;
     return (
       <div className="flex flex-col h-full bg-[#1a1a2e]/95"><div className="flex-1 flex flex-col items-center justify-center">
-        <div className="text-3xl mb-4">{'\u2B06'}</div>
+        <div className="mb-4"><SpriteIcon frame={UI_FRAMES.upgrade} scale={3} /></div>
         <h2 className="text-xl text-amber-400 mb-2">Upgraded</h2>
         <p className="text-stone-300 text-sm mb-4">
           {tileDef?.label ?? 'Tile'} has been upgraded.
@@ -98,25 +100,38 @@ export const RestSiteScreen = memo(function RestSiteScreen() {
             const currentLevel = run.tileUpgrades[tileType] ?? 0;
             const isSelected = selectedTile === tileType;
 
+            const tooltipContent = (
+              <div className="flex flex-col gap-0.5">
+                <div className="font-bold text-amber-400" style={{ fontSize: '10px' }}>{def.label}</div>
+                <div className="text-stone-200 whitespace-nowrap" style={{ fontSize: '9px' }}>{buildTileDescription(tileType, currentLevel)}</div>
+                {def.flavor && (
+                  <div className="text-stone-500 italic whitespace-nowrap" style={{ fontSize: '8px' }}>"{def.flavor}"</div>
+                )}
+              </div>
+            );
+            const hasKeywords = getReferencedKeywords(def.description).length > 0;
+            const keywordTooltip = hasKeywords ? <KeywordSubTooltips text={def.description} /> : undefined;
+
             return (
-              <button
-                key={tileType}
-                onClick={() => setSelectedTile(tileType)}
-                className={`flex flex-col items-center p-3 w-28 border-2 transition-colors ${
-                  isSelected
-                    ? 'border-amber-400 bg-amber-900/30'
-                    : 'border-stone-600 bg-stone-800/50 hover:border-stone-400'
-                }`}
-              >
-                <SpriteIcon frame={TILE_FRAMES[tileType]} scale={2} className="mb-1" />
-                <span className="text-amber-300 text-xs font-bold">{def.label}</span>
-                <span className="text-stone-400" style={{ fontSize: '10px' }}>
-                  Lv {currentLevel + 1} {'\u2192'} {currentLevel + 2}
-                </span>
-                <span className="text-stone-500 text-center" style={{ fontSize: '9px' }}>
-                  {def.upgradeText}
-                </span>
-              </button>
+              <Tooltip key={tileType} content={tooltipContent} secondContent={keywordTooltip} position="bottom">
+                <button
+                  onClick={() => setSelectedTile(tileType)}
+                  className={`flex flex-col items-center p-3 w-28 border-2 transition-colors ${
+                    isSelected
+                      ? 'border-amber-400 bg-amber-900/30'
+                      : 'border-stone-600 bg-stone-800/50 hover:border-stone-400'
+                  }`}
+                >
+                  <SpriteIcon frame={TILE_FRAMES[tileType]} scale={2} className="mb-1" />
+                  <span className="text-amber-300 text-xs font-bold">{def.label}</span>
+                  <span className="text-stone-400" style={{ fontSize: '10px' }}>
+                    Lv {currentLevel + 1} {'\u2192'} {currentLevel + 2}
+                  </span>
+                  <span className="text-stone-500 text-center" style={{ fontSize: '9px' }}>
+                    {def.upgradeText}
+                  </span>
+                </button>
+              </Tooltip>
             );
           })}
         </div>
@@ -147,13 +162,10 @@ export const RestSiteScreen = memo(function RestSiteScreen() {
   // Initial choice
   return (
     <div className="flex flex-col h-full bg-[#1a1a2e]/95"><div className="flex-1 flex flex-col items-center justify-center">
-      <div className="text-3xl mb-4">
-        {'\u2618'}
+      <div className="mb-4">
+        <SpriteIcon frame={NODE_FRAMES.campfire} scale={3} />
       </div>
-      <h2 className="text-xl text-amber-400 mb-2">Campfire</h2>
-      <p className="text-stone-400 text-xs mb-6">
-        A moment of peace. Choose wisely.
-      </p>
+      <h2 className="text-xl text-amber-400 mb-6">Campfire</h2>
 
       <div className="flex gap-4">
         <button
@@ -165,13 +177,10 @@ export const RestSiteScreen = memo(function RestSiteScreen() {
               : 'border-stone-600 bg-stone-800/50 hover:border-green-500 hover:bg-stone-700/50'
           }`}
         >
-          <span className="text-green-400 text-lg mb-1">{'\u2665'}</span>
+          <SpriteIcon frame={UI_FRAMES.rest} scale={2} className="mb-1" />
           <span className="text-stone-200 text-sm font-bold">Rest</span>
           <span className="text-stone-400 text-xs mt-1">
-            Heal {healAmount} HP
-          </span>
-          <span className="text-red-400 text-xs mt-1">
-            {run.health}/{run.maxHealth}
+            Heal 30% of your max HP.
           </span>
         </button>
 
@@ -179,10 +188,10 @@ export const RestSiteScreen = memo(function RestSiteScreen() {
           onClick={handleUpgrade}
           className="flex flex-col items-center p-4 w-40 border-2 border-stone-600 bg-stone-800/50 hover:border-amber-500 hover:bg-stone-700/50"
         >
-          <span className="text-amber-400 text-lg mb-1">{'\u2B06'}</span>
-          <span className="text-stone-200 text-sm font-bold">Upgrade Tile</span>
+          <SpriteIcon frame={UI_FRAMES.upgrade} scale={2} className="mb-1" />
+          <span className="text-stone-200 text-sm font-bold">Upgrade</span>
           <span className="text-stone-400 text-xs mt-1">
-            Permanent +1 tier
+            Upgrade one of your tiles.
           </span>
         </button>
       </div>

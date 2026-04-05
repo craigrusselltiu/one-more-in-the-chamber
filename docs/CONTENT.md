@@ -16,7 +16,7 @@ Buffs/debuffs:
 
 ### Bounty
 - Rust exclusive
-- Behaviour: Apply 2 stacks of Bounty per 3-match; +1 per extra tile.
+- Behaviour: Apply 2 stacks of Bounty per 3-match, plus 1 per extra tile.
 - Upgrade: +2 stacks to match total per level
 - Flavor: "The S is silent."
 
@@ -44,7 +44,7 @@ Buffs/debuffs:
 - Flavor: "Makes the world go 'round."
 
 ### Ricochet
-- Behaviour: Deal 2 damage per tile + each tile destroys 1 random tile elsewhere.
+- Behaviour: Deal 1 damage and destroy 1 random other tile per Ricochet tile.
 - Upgrade: +1 to number of tiles destroyed on match per level
 - Flavor: "Bullets bounce. You never know what they'll hit."
 
@@ -54,12 +54,12 @@ Buffs/debuffs:
 - Flavor: "The ground shakes. Everything in the way gets flattened."
 
 ### Buckshot
-- Behaviour: Deal 1 damage to a random enemy per tile.
-- Upgrade: +2 damage per tile per level
+- Behaviour: Each tile deals 1 damage to a random enemy.
+- Upgrade: +1 damage per tile per level
 - Flavor: "Spread shot. Hits harder, less precise."
 
 ### Battery
-- Behaviour: Gain 1 ability charge per 3-match; +1 per extra tile.
+- Behaviour: Gain 1 ability charge per 3-match, plus 1 per extra tile.
 - Upgrade: +1 charge to match total per level
 - Flavor: "Juice for the iron. Every spark counts."
 
@@ -81,7 +81,7 @@ Buffs/debuffs:
 - Flavor: "Links in the chain. More you match, harder they hit."
 
 ### Whiskey
-- Behaviour: Heals 1 HP per 3-match; +1 per extra tile.
+- Behaviour: Heals 1 HP per 3-match, plus 1 per extra tile.
 - Upgrade: +1 heal to match total per level
 - Flavor: "The cowboy's medicine."
 
@@ -97,7 +97,7 @@ Buffs/debuffs:
 
 ### .50 Cal
 - Behaviour: Deal 3 damage per tile. 5-match deals double damage.
-- Upgrade: +2 damage per tile per level
+- Upgrade: +1 damage per tile per level
 - Flavor: "Turns cover into a suggestion."
 
 ### Tombstone
@@ -106,7 +106,7 @@ Buffs/debuffs:
 - Flavor: "Dead men pay debts."
 
 ### Saloon
-- Behaviour: Heal 1 HP per 3-match; +1 per extra tile. Generate the resources of adjacent tiles.
+- Behaviour: Heal 1 HP per 3-match, plus 1 per extra tile. Generate the resources of adjacent tiles.
 - Upgrade: +1 heal per match total per level
 - Flavor: "Belly up to the bar. Drinks are on the house."
 
@@ -171,15 +171,15 @@ Trait level = number of artifacts held with that tag. Effects activate at breakp
 - 4 -- At the start of combat, gain 5 Sturdy.
 - 6 -- Block reflects 100% of absorbed damage back to attacker.
 
-## Sniper
-
-## Gambler
-
 ## Outlaw
 - Flavor: "Wanted: Alive. Preferably not."
 - 2 -- 4+ matches deal 30% bonus damage.
 - 4 -- 4+ matches apply 1 Vulnerable to targeted enemy.
 - 6 -- Tiles from 4+ match cascades trigger resource effects twice.
+
+## Sniper
+
+## Gambler
 
 ## Rattlesnake
 - Flavor: "Don't step on anything that hisses."

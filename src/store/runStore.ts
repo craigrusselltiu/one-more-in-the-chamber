@@ -31,8 +31,9 @@ interface RunStore {
   removeConsumable: (index: number) => void;
   addTileType: (type: TileType) => void;
   removeTileType: (type: TileType) => void;
-  swapTileType: (oldType: TileType, newType: TileType) => void;
+  swapTileType: (oldType: TileType, newType: TileType, newLevel?: number) => void;
   upgradeTile: (type: TileType) => void;
+  setTileUpgrade: (type: TileType, level: number) => void;
   addDamageDealt: (amount: number) => void;
   updateLongestCascade: (steps: number) => void;
   addFlawlessFight: () => void;
@@ -193,7 +194,7 @@ export const useRunStore = create<RunStore>((set, get) => ({
       return { run: { ...state.run, activeTileTypes } };
     }),
 
-  swapTileType: (oldType, newType) =>
+  swapTileType: (oldType, newType, newLevel) =>
     set((state) => {
       if (!state.run) return state;
       const idx = state.run.activeTileTypes.indexOf(oldType);
@@ -201,7 +202,10 @@ export const useRunStore = create<RunStore>((set, get) => ({
       if (state.run.activeTileTypes.includes(newType)) return state;
       const activeTileTypes = [...state.run.activeTileTypes];
       activeTileTypes[idx] = newType;
-      return { run: { ...state.run, activeTileTypes } };
+      const tileUpgrades = { ...state.run.tileUpgrades };
+      delete tileUpgrades[oldType];
+      if (newLevel && newLevel > 0) tileUpgrades[newType] = newLevel;
+      return { run: { ...state.run, activeTileTypes, tileUpgrades } };
     }),
 
   upgradeTile: (type) =>
@@ -209,6 +213,15 @@ export const useRunStore = create<RunStore>((set, get) => ({
       if (!state.run) return state;
       const tileUpgrades = { ...state.run.tileUpgrades };
       tileUpgrades[type] = (tileUpgrades[type] ?? 0) + 1;
+      return { run: { ...state.run, tileUpgrades } };
+    }),
+
+  setTileUpgrade: (type, level) =>
+    set((state) => {
+      if (!state.run) return state;
+      const tileUpgrades = { ...state.run.tileUpgrades };
+      if (level > 0) tileUpgrades[type] = level;
+      else delete tileUpgrades[type];
       return { run: { ...state.run, tileUpgrades } };
     }),
 

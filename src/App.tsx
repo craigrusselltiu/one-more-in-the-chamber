@@ -306,14 +306,8 @@ export default function App() {
             store.removeTileType('tumbleweed');
           }
 
-          if (currentRun!.currentAct >= 3) {
-            // Final boss: run complete
-            store.endRun(true);
-            EventBus.emit(GameEvent.SCREEN_CHANGE, 'score');
-          } else {
-            // Between-act: pick a new tile before advancing
-            EventBus.emit(GameEvent.SCREEN_CHANGE, 'tile-select');
-          }
+          // Boss victory: artifact reward first, then tile-select or score
+          EventBus.emit(GameEvent.SCREEN_CHANGE, 'treasure');
         } else if (currentNode && currentNode.type === 'elite') {
           // Elite victory: artifact reward before returning to map
           EventBus.emit(GameEvent.SCREEN_CHANGE, 'treasure');
