@@ -11,6 +11,7 @@ interface MetaProgression {
   unlockedLoadouts: string[];
   unlockedCharacters: string[];
   highestAscensionCleared: number;
+  playerName: string;
 }
 
 interface MetaStore {
@@ -26,6 +27,7 @@ interface MetaStore {
   purchaseShopItem: (unlockId: string, cost: number, category: ShopCategory) => boolean;
   isUnlocked: (unlockId: string, category: ShopCategory) => boolean;
   setHighestAscension: (level: number) => void;
+  setPlayerName: (name: string) => void;
 }
 
 const CATEGORY_KEY: Record<ShopCategory, keyof Pick<MetaProgression, 'unlockedArtifacts' | 'unlockedEvents' | 'unlockedCosmetics' | 'unlockedLoadouts' | 'unlockedCharacters'>> = {
@@ -44,6 +46,7 @@ const DEFAULT_META: MetaProgression = {
   unlockedLoadouts: [],
   unlockedCharacters: ['red_panda'],
   highestAscensionCleared: -1,
+  playerName: '',
 };
 
 function loadMeta(): MetaProgression {
@@ -143,6 +146,13 @@ export const useMetaStore = create<MetaStore>((set, get) => ({
   setHighestAscension: (level) =>
     set((state) => {
       const meta = { ...state.meta, highestAscensionCleared: Math.max(state.meta.highestAscensionCleared, level) };
+      persistMeta(meta);
+      return { meta };
+    }),
+
+  setPlayerName: (name) =>
+    set((state) => {
+      const meta = { ...state.meta, playerName: name };
       persistMeta(meta);
       return { meta };
     }),

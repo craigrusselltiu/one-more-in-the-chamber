@@ -198,11 +198,12 @@ const ACT3_ENCOUNTER_TEMPLATES: EncounterTemplate[] = [
 function rollFromTemplates(
   templates: EncounterTemplate[],
   enemies: Record<string, EnemyDefinition>,
+  rand: () => number = Math.random,
 ): EnemyDefinition[] {
-  const template = templates[Math.floor(Math.random() * templates.length)];
+  const template = templates[Math.floor(rand() * templates.length)];
   const count =
     template.minCount +
-    Math.floor(Math.random() * (template.maxCount - template.minCount + 1));
+    Math.floor(rand() * (template.maxCount - template.minCount + 1));
   const def = enemies[template.type];
   return Array.from({ length: count }, () => ({ ...def }));
 }
@@ -210,11 +211,12 @@ function rollFromTemplates(
 function rollEliteFrom(
   enemies: Record<string, EnemyDefinition>,
   excludeTypes: string[] = [],
+  rand: () => number = Math.random,
 ): EnemyDefinition[] {
   const pool = Object.values(enemies).filter(
     (e) => !excludeTypes.includes(e.type),
   );
-  const base = pool[Math.floor(Math.random() * pool.length)];
+  const base = pool[Math.floor(rand() * pool.length)];
   return [
     {
       ...base,
@@ -230,13 +232,13 @@ function rollEliteFrom(
 // ---------------------------------------------------------------------------
 
 /** Roll a random Act 1 combat encounter. */
-export function rollAct1Encounter(): EnemyDefinition[] {
-  return rollFromTemplates(ACT1_ENCOUNTER_TEMPLATES, ACT1_ENEMIES);
+export function rollAct1Encounter(rand?: () => number): EnemyDefinition[] {
+  return rollFromTemplates(ACT1_ENCOUNTER_TEMPLATES, ACT1_ENEMIES, rand);
 }
 
 /** Roll an Act 1 elite encounter (slightly tougher, always single enemy). */
-export function rollAct1EliteEncounter(): EnemyDefinition[] {
-  return rollEliteFrom(ACT1_ENEMIES, ['vulture']);
+export function rollAct1EliteEncounter(rand?: () => number): EnemyDefinition[] {
+  return rollEliteFrom(ACT1_ENEMIES, ['vulture'], rand);
 }
 
 // ---------------------------------------------------------------------------
@@ -244,13 +246,13 @@ export function rollAct1EliteEncounter(): EnemyDefinition[] {
 // ---------------------------------------------------------------------------
 
 /** Roll a random Act 2 combat encounter. */
-export function rollAct2Encounter(): EnemyDefinition[] {
-  return rollFromTemplates(ACT2_ENCOUNTER_TEMPLATES, ACT2_ENEMIES);
+export function rollAct2Encounter(rand?: () => number): EnemyDefinition[] {
+  return rollFromTemplates(ACT2_ENCOUNTER_TEMPLATES, ACT2_ENEMIES, rand);
 }
 
 /** Roll an Act 2 elite encounter. Excludes cave_bat and mine_cart. */
-export function rollAct2EliteEncounter(): EnemyDefinition[] {
-  return rollEliteFrom(ACT2_ENEMIES, ['cave_bat', 'mine_cart']);
+export function rollAct2EliteEncounter(rand?: () => number): EnemyDefinition[] {
+  return rollEliteFrom(ACT2_ENEMIES, ['cave_bat', 'mine_cart'], rand);
 }
 
 // ---------------------------------------------------------------------------
@@ -258,11 +260,11 @@ export function rollAct2EliteEncounter(): EnemyDefinition[] {
 // ---------------------------------------------------------------------------
 
 /** Roll a random Act 3 combat encounter. */
-export function rollAct3Encounter(): EnemyDefinition[] {
-  return rollFromTemplates(ACT3_ENCOUNTER_TEMPLATES, ACT3_ENEMIES);
+export function rollAct3Encounter(rand?: () => number): EnemyDefinition[] {
+  return rollFromTemplates(ACT3_ENCOUNTER_TEMPLATES, ACT3_ENEMIES, rand);
 }
 
 /** Roll an Act 3 elite encounter. Train Guard is included for elites. */
-export function rollAct3EliteEncounter(): EnemyDefinition[] {
-  return rollEliteFrom(ACT3_ENEMIES);
+export function rollAct3EliteEncounter(rand?: () => number): EnemyDefinition[] {
+  return rollEliteFrom(ACT3_ENEMIES, [], rand);
 }

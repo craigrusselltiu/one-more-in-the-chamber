@@ -40,7 +40,7 @@ export async function fetchLeaderboard(period: LeaderboardPeriod): Promise<Leade
 
   let query = sb
     .from('scores')
-    .select('final_score, ascension_level, run_completed, character, created_at, player_id, players(display_name)')
+    .select('final_score, ascension_level, run_completed, character, created_at, player_name')
     .order('final_score', { ascending: false })
     .limit(10);
 
@@ -52,16 +52,13 @@ export async function fetchLeaderboard(period: LeaderboardPeriod): Promise<Leade
   const { data, error } = await query;
   if (error || !data) return [];
 
-  return data.map((row: Record<string, unknown>, i: number) => {
-    const player = row.players as { display_name: string | null } | null;
-    return {
-      rank: i + 1,
-      playerName: player?.display_name ?? 'Anonymous',
-      score: (row.final_score as number) ?? 0,
-      ascensionLevel: (row.ascension_level as number) ?? 0,
-      runCompleted: (row.run_completed as boolean) ?? false,
-      character: (row.character as string) ?? 'red_panda',
-      createdAt: (row.created_at as string) ?? '',
-    };
-  });
+  return data.map((row: Record<string, unknown>, i: number) => ({
+    rank: i + 1,
+    playerName: (row.player_name as string) ?? 'Anonymous',
+    score: (row.final_score as number) ?? 0,
+    ascensionLevel: (row.ascension_level as number) ?? 0,
+    runCompleted: (row.run_completed as boolean) ?? false,
+    character: (row.character as string) ?? 'red_panda',
+    createdAt: (row.created_at as string) ?? '',
+  }));
 }

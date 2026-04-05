@@ -126,8 +126,9 @@ export const ScoreScreen = memo(function ScoreScreen() {
       createdAt: new Date().toISOString(),
     };
 
+    const playerName = useMetaStore.getState().meta.playerName;
     saveScore(record).catch(console.error);
-    pushScore(record).catch(console.error);
+    pushScore(record, playerName).catch(console.error);
   }, [run, score]);
 
   const handleMainMenu = () => {

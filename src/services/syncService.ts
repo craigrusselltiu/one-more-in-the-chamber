@@ -131,14 +131,16 @@ export async function pushRun(run: LocalRun): Promise<void> {
 }
 
 /** Push a score to remote. */
-export async function pushScore(score: LocalScore): Promise<void> {
+export async function pushScore(score: LocalScore, playerName?: string): Promise<void> {
   const sb = getSupabase();
+  if (!sb) return;
+
   const { userId } = getAuthState();
-  if (!sb || !userId) return;
 
   await sb.from('scores').upsert({
     id: score.id,
-    player_id: userId,
+    player_id: userId ?? null,
+    player_name: playerName ?? 'Anonymous',
     run_id: score.runId,
     character: score.character ?? 'red_panda',
     ascension_level: score.ascensionLevel ?? 0,

@@ -31,32 +31,6 @@ export function seededShuffle<T>(arr: T[], rand: () => number): T[] {
   return copy;
 }
 
-// ---------------------------------------------------------------------------
-// Global game RNG — overrides Math.random during a run for full determinism.
-// ---------------------------------------------------------------------------
-
-const originalRandom = Math.random.bind(Math);
-let gameRng: (() => number) | null = null;
-let activeSeed: string | null = null;
-
-/**
- * Install a seeded RNG as the global Math.random for the duration of a run.
- * All game code (combat, board, enemies, etc.) automatically uses it.
- */
-export function installGameSeed(seed: string): void {
-  activeSeed = seed;
-  gameRng = createSeededRandom(seed);
-  Math.random = () => gameRng!();
-}
-
-/** Restore the original Math.random (e.g. when returning to main menu). */
-export function uninstallGameSeed(): void {
-  activeSeed = null;
-  gameRng = null;
-  Math.random = originalRandom;
-}
-
-/** Get the current active seed, or null if not in a run. */
-export function getActiveSeed(): string | null {
-  return activeSeed;
-}
+// No global Math.random override — each generation point creates its own
+// seeded RNG via createSeededRandom(seed + context). This ensures code
+// changes can't shift the sequence for unrelated generation points.

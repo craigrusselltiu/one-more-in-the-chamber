@@ -40,6 +40,7 @@ import {
 import type { EnemyDefinition } from './types/combat';
 import type { MapNodeType, Act } from './types/game';
 import { applyAscensionToEnemies, getAscensionModifiers } from './data/ascension';
+import { createSeededRandom } from './utils/seededRandom';
 
 export type Screen =
   | 'main-menu'
@@ -56,7 +57,7 @@ export type Screen =
   | 'leaderboard'
   | 'settings';
 
-const ENCOUNTER_ROLLERS: Record<Act, { regular: () => EnemyDefinition[]; elite: () => EnemyDefinition[] }> = {
+const ENCOUNTER_ROLLERS: Record<Act, { regular: (r?: () => number) => EnemyDefinition[]; elite: (r?: () => number) => EnemyDefinition[] }> = {
   1: { regular: rollAct1Encounter, elite: rollAct1EliteEncounter },
   2: { regular: rollAct2Encounter, elite: rollAct2EliteEncounter },
   3: { regular: rollAct3Encounter, elite: rollAct3EliteEncounter },
@@ -75,15 +76,16 @@ interface EncounterInfo {
 }
 
 /** Roll enemies for a given act and node type. */
-function rollEncounter(act: Act, nodeType: MapNodeType): EncounterInfo {
+function rollEncounter(act: Act, nodeType: MapNodeType, seed?: string, nodeId?: string): EncounterInfo {
+  const rand = seed && nodeId ? createSeededRandom(`${seed}-encounter-${nodeId}`) : undefined;
   if (nodeType === 'boss') {
     return { enemies: [BOSSES[act]], isElite: false, isBoss: true };
   }
   const rollers = ENCOUNTER_ROLLERS[act];
   if (nodeType === 'elite') {
-    return { enemies: rollers.elite(), isElite: true, isBoss: false };
+    return { enemies: rollers.elite(rand), isElite: true, isBoss: false };
   }
-  const enemies = rollers.regular();
+  const enemies = rollers.regular(rand);
   const isMineCart = enemies.some((e) => e.type === 'mine_cart');
   return {
     enemies,
@@ -212,7 +214,7 @@ export default function App() {
         if (run) {
           const currentNode = run.mapState?.nodes.find((n) => n.id === run.currentNodeId);
           const nodeType = currentNode?.type ?? 'combat';
-          const encounter = rollEncounter(run.currentAct, nodeType);
+          const encounter = rollEncounter(run.currentAct, nodeType, run.seed, run.currentNodeId ?? undefined);
           applyAscensionToEnemies(encounter.enemies, run.ascensionLevel);
           const ascMods = getAscensionModifiers(run.ascensionLevel);
 

@@ -5,7 +5,6 @@ import { useMetaStore } from '../../store/metaStore';
 import { checkForCombatResume } from '../../services/combatResume';
 import { calculateScore } from '../../utils/scoring';
 import { playHover } from '../../services/sfx';
-import { installGameSeed, uninstallGameSeed } from '../../utils/seededRandom';
 
 import type { Screen } from '../../App';
 
@@ -67,13 +66,13 @@ function MenuButton({
 }
 
 export const MainMenu = memo(function MainMenu() {
-  // Uninstall seeded RNG when returning to main menu
-  uninstallGameSeed();
-
   const run = useRunStore((s) => s.run);
   const clearRun = useRunStore((s) => s.clearRun);
   const hasActiveRun = run && run.status === 'active';
   const [showConfirm, setShowConfirm] = useState(false);
+  const playerName = useMetaStore((s) => s.meta.playerName);
+  const setPlayerName = useMetaStore((s) => s.setPlayerName);
+  const [nameInput, setNameInput] = useState('');
 
   const handleNewGame = () => {
 
@@ -103,9 +102,6 @@ export const MainMenu = memo(function MainMenu() {
   };
 
   const handleContinue = async () => {
-    // Reinstall seeded RNG for the active run
-    if (run) installGameSeed(run.seed);
-
     // Stop main menu music immediately (before async IndexedDB check)
     EventBus.emit(GameEvent.MUSIC_FADE_OUT);
 
@@ -171,6 +167,22 @@ export const MainMenu = memo(function MainMenu() {
         draggable={false}
       />
 
+      {/* Welcome text -- just under the title image */}
+      {playerName && (
+        <div className="absolute left-13" style={{ top: 175 }}>
+          <span
+            style={{
+              fontSize: '12px',
+              color: 'rgba(255,255,255,0.5)',
+              WebkitTextStroke: '2px #000',
+              paintOrder: 'stroke fill',
+            }}
+          >
+            Welcome back, {playerName}!
+          </span>
+        </div>
+      )}
+
       {/* Menu items -- bottom left */}
       <div className="absolute left-8 bottom-10 flex flex-col gap-0.5">
         {hasActiveRun && (
@@ -218,6 +230,36 @@ export const MainMenu = memo(function MainMenu() {
           v0.1.0
         </span>
       </div>
+
+      {/* Name prompt -- shown once on first visit */}
+      {!playerName && (
+        <div className="absolute inset-0 flex items-center justify-center bg-black/80 z-20">
+          <div className="border border-stone-600 bg-stone-900 p-6 text-center" style={{ width: 280 }}>
+            <h2 className="text-amber-400 text-sm font-bold mb-3">What is your name?</h2>
+            <input
+              type="text"
+              value={nameInput}
+              onChange={(e) => setNameInput(e.target.value)}
+              onKeyDown={(e) => { if (e.key === 'Enter' && nameInput.trim()) setPlayerName(nameInput.trim()); }}
+              placeholder="Enter your name"
+              maxLength={20}
+              autoFocus
+              className="w-full bg-stone-800/60 border border-stone-600 text-stone-200 text-sm px-3 py-2 outline-none focus:border-amber-600 text-center mb-3"
+            />
+            <button
+              onClick={() => { if (nameInput.trim()) setPlayerName(nameInput.trim()); }}
+              disabled={!nameInput.trim()}
+              className={`px-6 py-1.5 text-xs border ${
+                nameInput.trim()
+                  ? 'bg-amber-900/60 text-amber-300 border-amber-700 hover:bg-amber-800/60'
+                  : 'bg-stone-700/50 text-stone-500 border-stone-600 cursor-not-allowed'
+              }`}
+            >
+              Confirm
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 });

@@ -3,7 +3,6 @@ import { EventBus, GameEvent } from '../../game/EventBus';
 import { useRunStore } from '../../store/runStore';
 import { useMetaStore } from '../../store/metaStore';
 import { getAscensionModifiers } from '../../data/ascension';
-import { installGameSeed } from '../../utils/seededRandom';
 
 import type { CharacterId } from '../../types/game';
 import type { Screen } from '../../App';
@@ -53,7 +52,6 @@ export const CharacterSelectScreen = memo(function CharacterSelectScreen() {
   const handleConfirm = () => {
     setPendingNewGame({ character: selectedCharacter, ascensionLevel });
     const seed = (customSeed.trim() || Date.now().toString(36) + Math.random().toString(36).slice(2, 6)).toUpperCase();
-    installGameSeed(seed);
     startRun(seed, ascensionLevel);
     EventBus.emit(GameEvent.SCREEN_CHANGE, 'map' satisfies Screen);
   };
