@@ -77,19 +77,34 @@ export class BootScene extends Phaser.Scene {
     let desiredTrack = 'main_menu';
     let audioUnlocked = false;
 
-    const startOnGesture = () => {
-      document.removeEventListener('click', startOnGesture);
+    const unlock = () => {
+      document.removeEventListener('click', unlock);
+      document.removeEventListener('pointerdown', unlock);
+      document.removeEventListener('keydown', unlock);
       audioUnlocked = true;
-      // Defer playback to next frame so any screen change from this same
-      // click event updates desiredTrack first.
+      // Resume the audio context if suspended
+      const ctx = (this.sound as Phaser.Sound.WebAudioSoundManager)?.context;
+      if (ctx?.state === 'suspended') ctx.resume();
       requestAnimationFrame(() => {
         if (desiredTrack && !this.currentMusic) {
           this.playTrack(desiredTrack);
         }
       });
     };
-    // Use 'click' (not pointerdown) so React onClick handlers fire first
-    document.addEventListener('click', startOnGesture);
+
+    // Try immediate unlock (works if browser remembers prior interaction)
+    const ctx = (this.sound as Phaser.Sound.WebAudioSoundManager)?.context;
+    if (ctx && ctx.state === 'running') {
+      audioUnlocked = true;
+      requestAnimationFrame(() => {
+        if (desiredTrack) this.playTrack(desiredTrack);
+      });
+    } else {
+      // Fall back to any user gesture
+      document.addEventListener('click', unlock);
+      document.addEventListener('pointerdown', unlock);
+      document.addEventListener('keydown', unlock);
+    }
 
     // Music transitions on screen changes
     EventBus.on(GameEvent.SCREEN_CHANGE, (...args: unknown[]) => {
