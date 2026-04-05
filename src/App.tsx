@@ -159,9 +159,9 @@ export default function App() {
         const store = useRunStore.getState();
 
         if (run && run.currentAct === 1) {
-          const completed = run.mapState?.nodes.filter((n) => n.completed).length ?? 0;
-          // Dust storm rolls in after midpoint (5+ completed nodes)
-          if (completed >= 5 && !run.activeTileTypes.includes('tumbleweed')) {
+          // Dust storm rolls in after the treasure node (row 6) is completed
+          const treasureCompleted = run.mapState?.nodes.some((n) => n.type === 'treasure' && n.completed) ?? false;
+          if (treasureCompleted && !run.activeTileTypes.includes('tumbleweed')) {
             store.addTileType('tumbleweed');
             setTimeout(() => {
               EventBus.emit('game:notification', { text: 'A dust storm rolls in...' });
