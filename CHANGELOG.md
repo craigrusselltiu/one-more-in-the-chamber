@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## v0.4.1
+
+### Changed
+- Swap counter and End Turn button moved under player character
+- Swap counter shows "SWAPS 1/3" with black outline
+- "TRAITS" label above trait icons
+- Reputation Shop disabled on main menu
+
 ## v0.4.0
 
 ### Added

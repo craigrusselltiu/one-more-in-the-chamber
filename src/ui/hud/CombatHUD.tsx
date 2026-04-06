@@ -37,7 +37,7 @@ export const CombatHUD = memo(function CombatHUD() {
       <div className="absolute inset-x-0 bottom-0 flex" style={{ top: 36 }}>
         {/* Player area -- combo has fixed height so it doesn't shift the sprite */}
         <div
-          className="flex flex-col items-center justify-center px-1 pointer-events-auto"
+          className="relative flex flex-col items-center justify-center px-1 pointer-events-auto"
           style={{ width: '26.67%' }}
         >
           {/* Combo indicator - fixed height so it doesn't push player panel */}
@@ -45,6 +45,19 @@ export const CombatHUD = memo(function CombatHUD() {
             <ComboDisplay />
           </div>
           <PlayerPanel />
+          {/* Swap count + end turn - absolute so it doesn't push player up */}
+          <div className="absolute bottom-14 left-1/2 -translate-x-1/2 flex flex-col items-center gap-1">
+            <span
+              className="text-sm text-stone-200 font-bold"
+              style={{
+                WebkitTextStroke: '3px #000',
+                paintOrder: 'stroke fill',
+              }}
+            >
+              SWAPS {swapsRemaining}/{swapsPerTurn}
+            </span>
+            <EndTurnButton />
+          </div>
         </div>
 
         {/* Board area (center, Phaser renders the board here) */}
@@ -61,13 +74,6 @@ export const CombatHUD = memo(function CombatHUD() {
         </div>
       </div>
 
-      {/* Bottom-left: swap count + end turn button */}
-      <div className="absolute bottom-1 left-1 flex flex-col items-start gap-0.5">
-        <span className="text-[7px] text-stone-300">
-          Swaps: {swapsRemaining}/{swapsPerTurn}
-        </span>
-        <EndTurnButton />
-      </div>
     </div>
   );
 });

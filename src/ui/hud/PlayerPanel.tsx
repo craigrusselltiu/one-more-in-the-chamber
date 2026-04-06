@@ -50,7 +50,18 @@ export const PlayerPanel = memo(function PlayerPanel() {
       </div>
 
       {/* Trait contributions from artifacts */}
-      <TraitDisplay />
+      <div className="mt-2">
+        <span
+          className="text-[8px] text-stone-200 font-bold block text-center mb-0.5"
+          style={{
+            WebkitTextStroke: '2px #000',
+            paintOrder: 'stroke fill',
+          }}
+        >
+          TRAITS
+        </span>
+        <TraitDisplay />
+      </div>
     </div>
   );
 });
