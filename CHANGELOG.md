@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## v0.4.2
+
+### Fixed
+- Swap counter flickering "SWAPS /" during resolution (removed spurious event)
+- End Turn button stays visible but disabled during resolution (was disappearing)
+
 ## v0.4.1
 
 ### Changed

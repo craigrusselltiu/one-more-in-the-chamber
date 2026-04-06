@@ -461,7 +461,6 @@ export class Board {
     }
 
     // Valid swap: resolve all cascades (pass swap target for special tile placement)
-    EventBus.emit(GameEvent.SWAPS_CHANGE);
     const allMatches = await this.cascadeResolver.resolve(this, onCascadeStep, to);
 
     // After cascade: check for no valid moves

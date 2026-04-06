@@ -18,16 +18,16 @@ export const EndTurnButton = memo(function EndTurnButton() {
     }
   }, [canEnd]);
 
-  if (!canEnd) return null;
-
   return (
     <button
       onClick={handleEndTurn}
+      disabled={!canEnd}
       className="pointer-events-auto text-[7px] px-2 py-0.5 font-bold border"
       style={{
-        color: '#D4A030',
-        borderColor: '#D4A030',
+        color: canEnd ? '#D4A030' : '#555',
+        borderColor: canEnd ? '#D4A030' : '#444',
         backgroundColor: 'rgba(0,0,0,0.5)',
+        opacity: canEnd ? 1 : 0.5,
       }}
     >
       END TURN
