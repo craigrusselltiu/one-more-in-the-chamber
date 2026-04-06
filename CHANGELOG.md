@@ -4,6 +4,25 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## v0.4.7
+
+### Added
+- Saloon Keeper trait (2: consumables heal 5 HP, 4: random consumable at combat start)
+- Desperado and High Roller trait tags
+- Reno's Coin artifact (renamed from Double Down, tags: Desperado + High Roller)
+- Rigged Deck: Reno starting artifact (Chip misses generate 2 gold)
+- Reno now gets Rigged Deck as starting artifact
+- Hit SFX on direct HP damage (debounced)
+- Block SFX on shield absorption
+- Ability ready SFX when charge reaches threshold
+- Alt music tracks: 3 variants per act, 2 elite themes
+- Tumbleweed Golem enemy sprite
+
+### Changed
+- Gold tile: 1 gold per tile (was 2)
+- Bamboo Canteen: tags changed to Saloon Keeper only, not character exclusive
+- Stacked Deck (formerly Rigged Deck): crits give 5 gold
+
 ## v0.4.6
 
 ### Changed

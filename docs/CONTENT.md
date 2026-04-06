@@ -39,7 +39,7 @@ NOTE: Observe the difference between +1 to match total and +1 per tile. The tile
 - Flavor: "Bend, don't break."
 
 ### Gold
-- Behaviour: Earn 2 gold per tile.
+- Behaviour: Earn 1 gold per tile.
 - Upgrade: +2 gold to match total per level
 - Flavor: "Makes the world go 'round."
 
@@ -165,17 +165,6 @@ NOTE: Observe the difference between +1 to match total and +1 per tile. The tile
 
 Trait level = number of artifacts held with that tag. Effects activate at breakpoints.
 
-## The Bounty Hunter
-- Rust exclusive
-- Flavor:
-- 1 -- Bounty grants 10 gold when killing a non-summoned enemy.
-- 2 -- The last shot of Deadeye can be used on an enemy, dealing 2 damage per stack of Bounty.
-
-## The Gambler
-- Reno exclusive
-- Flavor: something about chance
-- 
-
 ## Sheriff
 - Flavor: "The law is heavier than it looks."
 - 2 -- The first time you gain block each turn is doubled.
@@ -188,8 +177,13 @@ Trait level = number of artifacts held with that tag. Effects activate at breakp
 - 4 -- 4+ matches apply 1 Vulnerable to targeted enemy.
 - 6 -- Tiles from 4+ match cascades trigger resource effects twice.
 
+## High Roller
+- Flavor: "Go big or go home."
+- 2 --
+
 ## Sniper
 - Flavor: something about 5-match
+- 2 --
 
 ## Rattlesnake
 - Flavor: "Don't step on anything that hisses."
@@ -244,7 +238,7 @@ Trait level = number of artifacts held with that tag. Effects activate at breakp
 ## Saloon Keeper
 - Flavor: "On the house."
 - 2 -- Consumables heal 5 HP on use (any consumable).
-- 4 -- Start each fight with a random consumable (temporary, doesn't take a slot).
+- 4 -- At the start of combat, gain a random consumable.
 
 ## Tinker
 - Flavor: "Bigger boom. Better engineering."
@@ -265,7 +259,7 @@ Trait level = number of artifacts held with that tag. Effects activate at breakp
 
 ### Bamboo Canteen
 - Rust starting artifact
-- Tags: Outlaw, Saloon Keeper
+- Tags: Saloon Keeper
 - Effect: After completing combat, restore 6 HP.
 - Flavor: "Bamboo doesn't rust."
 
@@ -274,6 +268,18 @@ Trait level = number of artifacts held with that tag. Effects activate at breakp
 - Tags: Gunslinger, Outlaw
 - Effect: Increase Deadeye shots to 6. The last shot can now be used on an enemy, dealing 2 damage per stack of Bounty.
 - Flavor: "Six in the chamber. No reloads."
+
+### Rigged Deck
+- Reno starting artifact
+- Tags: Desperado
+- Effect: Chip misses generate 2 gold.
+- Flavor: "Bad luck is still luck."
+
+### Reno's Coin
+- Reno exclusive artifact
+- Tags: Desperado, High Roller
+- Effect: Chip damage doubled. On miss, lose 1 HP (increases by 1 per miss permanently).
+- Flavor: "Double or nothing. Emphasis on nothing."
 
 ## Outlaw
 
@@ -769,11 +775,6 @@ Trait level = number of artifacts held with that tag. Effects activate at breakp
 - Tags: --
 - Effect: +5 max HP. First match/fight: 2x resources.
 - Flavor: "Found it nailed above a saloon door."
-
-### Double Down
-- Tags: --
-- Effect: Reno only. Chip damage doubled. Miss: lose HP (increases by 1 per miss permanently).
-- Flavor: "The stakes just got higher."
 
 ### Dusty Canteen
 - Tags: --

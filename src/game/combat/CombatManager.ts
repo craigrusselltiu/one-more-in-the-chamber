@@ -20,7 +20,9 @@ import {
   ELITE_MODIFIERS,
 } from './EliteModifiers';
 import type { EliteModifierId, EliteModifier } from './EliteModifiers';
-import { playSwapFail, playMatch, playDeadeyeShot } from '../../services/sfx';
+import { playSwapFail, playMatch, playDeadeyeShot, playHit, playBlock, playAbilityReady } from '../../services/sfx';
+import { useRunStore } from '../../store/runStore';
+import { CONSUMABLES } from '../../data/consumables';
 
 export interface CombatConfig {
   character: CharacterId;
@@ -185,6 +187,11 @@ export class CombatManager {
     // Apply fight-start effects
     this.traits.onFightStart(this.player);
     this.artifacts.onFightStart(this.player);
+
+    // Saloon Keeper(4): grant a random consumable at combat start
+    if (this.traits.isActive('saloon_keeper', 4)) {
+      this.grantRandomConsumable();
+    }
 
     // Wire up React -> Phaser actions via EventBus
     this.listenForPlayerActions();
@@ -518,6 +525,7 @@ export class CombatManager {
     // Per-turn: +1 ability charge (capped at threshold)
     if (this.player.abilityCharge < this.player.abilityThreshold) {
       this.player.abilityCharge++;
+      if (this.player.abilityCharge >= this.player.abilityThreshold) playAbilityReady();
     }
 
     // Trait turn-start effects (Sheriff block, etc.)
@@ -639,7 +647,8 @@ export class CombatManager {
     if (!this.isCombatOver()) {
       const bombResult = this.hazardManager.tickBombs();
       if (bombResult.totalDamage > 0) {
-        if (this.player.takeDamage(bombResult.totalDamage).hpLost > 0) this.playerTookDamageThisFight = true;
+        const bombDmg = this.player.takeDamage(bombResult.totalDamage);
+        if (bombDmg.hpLost > 0) { playHit(); this.playerTookDamageThisFight = true; }
         EventBus.emit(GameEvent.PLAYER_HP_CHANGE, this.player.health, this.player.maxHealth);
         EventBus.emit(GameEvent.SCREEN_SHAKE, bombResult.detonations.length > 1 ? 'heavy' : 'medium');
       }
@@ -971,6 +980,12 @@ export class CombatManager {
         return false;
     }
 
+    // Saloon Keeper(2): consumables heal 5 HP on use
+    if (this.traits.isActive('saloon_keeper', 2)) {
+      this.player.heal(5);
+      this.floatOnPlayer('+5', '#40D840');
+    }
+
     EventBus.emit(GameEvent.CONSUMABLE_USED, consumableId);
     EventBus.emit(GameEvent.PLAYER_HP_CHANGE, this.player.health, this.player.maxHealth);
     this.emitEnemyHpChanges();
@@ -1249,13 +1264,14 @@ export class CombatManager {
       if (enemy.state.health <= 0) enemy.state.isDead = true;
       const actual = hpBefore - enemy.state.health;
       this.damageDealtThisFight += actual;
+      if (actual > 0) playHit();
       this.floatOnEnemy(enemy, isCrit ? `-${actual}!` : `-${actual}`, '#ff4444', critSize);
     } else {
       const { hpLost, blocked } = enemy.takeDamage(damage);
       this.damageDealtThisFight += hpLost;
-      if (blocked > 0) this.floatOnEnemy(enemy, `-${blocked}`, '#6888A0');
-      // Crit: show total incoming damage (before block) so it doesn't look deceptively small
+      if (blocked > 0) { playBlock(); this.floatOnEnemy(enemy, `-${blocked}`, '#6888A0'); }
       if (hpLost > 0) {
+        playHit();
         const label = isCrit ? `-${damage}!` : `-${hpLost}`;
         this.floatOnEnemy(enemy, label, '#ff4444', critSize);
       }
@@ -1343,10 +1359,12 @@ export class CombatManager {
 
     // Ability charges (capped at threshold)
     if (output.abilityCharges > 0) {
+      const wasFull = this.player.abilityCharge >= this.player.abilityThreshold;
       this.player.abilityCharge = Math.min(
         this.player.abilityThreshold,
         this.player.abilityCharge + output.abilityCharges,
       );
+      if (!wasFull && this.player.abilityCharge >= this.player.abilityThreshold) playAbilityReady();
       EventBus.emit(GameEvent.ABILITY_CHARGE_CHANGE, this.player.abilityCharge, this.player.abilityThreshold);
     }
 
@@ -1425,9 +1443,16 @@ export class CombatManager {
       } else {
         this.floatOnPlayer('MISS', '#666');
       }
+      // Rigged Deck: chip misses generate 2 gold
+      if (this.artifacts.has('rigged_deck')) {
+        const missGold = Math.max(1, Math.round(2 * this.goldMultiplier));
+        this.player.addGold(missGold);
+        this.floatOnPlayer(`+${missGold}g`, '#FFD700');
+        EventBus.emit(GameEvent.GOLD_CHANGE, this.player.gold);
+      }
     }
 
-    // Double Down: self-damage on chip miss
+    // Reno's Coin: self-damage on chip miss
     if (output.doubleDownPenalty && output.doubleDownPenalty > 0) {
       this.player.health = Math.max(0, this.player.health - output.doubleDownPenalty);
       this.floatOnPlayer(`-${output.doubleDownPenalty}`, '#ff4444');
@@ -1536,8 +1561,8 @@ export class CombatManager {
         case 'attack': {
           if (action.value > 0) {
             const { hpLost, blocked, thornsDamage } = this.player.takeDamage(action.value);
-            if (hpLost > 0) this.playerTookDamageThisFight = true;
-            if (blocked > 0) this.floatOnPlayer(`-${blocked}`, '#6888A0');
+            if (hpLost > 0) { playHit(); this.playerTookDamageThisFight = true; }
+            if (blocked > 0) { playBlock(); this.floatOnPlayer(`-${blocked}`, '#6888A0'); }
             if (hpLost > 0) this.floatOnPlayer(`-${hpLost}`, '#ff4444');
             EventBus.emit(
               GameEvent.PLAYER_HP_CHANGE,
@@ -1830,6 +1855,17 @@ export class CombatManager {
       suppressedTileTypes: this.hazardManager.getSuppressedTypes(),
       mirageType: this.board.getMirageType(),
     };
+  }
+
+  /** Saloon Keeper(4): grant a random consumable from the basic pool. */
+  private grantRandomConsumable(): void {
+    const pool = CONSUMABLES.filter((c) =>
+      !['stick_of_tnt', 'skeleton_key', 'signal_flare'].includes(c.id),
+    );
+    if (pool.length > 0) {
+      const pick = pool[Math.floor(Math.random() * pool.length)];
+      useRunStore.getState().addConsumable({ id: pick.id });
+    }
   }
 
   private emitFullState(): void {

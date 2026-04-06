@@ -79,4 +79,13 @@ export const TRAITS: TraitDefinition[] = [
       { threshold: 4, description: 'Crit multiplier 3x. Crit chance halves on trigger instead of resetting.' },
     ],
   },
+  {
+    id: 'saloon_keeper',
+    name: 'Saloon Keeper',
+    description: 'On the house.',
+    breakpoints: [
+      { threshold: 2, description: 'Consumables heal 5 HP on use.' },
+      { threshold: 4, description: 'At the start of combat, gain a random consumable.' },
+    ],
+  },
 ];

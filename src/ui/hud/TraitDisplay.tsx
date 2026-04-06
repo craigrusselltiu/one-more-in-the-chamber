@@ -19,6 +19,8 @@ const TRAIT_LABELS: Record<TraitId, string> = {
   mustang: 'Mustang',
   gunslinger: 'Gunslinger',
   saloon_keeper: 'Saloon Keeper',
+  desperado: 'Desperado',
+  high_roller: 'High Roller',
 };
 
 /** Descriptions for each trait at each breakpoint threshold. */
@@ -52,6 +54,10 @@ const TRAIT_DESCRIPTIONS: Record<string, Record<number, string>> = {
   gunslinger: {
     2: 'Start each fight with 15% crit. Crits deal 3 bonus flat damage.',
     4: 'Crit multiplier 3x. Crit chance halves instead of resetting.',
+  },
+  saloon_keeper: {
+    2: 'Consumables heal 5 HP on use.',
+    4: 'At the start of combat, gain a random consumable.',
   },
 };
 

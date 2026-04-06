@@ -92,13 +92,12 @@ export const useRunStore = create<RunStore>((set, get) => ({
       consumables.push({ id: 'smoke_bomb' }, { id: 'signal_flare' });
     }
 
-    // Character-specific starting artifact
-    if (character === 'red_panda') {
-      const def = ARTIFACTS.find((a) => a.id === 'bamboo_canteen');
-      if (def) {
-        artifacts.push({ id: def.id, tags: def.tags });
-        for (const tag of def.tags) traitCounts[tag] = (traitCounts[tag] ?? 0) + 1;
-      }
+    // Character-specific starting artifacts
+    const startingArtifactId = character === 'red_panda' ? 'bamboo_canteen' : 'rigged_deck';
+    const startDef = ARTIFACTS.find((a) => a.id === startingArtifactId);
+    if (startDef) {
+      artifacts.push({ id: startDef.id, tags: startDef.tags });
+      for (const tag of startDef.tags) traitCounts[tag] = (traitCounts[tag] ?? 0) + 1;
     }
 
     // Character-specific starting tiles (5th tile chosen after 3rd node)

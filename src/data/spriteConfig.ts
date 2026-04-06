@@ -42,6 +42,8 @@ export const TILE_FRAMES: Record<TileType, number> = {
 export const ARTIFACT_FRAMES: Record<string, number> = {
   bamboo_canteen: 1001,
   rusts_cylinder: 916,
+  renos_coin: 1157,
+  rigged_deck: 793,
 };
 
 /** Consumable sprite frames (by consumable ID). */
@@ -89,6 +91,8 @@ export const TRAIT_FRAMES: Record<string, number> = {
   mustang: 266,
   gunslinger: 1244,
   saloon_keeper: 499,
+  desperado: 1080,
+  high_roller: 1162,
 };
 
 /** Trait breakpoint thresholds (in order). */
@@ -100,7 +104,9 @@ export const TRAIT_BREAKPOINTS: Record<string, number[]> = {
   sapper: [1, 2, 3],
   mustang: [4],
   gunslinger: [2, 4],
-  saloon_keeper: [],
+  saloon_keeper: [2, 4],
+  desperado: [],
+  high_roller: [],
 };
 
 /** Tile hazard overlay icons. */

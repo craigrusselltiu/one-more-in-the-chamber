@@ -35,10 +35,15 @@ export class BootScene extends Phaser.Scene {
     this.load.audio('map_theme', `${base}assets/audio/map_theme.mp3`);
     this.load.audio('act1_theme', `${base}assets/audio/act1_theme.mp3`);
     this.load.audio('act1_theme_alt', `${base}assets/audio/act1_theme_alt.mp3`);
+    this.load.audio('act1_theme_alt2', `${base}assets/audio/act1_theme_alt2.mp3`);
+    this.load.audio('elite_theme', `${base}assets/audio/elite_theme.mp3`);
+    this.load.audio('elite_theme_alt', `${base}assets/audio/elite_theme_alt.mp3`);
     this.load.audio('act2_theme', `${base}assets/audio/act2_theme.mp3`);
     this.load.audio('act2_theme_alt', `${base}assets/audio/act2_theme_alt.mp3`);
+    this.load.audio('act2_theme_alt2', `${base}assets/audio/act2_theme_alt2.mp3`);
     this.load.audio('act3_theme', `${base}assets/audio/act3_theme.mp3`);
     this.load.audio('act3_theme_alt', `${base}assets/audio/act3_theme_alt.mp3`);
+    this.load.audio('act3_theme_alt2', `${base}assets/audio/act3_theme_alt2.mp3`);
     this.load.audio('shop_theme', `${base}assets/audio/shop_theme.mp3`);
     this.load.audio('dustys_theme', `${base}assets/audio/dustys_theme.mp3`);
     this.load.audio('copperheads_theme', `${base}assets/audio/copperheads_theme.mp3`);
@@ -52,6 +57,9 @@ export class BootScene extends Phaser.Scene {
     this.load.audio('sfx_match3', `${base}assets/audio/sfx/match3.wav`);
     this.load.audio('sfx_match_pitch', `${base}assets/audio/sfx/match_pitch.wav`);
     this.load.audio('sfx_gunshot', `${base}assets/audio/sfx/gunshot.wav`);
+    this.load.audio('sfx_hit', `${base}assets/audio/sfx/hit.wav`);
+    this.load.audio('sfx_ability_ready', `${base}assets/audio/sfx/ability_ready.wav`);
+    this.load.audio('sfx_block', `${base}assets/audio/sfx/block.wav`);
     this.load.audio('sfx_campfire', `${base}assets/audio/sfx/campfire.wav`);
     this.load.audio('sfx_treasure', `${base}assets/audio/sfx/treasure.wav`);
     this.load.audio('sfx_shop', `${base}assets/audio/sfx/shop.wav`);
@@ -150,9 +158,13 @@ export class BootScene extends Phaser.Scene {
               3: 'ironeyes_theme',
             };
             setTrack(bossThemes[run.currentAct] ?? `act${run.currentAct}_theme`);
+          } else if (currentNode?.type === 'elite') {
+            setTrack(Math.random() < 0.5 ? 'elite_theme' : 'elite_theme_alt');
           } else {
-            const alt = Math.random() < 0.5 ? '_alt' : '';
-            setTrack(`act${run.currentAct}_theme${alt}`);
+            // Act themes: 3 variants each (1/3 chance)
+            const r = Math.random();
+            const suffix = r < 0.333 ? '' : r < 0.666 ? '_alt' : '_alt2';
+            setTrack(`act${run.currentAct}_theme${suffix}`);
           }
           break;
         }

@@ -229,7 +229,7 @@ export function buildTileDescription(type: TileType, upgradeLevel: number): Reac
     case 'iron':
       return [...seg('Gain 2 block per tile', false), ...flatBonus(upgradeLevel, uv), ...seg('.', false)];
     case 'gold':
-      return [...seg('Earn 2 gold per tile', false), ...flatBonus(upgradeLevel, uv), ...seg('.', false)];
+      return [...seg('Earn 1 gold per tile', false), ...flatBonus(upgradeLevel, uv), ...seg('.', false)];
     case 'bounty': {
       const bv = 1 + upgradeLevel;
       return [
@@ -321,7 +321,7 @@ export function buildUpgradePreview(type: TileType, currentLevel: number): React
     case 'iron':
       return [...seg('Gain 2 block per tile', false), ...flatBonusPreview(currentLevel, uv), ...seg('.', false)];
     case 'gold':
-      return [...seg('Earn 2 gold per tile', false), ...flatBonusPreview(currentLevel, uv), ...seg('.', false)];
+      return [...seg('Earn 1 gold per tile', false), ...flatBonusPreview(currentLevel, uv), ...seg('.', false)];
     case 'bounty': {
       const oldBv = 1 + currentLevel;
       const newBv = 1 + currentLevel + 1;

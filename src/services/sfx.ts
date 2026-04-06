@@ -87,6 +87,26 @@ export function playUpgrade(): void {
   setTimeout(() => play('sfx_upgrade', 0.5), 400);
 }
 
+let lastBlockTime = 0;
+export function playBlock(): void {
+  const now = Date.now();
+  if (now - lastBlockTime < 50) return;
+  lastBlockTime = now;
+  play('sfx_block', 0.4);
+}
+
+let lastHitTime = 0;
+export function playHit(): void {
+  const now = Date.now();
+  if (now - lastHitTime < 50) return; // debounce: max 1 hit sound per 50ms
+  lastHitTime = now;
+  play('sfx_hit', 0.4);
+}
+
+export function playAbilityReady(): void {
+  play('sfx_ability_ready', 0.5);
+}
+
 export function playDeadeyeShot(): void {
   // Gunshot SFX for Deadeye shots (lower pitch match as fallback until gunshot.wav is added)
   play('sfx_gunshot', 0.3);

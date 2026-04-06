@@ -16,6 +16,8 @@ const TRAIT_COLORS: Record<TraitId, string> = {
   mustang: '#70B0D0',
   gunslinger: '#D06080',
   saloon_keeper: '#D4A870',
+  desperado: '#B060D0',
+  high_roller: '#FFD700',
 };
 
 const DEFAULT_COLOR = '#808080';
