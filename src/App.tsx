@@ -496,7 +496,7 @@ export default function App() {
           className="absolute right-2 bottom-1 pointer-events-none z-[60]"
           style={{ fontSize: '9px', color: 'rgba(255,255,255,0.3)' }}
         >
-          v0.3.7
+          v0.3.8
         </span>
       </div>
     </div>

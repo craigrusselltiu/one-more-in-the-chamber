@@ -4,6 +4,15 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## v0.3.8
+
+### Changed
+- Ricochet rework: destroy 1 tile per 3-match + 1 per extra (was per-tile), upgrade adds flat bonus
+- Map node positions have slight random jitter for organic look
+
+### Fixed
+- Reverted perf changes that didn't help (HSL optimization, enemy state cache)
+
 ## v0.3.7
 
 ### Added

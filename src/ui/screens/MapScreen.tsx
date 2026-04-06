@@ -27,10 +27,21 @@ const PATH_SPACING = 42;
 const PADDING_LEFT = 40;
 const PADDING_TOP = 24;
 
+/** Simple hash for deterministic per-node jitter. */
+function hashStr(s: string): number {
+  let h = 0;
+  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) | 0;
+  return h;
+}
+
 function getNodePos(node: MapNode): { x: number; y: number } {
+  const h = hashStr(node.id);
+  // Deterministic jitter: ±16px
+  const jx = ((h & 0xff) / 255 - 0.5) * 32;
+  const jy = (((h >> 8) & 0xff) / 255 - 0.5) * 32;
   return {
-    x: PADDING_LEFT + node.row * FLOOR_SPACING,
-    y: PADDING_TOP + node.col * PATH_SPACING,
+    x: PADDING_LEFT + node.row * FLOOR_SPACING + jx,
+    y: PADDING_TOP + node.col * PATH_SPACING + jy,
   };
 }
 

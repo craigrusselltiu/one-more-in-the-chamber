@@ -1137,10 +1137,11 @@ export class CombatManager {
         EventBus.emit(GameEvent.FLASH_LINE_TO_ENEMY, mid, match.tileType, fullIdx, this.enemies.length);
       }
 
-      // Ricochet: destroy (1 + upgradeLevel) random tiles per ricochet tile matched
+      // Ricochet: destroy 1 per 3-match + 1 per extra tile, upgrade adds flat bonus
       if (match.tileType === 'ricochet') {
         const ricoLevel = this.player.getUpgradeLevel('ricochet');
-        const destroyCount = (1 + ricoLevel) * match.tiles.length;
+        const baseDestroy = 1 + Math.max(0, match.tiles.length - 3);
+        const destroyCount = baseDestroy + ricoLevel;
         for (let i = 0; i < destroyCount; i++) {
           this.triggerRandomTileForRicochet(match);
         }

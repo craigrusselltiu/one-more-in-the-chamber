@@ -44,7 +44,7 @@ NOTE: Observe the difference between +1 to match total and +1 per tile. The tile
 - Flavor: "Makes the world go 'round."
 
 ### Ricochet
-- Behaviour: Deal 1 damage and destroy 1 random other tile per Ricochet tile.
+- Behaviour: Deal 1 damage per tile. Destroy 1 random other tile per 3-match, plus 1 per extra tile.
 - Upgrade: +1 to number of tiles destroyed on match per level
 - Flavor: "Bullets bounce. You never know what they'll hit."
 

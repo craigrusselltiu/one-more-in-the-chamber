@@ -111,9 +111,9 @@ export const TILE_DEFINITIONS: Record<TileType, TileDefinition> = {
     baseValue: 1,
     upgradeValue: 1,
     pool: 'starter',
-    description: 'Deal 1 damage and destroy 1 random other tile per Ricochet tile.',
+    description: 'Deal 1 damage per tile. Destroy 1 random other tile per 3-match, plus 1 per extra tile.',
     flavor: "Bullets bounce. You never know what they'll hit.",
-    upgradeText: '+1 to number of tiles destroyed per tile per level',
+    upgradeText: '+1 to number of tiles destroyed on match per level',
   },
   stampede: {
     type: 'stampede',
