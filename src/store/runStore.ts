@@ -262,7 +262,15 @@ export const useRunStore = create<RunStore>((set, get) => ({
   setCurrentNode: (nodeId) =>
     set((state) => {
       if (!state.run) return state;
-      return { run: { ...state.run, currentNodeId: nodeId } };
+      return {
+        run: {
+          ...state.run,
+          currentNodeId: nodeId,
+          mapState: state.run.mapState
+            ? { ...state.run.mapState, currentNodeId: nodeId }
+            : state.run.mapState,
+        },
+      };
     }),
 
   markNodeVisited: (nodeId) =>
