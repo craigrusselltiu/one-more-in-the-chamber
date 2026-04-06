@@ -108,7 +108,7 @@ export const ShopScreen = memo(function ShopScreen() {
 
     return { consumables, artifacts, tiles };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [run?.seed, run?.currentNodeId, run?.character]);
 
   const swappableTiles = useMemo(() => {
     if (!run) return [];
