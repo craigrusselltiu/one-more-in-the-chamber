@@ -69,7 +69,7 @@ NOTE: Observe the difference between +1 to match total and +1 per tile. The tile
 - Flavor: "Slow poison. The patient killer's weapon."
 
 ### Prairie Fire
-- Behaviour: Deal 2 damage per tile. 50% chance to convert 1 adjacent tile to Ember.
+- Behaviour: Deal 2 damage per tile. Each tile has a 50% chance to convert 1 adjacent tile to Ember.
 - Upgrade: +2 damage to match total per level
 - Flavor: "Sparks fly. Some of them catch."
 
@@ -171,6 +171,11 @@ Trait level = number of artifacts held with that tag. Effects activate at breakp
 - 1 -- Bounty grants 10 gold when killing a non-summoned enemy.
 - 2 -- The last shot of Deadeye can be used on an enemy, dealing 2 damage per stack of Bounty.
 
+## Gambler
+- Reno exclusive
+- Flavor: something about chance
+- 
+
 ## Sheriff
 - Flavor: "The law is heavier than it looks."
 - 2 -- The first time you gain block each turn is doubled.
@@ -185,9 +190,6 @@ Trait level = number of artifacts held with that tag. Effects activate at breakp
 
 ## Sniper
 - Flavor: something about 5-match
-
-## Gambler
-- Flavor: something about chance
 
 ## Rattlesnake
 - Flavor: "Don't step on anything that hisses."

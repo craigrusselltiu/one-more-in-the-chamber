@@ -171,7 +171,7 @@ export const TILE_DEFINITIONS: Record<TileType, TileDefinition> = {
     baseValue: 2,
     upgradeValue: 2,
     pool: 'starter',
-    description: 'Deal 2 damage per tile. 50% chance to convert 1 adjacent tile to Ember.',
+    description: 'Deal 2 damage per tile. Each tile has a 50% chance to convert 1 adjacent tile to Ember.',
     flavor: 'Sparks fly. Some of them catch.',
     upgradeText: '+2 damage to match total per level',
   },

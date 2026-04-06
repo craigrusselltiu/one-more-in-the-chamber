@@ -15,7 +15,8 @@ export const TreasureScreen = memo(function TreasureScreen() {
   const artifact = useMemo(() => {
     const rand = createSeededRandom(`${run?.seed ?? ''}-treasure-${run?.currentNodeId ?? ''}`);
     const ownedIds = new Set((run?.artifacts ?? []).map((a) => a.id));
-    const available = ARTIFACTS.filter((a) => !ownedIds.has(a.id));
+    const character = run?.character ?? 'red_panda';
+    const available = ARTIFACTS.filter((a) => !ownedIds.has(a.id) && (!a.exclusive || a.exclusive === character));
     const pool = available.length > 0 ? available : ARTIFACTS;
     return pool[Math.floor(rand() * pool.length)];
   }, []);

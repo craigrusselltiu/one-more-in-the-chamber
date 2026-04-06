@@ -57,7 +57,7 @@ export const ShopScreen = memo(function ShopScreen() {
 
     const artifacts: ShopItem[] = [];
     const ownedIds = new Set(run.artifacts.map((a) => a.id));
-    const availableArtifacts = ARTIFACTS.filter((a) => !ownedIds.has(a.id));
+    const availableArtifacts = ARTIFACTS.filter((a) => !ownedIds.has(a.id) && (!a.exclusive || a.exclusive === run.character));
     const shuffledArtifacts = seededShuffle(availableArtifacts, rand);
     for (let i = 0; i < Math.min(3, shuffledArtifacts.length); i++) {
       const a = shuffledArtifacts[i];

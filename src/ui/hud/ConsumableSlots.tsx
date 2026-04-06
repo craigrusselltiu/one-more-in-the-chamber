@@ -1,4 +1,4 @@
-import { memo, useCallback } from 'react';
+import { memo, useCallback, useState, useEffect, useRef } from 'react';
 import { EventBus, GameEvent } from '../../game/EventBus';
 import { useRunStore } from '../../store/runStore';
 import { useCombatStore } from '../../store/combatStore';
@@ -71,6 +71,8 @@ const ConsumableSlot = memo(function ConsumableSlot({
   consumableId,
 }: ConsumableSlotProps & { consumableId?: string }) {
   const removeConsumable = useRunStore((s) => s.removeConsumable);
+  const [menuPos, setMenuPos] = useState<{ x: number; y: number } | null>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
 
   const handleUse = useCallback(() => {
     if (canUse && consumableId) {
@@ -78,6 +80,30 @@ const ConsumableSlot = memo(function ConsumableSlot({
       removeConsumable(index);
     }
   }, [canUse, consumableId, index, removeConsumable]);
+
+  const handleContextMenu = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    if (filled) {
+      setMenuPos({ x: e.clientX, y: e.clientY });
+    }
+  }, [filled]);
+
+  const handleDiscard = useCallback(() => {
+    removeConsumable(index);
+    setMenuPos(null);
+  }, [index, removeConsumable]);
+
+  // Close menu on click outside
+  useEffect(() => {
+    if (!menuPos) return;
+    const close = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setMenuPos(null);
+      }
+    };
+    document.addEventListener('mousedown', close);
+    return () => document.removeEventListener('mousedown', close);
+  }, [menuPos]);
 
   const bgColor = filled && category
     ? CATEGORY_COLORS[category] ?? '#555'
@@ -87,27 +113,44 @@ const ConsumableSlot = memo(function ConsumableSlot({
   const tooltipText = filled ? `${name}: ${effect}` : 'Empty slot';
 
   return (
-    <Tooltip text={tooltipText} position="bottom">
-    <button
-      onClick={handleUse}
-      disabled={!canUse}
-      className="pointer-events-auto flex items-center justify-center"
-      style={{
-        width: 18,
-        height: 18,
-        backgroundColor: bgColor,
-        border: `1px solid ${borderColor}`,
-        opacity: filled ? 1 : 0.4,
-      }}
-    >
-      {filled && consumableId && CONSUMABLE_FRAMES[consumableId] != null ? (
-        <SpriteIcon frame={CONSUMABLE_FRAMES[consumableId]} scale={1} />
-      ) : filled && name ? (
-        <span className="text-[6px] text-white font-bold leading-none">
-          {name.charAt(0)}
-        </span>
-      ) : null}
-    </button>
-    </Tooltip>
+    <>
+      <Tooltip text={tooltipText} position="bottom">
+        <button
+          onClick={handleUse}
+          onContextMenu={handleContextMenu}
+          disabled={!canUse}
+          className="pointer-events-auto flex items-center justify-center"
+          style={{
+            width: 18,
+            height: 18,
+            backgroundColor: bgColor,
+            border: `1px solid ${borderColor}`,
+            opacity: filled ? 1 : 0.4,
+          }}
+        >
+          {filled && consumableId && CONSUMABLE_FRAMES[consumableId] != null ? (
+            <SpriteIcon frame={CONSUMABLE_FRAMES[consumableId]} scale={1} />
+          ) : filled && name ? (
+            <span className="text-[6px] text-white font-bold leading-none">
+              {name.charAt(0)}
+            </span>
+          ) : null}
+        </button>
+      </Tooltip>
+      {menuPos && (
+        <div
+          ref={menuRef}
+          className="fixed z-[100] pointer-events-auto"
+          style={{ left: menuPos.x, top: menuPos.y }}
+        >
+          <button
+            onClick={handleDiscard}
+            className="px-3 py-1 text-xs text-red-300 bg-stone-800 border border-stone-600 hover:bg-stone-700 hover:text-red-200"
+          >
+            Discard
+          </button>
+        </div>
+      )}
+    </>
   );
 });

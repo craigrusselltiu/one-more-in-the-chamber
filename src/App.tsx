@@ -319,8 +319,14 @@ export default function App() {
             store.removeTileType('tumbleweed');
           }
 
-          // Boss victory: artifact reward first, then tile-select or score
-          EventBus.emit(GameEvent.SCREEN_CHANGE, 'treasure');
+          // Final boss (Act 3): go straight to score, no treasure
+          if (currentRun!.currentAct === 3) {
+            EventBus.emit(GameEvent.SCREEN_CHANGE, 'score');
+            store.endRun(true);
+          } else {
+            // Non-final boss: artifact reward first, then tile-select
+            EventBus.emit(GameEvent.SCREEN_CHANGE, 'treasure');
+          }
         } else if (currentNode && currentNode.type === 'elite') {
           // Elite victory: artifact reward before returning to map
           EventBus.emit(GameEvent.SCREEN_CHANGE, 'treasure');
@@ -490,7 +496,7 @@ export default function App() {
           className="absolute right-2 bottom-1 pointer-events-none z-[60]"
           style={{ fontSize: '9px', color: 'rgba(255,255,255,0.3)' }}
         >
-          v0.3.6
+          v0.3.7
         </span>
       </div>
     </div>

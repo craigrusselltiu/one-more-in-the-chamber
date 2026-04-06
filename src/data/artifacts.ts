@@ -1,4 +1,4 @@
-import type { TraitId } from '../types/game';
+import type { TraitId, CharacterId } from '../types/game';
 
 export interface ArtifactDefinition {
   id: string;
@@ -6,6 +6,8 @@ export interface ArtifactDefinition {
   description: string;
   tags: TraitId[];
   effect: string;
+  /** If set, only offered when playing this character. */
+  exclusive?: CharacterId;
 }
 
 /** Sample artifacts from SPEC (~20 for MVP). */
@@ -205,6 +207,7 @@ export const ARTIFACTS: ArtifactDefinition[] = [
     description: 'Six in the chamber. No reloads.',
     tags: ['bounty_hunter', 'outlaw'],
     effect: 'Rust only. Deadeye: 3 shots become 6.',
+    exclusive: 'red_panda',
   },
   {
     id: 'bamboo_canteen',
@@ -219,6 +222,7 @@ export const ARTIFACTS: ArtifactDefinition[] = [
     description: 'The stakes just got higher.',
     tags: [],
     effect: 'Reno only. Chip damage doubled. Miss: lose HP (increases by 1 per miss).',
+    exclusive: 'reno',
   },
 
   // --- Batch 2: Outlaw / Sheriff / Prospector focus ---

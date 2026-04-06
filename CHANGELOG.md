@@ -4,6 +4,22 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## v0.3.7
+
+### Added
+- Right-click consumables to discard them (context menu)
+- Character-exclusive artifacts: Fully Loaded (Rust), Double Down (Reno)
+
+### Changed
+- Prairie Fire description: "Each tile has a 50% chance..."
+- Act 3 boss no longer drops treasure (goes straight to score)
+- Incomplete map nodes are retryable (fixes boss hard-lock retroactively)
+- Incomplete current nodes don't show gold glow on map
+
+### Fixed
+- Boss hard-lock: re-enter combat instead of corrupting node state
+- Map node visual: incomplete nodes breathe instead of showing visited glow
+
 ## v0.3.6
 
 ### Fixed

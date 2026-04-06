@@ -245,7 +245,7 @@ export function buildTileDescription(type: TileType, upgradeLevel: number): Reac
     case 'venom':
       return [...seg('Apply 1 Venom per tile', false), ...flatBonus(upgradeLevel, uv), ...seg('.', false)];
     case 'prairie_fire':
-      return [...seg('Deal 2 damage per tile', false), ...flatBonus(upgradeLevel, uv), ...seg('. 50% chance to convert 1 adjacent tile to Ember.', false)];
+      return [...seg('Deal 2 damage per tile', false), ...flatBonus(upgradeLevel, uv), ...seg('. Each tile has a 50% chance to convert 1 adjacent tile to Ember.', false)];
     case 'chain':
       return [...seg('Deal 1 damage per tile', false), ...flatBonus(upgradeLevel, uv), ...seg('. Each Chain match adds +1 damage to ALL Chain tiles for this combat.', false)];
     case 'whiskey':
@@ -334,7 +334,7 @@ export function buildUpgradePreview(type: TileType, currentLevel: number): React
     case 'venom':
       return [...seg('Apply 1 Venom per tile', false), ...flatBonusPreview(currentLevel, uv), ...seg('.', false)];
     case 'prairie_fire':
-      return [...seg('Deal 2 damage per tile', false), ...flatBonusPreview(currentLevel, uv), ...seg('. 50% chance to convert 1 adjacent tile to Ember.', false)];
+      return [...seg('Deal 2 damage per tile', false), ...flatBonusPreview(currentLevel, uv), ...seg('. Each tile has a 50% chance to convert 1 adjacent tile to Ember.', false)];
     case 'chain':
       return [...seg('Deal 1 damage per tile', false), ...flatBonusPreview(currentLevel, uv), ...seg('. Each Chain match adds +1 damage to ALL Chain tiles for this combat.', false)];
     case 'whiskey':
