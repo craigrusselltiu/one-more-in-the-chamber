@@ -164,7 +164,7 @@ export const MapScreen = memo(function MapScreen({ readonly }: { readonly?: bool
       for (const node of nodes) {
         const pos = getNodePos(node);
         const isReachable = reachableSet.has(node.id);
-        const isCurrent = node.id === mapState!.currentNodeId;
+        const isCurrent = node.id === mapState!.currentNodeId && node.completed;
         const frame = NODE_FRAMES[node.type];
         if (frame == null) continue;
 
