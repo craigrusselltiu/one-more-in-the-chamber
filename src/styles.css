@@ -13,6 +13,18 @@
   animation: ability-pulse 1.2s ease-in-out infinite;
 }
 
+/* Enemy targeting: breathing white overlay glow on sprite */
+@keyframes target-breathe {
+  0%, 100% { filter: brightness(1) drop-shadow(0 0 1px #ffffff44) drop-shadow(0 0 3px #ffffff22); }
+  50% { filter: brightness(1.25) drop-shadow(0 0 3px #ffffff88) drop-shadow(0 0 6px #ffffff44); }
+}
+.enemy-targeted {
+  animation: target-breathe 1.2s ease-in-out infinite;
+}
+.enemy-sprite {
+  filter: brightness(1) drop-shadow(0 0 1px #ffffff00) drop-shadow(0 0 3px #ffffff00);
+}
+
 /* Screen transition: black wipe left-to-right */
 @keyframes wipe-in {
   from { transform: translateX(-100%); }

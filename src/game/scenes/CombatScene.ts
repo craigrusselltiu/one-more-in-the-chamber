@@ -13,6 +13,16 @@ import type { ShakeIntensity } from '../effects/ScreenShake';
 import type { GridPosition } from '../../types/combat';
 import type { TileType } from '../../types/game';
 import { useSettingsStore } from '../../store/settingsStore';
+
+/** Get the center position of an enemy slot in the 960x540 virtual space. */
+function getEnemySlotPosition(aliveIndex: number): { x: number; y: number } {
+  // Alive index -> visual slot: 0->center(1), 1->top(0), 2->bottom(2)
+  const SLOT_MAP = [1, 0, 2];
+  const slot = SLOT_MAP[aliveIndex] ?? 1;
+  const SLOT_X = [772, 900, 772];
+  const SLOT_Y = [150, 280, 410];
+  return { x: SLOT_X[slot] ?? 900, y: SLOT_Y[slot] ?? 280 };
+}
 import { useCombatStore } from '../../store/combatStore';
 
 /**
@@ -246,25 +256,12 @@ export class CombatScene extends Phaser.Scene {
     const from = args[0] as GridPosition;
     const tileType = args[1] as TileType;
     const enemyIndex = (args[2] as number) ?? 0;
-    const enemyCount = (args[3] as number) ?? 1;
     const origin = this.board.getOrigin();
     const x1 = origin.x + from.col * TILE_SIZE + TILE_SIZE / 2;
     const y1 = origin.y + from.row * TILE_SIZE + TILE_SIZE / 2;
 
-    // Enemy area: centered between board right edge and screen right
-    const boardRight = origin.x + 8 * TILE_SIZE;
-    const x2 = Math.round((boardRight + GAME_WIDTH) / 2);
-
-    // Enemies are stacked vertically, centered in the combat area.
-    // Each panel is ~32px tall in Phaser coords with ~2px gap.
-    const panelHeight = 32;
-    const gap = 2;
-    const totalHeight = enemyCount * panelHeight + (enemyCount - 1) * gap;
-    const areaCenter = GAME_HEIGHT / 2;
-    const stackTop = areaCenter - totalHeight / 2;
-    const y2 = Math.round(stackTop + enemyIndex * (panelHeight + gap) + panelHeight / 2);
-
-    this.drawFlashLine(x1, y1, x2, y2, tileType);
+    const pos = getEnemySlotPosition(enemyIndex);
+    this.drawFlashLine(x1, y1, pos.x, pos.y, tileType);
   }
 
   private drawFlashLine(x1: number, y1: number, x2: number, y2: number, tileType: TileType): void {

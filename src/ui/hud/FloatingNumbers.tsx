@@ -43,10 +43,14 @@ export const FloatingNumbers = memo(function FloatingNumbers() {
       x = 840 + Math.random() * 20;
       y = 10;
     } else {
-      // Enemy sprite areas. Map index to visual slot (0->center, 1->top, 2->bottom)
-      const slotY = [270, 170, 370];
-      x = 800 + Math.random() * 64;
-      y = (slotY[index] ?? 270) - 32 + Math.random() * 64;
+      // Enemy sprite areas: zig-zag layout matching EnemyTargeting.
+      // Alive index -> visual slot: 0->center(1), 1->top(0), 2->bottom(2)
+      const SLOT_MAP = [1, 0, 2];
+      const slot = SLOT_MAP[index] ?? 1;
+      const SLOT_X = [772, 900, 772]; // left, right, left
+      const SLOT_Y = [150, 280, 410]; // top, center, bottom
+      x = (SLOT_X[slot] ?? 900) + Math.random() * 40 - 20;
+      y = (SLOT_Y[slot] ?? 280) + Math.random() * 40 - 20;
     }
 
     setNumbers((prev) => [

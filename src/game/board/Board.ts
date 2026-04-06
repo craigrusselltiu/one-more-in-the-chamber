@@ -82,6 +82,71 @@ export class Board {
     this.removeInitialMatches();
   }
 
+  /**
+   * Break any 3+ matches on the board by swapping tiles with other unlocked tiles.
+   * Does not introduce new tile types -- only rearranges what's already there.
+   * Used during reshuffle; initial board gen still uses randomTileTypeExcluding.
+   */
+  private removeInitialMatchesBySwapping(): void {
+    // Collect all unlocked positions for swap candidates
+    const unlocked: GridPosition[] = [];
+    for (let row = 0; row < BOARD_SIZE; row++) {
+      for (let col = 0; col < BOARD_SIZE; col++) {
+        const tile = this.grid[row][col];
+        if (!tile) continue;
+        const isLocked = tile.hazard?.type === 'lock' || tile.hazard?.type === 'hardened_lock';
+        if (!isLocked) unlocked.push({ row, col });
+      }
+    }
+
+    let hasMatches = true;
+    let safety = 500;
+    while (hasMatches && safety-- > 0) {
+      hasMatches = false;
+      for (let row = 0; row < BOARD_SIZE; row++) {
+        for (let col = 0; col < BOARD_SIZE; col++) {
+          const tile = this.grid[row][col];
+          if (!tile) continue;
+          const isLocked = tile.hazard?.type === 'lock' || tile.hazard?.type === 'hardened_lock';
+          if (isLocked) continue;
+
+          let formsMatch = false;
+          if (col >= 2) {
+            const t1 = this.grid[row][col - 1];
+            const t2 = this.grid[row][col - 2];
+            if (t1 && t2 && t1.type === tile.type && t2.type === tile.type) formsMatch = true;
+          }
+          if (!formsMatch && row >= 2) {
+            const t1 = this.grid[row - 1][col];
+            const t2 = this.grid[row - 2][col];
+            if (t1 && t2 && t1.type === tile.type && t2.type === tile.type) formsMatch = true;
+          }
+
+          if (formsMatch) {
+            // Find an unlocked tile with a different type to swap with
+            const candidates = unlocked.filter(p =>
+              !(p.row === row && p.col === col) &&
+              this.grid[p.row][p.col]!.type !== tile.type,
+            );
+            if (candidates.length > 0) {
+              const pick = candidates[Math.floor(Math.random() * candidates.length)];
+              const other = this.grid[pick.row][pick.col]!;
+              // Swap full state between the two tiles
+              const tmpType = tile.type;
+              const tmpExplosive = tile.isExplosive;
+              const tmpShowdown = tile.isShowdown;
+              const tmpHazard = tile.hazard;
+              tile.setType(other.type); tile.isExplosive = other.isExplosive; tile.isShowdown = other.isShowdown; tile.hazard = other.hazard;
+              other.setType(tmpType); other.isExplosive = tmpExplosive; other.isShowdown = tmpShowdown; other.hazard = tmpHazard;
+              hasMatches = true;
+            }
+          }
+        }
+      }
+    }
+  }
+
+  /** Break initial matches by replacing with random types. Used only for initial board generation. */
   private removeInitialMatches(): void {
     let hasMatches = true;
     while (hasMatches) {
@@ -1158,7 +1223,7 @@ export class Board {
       const result = this.collectAndShuffleUnlocked();
       if (!result) return;
       this.applyShuffledState(result.unlocked, result.states);
-      this.removeInitialMatches();
+      this.removeInitialMatchesBySwapping();
       attempts++;
     } while (!this.hasValidMoves() && attempts < maxAttempts);
 
@@ -1168,29 +1233,27 @@ export class Board {
     }
   }
 
-  /** Animated reshuffle: scale tiles down, shuffle state, scale back up. */
+  /** Animated reshuffle for no-valid-moves: breaks matches, guarantees valid moves. */
   async reshuffleAnimated(): Promise<void> {
     const result = this.collectAndShuffleUnlocked();
     if (!result) return;
 
-    // Scale down unlocked tiles
     const tiles = result.unlocked
       .map(pos => this.grid[pos.row]?.[pos.col])
       .filter((t): t is Tile => t != null);
 
     await Promise.all(tiles.map(t => t.tweenScale(0, 150)));
 
-    // Apply shuffled state (with retry for valid moves)
     let attempts = 0;
     this.applyShuffledState(result.unlocked, result.states);
-    this.removeInitialMatches();
+    this.removeInitialMatchesBySwapping();
     attempts++;
 
     while (!this.hasValidMoves() && attempts < 100) {
       const retry = this.collectAndShuffleUnlocked();
       if (!retry) break;
       this.applyShuffledState(retry.unlocked, retry.states);
-      this.removeInitialMatches();
+      this.removeInitialMatchesBySwapping();
       attempts++;
     }
 
@@ -1200,7 +1263,20 @@ export class Board {
       return;
     }
 
-    // Scale back up
+    await Promise.all(tiles.map(t => t.tweenScale(1, 150)));
+  }
+
+  /** Animated reshuffle that allows matches to remain (for Reno ability / consumables). */
+  async reshuffleAnimatedWithCascades(): Promise<void> {
+    const result = this.collectAndShuffleUnlocked();
+    if (!result) return;
+
+    const tiles = result.unlocked
+      .map(pos => this.grid[pos.row]?.[pos.col])
+      .filter((t): t is Tile => t != null);
+
+    await Promise.all(tiles.map(t => t.tweenScale(0, 150)));
+    this.applyShuffledState(result.unlocked, result.states);
     await Promise.all(tiles.map(t => t.tweenScale(1, 150)));
   }
 
@@ -1259,7 +1335,11 @@ export class Board {
 
   private randomTileTypeExcluding(exclude: TileType): TileType {
     const types = this.activeTileTypes.filter((t) => t !== exclude);
-    return types[Math.floor(Math.random() * types.length)];
+    let type = types[Math.floor(Math.random() * types.length)];
+    if (type === 'mirage' && this.mirageReplacementType) {
+      type = this.mirageReplacementType;
+    }
+    return type;
   }
 
   // -- Public API --

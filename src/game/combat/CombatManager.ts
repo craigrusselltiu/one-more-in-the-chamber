@@ -865,9 +865,9 @@ export class CombatManager {
     this.emitFullState();
     EventBus.emit(GameEvent.ABILITY_CHARGE_CHANGE, this.player.abilityCharge, this.player.abilityThreshold);
 
-    // Animated reshuffle then cascade
+    // Animated reshuffle then let matches cascade
     this.board.setIsResolving(true);
-    await this.board.reshuffleAnimated();
+    await this.board.reshuffleAnimatedWithCascades();
 
     this.ricochetTriggeredThisResolution = false;
     let cascadeSteps = 0;
@@ -940,7 +940,7 @@ export class CombatManager {
         this.hazardManager.clearAllOfType('hardened_lock');
         break;
       case 'tumbleweed':
-        await this.board.reshuffleAnimated();
+        await this.board.reshuffleAnimatedWithCascades();
         break;
       case 'signal_flare':
         this.hazardManager.clearAllOfType('sand');
@@ -1126,9 +1126,7 @@ export class CombatManager {
       if (scaled.damage > 0 && !scaled.isAoE) {
         const mid = match.tiles[Math.floor(match.tiles.length / 2)];
         const alive = this.aliveEnemies();
-        const target = alive[this.targetedEnemyIndex];
-        const fullIdx = target ? this.enemies.indexOf(target) : 0;
-        EventBus.emit(GameEvent.FLASH_LINE_TO_ENEMY, mid, match.tileType, fullIdx, this.enemies.length);
+        EventBus.emit(GameEvent.FLASH_LINE_TO_ENEMY, mid, match.tileType, this.targetedEnemyIndex, alive.length);
       }
 
       // Ricochet: destroy (1 + upgradeLevel) random tiles per ricochet tile matched
@@ -1209,7 +1207,8 @@ export class CombatManager {
 
   /** Emit a floating number on an enemy. */
   private floatOnEnemy(enemy: Enemy, text: string, color: string, fontSize?: number): void {
-    EventBus.emit(GameEvent.FLOATING_NUMBER, 'enemy', this.enemies.indexOf(enemy), text, color, fontSize);
+    const alive = this.aliveEnemies();
+    EventBus.emit(GameEvent.FLOATING_NUMBER, 'enemy', alive.indexOf(enemy), text, color, fontSize);
   }
 
   /** Emit a floating number on the player. */
@@ -1238,7 +1237,11 @@ export class CombatManager {
       const { hpLost, blocked } = enemy.takeDamage(damage);
       this.damageDealtThisFight += hpLost;
       if (blocked > 0) this.floatOnEnemy(enemy, `-${blocked}`, '#6888A0');
-      if (hpLost > 0) this.floatOnEnemy(enemy, isCrit ? `-${hpLost}!` : `-${hpLost}`, '#ff4444', critSize);
+      // Crit: show total incoming damage (before block) so it doesn't look deceptively small
+      if (hpLost > 0) {
+        const label = isCrit ? `-${damage}!` : `-${hpLost}`;
+        this.floatOnEnemy(enemy, label, '#ff4444', critSize);
+      }
     }
     // Bounty kill check after damage
     this.handleBountyKill(enemy);
@@ -1399,7 +1402,12 @@ export class CombatManager {
     if (output.chipHit === true) {
       this.floatOnPlayer('HIT', '#B060D0');
     } else if (output.chipHit === false) {
-      this.floatOnPlayer('MISS', '#666');
+      const target = this.getTargetedAliveEnemy();
+      if (target) {
+        this.floatOnEnemy(target, 'MISS', '#666');
+      } else {
+        this.floatOnPlayer('MISS', '#666');
+      }
     }
 
     // Double Down: self-damage on chip miss
@@ -1759,12 +1767,7 @@ export class CombatManager {
   }
 
   private buildState(): CombatState {
-    // Convert alive-list index to full-list index for the UI
     const alive = this.aliveEnemies();
-    const targetedEnemy = alive[this.targetedEnemyIndex] ?? alive[0];
-    const fullListIndex = targetedEnemy
-      ? this.enemies.indexOf(targetedEnemy)
-      : 0;
 
     return {
       character: this.character,
@@ -1780,8 +1783,8 @@ export class CombatManager {
       sturdyStacks: this.player.sturdyStacks,
       venomousStacks: this.player.venomousStacks,
       thorns: this.player.thorns,
-      enemies: this.enemies.map((e) => ({ ...e.state })),
-      targetedEnemyIndex: fullListIndex,
+      enemies: alive.map((e) => ({ ...e.state })),
+      targetedEnemyIndex: Math.min(this.targetedEnemyIndex, Math.max(0, alive.length - 1)),
       phase: this.phase,
       abilityCharge: this.player.abilityCharge,
       abilityThreshold: this.player.abilityThreshold,

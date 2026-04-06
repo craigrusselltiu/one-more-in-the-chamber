@@ -84,6 +84,7 @@ export function playShop(): void {
 
 export function playUpgrade(): void {
   play('sfx_upgrade', 0.5);
+  setTimeout(() => play('sfx_upgrade', 0.5), 400);
 }
 
 export function playDeadeyeShot(): void {

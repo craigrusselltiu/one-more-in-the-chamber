@@ -12,7 +12,8 @@ const ENEMY_SPRITES: Record<string, string> = {
   coyote: 'coyote.png',
   bandit: 'bandit.png',
   vulture: 'vulture.png',
-  dusty_dan: 'bandit.png',
+  rattlesnake: 'rattlesnake.png',
+  dusty_dan: 'dusty.png',
 };
 
 /**
@@ -37,18 +38,22 @@ export const EnemyTargeting = memo(function EnemyTargeting() {
   const SLOT_TO_ENEMY: Record<number, number> = { 0: 1, 1: 0, 2: 2 };
   const slotToEnemyIndex = (slotIdx: number): number => SLOT_TO_ENEMY[slotIdx] ?? slotIdx;
 
+  // Zig-zag offsets: slots 0 & 2 (top/bottom) left, slot 1 (center) right
+  const SLOT_OFFSET: Record<number, number> = { 0: -60, 1: 68, 2: -60 };
+
   return (
-    <div className="flex flex-col gap-1 items-center">
+    <div className="flex flex-col items-center" style={{ position: 'relative', gap: '-8px' }}>
       {slots.map((enemy, slotIdx) => {
         const enemyIdx = slotToEnemyIndex(slotIdx);
         return (
-          <EnemySlot
-            key={slotIdx}
-            enemy={enemy}
-            index={enemyIdx}
-            isTargeted={enemy !== null && !enemy.isDead && enemyIdx === targetedIndex}
-            canShootEnemy={canShootEnemy}
-          />
+          <div key={slotIdx} style={{ marginLeft: SLOT_OFFSET[slotIdx] ?? 0, marginTop: slotIdx > 0 ? -20 : 0 }}>
+            <EnemySlot
+              enemy={enemy}
+              index={enemyIdx}
+              isTargeted={enemy !== null && !enemy.isDead && enemyIdx === targetedIndex}
+              canShootEnemy={canShootEnemy}
+            />
+          </div>
         );
       })}
     </div>
@@ -81,23 +86,20 @@ const EnemySlot = memo(function EnemySlot({
 
   // Empty or dead slot: fixed-height spacer to prevent position shifts
   if (!enemy || enemy.isDead) {
-    return <div style={{ width: 100, height: 136 }} />;
+    return <div style={{ width: 116, height: 152 }} />;
   }
 
   const effects = getEnemyStatusEffects(enemy);
   const nonBlockEffects = effects.filter((e) => e.type !== 'block');
-  const borderColor = isTargeted ? '#FFD700' : '#555';
 
   return (
     <button
       onClick={handleClick}
       data-no-click-sfx
-      className="flex flex-col items-center text-center px-1 py-0.5 pointer-events-auto"
+      className="flex flex-col items-center text-center px-1 py-0.5 pointer-events-auto outline-none cursor-pointer"
       style={{
         width: 116,
         height: 152,
-        border: `1px solid ${borderColor}`,
-        backgroundColor: isTargeted ? 'rgba(255, 215, 0, 0.08)' : 'rgba(0,0,0,0.3)',
       }}
     >
       {/* Intent above sprite */}
@@ -108,12 +110,12 @@ const EnemySlot = memo(function EnemySlot({
         <img
           src={`${import.meta.env.BASE_URL}assets/sprites/${ENEMY_SPRITES[enemy.enemyType]}`}
           alt={enemy.enemyType}
-          className="mb-0.5 shrink-0"
+          className={`mb-0.5 shrink-0 enemy-sprite${isTargeted ? ' enemy-targeted' : ''}`}
           style={{ width: 96, height: 96, imageRendering: 'pixelated', objectFit: 'contain' }}
         />
       ) : (
         <div
-          className="border border-stone-600 border-dashed mb-0.5 flex items-center justify-center shrink-0"
+          className={`border border-stone-600 border-dashed mb-0.5 flex items-center justify-center shrink-0 enemy-sprite${isTargeted ? ' enemy-targeted' : ''}`}
           style={{ width: 96, height: 96 }}
         >
           <span className="text-stone-600 capitalize" style={{ fontSize: '8px' }}>
@@ -125,9 +127,6 @@ const EnemySlot = memo(function EnemySlot({
       {/* Enemy name */}
       <div className="text-[8px] text-stone-300 leading-none mb-0.5 capitalize">
         {enemy.enemyType}
-        {isTargeted && (
-          <span className="text-yellow-400 ml-0.5">&lt;</span>
-        )}
       </div>
 
       {/* HP bar centered, block badge overlaid to the left */}
