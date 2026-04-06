@@ -14,6 +14,7 @@ const ENEMY_SPRITES: Record<string, string> = {
   vulture: 'vulture.png',
   rattlesnake: 'rattlesnake.png',
   dusty_dan: 'dusty.png',
+  card_shark: 'card_shark.png',
 };
 
 /**

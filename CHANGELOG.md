@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## v0.4.4
+
+### Added
+- Card Shark enemy sprite
+
+### Fixed
+- Tumbleweed consumable now resolves matches after shuffle (was skipping cascades)
+
 ## v0.4.3
 
 ### Added

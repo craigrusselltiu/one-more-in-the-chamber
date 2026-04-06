@@ -119,13 +119,13 @@ export class ArtifactSystem {
       player.addLuckyStacks(10);
     }
 
-    // Fully Loaded: Deadeye 3 shots -> 6
+    // Rust's Cylinder: Deadeye 3 shots -> 6
     if (this.has('rusts_cylinder')) {
       player.deadeyeShots = 6;
     }
   }
 
-  /** Get number of Deadeye shots (3 default, 6 with Fully Loaded). */
+  /** Get number of Deadeye shots (3 default, 6 with Rust's Cylinder). */
   getDeadeyeShots(): number {
     return this.has('rusts_cylinder') ? 6 : 3;
   }

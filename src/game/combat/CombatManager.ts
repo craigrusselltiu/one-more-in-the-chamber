@@ -941,9 +941,23 @@ export class CombatManager {
         this.hazardManager.clearAllOfType('lock');
         this.hazardManager.clearAllOfType('hardened_lock');
         break;
-      case 'tumbleweed':
+      case 'tumbleweed': {
+        this.board.setIsResolving(true);
         await this.board.reshuffleAnimatedWithCascades();
+        this.ricochetTriggeredThisResolution = false;
+        let cascadeSteps = 0;
+        const onCascadeStep = this.makeCascadeStepHandler(() => ++cascadeSteps);
+        await this.board.resolveMatchesFull(onCascadeStep);
+        while (this.ricochetTriggeredThisResolution) {
+          this.ricochetTriggeredThisResolution = false;
+          await this.board.applyGravityAnimated();
+          await this.board.fillEmptyTilesAnimated();
+          await this.board.resolveMatchesFull(onCascadeStep);
+        }
+        this.board.setIsResolving(false);
+        EventBus.emit(GameEvent.COMBO_UPDATE, 0);
         break;
+      }
       case 'signal_flare':
         this.hazardManager.clearAllOfType('sand');
         break;
