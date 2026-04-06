@@ -336,13 +336,14 @@ export const ShopScreen = memo(function ShopScreen() {
         </div>
       )}
 
-      {/* Upgrade: tile selection screen */}
+      {/* Upgrade: tile selection (same layout as campfire) */}
       {upgradePhase === 'selecting' && (
-        <div className="absolute inset-0 flex items-center justify-center bg-black/70 z-10">
-          <div className="bg-[#1a1a2e] border border-stone-600 p-4" style={{ width: 420 }}>
-            <h3 className="text-sm text-amber-400 mb-1">Choose a tile to upgrade</h3>
-            <p className="text-xs text-stone-400 mb-3">Permanent +1 tier for the rest of the run</p>
-            <div className="grid grid-cols-4 gap-2 mb-3 justify-items-center">
+        <div className="absolute inset-0 flex flex-col bg-[#1a1a2e]/95 z-10">
+          <div className="flex-1 flex flex-col items-center justify-center">
+            <h2 className="text-xl text-amber-400 mb-2">Upgrade a Tile</h2>
+            <p className="text-stone-400 text-xs mb-4">Permanent +1 tier for the rest of the run</p>
+
+            <div className="grid grid-cols-4 gap-3 justify-items-center">
               {run.activeTileTypes
                 .filter((t) => TILE_DEFINITIONS[t]?.upgradeText)
                 .map((tileType) => {
@@ -360,38 +361,41 @@ export const ShopScreen = memo(function ShopScreen() {
                     <Tooltip key={tileType} content={previewTooltip} secondContent={keywordTooltip} position="bottom">
                       <button
                         onClick={() => setUpgradeSelectedTile(tileType)}
-                        className="flex flex-col items-center p-2 w-20 transition-colors"
-                        style={{
-                          border: `2px solid ${isSelected ? '#f59e0b' : '#44403c'}`,
-                          backgroundColor: isSelected ? 'rgba(120, 53, 15, 0.4)' : 'rgba(28, 25, 23, 0.5)',
-                        }}
+                        className={`flex flex-col items-center p-3 w-28 border-2 transition-colors ${
+                          isSelected
+                            ? 'border-amber-400 bg-amber-900/30'
+                            : 'border-stone-600 bg-stone-800/50 hover:border-stone-400'
+                        }`}
                       >
                         <SpriteIcon frame={TILE_FRAMES[tileType]} scale={2} className="mb-1" />
                         <span className="text-amber-300 text-xs font-bold">{def.label}</span>
-                        <span className="text-stone-400" style={{ fontSize: '9px' }}>
+                        <span className="text-stone-400" style={{ fontSize: '10px' }}>
                           Lv {currentLevel + 1} {'\u2192'} {currentLevel + 2}
+                        </span>
+                        <span className="text-stone-500 text-center" style={{ fontSize: '9px' }}>
+                          {def.upgradeText}
                         </span>
                       </button>
                     </Tooltip>
                   );
                 })}
             </div>
-            <div className="flex gap-2">
+
+            <div className="flex gap-3 mt-4">
               <button
                 onClick={() => setUpgradePhase('none')}
-                className="flex-1 px-4 py-1.5 bg-stone-700/50 text-stone-400 text-xs border border-stone-600 hover:bg-stone-600/50"
+                className="px-4 py-2 bg-stone-700/50 text-stone-400 text-sm border border-stone-600 hover:bg-stone-600/50"
               >
-                Cancel
+                Back
               </button>
               <button
                 onClick={handleUpgradeConfirm}
                 disabled={!upgradeSelectedTile}
-                className="flex-1 px-4 py-1.5 text-xs border disabled:opacity-30"
-                style={{
-                  backgroundColor: upgradeSelectedTile ? 'rgba(120, 53, 15, 0.6)' : undefined,
-                  borderColor: upgradeSelectedTile ? '#d97706' : '#44403c',
-                  color: upgradeSelectedTile ? '#fbbf24' : '#666',
-                }}
+                className={`px-6 py-2 text-sm border ${
+                  upgradeSelectedTile
+                    ? 'bg-amber-900/60 text-amber-300 border-amber-700 hover:bg-amber-800/60'
+                    : 'bg-stone-700/50 text-stone-500 border-stone-600 cursor-not-allowed'
+                }`}
               >
                 Upgrade
               </button>
@@ -400,13 +404,13 @@ export const ShopScreen = memo(function ShopScreen() {
         </div>
       )}
 
-      {/* Upgrade: confirmation screen */}
+      {/* Upgrade: confirmation (same layout as campfire) */}
       {upgradePhase === 'upgraded' && (() => {
         const tileDef = upgradeSelectedTile ? TILE_DEFINITIONS[upgradeSelectedTile] : null;
         return (
-          <div className="absolute inset-0 flex items-center justify-center bg-black/70 z-10">
-            <div className="bg-[#1a1a2e] border border-stone-600 p-6 flex flex-col items-center">
-              <SpriteIcon frame={UI_FRAMES.upgrade} scale={3} className="mb-3" />
+          <div className="absolute inset-0 flex flex-col bg-[#1a1a2e]/95 z-10">
+            <div className="flex-1 flex flex-col items-center justify-center">
+              <div className="mb-4"><SpriteIcon frame={UI_FRAMES.upgrade} scale={3} /></div>
               <h2 className="text-xl text-amber-400 mb-2">Upgraded</h2>
               <p className="text-stone-300 text-sm mb-4">
                 {tileDef?.label ?? 'Tile'} has been upgraded.

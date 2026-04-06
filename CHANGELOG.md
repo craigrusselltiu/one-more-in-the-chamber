@@ -4,6 +4,16 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## v0.3.5
+
+### Changed
+- Shop upgrade screen matches campfire layout (full-screen, 4-column grid, select+confirm flow)
+- Campfire upgrade grid uses 4-column layout
+
+### Fixed
+- Consumables (Stick of TNT, Snake Oil) killing the last enemy now ends combat
+- Upgrade tile grid overflowing at 4+ cards
+
 ## v0.3.4
 
 ### Changed

@@ -98,7 +98,7 @@ export const RestSiteScreen = memo(function RestSiteScreen() {
           Permanent +1 tier for the rest of the run
         </p>
 
-        <div className="flex flex-wrap justify-center gap-3 max-w-md">
+        <div className="grid grid-cols-4 gap-3 justify-items-center">
           {run.activeTileTypes.filter((t) => TILE_DEFINITIONS[t]?.upgradeText).map((tileType) => {
             const def = TILE_DEFINITIONS[tileType];
             const currentLevel = run.tileUpgrades[tileType] ?? 0;

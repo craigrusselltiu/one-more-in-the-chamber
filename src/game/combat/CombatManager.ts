@@ -953,7 +953,13 @@ export class CombatManager {
 
     EventBus.emit(GameEvent.CONSUMABLE_USED, consumableId);
     EventBus.emit(GameEvent.PLAYER_HP_CHANGE, this.player.health, this.player.maxHealth);
+    this.emitEnemyHpChanges();
     this.emitFullState();
+
+    if (this.isCombatOver()) {
+      this.endCombat();
+    }
+
     return true;
   }
 
