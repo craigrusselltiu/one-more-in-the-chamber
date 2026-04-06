@@ -128,11 +128,11 @@ export const MainMenu = memo(function MainMenu() {
         return;
       }
 
-      // Safeguard: combat node visited but no snapshot means combat failed to load.
-      // Reset the node so the player can retry.
+      // Combat node visited but no snapshot: re-enter combat fresh
       const isCombatNode = currentNode.type === 'combat' || currentNode.type === 'elite' || currentNode.type === 'boss';
       if (isCombatNode) {
-        useRunStore.getState().resetNodeVisited(currentNode.id);
+        EventBus.emit(GameEvent.SCREEN_CHANGE, 'combat');
+        return;
       }
     }
 
