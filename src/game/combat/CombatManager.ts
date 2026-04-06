@@ -679,14 +679,10 @@ export class CombatManager {
   /**
    * Switch which enemy is targeted. Free action, available at any time.
    */
-  setTargetedEnemy(fullListIndex: number): void {
-    // Convert full-list index (from UI) to alive-list index (internal)
-    const enemy = this.enemies[fullListIndex];
-    if (!enemy || enemy.state.isDead) return;
+  setTargetedEnemy(aliveIdx: number): void {
     const alive = this.aliveEnemies();
-    const aliveIndex = alive.indexOf(enemy);
-    if (aliveIndex >= 0) {
-      this.targetedEnemyIndex = aliveIndex;
+    if (aliveIdx >= 0 && aliveIdx < alive.length) {
+      this.targetedEnemyIndex = aliveIdx;
       this.emitFullState();
     }
   }
