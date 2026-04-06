@@ -4,6 +4,17 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## v0.3.4
+
+### Changed
+- Shop upgrade card opens full upgrade screen (select, confirm, back to shop)
+- Leaderboard shows top 100 instead of 10
+- Cactus Spine Vest: "Enemy attacks apply 1 Venomous to them."
+
+### Fixed
+- Boss/combat node hard-lock: defer marking visited until combat starts
+- Safeguard: reset visited combat nodes with no snapshot on continue
+
 ## v0.3.3
 
 ### Added
