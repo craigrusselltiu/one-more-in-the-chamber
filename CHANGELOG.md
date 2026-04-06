@@ -4,6 +4,18 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## v0.3.9
+
+### Changed
+- Bounty Hunter trait label: "The Bounty Hunter"
+- Bounty tile description updated to match behavior (1 stack per tile)
+
+### Fixed
+- Board not loading after campfire: wipe animation race condition
+- Phaser scene.start data loss workaround (module-level fallback)
+- Bounty Hunter trait descriptions in tooltip (was showing "Breakpoint 1/2")
+- Bounty Hunter and Saloon Keeper sprite config entries
+
 ## v0.3.8
 
 ### Changed

@@ -231,7 +231,7 @@ export function buildTileDescription(type: TileType, upgradeLevel: number): Reac
     case 'gold':
       return [...seg('Earn 2 gold per tile', false), ...flatBonus(upgradeLevel, uv), ...seg('.', false)];
     case 'bounty':
-      return [...seg('Apply 2 Bounty stacks per 3-match', false), ...flatBonus(upgradeLevel, uv), ...seg(', plus 1 per extra tile.', false)];
+      return [...seg('Apply 1 Bounty stack per tile', false), ...flatBonus(upgradeLevel, uv), ...seg('.', false)];
     case 'stampede':
       return [...seg('Deal 1 damage to ALL enemies per tile', false), ...flatBonus(upgradeLevel, uv), ...seg('.', false)];
     case 'battery':
