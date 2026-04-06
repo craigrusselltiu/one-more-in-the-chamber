@@ -113,6 +113,7 @@ export const TRAIT_BREAKPOINTS: Record<string, number[]> = {
 export const HAZARD_FRAMES: Record<string, number> = {
   lock: 738,
   poison: 1190,
+  sand: 1120,
 };
 
 /** UI button icons for the top bar. */

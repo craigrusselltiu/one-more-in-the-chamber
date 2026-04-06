@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 import type { TileType } from '../../types/game';
 import type { TileHazardState } from '../../types/tiles';
 import { TILE_FRAMES, HAZARD_FRAMES } from '../../data/spriteConfig';
+import { EventBus, GameEvent } from '../EventBus';
 import { useSettingsStore, getSpeedMultiplier } from '../../store/settingsStore';
 
 /** Grid spacing. Larger than sprite (32px) to leave room for VFX outlines. */
@@ -47,14 +48,33 @@ export class Tile {
   private poisonIcon: Phaser.GameObjects.Image | null = null;
   private destroyed = false;
   private _mask: Phaser.Display.Masks.GeometryMask | null = null;
+  /** Breathing "?" label for buried (sand) tiles. */
+  private sandLabel: Phaser.GameObjects.Text | null = null;
 
   get hazard(): TileHazardState | null {
     return this._hazard;
   }
 
   set hazard(val: TileHazardState | null) {
+    const wasSand = this._hazard?.type === 'sand';
     this._hazard = val;
+    const isSand = val?.type === 'sand';
+
     if (!this.destroyed) {
+      // Sand: swap sprite to sand frame / restore real frame
+      if (isSand && !wasSand) {
+        this.sprite.setFrame(HAZARD_FRAMES.sand);
+        if (this.overlay) this.overlay.setFrame(HAZARD_FRAMES.sand);
+        for (const s of this.outlineSprites) s.setFrame(HAZARD_FRAMES.sand);
+      } else if (!isSand && wasSand) {
+        const realFrame = TILE_FRAMES[this.type];
+        this.sprite.setFrame(realFrame);
+        if (this.overlay) this.overlay.setFrame(realFrame);
+        for (const s of this.outlineSprites) s.setFrame(realFrame);
+        // Sand-colored particles on reveal
+        EventBus.emit(GameEvent.TILE_PARTICLES, this.sprite.x, this.sprite.y, '#e8c170');
+      }
+
       this.updateOverlay();
       this.updateStatusIndicator();
     }
@@ -130,7 +150,15 @@ export class Tile {
 
   /** Per-frame update called by Board.update(). Drives breathing animations. */
   updateEffects(time: number): void {
-    if (this.destroyed || !this.overlay) return;
+    if (this.destroyed) return;
+
+    // Sand label breathing
+    if (this.sandLabel) {
+      const sandBreath = 0.5 + 0.5 * Math.sin(time / 600);
+      this.sandLabel.setAlpha(0.5 + sandBreath * 0.5);
+    }
+
+    if (!this.overlay) return;
 
     const breath = 0.5 + 0.5 * Math.sin(time / 400);
 
@@ -306,6 +334,7 @@ export class Tile {
       this.destroyStatusIndicator();
       this.destroyLockIcon();
       this.destroyPoisonIcon();
+      this.destroySandLabel();
       this.sprite.clearTint();
       return;
     }
@@ -384,7 +413,32 @@ export class Tile {
       return;
     }
 
-    // Sand and other hazards: corner dot + text
+    // Sand (bury): centered breathing "?" with black outline
+    if (this._hazard.type === 'sand') {
+      this.destroyLockIcon();
+      this.destroyPoisonIcon();
+      this.destroyStatusIndicator();
+      this.sprite.clearTint();
+
+      if (!this.sandLabel) {
+        this.sandLabel = this.scene.add
+          .text(cx, cy, '?', {
+            fontSize: '16px',
+            color: '#ffffff',
+            fontFamily: 'Inter, sans-serif',
+            fontStyle: 'bold',
+          })
+          .setOrigin(0.5)
+          .setDepth(4)
+          .setStroke('#000000', 4);
+      } else {
+        this.sandLabel.setPosition(cx, cy);
+      }
+      return;
+    }
+
+    // Other hazards: corner dot + text
+    this.destroySandLabel();
     this.destroyLockIcon();
     this.destroyPoisonIcon();
     this.sprite.clearTint();
@@ -438,6 +492,13 @@ export class Tile {
     }
   }
 
+  private destroySandLabel(): void {
+    if (this.sandLabel) {
+      this.sandLabel.destroy();
+      this.sandLabel = null;
+    }
+  }
+
   private destroyStatusIndicator(): void {
     if (this.statusDot) {
       this.statusDot.destroy();
@@ -473,6 +534,7 @@ export class Tile {
     }
     if (this.lockIcon) this.lockIcon.setPosition(cx, cy);
     if (this.poisonIcon) this.poisonIcon.setPosition(Math.round(cx + STATUS_OFFSET), Math.round(cy + STATUS_OFFSET));
+    if (this.sandLabel) this.sandLabel.setPosition(cx, cy);
   }
 
   setSelected(selected: boolean): void {
@@ -519,6 +581,7 @@ export class Tile {
       if (this.highlight) targets.push(this.highlight);
       if (this.bombLabel) targets.push(this.bombLabel);
       if (this.lockIcon) targets.push(this.lockIcon);
+      if (this.sandLabel) targets.push(this.sandLabel);
 
       // Lock outline sprites tween individually (each has its own offset)
       {
@@ -609,6 +672,7 @@ export class Tile {
     if (this.statusLabel) targets.push(this.statusLabel);
     if (this.lockIcon) targets.push(this.lockIcon);
     if (this.poisonIcon) targets.push(this.poisonIcon);
+    if (this.sandLabel) targets.push(this.sandLabel);
 
     // Lock/status icons are at scale 1, main sprite/overlay/outlines at scale 2
     const mainTargets: Phaser.GameObjects.GameObject[] = [this.sprite];
@@ -664,6 +728,7 @@ export class Tile {
       if (this.statusLabel) targets.push(this.statusLabel);
       if (this.lockIcon) targets.push(this.lockIcon);
       if (this.poisonIcon) targets.push(this.poisonIcon);
+      if (this.sandLabel) targets.push(this.sandLabel);
 
       const popDuration = Math.round(duration * 0.3);
       const fadeDuration = Math.round(duration * 0.7);
@@ -708,5 +773,6 @@ export class Tile {
     this.destroyStatusIndicator();
     this.destroyLockIcon();
     this.destroyPoisonIcon();
+    this.destroySandLabel();
   }
 }

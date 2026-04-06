@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## v0.4.9
+
+### Added
+- Bury (sand) visual rework: buried tiles show sand sprite with breathing "?" overlay
+- Sand-colored particles on bury clear
+- Bury hazard sprite in spriteConfig
+
 ## v0.4.8
 
 ### Changed

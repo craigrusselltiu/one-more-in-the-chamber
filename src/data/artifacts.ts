@@ -216,7 +216,6 @@ export const ARTIFACTS: ArtifactDefinition[] = [
     tags: ['saloon_keeper'],
     effect: 'After completing combat, restore 6 HP.',
     exclusive: 'red_panda',
-    exclusive: 'red_panda',
   },
   {
     id: 'renos_coin',
@@ -233,7 +232,6 @@ export const ARTIFACTS: ArtifactDefinition[] = [
     description: 'Bad luck is still luck.',
     tags: ['desperado'],
     effect: 'Chip misses generate 2 gold.',
-    exclusive: 'reno',
     exclusive: 'reno',
   },
 
