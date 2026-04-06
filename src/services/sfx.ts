@@ -100,7 +100,7 @@ export function playHit(): void {
   const now = Date.now();
   if (now - lastHitTime < 50) return; // debounce: max 1 hit sound per 50ms
   lastHitTime = now;
-  play('sfx_hit', 0.4);
+  play('sfx_hit', 0.2);
 }
 
 export function playAbilityReady(): void {
