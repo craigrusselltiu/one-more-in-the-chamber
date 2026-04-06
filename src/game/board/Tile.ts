@@ -139,19 +139,9 @@ export class Tile {
     let outlineAlpha = 0;
 
     if (this.isShowdown) {
-      // Fast HSL→RGB for rainbow cycle (avoids expensive Phaser.Display.Color.HSLToColor)
-      const hue = ((time / 20) % 360) / 60;
-      const c = 0.6; // chroma for s=0.8,l=0.5 approximation
-      const x = c * (1 - Math.abs(hue % 2 - 1));
-      const m = 0.2;
-      let r = m, g = m, b = m;
-      if (hue < 1) { r += c; g += x; }
-      else if (hue < 2) { r += x; g += c; }
-      else if (hue < 3) { g += c; b += x; }
-      else if (hue < 4) { g += x; b += c; }
-      else if (hue < 5) { r += x; b += c; }
-      else { r += c; b += x; }
-      tint = ((r * 255) << 16) | ((g * 255) << 8) | (b * 255);
+      const hue = (time / 20) % 360;
+      const color = Phaser.Display.Color.HSLToColor(hue / 360, 0.8, 0.5);
+      tint = color.color;
       overlayAlpha = 0.2 + breath * 0.25;
       outlineAlpha = 0.6 + breath * 0.4;
     } else if (this.isExplosive) {
