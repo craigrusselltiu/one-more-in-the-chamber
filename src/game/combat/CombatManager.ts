@@ -1053,8 +1053,8 @@ export class CombatManager {
       const upgradeLevel = this.player.getUpgradeLevel(match.tileType);
       let output = this.resolver.resolve(match, upgradeLevel);
 
-      // Poison tiles: apply venomous stacks to player
-      if (match.poisonCount && match.poisonCount > 0) {
+      // Poison tiles: apply venomous stacks to player (Rattlesnake(1) grants immunity)
+      if (match.poisonCount && match.poisonCount > 0 && !this.traits.isPoisonImmune()) {
         this.player.venomousStacks += match.poisonCount;
         this.floatOnPlayer(`+${match.poisonCount} VNM`, '#40ff40');
       }

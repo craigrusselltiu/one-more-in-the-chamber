@@ -4,6 +4,19 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## v0.4.6
+
+### Changed
+- Combat HUD: swaps/end turn above player, ability bar + traits below player
+- Ability bar: 128px wide, name label above, breathing READY text below
+- Traits section hidden when no artifacts, independently positioned
+- Pre-boss row has 2-3 rest sites instead of 1
+- Reputation Shop disabled on main menu
+
+### Fixed
+- Rattlesnake(1) trait now grants immunity to poison tile venomous stacks
+- Trait tooltips show above icons (were clipped at bottom edge)
+
 ## v0.4.5
 
 ### Fixed

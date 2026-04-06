@@ -3,7 +3,6 @@ import { useCombatStore, getPlayerStatusEffects } from '../../store/combatStore'
 import { HealthBar } from './HealthBar';
 import { BlockBadge } from './BlockBadge';
 import { StatusEffects } from './StatusEffects';
-import { TraitDisplay } from './TraitDisplay';
 
 /**
  * PlayerPanel: left-side player area during combat.
@@ -49,19 +48,6 @@ export const PlayerPanel = memo(function PlayerPanel() {
         <StatusEffects effects={nonBlockEffects} />
       </div>
 
-      {/* Trait contributions from artifacts */}
-      <div className="mt-2">
-        <span
-          className="text-[8px] text-stone-200 font-bold block text-center mb-0.5"
-          style={{
-            WebkitTextStroke: '2px #000',
-            paintOrder: 'stroke fill',
-          }}
-        >
-          TRAITS
-        </span>
-        <TraitDisplay />
-      </div>
     </div>
   );
 });

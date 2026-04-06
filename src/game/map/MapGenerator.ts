@@ -126,7 +126,7 @@ export function generateMap(seed: string, act: Act): MapState {
     } else if (isLast) {
       count = 1;
     } else if (row === totalRows - 2) {
-      count = 1; // pre-boss rest site
+      count = 2 + Math.floor(rng() * 2); // 2-3 pre-boss rest sites
     } else {
       count = 2 + Math.floor(rng() * 2); // 2-3
     }

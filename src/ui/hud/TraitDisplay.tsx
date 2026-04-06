@@ -139,7 +139,7 @@ const TraitIcon = memo(function TraitIcon({
   );
 
   return (
-    <Tooltip content={tooltipContent} position="bottom">
+    <Tooltip content={tooltipContent} position="top">
       <div
         className="relative"
         style={{

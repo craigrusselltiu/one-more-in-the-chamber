@@ -12,6 +12,13 @@
 .ability-segment-ready {
   animation: ability-pulse 1.2s ease-in-out infinite;
 }
+@keyframes ready-breathe {
+  0%, 100% { opacity: 0.6; }
+  50% { opacity: 1; }
+}
+.ability-ready-text {
+  animation: ready-breathe 1.2s ease-in-out infinite;
+}
 
 /* Enemy targeting: breathing pixel outline using offset drop-shadows */
 @keyframes target-breathe {

@@ -6,7 +6,9 @@ import { ComboDisplay } from './ComboDisplay';
 import { AbilityMeter } from './AbilityMeter';
 import { EndTurnButton } from './EndTurnButton';
 import { FloatingNumbers } from './FloatingNumbers';
+import { TraitDisplay } from './TraitDisplay';
 import { useCombatStore } from '../../store/combatStore';
+import { useRunStore } from '../../store/runStore';
 
 /**
  * CombatHUD: React overlay during combat.
@@ -26,6 +28,7 @@ import { useCombatStore } from '../../store/combatStore';
 export const CombatHUD = memo(function CombatHUD() {
   const swapsRemaining = useCombatStore((s) => s.swapsRemaining);
   const swapsPerTurn = useCombatStore((s) => s.swapsPerTurn);
+  const hasArtifacts = useRunStore((s) => (s.run?.artifacts.length ?? 0) > 0);
 
   return (
     <div className="pointer-events-none text-xs select-none" style={{ width: 960, height: 540, position: 'relative' }}>
@@ -40,13 +43,12 @@ export const CombatHUD = memo(function CombatHUD() {
           className="relative flex flex-col items-center justify-center px-1 pointer-events-auto"
           style={{ width: '26.67%' }}
         >
-          {/* Combo indicator - fixed height so it doesn't push player panel */}
-          <div style={{ height: 16 }}>
-            <ComboDisplay />
-          </div>
           <PlayerPanel />
-          {/* Swap count + end turn - absolute so it doesn't push player up */}
-          <div className="absolute bottom-14 left-1/2 -translate-x-1/2 flex flex-col items-center gap-1">
+          {/* Combo + Swap count + end turn - absolute above player */}
+          <div className="absolute top-10 left-1/2 -translate-x-1/2 flex flex-col items-center gap-1">
+            <div style={{ height: 16 }}>
+              <ComboDisplay />
+            </div>
             <span
               className="text-sm text-stone-200 font-bold"
               style={{
@@ -58,12 +60,29 @@ export const CombatHUD = memo(function CombatHUD() {
             </span>
             <EndTurnButton />
           </div>
+          {/* Ability meter - fixed position below player */}
+          <div className="absolute bottom-28 left-1/2 -translate-x-1/2 flex flex-col items-center">
+            <AbilityMeter />
+          </div>
+          {/* Traits - fixed position at bottom, hidden when no artifacts */}
+          {hasArtifacts && (
+            <div className="absolute bottom-12 left-1/2 -translate-x-1/2 flex flex-col items-center">
+              <span
+                className="text-[8px] text-stone-200 font-bold block text-center mb-0.5"
+                style={{
+                  WebkitTextStroke: '2px #000',
+                  paintOrder: 'stroke fill',
+                }}
+              >
+                TRAITS
+              </span>
+              <TraitDisplay />
+            </div>
+          )}
         </div>
 
         {/* Board area (center, Phaser renders the board here) */}
-        <div className="flex-1 flex flex-col items-center justify-end pb-1">
-          <AbilityMeter />
-        </div>
+        <div className="flex-1" />
 
         {/* Enemy area -- centered, shifted up to align with player sprite */}
         <div

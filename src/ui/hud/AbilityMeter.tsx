@@ -75,11 +75,20 @@ export const AbilityMeter = memo(function AbilityMeter() {
   return (
     <Tooltip text={ready ? `Activate ${abilityName} (Space)` : `${charge}/${threshold} charges`} position="top">
       <button
-        className="mt-1 pointer-events-auto"
+        className="mt-1 pointer-events-auto w-full"
         onClick={handleActivate}
         disabled={!canActivate}
       >
-        <div className="flex gap-px" style={{ width: 8 * 32 }}>
+        <div
+          className="text-[8px] text-center leading-none mb-0.5 font-bold text-stone-200"
+          style={{
+            WebkitTextStroke: '2px #000',
+            paintOrder: 'stroke fill',
+          }}
+        >
+          {abilityName.toUpperCase()}
+        </div>
+        <div className="flex" style={{ width: 128, gap: 1 }}>
           {Array.from({ length: segments }, (_, i) => {
             const filled = i < filledCount;
             let bgColor: string;
@@ -100,7 +109,7 @@ export const AbilityMeter = memo(function AbilityMeter() {
                 className={extraClass}
                 style={{
                   flex: 1,
-                  height: 6,
+                  height: 10,
                   backgroundColor: bgColor,
                   borderRadius: 1,
                 }}
@@ -109,10 +118,15 @@ export const AbilityMeter = memo(function AbilityMeter() {
           })}
         </div>
         <div
-          className="text-[7px] text-center leading-none mt-px"
-          style={{ color: ready ? '#FFD700' : '#888' }}
+          className={`text-[8px] text-center leading-none mt-0.5 font-bold ${ready ? 'ability-ready-text' : ''}`}
+          style={{
+            color: '#FFD700',
+            WebkitTextStroke: '2px #000',
+            paintOrder: 'stroke fill',
+            visibility: ready ? 'visible' : 'hidden',
+          }}
         >
-          {ready ? 'READY' : `${charge}/${threshold}`}
+          READY
         </div>
       </button>
     </Tooltip>
