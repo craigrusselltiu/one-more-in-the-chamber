@@ -24,7 +24,7 @@ const NODE_RADIUS = 14;
 const FLOOR_SPACING = 52;
 /** Vertical spacing between path branches (col -> y). */
 const PATH_SPACING = 42;
-const PADDING_LEFT = 40;
+const PADDING_LEFT = 28;
 const PADDING_TOP = 24;
 
 /** Simple hash for deterministic per-node jitter. */
@@ -39,8 +39,10 @@ function getNodePos(node: MapNode): { x: number; y: number } {
   // Deterministic jitter: ±16px
   const jx = ((h & 0xff) / 255 - 0.5) * 32;
   const jy = (((h >> 8) & 0xff) / 255 - 0.5) * 32;
+  // Boss node gets extra horizontal spacing from the campfire row
+  const bossExtra = node.type === 'boss' ? 30 : 0;
   return {
-    x: PADDING_LEFT + node.row * FLOOR_SPACING + jx,
+    x: PADDING_LEFT + node.row * FLOOR_SPACING + jx + bossExtra,
     y: PADDING_TOP + node.col * PATH_SPACING + jy,
   };
 }
@@ -59,7 +61,7 @@ export const MapScreen = memo(function MapScreen({ readonly }: { readonly?: bool
   const reachable = mapState ? getReachableNodes(mapState) : [];
 
   // 15 floors horizontal, 7 paths vertical
-  const canvasWidth = PADDING_LEFT + 14 * FLOOR_SPACING + 40;
+  const canvasWidth = PADDING_LEFT + 14 * FLOOR_SPACING + 40 + 30; // +30 for boss extra offset
   const canvasHeight = PADDING_TOP + 6 * PATH_SPACING + 24;
 
   // Load sprite sheet for node icons
