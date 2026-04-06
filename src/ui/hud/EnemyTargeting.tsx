@@ -110,12 +110,12 @@ const EnemySlot = memo(function EnemySlot({
         <img
           src={`${import.meta.env.BASE_URL}assets/sprites/${ENEMY_SPRITES[enemy.enemyType]}`}
           alt={enemy.enemyType}
-          className={`mb-0.5 shrink-0 enemy-sprite${isTargeted ? ' enemy-targeted' : ''}`}
+          className={`mb-0.5 shrink-0${isTargeted ? ' enemy-targeted' : ''}`}
           style={{ width: 96, height: 96, imageRendering: 'pixelated', objectFit: 'contain' }}
         />
       ) : (
         <div
-          className={`border border-stone-600 border-dashed mb-0.5 flex items-center justify-center shrink-0 enemy-sprite${isTargeted ? ' enemy-targeted' : ''}`}
+          className={`border border-stone-600 border-dashed mb-0.5 flex items-center justify-center shrink-0${isTargeted ? ' enemy-targeted' : ''}`}
           style={{ width: 96, height: 96 }}
         >
           <span className="text-stone-600 capitalize" style={{ fontSize: '8px' }}>

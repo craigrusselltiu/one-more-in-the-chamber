@@ -47,7 +47,7 @@ const DEFAULTS: Settings = {
   screenShakeEnabled: true,
   juiceAnimationsEnabled: true,
   gameSpeed: 1,
-  musicVolume: 0.5,
+  musicVolume: 0.25,
   sfxVolume: 0.5,
 };
 

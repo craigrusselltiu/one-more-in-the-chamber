@@ -8,7 +8,7 @@ import { ADDITIONAL_POOL, STARTER_POOL, TILE_DEFINITIONS } from '../../data/tile
 import { TILE_FRAMES, UI_FRAMES } from '../../data/spriteConfig';
 import { SpriteIcon } from '../components/SpriteIcon';
 import { Tooltip } from '../components/Tooltip';
-import { KeywordSubTooltips, getReferencedKeywords, buildTileDescription } from '../components/KeywordText';
+import { KeywordSubTooltips, getReferencedKeywords, buildTileDescription, buildUpgradePreview } from '../components/KeywordText';
 import { createSeededRandom, seededShuffle } from '../../utils/seededRandom';
 import type { TileType } from '../../types/game';
 import type { Screen } from '../../App';
@@ -207,17 +207,17 @@ export const ShopScreen = memo(function ShopScreen() {
               const tileType = tileItem.id.replace('swap-', '') as TileType;
               const def = TILE_DEFINITIONS[tileType];
               const level = tileItem.tileLevel ?? 0;
-              const tooltipContent = (
-                <div className="flex flex-col gap-0.5">
-                  <div className="font-bold text-amber-400" style={{ fontSize: '10px' }}>{def.label}</div>
-                  <div className="text-stone-200 whitespace-nowrap" style={{ fontSize: '9px' }}>{buildTileDescription(tileType, level)}</div>
-                  {def.flavor && <div className="text-stone-500 italic whitespace-nowrap" style={{ fontSize: '8px' }}>"{def.flavor}"</div>}
-                </div>
-              );
               const hasKeywords = getReferencedKeywords(def.description).length > 0;
               const keywordTooltip = hasKeywords ? <KeywordSubTooltips text={def.description} /> : undefined;
+              const upgradeTooltip = def.upgradeText ? (
+                <div className="whitespace-nowrap" style={{ fontSize: '8px', lineHeight: 1.3 }}>
+                  <span className="text-stone-400 font-bold">Upgrade</span>
+                  <span className="text-stone-400"> - </span>
+                  <span className="text-amber-300">{def.upgradeText}</span>
+                </div>
+              ) : undefined;
               return (
-                <Tooltip content={tooltipContent} secondContent={keywordTooltip} position="bottom">
+                <Tooltip content={keywordTooltip} secondContent={upgradeTooltip} position="bottom">
                   <ShopCard
                     icon={<SpriteIcon frame={TILE_FRAMES[tileType]} scale={2} />}
                     name={tileItem.name}
@@ -301,17 +301,17 @@ export const ShopScreen = memo(function ShopScreen() {
               {swappableTiles.map((tile) => {
                 const def = TILE_DEFINITIONS[tile];
                 const level = run?.tileUpgrades[tile] ?? 0;
-                const tooltipContent = (
-                  <div className="flex flex-col gap-0.5">
-                    <div className="font-bold text-amber-400" style={{ fontSize: '10px' }}>{def.label}</div>
-                    <div className="text-stone-200 whitespace-nowrap" style={{ fontSize: '9px' }}>{buildTileDescription(tile, level)}</div>
-                    {def.flavor && <div className="text-stone-500 italic whitespace-nowrap" style={{ fontSize: '8px' }}>"{def.flavor}"</div>}
-                  </div>
-                );
                 const hasKeywords = getReferencedKeywords(def.description).length > 0;
                 const keywordTooltip = hasKeywords ? <KeywordSubTooltips text={def.description} /> : undefined;
+                const upgradeTooltip = def.upgradeText ? (
+                  <div className="whitespace-nowrap" style={{ fontSize: '8px', lineHeight: 1.3 }}>
+                    <span className="text-stone-400 font-bold">Upgrade</span>
+                    <span className="text-stone-400"> - </span>
+                    <span className="text-amber-300">{def.upgradeText}</span>
+                  </div>
+                ) : undefined;
                 return (
-                  <Tooltip key={tile} content={tooltipContent} secondContent={keywordTooltip} position="bottom">
+                  <Tooltip key={tile} content={keywordTooltip} secondContent={upgradeTooltip} position="bottom">
                     <button
                       onClick={() => handleSwapConfirm(tile)}
                       className="flex items-center gap-2 p-2 border border-stone-600 bg-stone-800/50 hover:border-amber-600 hover:bg-stone-700/50 text-left w-full"
@@ -337,26 +337,24 @@ export const ShopScreen = memo(function ShopScreen() {
       {/* Upgrade picker overlay */}
       {upgradeMode && (
         <div className="absolute inset-0 flex items-center justify-center bg-black/70 z-10">
-          <div className="bg-[#1a1a2e] border border-stone-600 p-4 w-80">
+          <div className="bg-[#1a1a2e] border border-stone-600 p-4" style={{ width: 380 }}>
             <h3 className="text-sm text-amber-400 mb-1">Choose a tile to upgrade</h3>
             <p className="text-xs text-stone-400 mb-3">Permanent +1 tier for the rest of the run</p>
-            <div className="flex flex-wrap justify-center gap-2 mb-3">
+            <div className="grid grid-cols-4 gap-2 mb-3 justify-items-center">
               {run.activeTileTypes
                 .filter((t) => TILE_DEFINITIONS[t]?.upgradeText)
                 .map((tileType) => {
                   const def = TILE_DEFINITIONS[tileType];
                   const currentLevel = run.tileUpgrades[tileType] ?? 0;
-                  const tooltipContent = (
-                    <div className="flex flex-col gap-0.5">
-                      <div className="font-bold text-amber-400" style={{ fontSize: '10px' }}>{def.label}</div>
-                      <div className="text-stone-200 whitespace-nowrap" style={{ fontSize: '9px' }}>{buildTileDescription(tileType, currentLevel)}</div>
-                      {def.flavor && <div className="text-stone-500 italic whitespace-nowrap" style={{ fontSize: '8px' }}>"{def.flavor}"</div>}
+                  const previewTooltip = (
+                    <div className="whitespace-nowrap" style={{ fontSize: '9px', lineHeight: 1.3 }}>
+                      {buildUpgradePreview(tileType, currentLevel)}
                     </div>
                   );
                   const hasKeywords = getReferencedKeywords(def.description).length > 0;
                   const keywordTooltip = hasKeywords ? <KeywordSubTooltips text={def.description} /> : undefined;
                   return (
-                    <Tooltip key={tileType} content={tooltipContent} secondContent={keywordTooltip} position="bottom">
+                    <Tooltip key={tileType} content={previewTooltip} secondContent={keywordTooltip} position="bottom">
                       <button
                         onClick={() => handleUpgradeConfirm(tileType)}
                         className="flex flex-col items-center p-2 w-20 border border-stone-600 bg-stone-800/50 hover:border-amber-400 hover:bg-stone-700/50"

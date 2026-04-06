@@ -219,17 +219,6 @@ export const MainMenu = memo(function MainMenu() {
         </div>
       )}
 
-      {/* Version -- bottom right */}
-      <div className="absolute right-4 bottom-3">
-        <span
-          style={{
-                        fontSize: '9px',
-            color: 'rgba(255,255,255,0.3)',
-          }}
-        >
-          v0.3.2
-        </span>
-      </div>
 
       {/* Name prompt -- shown once on first visit */}
       {!playerName && (

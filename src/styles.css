@@ -13,16 +13,40 @@
   animation: ability-pulse 1.2s ease-in-out infinite;
 }
 
-/* Enemy targeting: breathing white overlay glow on sprite */
+/* Enemy targeting: breathing pixel outline using offset drop-shadows */
 @keyframes target-breathe {
-  0%, 100% { filter: brightness(1) drop-shadow(0 0 1px #ffffff44) drop-shadow(0 0 3px #ffffff22); }
-  50% { filter: brightness(1.25) drop-shadow(0 0 3px #ffffff88) drop-shadow(0 0 6px #ffffff44); }
+  0%, 100% {
+    filter:
+      drop-shadow( 2px  0px 0px rgba(255,255,255,0.15))
+      drop-shadow(-2px  0px 0px rgba(255,255,255,0.15))
+      drop-shadow( 0px  2px 0px rgba(255,255,255,0.15))
+      drop-shadow( 0px -2px 0px rgba(255,255,255,0.15));
+  }
+  50% {
+    filter:
+      drop-shadow( 2px  0px 0px rgba(255,255,255,0.7))
+      drop-shadow(-2px  0px 0px rgba(255,255,255,0.7))
+      drop-shadow( 0px  2px 0px rgba(255,255,255,0.7))
+      drop-shadow( 0px -2px 0px rgba(255,255,255,0.7));
+  }
 }
 .enemy-targeted {
-  animation: target-breathe 1.2s ease-in-out infinite;
+  animation: target-breathe 2s ease-in-out infinite;
 }
-.enemy-sprite {
-  filter: brightness(1) drop-shadow(0 0 1px #ffffff00) drop-shadow(0 0 3px #ffffff00);
+
+/* Upgrade preview: breathing orange-to-white gradient text */
+@keyframes upgrade-gradient-breathe {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+.upgrade-breathe {
+  background: linear-gradient(90deg, #fb923c, #fbbf24, #fef08a, #fbbf24, #fb923c);
+  background-size: 300% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: upgrade-gradient-breathe 2.5s ease-in-out infinite;
+  font-weight: bold;
 }
 
 /* Screen transition: black wipe left-to-right */

@@ -143,6 +143,26 @@ function flatBonus(upgradeLevel: number, upgradeValue: number): ReactNode[] {
   return seg(` plus ${upgradeLevel * upgradeValue}`, true);
 }
 
+const O = ({ children }: { children: ReactNode }) => (
+  <span className="upgrade-breathe" style={{ fontWeight: 'bold' }}>{children}</span>
+);
+
+/** Show "oldVal → newVal" with arrow and new value in orange. */
+function arrowUpgrade(oldVal: number, newVal: number): ReactNode[] {
+  return [<span key="arrow">{oldVal} <O>{'\u2192'} {newVal}</O></span>];
+}
+
+/** Flat upgrade preview: show "plus X → X+Y" transition in orange. */
+function flatBonusPreview(currentLevel: number, upgradeValue: number): ReactNode[] {
+  const oldBonus = currentLevel * upgradeValue;
+  const newBonus = (currentLevel + 1) * upgradeValue;
+  if (currentLevel <= 0) {
+    // Going from no bonus to first bonus
+    return [<O key="fb"> plus {newBonus}</O>];
+  }
+  return [<span key="fb"> plus {oldBonus} <O>{'\u2192'} {newBonus}</O></span>];
+}
+
 /**
  * Build a tile's description with upgrade values highlighted in green.
  * Returns ReactNode[] suitable for rendering in a tooltip.
@@ -254,6 +274,86 @@ export function buildTileDescription(type: TileType, upgradeLevel: number): Reac
     }
 
     // --- No upgrade / special ---
+    default:
+      return colorizeKeywords(def.description);
+  }
+}
+
+/**
+ * Build a tile upgrade preview: shows the description at the next level
+ * with orange highlights on what changes (arrow transitions or new bonuses).
+ */
+export function buildUpgradePreview(type: TileType, currentLevel: number): ReactNode[] {
+  const def = TILE_DEFINITIONS[type];
+  if (!def) return [];
+  const uv = def.upgradeValue;
+  const oldVal = def.baseValue + currentLevel * uv;
+  const newVal = def.baseValue + (currentLevel + 1) * uv;
+
+  switch (type) {
+    // --- Per-tile upgrade: show value arrow ---
+    case 'buckshot':
+      return [...seg('Each tile deals ', false), ...arrowUpgrade(oldVal, newVal), ...seg(' damage to a random enemy.', false)];
+    case 'fifty_cal':
+      return [...seg('Deal ', false), ...arrowUpgrade(oldVal, newVal), ...seg(' damage per tile. 5-match deals double damage.', false)];
+    case 'barricade':
+      return [...seg('Gain ', false), ...arrowUpgrade(oldVal, newVal), ...seg(' block per tile and 1 Barricade.', false)];
+    case 'chip':
+      return [...seg('50% chance to deal ', false), ...arrowUpgrade(oldVal, newVal), ...seg(' damage per tile; 50% chance to deal 0.', false)];
+    case 'ricochet': {
+      const oldD = 1 + currentLevel;
+      const newD = 1 + currentLevel + 1;
+      return [...seg('Deal 1 damage and destroy ', false), ...arrowUpgrade(oldD, newD), ...seg(' random other tile per Ricochet tile.', false)];
+    }
+    case 'boulder':
+      return [...seg('Deal ', false), ...arrowUpgrade(oldVal, newVal), ...seg(' damage per tile, plus 1 damage per block.', false)];
+
+    // --- Rattler: splits between damage and venom ---
+    case 'rattler':
+      return [
+        ...seg('Deal 2 damage per tile', false),
+        ...flatBonusPreview(currentLevel, uv),
+        ...seg(' and apply 1 Venom', false),
+        ...flatBonusPreview(currentLevel, uv),
+        ...seg('. Pierces block.', false),
+      ];
+
+    // --- Flat upgrade tiles: show plus bonus transition ---
+    case 'bullet':
+      return [...seg('Deal 2 damage per tile', false), ...flatBonusPreview(currentLevel, uv), ...seg('.', false)];
+    case 'iron':
+      return [...seg('Gain 2 block per tile', false), ...flatBonusPreview(currentLevel, uv), ...seg('.', false)];
+    case 'gold':
+      return [...seg('Earn 2 gold per tile', false), ...flatBonusPreview(currentLevel, uv), ...seg('.', false)];
+    case 'bounty':
+      return [...seg('Apply 1 Bounty stack per tile', false), ...flatBonusPreview(currentLevel, uv), ...seg('.', false)];
+    case 'stampede':
+      return [...seg('Deal 1 damage to ALL enemies per tile', false), ...flatBonusPreview(currentLevel, uv), ...seg('.', false)];
+    case 'battery':
+      return [...seg('Gain 1 ability charge per 3-match', false), ...flatBonusPreview(currentLevel, uv), ...seg(', plus 1 per extra tile.', false)];
+    case 'venom':
+      return [...seg('Apply 1 Venom per tile', false), ...flatBonusPreview(currentLevel, uv), ...seg('.', false)];
+    case 'prairie_fire':
+      return [...seg('Deal 2 damage per tile', false), ...flatBonusPreview(currentLevel, uv), ...seg('. 50% chance to convert 1 adjacent tile to Ember.', false)];
+    case 'chain':
+      return [...seg('Deal 1 damage per tile', false), ...flatBonusPreview(currentLevel, uv), ...seg('. Each Chain match adds +1 damage to ALL Chain tiles for this combat.', false)];
+    case 'whiskey':
+      return [...seg('Heals 1 HP per 3-match', false), ...flatBonusPreview(currentLevel, uv), ...seg(', plus 1 per extra tile.', false)];
+    case 'ace':
+      return [...seg('Gain 1 stack of Ace per tile', false), ...flatBonusPreview(currentLevel, uv), ...seg('.', false)];
+    case 'horseshoe':
+      return [...seg('Gain 1 stack of Lucky per tile', false), ...flatBonusPreview(currentLevel, uv), ...seg('.', false)];
+    case 'tombstone':
+      return [...seg('Deal 2 damage per tile', false), ...flatBonusPreview(currentLevel, uv), ...seg('. Deals double damage when target is below 30% HP.', false)];
+    case 'saloon':
+      return [...seg('Heal 1 HP per 3-match', false), ...flatBonusPreview(currentLevel, uv), ...seg(', plus 1 per extra tile. Generate the resources of adjacent tiles.', false)];
+    case 'shank':
+      return [...seg('Deal 1 damage per tile', false), ...flatBonusPreview(currentLevel, uv), ...seg(' and apply 1 Vulnerable.', false)];
+    case 'cavalry':
+      return [...seg('1 damage per tile', false), ...flatBonusPreview(currentLevel, uv), ...seg('. If 4+ matched, +1 swap this turn (max 1 per turn).', false)];
+    case 'duel':
+      return [...seg('Deal 4 damage per tile', false), ...flatBonusPreview(currentLevel, uv), ...seg(' but ONLY if exactly 4 matched. 3 or 5+ matches deal no damage.', false)];
+
     default:
       return colorizeKeywords(def.description);
   }

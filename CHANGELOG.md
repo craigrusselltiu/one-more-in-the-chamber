@@ -4,6 +4,33 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## v0.3.3
+
+### Added
+- Global version label on all screens (moved from MainMenu to App)
+- Upgrade preview tooltips with orange-highlighted changes (arrow transitions and bonus previews)
+- Breathing pixel outline VFX for targeted enemies
+- Rattlesnake and Dusty Dan enemy sprites
+
+### Changed
+- Shop tile tooltips now show only keywords + upgrade text (matching tile selection screen)
+- Upgrade picker widened to 4 columns to fit 7+ tiles
+- Campfire upgrade tooltips use same upgrade preview format
+- Default music volume reduced to 25%
+- Upgrade SFX plays twice (400ms apart)
+
+### Fixed
+- Enemy targeting resetting after each swap (alive-index mismatch)
+- Locked tiles changing type during reshuffle
+- Mirage tiles appearing during reshuffle instead of transformed type
+- Reshuffle no longer generates new tiles (swap-based match breaking)
+- Flash lines and floating numbers targeting correct zig-zag enemy positions
+- Dead enemies blocking summon UI slots
+- Crit floating number showing post-block damage instead of full crit damage
+- Chip MISS text shows on enemy instead of player
+- Browser focus outline on enemy cards
+- Cursor reverting to system cursor on enemy hover
+
 ## v0.3.0
 
 ### Added

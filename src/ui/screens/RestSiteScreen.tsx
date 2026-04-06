@@ -6,7 +6,7 @@ import { TILE_DEFINITIONS } from '../../data/tiles';
 import { TILE_FRAMES, UI_FRAMES, NODE_FRAMES } from '../../data/spriteConfig';
 import { SpriteIcon } from '../components/SpriteIcon';
 import { Tooltip } from '../components/Tooltip';
-import { KeywordSubTooltips, getReferencedKeywords, buildTileDescription } from '../components/KeywordText';
+import { KeywordSubTooltips, getReferencedKeywords, buildUpgradePreview } from '../components/KeywordText';
 import type { TileType } from '../../types/game';
 import type { Screen } from '../../App';
 
@@ -104,20 +104,16 @@ export const RestSiteScreen = memo(function RestSiteScreen() {
             const currentLevel = run.tileUpgrades[tileType] ?? 0;
             const isSelected = selectedTile === tileType;
 
-            const tooltipContent = (
-              <div className="flex flex-col gap-0.5">
-                <div className="font-bold text-amber-400" style={{ fontSize: '10px' }}>{def.label}</div>
-                <div className="text-stone-200 whitespace-nowrap" style={{ fontSize: '9px' }}>{buildTileDescription(tileType, currentLevel)}</div>
-                {def.flavor && (
-                  <div className="text-stone-500 italic whitespace-nowrap" style={{ fontSize: '8px' }}>"{def.flavor}"</div>
-                )}
+            const previewTooltip = (
+              <div className="whitespace-nowrap" style={{ fontSize: '9px', lineHeight: 1.3 }}>
+                {buildUpgradePreview(tileType, currentLevel)}
               </div>
             );
             const hasKeywords = getReferencedKeywords(def.description).length > 0;
             const keywordTooltip = hasKeywords ? <KeywordSubTooltips text={def.description} /> : undefined;
 
             return (
-              <Tooltip key={tileType} content={tooltipContent} secondContent={keywordTooltip} position="bottom">
+              <Tooltip key={tileType} content={previewTooltip} secondContent={keywordTooltip} position="bottom">
                 <button
                   onClick={() => setSelectedTile(tileType)}
                   className={`flex flex-col items-center p-3 w-28 border-2 transition-colors ${
