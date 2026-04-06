@@ -26,6 +26,18 @@ function getEnemySlotPosition(aliveIndex: number): { x: number; y: number } {
 import { useCombatStore } from '../../store/combatStore';
 
 /**
+ * Workaround for Phaser scene.start() not reliably passing data to create()
+ * when restarting a previously-stopped scene. Store data before starting,
+ * read in create() if the parameter is missing.
+ */
+let pendingSceneData: { config?: CombatConfig; snapshot?: CombatSnapshot } | null = null;
+
+/** Set scene data before calling game.scene.start('CombatScene'). */
+export function setCombatSceneData(data: { config?: CombatConfig; snapshot?: CombatSnapshot }): void {
+  pendingSceneData = data;
+}
+
+/**
  * CombatScene: the main combat loop.
  * Owns the board, delegates combat flow to CombatManager,
  * and listens for board swap events to drive the turn sequence.
@@ -59,6 +71,12 @@ export class CombatScene extends Phaser.Scene {
   }
 
   create(data?: { config?: CombatConfig; snapshot?: CombatSnapshot }): void {
+    // Phaser may not pass data on scene restart; use module-level fallback
+    if (!data?.config && !data?.snapshot && pendingSceneData) {
+      data = pendingSceneData;
+    }
+    pendingSceneData = null;
+
     this.cameras.main.setRoundPixels(true);
     this.cameras.main.setBackgroundColor('#2a1a0e');
 

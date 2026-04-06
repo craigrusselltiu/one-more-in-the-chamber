@@ -81,7 +81,7 @@ export const TRAITS: TraitDefinition[] = [
   },
   {
     id: 'bounty_hunter',
-    name: 'Bounty Hunter',
+    name: 'The Bounty Hunter',
     description: 'The bounty trait. Rust exclusive.',
     breakpoints: [
       { threshold: 1, description: 'Bounty grants 10 gold when killing a non-summoned enemy.' },

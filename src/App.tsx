@@ -27,6 +27,7 @@ import type { CombatSnapshot } from './types/combatSnapshot';
 import { saveCombatSnapshot, clearCombatSnapshot, purgeCorruptSnapshots } from './services/localSave';
 import { initSfx } from './services/sfx';
 import { consumePendingSnapshot } from './services/combatResume';
+import { setCombatSceneData } from './game/scenes/CombatScene';
 import { loadPersistedRun, startRunPersistence } from './services/runPersistence';
 import {
   rollAct1Encounter,
@@ -212,6 +213,7 @@ export default function App() {
         useCombatStore.getState().setGold(snapshot.player.gold);
         if (run) useCombatStore.getState().setAct(run.currentAct);
 
+        setCombatSceneData({ snapshot });
         game.scene.start('CombatScene', { snapshot });
       } else {
         // Fresh combat: build config from run state and start CombatScene
@@ -247,6 +249,7 @@ export default function App() {
           useCombatStore.getState().setGold(run.gold);
           useCombatStore.getState().setAct(run.currentAct);
 
+          setCombatSceneData({ config: combatConfig });
           game.scene.start('CombatScene', { config: combatConfig });
 
           // Mark combat node as visited now that combat is starting

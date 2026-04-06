@@ -87,6 +87,8 @@ export const TRAIT_FRAMES: Record<string, number> = {
   sapper: 938,
   mustang: 266,
   gunslinger: 1244,
+  bounty_hunter: 1167,
+  saloon_keeper: 499,
 };
 
 /** Trait breakpoint thresholds (in order). */
@@ -98,6 +100,8 @@ export const TRAIT_BREAKPOINTS: Record<string, number[]> = {
   sapper: [1, 2, 3],
   mustang: [4],
   gunslinger: [2, 4],
+  bounty_hunter: [1, 2],
+  saloon_keeper: [],
 };
 
 /** Tile hazard overlay icons. */
