@@ -41,6 +41,7 @@ export const MapScreen = memo(function MapScreen({ readonly }: { readonly?: bool
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [tooltip, setTooltip] = useState<{ text: string; x: number; y: number } | null>(null);
+  const navigatingRef = useRef(false);
 
   const mapState = run?.mapState;
   const nodes = mapState?.nodes ?? [];
@@ -263,7 +264,8 @@ export const MapScreen = memo(function MapScreen({ readonly }: { readonly?: bool
         const dx = mx - pos.x;
         const dy = my - pos.y;
         if (dx * dx + dy * dy <= NODE_RADIUS * NODE_RADIUS * 1.5) {
-          if (reachable.includes(node.id)) {
+          if (reachable.includes(node.id) && !navigatingRef.current) {
+            navigatingRef.current = true;
             // Non-combat nodes: mark visited immediately (they load synchronously)
             // Combat nodes: only set currentNodeId now; mark visited once combat starts
             const isCombatNode = node.type === 'combat' || node.type === 'elite' || node.type === 'boss';

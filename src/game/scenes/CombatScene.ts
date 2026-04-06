@@ -64,12 +64,17 @@ export class CombatScene extends Phaser.Scene {
 
     // Combat background image (boss uses dusty_bg, regular uses act bg)
     const isBoss = data?.config?.isBoss || data?.snapshot?.isBoss;
-    const bgKey = isBoss && this.textures.exists('dusty_bg') ? 'dusty_bg' : 'act1_bg';
-    if (this.textures.exists(bgKey)) {
+    const bgCandidates = isBoss ? ['dusty_bg', 'act1_bg'] : ['act1_bg'];
+    const bgKey = bgCandidates.find(k => this.textures.exists(k));
+    if (bgKey) {
       const bg = this.add.image(GAME_WIDTH / 2, GAME_HEIGHT / 2, bgKey);
       bg.setDisplaySize(GAME_WIDTH, GAME_HEIGHT);
       bg.setDepth(-10);
       bg.setAlpha(0.4);
+    } else {
+      // Fallback: solid color rectangle if no background texture loaded
+      const fallback = this.add.rectangle(GAME_WIDTH / 2, GAME_HEIGHT / 2, GAME_WIDTH, GAME_HEIGHT, 0x3a2a1e);
+      fallback.setDepth(-10);
     }
 
     this.screenShake = new ScreenShake(this);

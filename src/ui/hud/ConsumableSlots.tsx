@@ -71,8 +71,9 @@ const ConsumableSlot = memo(function ConsumableSlot({
   consumableId,
 }: ConsumableSlotProps & { consumableId?: string }) {
   const removeConsumable = useRunStore((s) => s.removeConsumable);
-  const [menuPos, setMenuPos] = useState<{ x: number; y: number } | null>(null);
+  const [showMenu, setShowMenu] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
 
   const handleUse = useCallback(() => {
     if (canUse && consumableId) {
@@ -84,26 +85,26 @@ const ConsumableSlot = memo(function ConsumableSlot({
   const handleContextMenu = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
     if (filled) {
-      setMenuPos({ x: e.clientX, y: e.clientY });
+      setShowMenu(true);
     }
   }, [filled]);
 
   const handleDiscard = useCallback(() => {
     removeConsumable(index);
-    setMenuPos(null);
+    setShowMenu(false);
   }, [index, removeConsumable]);
 
   // Close menu on click outside
   useEffect(() => {
-    if (!menuPos) return;
+    if (!showMenu) return;
     const close = (e: MouseEvent) => {
       if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
-        setMenuPos(null);
+        setShowMenu(false);
       }
     };
     document.addEventListener('mousedown', close);
     return () => document.removeEventListener('mousedown', close);
-  }, [menuPos]);
+  }, [showMenu]);
 
   const bgColor = filled && category
     ? CATEGORY_COLORS[category] ?? '#555'
@@ -113,9 +114,10 @@ const ConsumableSlot = memo(function ConsumableSlot({
   const tooltipText = filled ? `${name}: ${effect}` : 'Empty slot';
 
   return (
-    <>
+    <div className="relative">
       <Tooltip text={tooltipText} position="bottom">
         <button
+          ref={buttonRef}
           onClick={handleUse}
           onContextMenu={handleContextMenu}
           disabled={!canUse}
@@ -137,20 +139,21 @@ const ConsumableSlot = memo(function ConsumableSlot({
           ) : null}
         </button>
       </Tooltip>
-      {menuPos && (
+      {showMenu && (
         <div
           ref={menuRef}
-          className="fixed z-[100] pointer-events-auto"
-          style={{ left: menuPos.x, top: menuPos.y }}
+          className="absolute z-[100] pointer-events-auto"
+          style={{ top: '100%', left: '50%', transform: 'translateX(-50%)' }}
         >
           <button
             onClick={handleDiscard}
-            className="px-3 py-1 text-xs text-red-300 bg-stone-800 border border-stone-600 hover:bg-stone-700 hover:text-red-200"
+            className="px-1.5 py-0.5 font-bold text-red-300 bg-stone-800 border border-stone-600 hover:bg-stone-700 hover:text-red-200 whitespace-nowrap"
+            style={{ fontSize: '7px' }}
           >
             Discard
           </button>
         </div>
       )}
-    </>
+    </div>
   );
 });
