@@ -64,22 +64,18 @@ export const FloatingNumbers = memo(function FloatingNumbers() {
     return () => { EventBus.off(GameEvent.FLOATING_NUMBER, handleFloat); };
   }, [handleFloat]);
 
-  // Animation loop: drive position updates via rAF, clean expired numbers
-  const [, setTick] = useState(0);
+  // Animation loop: update positions and remove expired numbers
   useEffect(() => {
     if (numbers.length === 0) return;
-    let rafId: number;
-    const tick = () => {
+    const interval = setInterval(() => {
       const now = Date.now();
-      setNumbers((prev) => {
-        const filtered = prev.filter((n) => now - n.startTime < 1000);
-        return filtered.length === prev.length ? prev : filtered;
-      });
-      setTick((t) => t + 1);
-      rafId = requestAnimationFrame(tick);
-    };
-    rafId = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(rafId);
+      setNumbers((prev) =>
+        prev
+          .filter((n) => now - n.startTime < 1000)
+          .map((n) => n) // trigger re-render for position updates
+      );
+    }, 30);
+    return () => clearInterval(interval);
   }, [numbers.length > 0]);
 
   return (

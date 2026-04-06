@@ -17,7 +17,7 @@ NOTE: Observe the difference between +1 to match total and +1 per tile. The tile
 ### Bounty
 - Rust exclusive
 - Behaviour: Apply 1 stack of Bounty per tile.
-- Upgrade: +2 stacks to match total per level
+- Upgrade: +1 stack per tile per level
 - Flavor: "The S is silent."
 
 ### Chip
