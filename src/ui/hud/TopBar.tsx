@@ -99,7 +99,9 @@ export const TopBar = memo(function TopBar({ mapDisabled }: { showMapButton?: bo
           <span className="text-amber-400 font-bold">
             Act {act} - {getActName(act)}
           </span>
-          <ConsumableSlots />
+          <div style={{ position: 'relative', top: 2 }}>
+            <ConsumableSlots />
+          </div>
           {currentNodeType && (
             <span className={`${NODE_TYPE_COLORS[currentNodeType]} font-bold`}>
               {NODE_TYPE_LABELS[currentNodeType]}

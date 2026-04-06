@@ -28,7 +28,7 @@ export const ConsumableSlots = memo(function ConsumableSlots() {
   const canUse = phase === 'consumable-window' || phase === 'swap-phase';
 
   return (
-    <div className="flex gap-0.5">
+    <div className="flex gap-0.5 items-center">
       {Array.from({ length: maxSlots }, (_, i) => {
         const instance = consumables[i];
         const def = instance
@@ -85,7 +85,7 @@ const ConsumableSlot = memo(function ConsumableSlot({
   const handleContextMenu = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
     if (filled) {
-      setShowMenu(true);
+      setShowMenu((prev) => !prev);
     }
   }, [filled]);
 
@@ -94,10 +94,11 @@ const ConsumableSlot = memo(function ConsumableSlot({
     setShowMenu(false);
   }, [index, removeConsumable]);
 
-  // Close menu on click outside
+  // Close menu on left-click outside (skip right-clicks to allow toggle)
   useEffect(() => {
     if (!showMenu) return;
     const close = (e: MouseEvent) => {
+      if (e.button !== 0) return;
       if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
         setShowMenu(false);
       }
@@ -143,7 +144,7 @@ const ConsumableSlot = memo(function ConsumableSlot({
         <div
           ref={menuRef}
           className="absolute z-[100] pointer-events-auto"
-          style={{ top: '100%', left: '50%', transform: 'translateX(-50%)' }}
+          style={{ top: '100%', left: 0 }}
         >
           <button
             onClick={handleDiscard}

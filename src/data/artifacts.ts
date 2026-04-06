@@ -215,6 +215,7 @@ export const ARTIFACTS: ArtifactDefinition[] = [
     description: 'Rust starting artifact.',
     tags: ['bounty_hunter', 'saloon_keeper'],
     effect: 'After completing combat, restore 6 HP.',
+    exclusive: 'red_panda',
   },
   {
     id: 'double_down',
