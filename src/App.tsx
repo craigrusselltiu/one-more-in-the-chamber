@@ -486,9 +486,14 @@ export default function App() {
                   pendingScreenRef.current = null;
                 }
                 setWipePhase('out');
-              } else {
-                // Wipe finished
-                setWipePhase('none');
+              } else if (wipePhase === 'out') {
+                // Only finish wipe if no new screen change is pending
+                if (pendingScreenRef.current) {
+                  // A new screen change arrived during wipe-out; start new wipe-in
+                  setWipePhase('in');
+                } else {
+                  setWipePhase('none');
+                }
               }
             }}
           />
