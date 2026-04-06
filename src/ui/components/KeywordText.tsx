@@ -82,7 +82,7 @@ export const KeywordText = memo(function KeywordText({
  */
 export function KeywordLine({ name, color, description }: { name: string; color: string; description: string }) {
   return (
-    <div style={{ fontSize: '8px', lineHeight: 1.3 }}>
+    <div style={{ fontSize: '8px', lineHeight: 1.3, textAlign: 'left' }}>
       {description.includes('\n') ? (
         <>
           {description.split('\n').map((line, i) => (
@@ -230,8 +230,14 @@ export function buildTileDescription(type: TileType, upgradeLevel: number): Reac
       return [...seg('Gain 2 block per tile', false), ...flatBonus(upgradeLevel, uv), ...seg('.', false)];
     case 'gold':
       return [...seg('Earn 2 gold per tile', false), ...flatBonus(upgradeLevel, uv), ...seg('.', false)];
-    case 'bounty':
-      return [...seg('Apply 1 Bounty stack per tile', false), ...flatBonus(upgradeLevel, uv), ...seg('.', false)];
+    case 'bounty': {
+      const bv = 1 + upgradeLevel;
+      return [
+        ...seg('Apply ', false),
+        ...seg(`${bv}`, upgradeLevel > 0),
+        ...seg(' Bounty stack per tile.', false),
+      ];
+    }
     case 'stampede':
       return [...seg('Deal 1 damage to ALL enemies per tile', false), ...flatBonus(upgradeLevel, uv), ...seg('.', false)];
     case 'battery':
@@ -316,8 +322,11 @@ export function buildUpgradePreview(type: TileType, currentLevel: number): React
       return [...seg('Gain 2 block per tile', false), ...flatBonusPreview(currentLevel, uv), ...seg('.', false)];
     case 'gold':
       return [...seg('Earn 2 gold per tile', false), ...flatBonusPreview(currentLevel, uv), ...seg('.', false)];
-    case 'bounty':
-      return [...seg('Apply 1 Bounty stack per tile', false), ...flatBonusPreview(currentLevel, uv), ...seg('.', false)];
+    case 'bounty': {
+      const oldBv = 1 + currentLevel;
+      const newBv = 1 + currentLevel + 1;
+      return [...seg('Apply ', false), ...arrowUpgrade(oldBv, newBv), ...seg(' Bounty stack per tile.', false)];
+    }
     case 'stampede':
       return [...seg('Deal 1 damage to ALL enemies per tile', false), ...flatBonusPreview(currentLevel, uv), ...seg('.', false)];
     case 'battery':

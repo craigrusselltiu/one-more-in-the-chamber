@@ -33,6 +33,7 @@ export interface SerializedBoard {
   tiles: (SerializedTile | null)[][];
   activeTileTypes: TileType[];
   gravityDirection: GravityDirection;
+  mirageReplacementType?: TileType | null;
 }
 
 export interface SerializedPlayer {

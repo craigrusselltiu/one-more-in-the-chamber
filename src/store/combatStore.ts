@@ -48,6 +48,7 @@ interface CombatStore {
   turnLimit: number;
   comboCount: number;
   currentAct: number;
+  mirageType: import('../types/game').TileType | null;
 
   // Actions
   syncFromCombatState: (state: CombatState) => void;
@@ -93,6 +94,7 @@ const initialState = {
   turnLimit: 0,
   comboCount: 0,
   currentAct: 1,
+  mirageType: null,
 };
 
 export const useCombatStore = create<CombatStore>((set) => ({
@@ -126,6 +128,7 @@ export const useCombatStore = create<CombatStore>((set) => ({
       phase: state.phase,
       turnNumber: state.turnNumber,
       turnLimit: state.turnLimit,
+      mirageType: state.mirageType,
     }),
 
   setPlayerHealth: (current, max) =>

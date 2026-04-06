@@ -1,5 +1,6 @@
 import { memo, useState, useEffect } from 'react';
 import { useRunStore } from '../../store/runStore';
+import { useCombatStore } from '../../store/combatStore';
 import { getActName } from '../../game/map/MapGenerator';
 import { EventBus, GameEvent } from '../../game/EventBus';
 import { MapScreen } from '../screens/MapScreen';
@@ -58,6 +59,7 @@ export const TopBar = memo(function TopBar({ mapDisabled }: { showMapButton?: bo
   const [showMap, setShowMap] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [showTiles, setShowTiles] = useState(false);
+  const mirageType = useCombatStore((s) => s.mirageType);
   const [seedCopied, setSeedCopied] = useState(false);
   const [elapsed, setElapsed] = useState(0);
   const endRun = useRunStore((s) => s.endRun);
@@ -165,6 +167,7 @@ export const TopBar = memo(function TopBar({ mapDisabled }: { showMapButton?: bo
         <TilesPopup
           activeTileTypes={run.activeTileTypes}
           tileUpgrades={run.tileUpgrades}
+          mirageType={mirageType}
           onClose={() => setShowTiles(false)}
         />
       )}
@@ -199,10 +202,12 @@ export const TopBar = memo(function TopBar({ mapDisabled }: { showMapButton?: bo
 function TilesPopup({
   activeTileTypes,
   tileUpgrades,
+  mirageType,
   onClose,
 }: {
   activeTileTypes: import('../../types/game').TileType[];
   tileUpgrades: Partial<Record<import('../../types/game').TileType, number>>;
+  mirageType: import('../../types/game').TileType | null;
   onClose: () => void;
 }) {
   return (
@@ -212,7 +217,7 @@ function TilesPopup({
     >
       <div className="bg-stone-900 border border-stone-600 p-3" style={{ minWidth: 140 }} onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between mb-3">
-          <span className="text-stone-200 text-sm font-bold">Tiles</span>
+          <span className="text-amber-400 text-sm font-bold">Tiles</span>
           <button
             onClick={onClose}
             className="w-4 h-4 flex items-center justify-center bg-stone-800/80 text-red-400 font-bold border border-red-900/50 hover:bg-red-900/40"
@@ -222,9 +227,9 @@ function TilesPopup({
           </button>
         </div>
         <div className="flex flex-col gap-1.5">
-          {activeTileTypes.map((tileType) => {
+          {activeTileTypes.flatMap((tileType) => {
             const def = TILE_DEFINITIONS[tileType];
-            if (!def) return null;
+            if (!def) return [];
             const level = tileUpgrades[tileType] ?? 0;
             const tooltipContent = (
               <div className="flex flex-col gap-0.5">
@@ -237,7 +242,7 @@ function TilesPopup({
             );
             const hasKeywords = getReferencedKeywords(def.description).length > 0;
             const keywordTooltip = hasKeywords ? <KeywordSubTooltips text={def.description} /> : undefined;
-            return (
+            const items = [
               <Tooltip key={tileType} content={tooltipContent} secondContent={keywordTooltip} position="bottom">
                 <div className="flex items-center gap-2">
                   <SpriteIcon frame={TILE_FRAMES[tileType]} scale={1} />
@@ -246,8 +251,35 @@ function TilesPopup({
                     Lv {level + 1}
                   </span>
                 </div>
-              </Tooltip>
-            );
+              </Tooltip>,
+            ];
+            // Show mirage transformed tile right after the Mirage entry
+            if (tileType === 'mirage' && mirageType) {
+              const mDef = TILE_DEFINITIONS[mirageType];
+              if (mDef) {
+                const mLevel = tileUpgrades[mirageType] ?? 0;
+                const mTooltip = (
+                  <div className="flex flex-col gap-0.5">
+                    <div className="font-bold text-amber-400" style={{ fontSize: '10px' }}>{mDef.label}</div>
+                    <div className="text-stone-200 whitespace-nowrap" style={{ fontSize: '9px' }}>{buildTileDescription(mirageType, mLevel)}</div>
+                    {mDef.flavor && (
+                      <div className="text-stone-500 italic whitespace-nowrap" style={{ fontSize: '8px' }}>"{mDef.flavor}"</div>
+                    )}
+                  </div>
+                );
+                const mHasKeywords = getReferencedKeywords(mDef.description).length > 0;
+                const mKeywordTooltip = mHasKeywords ? <KeywordSubTooltips text={mDef.description} /> : undefined;
+                items.push(
+                  <Tooltip key="mirage-transformed" content={mTooltip} secondContent={mKeywordTooltip} position="bottom">
+                    <div className="flex items-center gap-2 opacity-50">
+                      <SpriteIcon frame={TILE_FRAMES[mirageType]} scale={1} />
+                      <span className="text-stone-400 text-xs">{mDef.label} <span className="text-stone-500">(Mirage)</span></span>
+                    </div>
+                  </Tooltip>,
+                );
+              }
+            }
+            return items;
           })}
           {activeTileTypes.length === 0 && (
             <span className="text-stone-500 text-xs">No active tiles</span>

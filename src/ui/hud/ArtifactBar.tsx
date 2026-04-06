@@ -1,6 +1,8 @@
 import { memo } from 'react';
 import { useRunStore } from '../../store/runStore';
 import { ARTIFACTS } from '../../data/artifacts';
+import { ARTIFACT_FRAMES } from '../../data/spriteConfig';
+import { SpriteIcon } from '../components/SpriteIcon';
 import { Tooltip } from '../components/Tooltip';
 import type { TraitId } from '../../types/game';
 
@@ -13,7 +15,6 @@ const TRAIT_COLORS: Record<TraitId, string> = {
   sapper: '#D4A030',
   mustang: '#70B0D0',
   gunslinger: '#D06080',
-  bounty_hunter: '#C04040',
   saloon_keeper: '#D4A870',
 };
 
@@ -53,17 +54,21 @@ export const ArtifactBar = memo(function ArtifactBar() {
               )}
             </div>
           ) : undefined} text={def ? undefined : inst.id}>
-            <div
-              className="flex items-center justify-center text-[6px] text-white font-bold"
-              style={{
-                width: 18,
-                height: 18,
-                backgroundColor: color,
-                border: `1px solid ${color}`,
-              }}
-            >
-              {(def?.name ?? inst.id).charAt(0).toUpperCase()}
-            </div>
+            {ARTIFACT_FRAMES[inst.id] != null ? (
+              <SpriteIcon frame={ARTIFACT_FRAMES[inst.id]} scale={1} />
+            ) : (
+              <div
+                className="flex items-center justify-center text-[6px] text-white font-bold"
+                style={{
+                  width: 18,
+                  height: 18,
+                  backgroundColor: color,
+                  border: `1px solid ${color}`,
+                }}
+              >
+                {(def?.name ?? inst.id).charAt(0).toUpperCase()}
+              </div>
+            )}
           </Tooltip>
         );
       })}

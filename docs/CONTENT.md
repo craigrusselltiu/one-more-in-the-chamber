@@ -2,7 +2,7 @@
 - Rageful - Deal 1 extra damage per stack. Decrease stacks by 1 at the end of the turn.
 - Sturdy - Gain 1 extra block per stack. Decrease stacks by 1 at the end of the turn.
 - Ace - Add x0.25 multiplier per stack to the next non-Ace match.
-- Lucky - 1% crit chance per stack. (max 50)
+- Lucky - 1% chance per stack to deal double damage. (max 50)
 - Barricade - At the end of the turn, retain block and decrease stacks by 1.
 - Vulnerable - Take 50% extra damage from attacks. Decrease stacks by 1 at the end of the turn.
 - Venom - At the start of the turn, take damage equal to the number of stacks and decrease stacks by 1.
@@ -16,7 +16,7 @@ NOTE: Observe the difference between +1 to match total and +1 per tile. The tile
 
 ### Bounty
 - Rust exclusive
-- Behaviour: Apply 1 stack of Bounty per tile.
+- Behaviour: Apply 1 stack of Bounty per tile. When this kills a non-summoned enemy, gain 10 gold.
 - Upgrade: +1 stack per tile per level
 - Flavor: "The S is silent."
 
@@ -265,14 +265,14 @@ Trait level = number of artifacts held with that tag. Effects activate at breakp
 
 ### Bamboo Canteen
 - Rust starting artifact
-- Tags: Bounty Hunter, Saloon Keeper
+- Tags: Outlaw, Saloon Keeper
 - Effect: After completing combat, restore 6 HP.
-- Flavor: 
+- Flavor: "Bamboo doesn't rust."
 
-### Fully Loaded
+### Rust's Cylinder
 - Rust exclusive artifact
-- Tags: Bounty Hunter, Outlaw
-- Effect: Rust only. Deadeye: 3 shots become 6.
+- Tags: Gunslinger, Outlaw
+- Effect: Increase Deadeye shots to 6. The last shot can now be used on an enemy, dealing 2 damage per stack of Bounty.
 - Flavor: "Six in the chamber. No reloads."
 
 ## Outlaw

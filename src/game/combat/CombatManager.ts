@@ -796,7 +796,7 @@ export class CombatManager {
    */
   async deadeyeShootEnemy(enemyIndex: number): Promise<void> {
     if (!this.isDeadeyeActive || this.deadeyeShotsRemaining !== 1) return;
-    if (!this.traits.isActive('bounty_hunter', 2)) return;
+    if (!this.artifacts.has('rusts_cylinder')) return;
 
     const enemy = this.enemies[enemyIndex];
     if (!enemy || enemy.state.isDead) return;
@@ -843,8 +843,10 @@ export class CombatManager {
       document.body.classList.remove('cursor-crosshair');
       if (usedShots > 0) {
         this.player.abilityCharge = 0;
+      } else {
+        // No shots fired: restore charges consumed on activation
+        this.player.abilityCharge = this.player.abilityThreshold;
       }
-      // else: retain all charges (no shots fired)
       EventBus.emit(GameEvent.ABILITY_CHARGE_CHANGE, this.player.abilityCharge, this.player.abilityThreshold);
       this.emitFullState();
     }
@@ -1076,13 +1078,6 @@ export class CombatManager {
           output.damage += critConfig.bonusFlatDamage;
         }
 
-        // Reset or halve Lucky stacks on crit
-        if (critConfig.halveOnTrigger) {
-          this.player.luckyStacks = Math.floor(this.player.luckyStacks / 2);
-        } else {
-          this.player.consumeLucky();
-        }
-
         // Artifact crit effects (Dead Man's Hand, Rigged Deck)
         this.artifacts.onCritTriggered(this.player, targetEnemy);
       }
@@ -1259,8 +1254,8 @@ export class CombatManager {
   private handleBountyKill(enemy: Enemy): boolean {
     if (enemy.checkBountyKill()) {
       this.floatOnEnemy(enemy, 'COLLECTED', '#FFD700');
-      // Bounty Hunter(1): bounty kills on non-summoned enemies grant 10 gold
-      if (!enemy.summoned && this.traits.isActive('bounty_hunter', 1)) {
+      // Bounty kills on non-summoned enemies grant 10 gold
+      if (!enemy.summoned) {
         this.player.addGold(10);
         this.floatOnPlayer('+10g', '#FFD700');
         EventBus.emit(GameEvent.GOLD_CHANGE, this.player.gold);
@@ -1321,7 +1316,7 @@ export class CombatManager {
     if (output.gold > 0) {
       const scaledGold = Math.max(1, Math.round(output.gold * this.goldMultiplier));
       this.player.addGold(scaledGold);
-      this.floatOnPlayer(`+${scaledGold}`, '#FFD700');
+      this.floatOnPlayer(`+${scaledGold}g`, '#FFD700');
       EventBus.emit(GameEvent.GOLD_CHANGE, this.player.gold);
     }
 
@@ -1384,7 +1379,7 @@ export class CombatManager {
     // Lucky stacks (crit chance)
     if (output.luckyStacks > 0) {
       this.player.addLuckyStacks(output.luckyStacks);
-      this.floatOnPlayer(`+${output.luckyStacks}% LCK`, '#C8A040');
+      this.floatOnPlayer(`+${output.luckyStacks} LCK`, '#C8A040');
     }
 
     // Rageful stacks
@@ -1687,7 +1682,7 @@ export class CombatManager {
       let goldReward = base + Math.floor(Math.random() * (range * 2 + 1)) - range;
       goldReward = Math.max(1, Math.round(goldReward * this.goldMultiplier));
       this.player.addGold(goldReward);
-      this.floatOnPlayer(`+${goldReward}`, '#FFD700');
+      this.floatOnPlayer(`+${goldReward}g`, '#FFD700');
       EventBus.emit(GameEvent.GOLD_CHANGE, this.player.gold);
     }
 
@@ -1813,12 +1808,13 @@ export class CombatManager {
       deadeyeMaxShots: this.deadeyeMaxShots,
       canDeadeyeShootEnemy: this.isDeadeyeActive
         && this.deadeyeShotsRemaining === 1
-        && this.traits.isActive('bounty_hunter', 2),
+        && this.artifacts.has('rusts_cylinder'),
       isShuffleHoldMode: false,
       shuffleHoldsRemaining: 0,
       shuffleMaxHolds: 0,
       turnLimit: this.turnLimit,
       suppressedTileTypes: this.hazardManager.getSuppressedTypes(),
+      mirageType: this.board.getMirageType(),
     };
   }
 

@@ -171,7 +171,7 @@ When an enemy is blocking, consider matching gold or setting up instead of wasti
 
 **Charge:** +1 per player turn taken. Dynamite tiles add charges when cleared. Requires **10 charges** to activate. **Meter carries over between fights.** Charges cap at the threshold (excess charges are lost).
 
-**Activation:** Crosshair cursor appears. Select **3 tiles** anywhere on the board (6 with Fully Loaded). Each selected tile is destroyed and generates its resource. Gravity + cascades resolve after each shot. **Cancel:** Ability can be cancelled. If no shots were fired, all charges are retained. If any shots were fired, charges reset to 0.
+**Activation:** Crosshair cursor appears. Select **3 tiles** anywhere on the board (6 with Rust's Cylinder). Each selected tile is destroyed and generates its resource. Gravity + cascades resolve after each shot. **Cancel:** Ability can be cancelled. If no shots were fired, all charges are retained. If any shots were fired, charges reset to 0.
 
 **Deadeye + Showdown:** Shooting a Showdown tile clears all tiles of a **random** type on the board.
 
@@ -179,7 +179,7 @@ When an enemy is blocking, consider matching gold or setting up instead of wasti
 
 **Deadeye + Bounty:** Each shot consumes Bounty stacks on the targeted enemy for bonus damage.
 
-**"Fully Loaded"** — red panda-exclusive artifact. 3 shots become 6. Six chambers. The title of the game.
+**"Rust's Cylinder"** — red panda-exclusive artifact. 3 shots become 6. Six chambers. The title of the game.
 
 #### Ability Bar
 
@@ -315,12 +315,6 @@ Traits are powered by **artifact tags**. Each artifact has 0-2 trait tags. Your 
 |---|---|
 | 4 | Crit multiplier becomes 3x (from 2x). Crit chance halves on trigger instead of resetting to 0%. Chain crits become possible. |
 
-### Bounty Hunter — "The bounty trait" (1 / 2) — Rust exclusive
-
-| 1 | Bounty grants 10 gold when killing a non-summoned enemy. |
-|---|---|
-| 2 | The last shot of Deadeye can be used on an enemy, dealing 2 damage per stack of Bounty. |
-
 ---
 
 ## Artifacts
@@ -362,8 +356,8 @@ Each artifact has 0-2 trait tags. Collecting artifacts with the same tag is how 
 | Rigged Deck | Crits give 5 gold. | Gunslinger, Prospector | Lady luck pays well. |
 | Sharpshooter's Eye | +5% crit per swap used this turn. Resets at turn end. | Gunslinger, Outlaw | More shots, sharper aim. |
 | Silver Bullet | +20% crit vs bosses only. | Gunslinger, Sheriff | Save these for the big ones. |
-| **Fully Loaded** | **Rust only.** Deadeye: 3 shots become 6. | Bounty Hunter, Outlaw | Six in the chamber. No reloads. |
-| **Bamboo Canteen** | Rust starting artifact. After completing combat, restore 6 HP. | Bounty Hunter, Saloon Keeper | *(none)* |
+| **Rust's Cylinder** | **Rust only.** Increase Deadeye shots to 6. Last shot can target an enemy for 2 damage per Bounty stack. | Gunslinger, Outlaw | Six in the chamber. No reloads. |
+| **Bamboo Canteen** | Rust starting artifact. After completing combat, restore 6 HP. | Outlaw, Saloon Keeper | *(none)* |
 
 Target: **60-80 artifacts** (full game), **~20** (MVP).
 
@@ -576,7 +570,7 @@ Multi-step escalation. Stop at any point and keep what you've found.
 
 Small, scrappy, cowboy gear. The underdog. Pixel art with expressive reactions — flinch on hit, grin on big match, hat tip on boss kill.
 
-**Ability:** Deadeye (see Combat). **Exclusive artifact:** Fully Loaded. **Exclusive tile:** Bounty (apply 1 Bounty stack per tile; upgrade: +2 stacks to match total per level; flavor: "The S is silent.").
+**Ability:** Deadeye (see Combat). **Exclusive artifact:** Rust's Cylinder. **Exclusive tile:** Bounty (apply 1 Bounty stack per tile; upgrade: +2 stacks to match total per level; flavor: "The S is silent.").
 
 ### Future Characters (post-MVP)
 

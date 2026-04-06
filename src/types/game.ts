@@ -71,7 +71,6 @@ export type TraitId =
   | 'sapper'
   | 'mustang'
   | 'gunslinger'
-  | 'bounty_hunter'
   | 'saloon_keeper';
 
 export interface ArtifactInstance {

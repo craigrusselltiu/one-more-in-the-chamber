@@ -35,6 +35,8 @@ export interface CombatState {
   turnLimit: number;
   /** Tile types currently suppressed by warrants (produce no output when matched). */
   suppressedTileTypes: TileType[];
+  /** If mirage is active, the tile type it transformed into this combat. */
+  mirageType: TileType | null;
 }
 
 export type CombatPhase =

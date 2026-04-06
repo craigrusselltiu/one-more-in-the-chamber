@@ -82,11 +82,11 @@ export const TILE_DEFINITIONS: Record<TileType, TileDefinition> = {
     abbreviation: 'By',
     color: TILE_COLORS.bounty,
     baseValue: 1,
-    upgradeValue: 2,
+    upgradeValue: 1,
     pool: 'exclusive',
     description: 'Apply 1 Bounty stack per tile.',
     flavor: 'The S is silent.',
-    upgradeText: '+2 stacks to match total per level',
+    upgradeText: '+1 stack per tile per level',
   },
 
   chip: {

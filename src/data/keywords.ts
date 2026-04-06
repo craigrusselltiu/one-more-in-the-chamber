@@ -15,7 +15,7 @@ export const KEYWORDS: Record<string, KeywordDefinition> = {
   },
   Lucky: {
     color: '#C8A040',
-    description: '1% crit chance per stack (max 50%), removed when crit occurs.',
+    description: '1% chance per stack to deal double damage. (max 50)',
   },
   Barricade: {
     color: '#8B7355',
@@ -43,6 +43,6 @@ export const KEYWORDS: Record<string, KeywordDefinition> = {
   },
   Bounty: {
     color: '#C04040',
-    description: 'When applying this or taking damage, if HP is lower than Bounty stacks, die.',
+    description: 'When applying this or taking damage, if HP is lower than Bounty stacks, die.\nWhen this kills a non-summoned enemy, gain 10 gold.',
   },
 };

@@ -33,7 +33,7 @@ export interface ResourceOutput {
 
 /** Tiles where upgrade scales per tile (not flat per match). */
 const PER_TILE_UPGRADE: Set<TileType> = new Set([
-  'buckshot', 'fifty_cal', 'barricade', 'chip', 'boulder',
+  'buckshot', 'fifty_cal', 'barricade', 'chip', 'boulder', 'bounty',
 ]);
 
 /**
@@ -230,9 +230,9 @@ export class ResourceResolver {
         output.venomStacks = count + Math.round(upgradeBonus);
         break;
 
-      // --- Bounty (1 stack per tile) ---
+      // --- Bounty (1+upgrade stacks per tile) ---
       case 'bounty':
-        output.bountyStacks = count + Math.round(upgradeBonus);
+        output.bountyStacks = total;
         break;
 
       // --- Chip (50/50 gamble: per-tile damage or 0) ---

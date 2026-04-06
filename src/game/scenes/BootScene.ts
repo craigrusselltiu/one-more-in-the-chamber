@@ -34,8 +34,11 @@ export class BootScene extends Phaser.Scene {
     this.load.audio('main_menu', `${base}assets/audio/main_menu.mp3`);
     this.load.audio('map_theme', `${base}assets/audio/map_theme.mp3`);
     this.load.audio('act1_theme', `${base}assets/audio/act1_theme.mp3`);
+    this.load.audio('act1_theme_alt', `${base}assets/audio/act1_theme_alt.mp3`);
     this.load.audio('act2_theme', `${base}assets/audio/act2_theme.mp3`);
+    this.load.audio('act2_theme_alt', `${base}assets/audio/act2_theme_alt.mp3`);
     this.load.audio('act3_theme', `${base}assets/audio/act3_theme.mp3`);
+    this.load.audio('act3_theme_alt', `${base}assets/audio/act3_theme_alt.mp3`);
     this.load.audio('shop_theme', `${base}assets/audio/shop_theme.mp3`);
     this.load.audio('dustys_theme', `${base}assets/audio/dustys_theme.mp3`);
     this.load.audio('copperheads_theme', `${base}assets/audio/copperheads_theme.mp3`);
@@ -148,7 +151,8 @@ export class BootScene extends Phaser.Scene {
             };
             setTrack(bossThemes[run.currentAct] ?? `act${run.currentAct}_theme`);
           } else {
-            setTrack(`act${run.currentAct}_theme`);
+            const alt = Math.random() < 0.5 ? '_alt' : '';
+            setTrack(`act${run.currentAct}_theme${alt}`);
           }
           break;
         }

@@ -40,7 +40,8 @@ export const TILE_FRAMES: Record<TileType, number> = {
 
 /** Artifact sprite frames (by artifact ID). */
 export const ARTIFACT_FRAMES: Record<string, number> = {
-  // Add artifact frame indices here as they are assigned
+  bamboo_canteen: 1001,
+  rusts_cylinder: 916,
 };
 
 /** Consumable sprite frames (by consumable ID). */
@@ -87,7 +88,6 @@ export const TRAIT_FRAMES: Record<string, number> = {
   sapper: 938,
   mustang: 266,
   gunslinger: 1244,
-  bounty_hunter: 1167,
   saloon_keeper: 499,
 };
 
@@ -100,7 +100,6 @@ export const TRAIT_BREAKPOINTS: Record<string, number[]> = {
   sapper: [1, 2, 3],
   mustang: [4],
   gunslinger: [2, 4],
-  bounty_hunter: [1, 2],
   saloon_keeper: [],
 };
 

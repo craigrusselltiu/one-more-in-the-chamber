@@ -4,6 +4,32 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## v0.4.0
+
+### Added
+- Alt combat music tracks (50/50 chance per non-boss encounter)
+- Mirage transformed tile entry in Tiles popup (greyed out, with tooltips)
+- Mirage replacement type persists in combat snapshot
+- Consumable left-click dropdown with Use/Discard options
+- Artifact sprite icons in artifact bar (Bamboo Canteen, Rust's Cylinder)
+
+### Changed
+- Renamed Fully Loaded to Rust's Cylinder (Gunslinger + Outlaw tags)
+- Bamboo Canteen tags: Outlaw + Saloon Keeper
+- Bounty: upgrade now +1 stack per tile per level (was flat +2)
+- Bounty kill gold moved to Bounty keyword tooltip
+- Bounty Hunter trait removed; effects moved to Bounty tile and Rust's Cylinder
+- Lucky stacks no longer consumed on crit
+- Lucky tooltip: "1% chance per stack to deal double damage. (max 50)"
+- Lucky floating text shows "+15 LCK" instead of "+15% LCK"
+- Gold floating text shows "+Xg" suffix
+- Tiles popup title is yellow
+- Deadeye cancel restores charges when no shots fired
+
+### Fixed
+- Wipe animation race condition causing board not to load after campfire
+- ConsumableSlots infinite re-render loop (moved store selector to parent)
+
 ## v0.3.9
 
 ### Changed

@@ -22,12 +22,12 @@ export interface ShopItemDefinition {
 export const SHOP_ITEMS: ShopItemDefinition[] = [
   // --- Artifacts (unlock into the run artifact pool) ---
   {
-    id: 'shop_fully_loaded',
-    name: 'Fully Loaded',
-    description: 'Six chambers. All loaded. The title.',
+    id: 'shop_rusts_cylinder',
+    name: "Rust's Cylinder",
+    description: 'Six in the chamber. No reloads.',
     cost: 500,
     category: 'artifact',
-    unlockId: 'fully_loaded',
+    unlockId: 'rusts_cylinder',
   },
   {
     id: 'shop_twin_revolvers',

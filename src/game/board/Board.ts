@@ -35,6 +35,10 @@ export class Board {
   private tileTypeBag: TileType[] = [];
   /** If mirage is active, the type it transformed into for this combat. */
   private mirageReplacementType: TileType | null = null;
+
+  getMirageType(): TileType | null {
+    return this.mirageReplacementType;
+  }
   private isResolving = false;
   private selectedTile: GridPosition | null = null;
   private inputEnabled = true;
@@ -1615,6 +1619,7 @@ export class Board {
       tiles,
       activeTileTypes: [...this.activeTileTypes],
       gravityDirection: this.cascadeResolver.getGravityDirection(),
+      mirageReplacementType: this.mirageReplacementType,
     };
   }
 
@@ -1626,6 +1631,7 @@ export class Board {
     this.destroyAllTiles();
     this.activeTileTypes = snapshot.activeTileTypes;
     this.tileTypeBag = [];
+    this.mirageReplacementType = snapshot.mirageReplacementType ?? null;
     this.cascadeResolver.setGravityDirection(snapshot.gravityDirection);
 
     for (let row = 0; row < BOARD_SIZE; row++) {

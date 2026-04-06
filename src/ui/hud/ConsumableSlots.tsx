@@ -22,6 +22,7 @@ export const ConsumableSlots = memo(function ConsumableSlots() {
   const hasSaddlebag = useRunStore((s) =>
     s.run?.artifacts.some((a) => a.id === 'saddlebag') ?? false,
   );
+  const removeConsumable = useRunStore((s) => s.removeConsumable);
   const phase = useCombatStore((s) => s.phase);
 
   const maxSlots = hasSaddlebag ? 4 : 3;
@@ -45,6 +46,7 @@ export const ConsumableSlots = memo(function ConsumableSlots() {
             filled={!!instance}
             canUse={canUse && !!instance}
             consumableId={instance?.id}
+            onRemove={removeConsumable}
           />
         );
       })}
@@ -69,37 +71,37 @@ const ConsumableSlot = memo(function ConsumableSlot({
   filled,
   canUse,
   consumableId,
-}: ConsumableSlotProps & { consumableId?: string }) {
-  const removeConsumable = useRunStore((s) => s.removeConsumable);
+  onRemove,
+}: ConsumableSlotProps & { consumableId?: string; onRemove: (index: number) => void }) {
   const [showMenu, setShowMenu] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
 
-  const handleUse = useCallback(() => {
-    if (canUse && consumableId) {
-      EventBus.emit(GameEvent.USE_CONSUMABLE, consumableId);
-      removeConsumable(index);
-    }
-  }, [canUse, consumableId, index, removeConsumable]);
-
-  const handleContextMenu = useCallback((e: React.MouseEvent) => {
-    e.preventDefault();
+  const handleClick = useCallback(() => {
     if (filled) {
       setShowMenu((prev) => !prev);
     }
   }, [filled]);
 
-  const handleDiscard = useCallback(() => {
-    removeConsumable(index);
+  const handleUse = useCallback(() => {
+    if (canUse && consumableId) {
+      EventBus.emit(GameEvent.USE_CONSUMABLE, consumableId);
+      onRemove(index);
+    }
     setShowMenu(false);
-  }, [index, removeConsumable]);
+  }, [canUse, consumableId, index, onRemove]);
 
-  // Close menu on left-click outside (skip right-clicks to allow toggle)
+  const handleDiscard = useCallback(() => {
+    onRemove(index);
+    setShowMenu(false);
+  }, [index, onRemove]);
+
+  // Close menu on click outside
   useEffect(() => {
     if (!showMenu) return;
     const close = (e: MouseEvent) => {
-      if (e.button !== 0) return;
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)
+        && buttonRef.current && !buttonRef.current.contains(e.target as Node)) {
         setShowMenu(false);
       }
     };
@@ -119,9 +121,7 @@ const ConsumableSlot = memo(function ConsumableSlot({
       <Tooltip text={tooltipText} position="bottom">
         <button
           ref={buttonRef}
-          onClick={handleUse}
-          onContextMenu={handleContextMenu}
-          disabled={!canUse}
+          onClick={handleClick}
           className="pointer-events-auto flex items-center justify-center"
           style={{
             width: 18,
@@ -143,12 +143,21 @@ const ConsumableSlot = memo(function ConsumableSlot({
       {showMenu && (
         <div
           ref={menuRef}
-          className="absolute z-[100] pointer-events-auto"
-          style={{ top: '100%', left: 0 }}
+          className="absolute z-[100] pointer-events-auto bg-stone-800 border border-stone-600 overflow-hidden"
+          style={{ top: 'calc(100% + 3px)', left: 0, minWidth: 42 }}
         >
+          {canUse && (
+            <button
+              onClick={handleUse}
+              className="block w-full px-2 py-1 font-bold text-amber-300 hover:bg-stone-700 hover:text-amber-200 whitespace-nowrap text-left"
+              style={{ fontSize: '7px' }}
+            >
+              Use
+            </button>
+          )}
           <button
             onClick={handleDiscard}
-            className="px-1.5 py-0.5 font-bold text-red-300 bg-stone-800 border border-stone-600 hover:bg-stone-700 hover:text-red-200 whitespace-nowrap"
+            className="block w-full px-2 py-1 font-bold text-red-300 hover:bg-stone-700 hover:text-red-200 whitespace-nowrap text-left"
             style={{ fontSize: '7px' }}
           >
             Discard

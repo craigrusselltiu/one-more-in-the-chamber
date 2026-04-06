@@ -18,7 +18,6 @@ const TRAIT_LABELS: Record<TraitId, string> = {
   sapper: 'Sapper',
   mustang: 'Mustang',
   gunslinger: 'Gunslinger',
-  bounty_hunter: 'The Bounty Hunter',
   saloon_keeper: 'Saloon Keeper',
 };
 
@@ -53,10 +52,6 @@ const TRAIT_DESCRIPTIONS: Record<string, Record<number, string>> = {
   gunslinger: {
     2: 'Start each fight with 15% crit. Crits deal 3 bonus flat damage.',
     4: 'Crit multiplier 3x. Crit chance halves instead of resetting.',
-  },
-  bounty_hunter: {
-    1: 'Bounty grants 10 gold when killing a non-summoned enemy.',
-    2: 'Last Deadeye shot can target an enemy, dealing 2 damage per Bounty stack.',
   },
 };
 
