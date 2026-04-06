@@ -42,7 +42,7 @@ export async function fetchLeaderboard(period: LeaderboardPeriod): Promise<Leade
     .from('scores')
     .select('final_score, ascension_level, run_completed, character, created_at, player_name')
     .order('final_score', { ascending: false })
-    .limit(10);
+    .limit(100);
 
   const start = periodStart(period);
   if (start) {

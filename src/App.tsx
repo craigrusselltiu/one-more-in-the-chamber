@@ -248,6 +248,12 @@ export default function App() {
           useCombatStore.getState().setAct(run.currentAct);
 
           game.scene.start('CombatScene', { config: combatConfig });
+
+          // Mark combat node as visited now that combat is starting
+          const nodeId = run.currentNodeId;
+          if (nodeId) {
+            useRunStore.getState().markNodeVisited(nodeId);
+          }
         }
       }
     } else if (screen !== 'combat' && prevScreenRef.current === 'combat') {
@@ -484,7 +490,7 @@ export default function App() {
           className="absolute right-2 bottom-1 pointer-events-none z-[60]"
           style={{ fontSize: '9px', color: 'rgba(255,255,255,0.3)' }}
         >
-          v0.3.3
+          v0.3.4
         </span>
       </div>
     </div>

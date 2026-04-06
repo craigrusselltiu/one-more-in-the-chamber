@@ -112,7 +112,7 @@ export const MainMenu = memo(function MainMenu() {
       return;
     }
 
-    // Check if player was at an incomplete non-combat node (e.g. shop, campfire)
+    // Check if player was at an incomplete node
     const currentRun = useRunStore.getState().run;
     const currentNode = currentRun?.mapState?.nodes.find((n) => n.id === currentRun?.currentNodeId);
     if (currentNode && currentNode.visited && !currentNode.completed) {
@@ -126,6 +126,13 @@ export const MainMenu = memo(function MainMenu() {
       if (screen) {
         EventBus.emit(GameEvent.SCREEN_CHANGE, screen);
         return;
+      }
+
+      // Safeguard: combat node visited but no snapshot means combat failed to load.
+      // Reset the node so the player can retry.
+      const isCombatNode = currentNode.type === 'combat' || currentNode.type === 'elite' || currentNode.type === 'boss';
+      if (isCombatNode) {
+        useRunStore.getState().resetNodeVisited(currentNode.id);
       }
     }
 

@@ -37,6 +37,7 @@ function getNodePos(node: MapNode): { x: number; y: number } {
 export const MapScreen = memo(function MapScreen({ readonly }: { readonly?: boolean } = {}) {
   const run = useRunStore((s) => s.run);
   const markNodeVisited = useRunStore((s) => s.markNodeVisited);
+  const setCurrentNode = useRunStore((s) => s.setCurrentNode);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [tooltip, setTooltip] = useState<{ text: string; x: number; y: number } | null>(null);
@@ -263,14 +264,21 @@ export const MapScreen = memo(function MapScreen({ readonly }: { readonly?: bool
         const dy = my - pos.y;
         if (dx * dx + dy * dy <= NODE_RADIUS * NODE_RADIUS * 1.5) {
           if (reachable.includes(node.id)) {
-            markNodeVisited(node.id);
+            // Non-combat nodes: mark visited immediately (they load synchronously)
+            // Combat nodes: only set currentNodeId now; mark visited once combat starts
+            const isCombatNode = node.type === 'combat' || node.type === 'elite' || node.type === 'boss';
+            if (isCombatNode) {
+              setCurrentNode(node.id);
+            } else {
+              markNodeVisited(node.id);
+            }
             navigateToNode(node);
           }
           return;
         }
       }
     },
-    [mapState, nodes, reachable, markNodeVisited],
+    [mapState, nodes, reachable, markNodeVisited, setCurrentNode],
   );
 
   if (!run || !mapState) {

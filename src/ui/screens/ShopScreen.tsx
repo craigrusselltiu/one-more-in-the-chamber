@@ -32,7 +32,8 @@ export const ShopScreen = memo(function ShopScreen() {
   const upgradeTile = useRunStore((s) => s.upgradeTile);
   const [purchased, setPurchased] = useState<Set<string>>(new Set());
   const [swapPending, setSwapPending] = useState<ShopItem | null>(null);
-  const [upgradeMode, setUpgradeMode] = useState(false);
+  const [upgradePhase, setUpgradePhase] = useState<'none' | 'selecting' | 'upgraded'>('none');
+  const [upgradeSelectedTile, setUpgradeSelectedTile] = useState<TileType | null>(null);
 
   useEffect(() => { playShop(); }, []);
 
@@ -125,7 +126,8 @@ export const ShopScreen = memo(function ShopScreen() {
     }
 
     if (item.type === 'upgrade') {
-      setUpgradeMode(true);
+      setUpgradePhase('selecting');
+      setUpgradeSelectedTile(null);
       return;
     }
 
@@ -152,15 +154,15 @@ export const ShopScreen = memo(function ShopScreen() {
     setSwapPending(null);
   };
 
-  const handleUpgradeConfirm = (tileType: TileType) => {
-    if (!run) return;
+  const handleUpgradeConfirm = () => {
+    if (!run || !upgradeSelectedTile) return;
     const upgradeItem = stock.tiles.find((t) => t.type === 'upgrade');
     if (!upgradeItem || run.gold < upgradeItem.price) return;
     updateGold(-upgradeItem.price);
-    upgradeTile(tileType);
+    upgradeTile(upgradeSelectedTile);
     playUpgrade();
     setPurchased((prev) => new Set([...prev, 'upgrade']));
-    setUpgradeMode(false);
+    setUpgradePhase('upgraded');
   };
 
   const handleLeave = () => {
@@ -334,10 +336,10 @@ export const ShopScreen = memo(function ShopScreen() {
         </div>
       )}
 
-      {/* Upgrade picker overlay */}
-      {upgradeMode && (
+      {/* Upgrade: tile selection screen */}
+      {upgradePhase === 'selecting' && (
         <div className="absolute inset-0 flex items-center justify-center bg-black/70 z-10">
-          <div className="bg-[#1a1a2e] border border-stone-600 p-4" style={{ width: 380 }}>
+          <div className="bg-[#1a1a2e] border border-stone-600 p-4" style={{ width: 420 }}>
             <h3 className="text-sm text-amber-400 mb-1">Choose a tile to upgrade</h3>
             <p className="text-xs text-stone-400 mb-3">Permanent +1 tier for the rest of the run</p>
             <div className="grid grid-cols-4 gap-2 mb-3 justify-items-center">
@@ -346,6 +348,7 @@ export const ShopScreen = memo(function ShopScreen() {
                 .map((tileType) => {
                   const def = TILE_DEFINITIONS[tileType];
                   const currentLevel = run.tileUpgrades[tileType] ?? 0;
+                  const isSelected = upgradeSelectedTile === tileType;
                   const previewTooltip = (
                     <div className="whitespace-nowrap" style={{ fontSize: '9px', lineHeight: 1.3 }}>
                       {buildUpgradePreview(tileType, currentLevel)}
@@ -356,8 +359,12 @@ export const ShopScreen = memo(function ShopScreen() {
                   return (
                     <Tooltip key={tileType} content={previewTooltip} secondContent={keywordTooltip} position="bottom">
                       <button
-                        onClick={() => handleUpgradeConfirm(tileType)}
-                        className="flex flex-col items-center p-2 w-20 border border-stone-600 bg-stone-800/50 hover:border-amber-400 hover:bg-stone-700/50"
+                        onClick={() => setUpgradeSelectedTile(tileType)}
+                        className="flex flex-col items-center p-2 w-20 transition-colors"
+                        style={{
+                          border: `2px solid ${isSelected ? '#f59e0b' : '#44403c'}`,
+                          backgroundColor: isSelected ? 'rgba(120, 53, 15, 0.4)' : 'rgba(28, 25, 23, 0.5)',
+                        }}
                       >
                         <SpriteIcon frame={TILE_FRAMES[tileType]} scale={2} className="mb-1" />
                         <span className="text-amber-300 text-xs font-bold">{def.label}</span>
@@ -369,15 +376,51 @@ export const ShopScreen = memo(function ShopScreen() {
                   );
                 })}
             </div>
-            <button
-              onClick={() => setUpgradeMode(false)}
-              className="w-full px-4 py-1.5 bg-stone-700/50 text-stone-400 text-xs border border-stone-600 hover:bg-stone-600/50"
-            >
-              Cancel
-            </button>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setUpgradePhase('none')}
+                className="flex-1 px-4 py-1.5 bg-stone-700/50 text-stone-400 text-xs border border-stone-600 hover:bg-stone-600/50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleUpgradeConfirm}
+                disabled={!upgradeSelectedTile}
+                className="flex-1 px-4 py-1.5 text-xs border disabled:opacity-30"
+                style={{
+                  backgroundColor: upgradeSelectedTile ? 'rgba(120, 53, 15, 0.6)' : undefined,
+                  borderColor: upgradeSelectedTile ? '#d97706' : '#44403c',
+                  color: upgradeSelectedTile ? '#fbbf24' : '#666',
+                }}
+              >
+                Upgrade
+              </button>
+            </div>
           </div>
         </div>
       )}
+
+      {/* Upgrade: confirmation screen */}
+      {upgradePhase === 'upgraded' && (() => {
+        const tileDef = upgradeSelectedTile ? TILE_DEFINITIONS[upgradeSelectedTile] : null;
+        return (
+          <div className="absolute inset-0 flex items-center justify-center bg-black/70 z-10">
+            <div className="bg-[#1a1a2e] border border-stone-600 p-6 flex flex-col items-center">
+              <SpriteIcon frame={UI_FRAMES.upgrade} scale={3} className="mb-3" />
+              <h2 className="text-xl text-amber-400 mb-2">Upgraded</h2>
+              <p className="text-stone-300 text-sm mb-4">
+                {tileDef?.label ?? 'Tile'} has been upgraded.
+              </p>
+              <button
+                onClick={() => setUpgradePhase('none')}
+                className="px-6 py-2 bg-amber-900/60 text-amber-300 text-sm border border-amber-700 hover:bg-amber-800/60"
+              >
+                Back to Shop
+              </button>
+            </div>
+          </div>
+        );
+      })()}
     </div>
   );
 });

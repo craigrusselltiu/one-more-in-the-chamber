@@ -99,7 +99,7 @@ export const ARTIFACTS: ArtifactDefinition[] = [
     name: 'Cactus Spine Vest',
     description: 'They hit you, they get pricked.',
     tags: ['rattlesnake'],
-    effect: 'Enemy attacks poison 1 tile.',
+    effect: 'Enemy attacks apply 1 Venomous to them.',
   },
   {
     id: 'lit_fuse',

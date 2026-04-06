@@ -40,6 +40,7 @@ interface RunStore {
   addBossDefeated: () => void;
   setCurrentNode: (nodeId: string) => void;
   markNodeVisited: (nodeId: string) => void;
+  resetNodeVisited: (nodeId: string) => void;
   markNodeCompleted: (nodeId: string) => void;
   advanceAct: () => void;
   setMapState: (map: MapState) => void;
@@ -275,6 +276,22 @@ export const useRunStore = create<RunStore>((set, get) => ({
           ...state.run,
           currentNodeId: nodeId,
           mapState: { ...state.run.mapState, nodes, currentNodeId: nodeId },
+        },
+      };
+    }),
+
+  /** Reset a visited node back to unvisited (safeguard for failed combat loads). */
+  resetNodeVisited: (nodeId) =>
+    set((state) => {
+      if (!state.run?.mapState) return state;
+      const nodes = state.run.mapState.nodes.map((n) =>
+        n.id === nodeId ? { ...n, visited: false } : n,
+      );
+      return {
+        run: {
+          ...state.run,
+          currentNodeId: null,
+          mapState: { ...state.run.mapState, nodes },
         },
       };
     }),
