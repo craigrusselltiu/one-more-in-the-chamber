@@ -962,7 +962,7 @@ export class CombatManager {
         this.hazardManager.clearAllOfType('sand');
         break;
       case 'stick_of_tnt':
-        this.resolveStickOfTNT();
+        await this.resolveStickOfTNT();
         break;
       case 'snake_oil':
         this.resolveSnakeOil();
