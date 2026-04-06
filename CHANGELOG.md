@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## v0.3.6
+
+### Fixed
+- Enemies no longer shift slots when another enemy dies (summons replace dead slots)
+- Visited-but-incomplete nodes (boss/combat) are retryable on the map (fixes hard-lock)
+- Works retroactively for existing hard-locked runs
+
 ## v0.3.5
 
 ### Changed

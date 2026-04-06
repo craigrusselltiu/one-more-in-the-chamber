@@ -298,5 +298,10 @@ export function getReachableNodes(map: MapState): string[] {
   const current = map.nodes.find((n) => n.id === map.currentNodeId);
   if (!current) return [];
 
+  // If current node is visited but not completed, allow retrying it
+  if (current.visited && !current.completed) {
+    return [current.id];
+  }
+
   return current.connections;
 }

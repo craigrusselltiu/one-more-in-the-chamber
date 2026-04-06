@@ -679,9 +679,13 @@ export class CombatManager {
   /**
    * Switch which enemy is targeted. Free action, available at any time.
    */
-  setTargetedEnemy(aliveIdx: number): void {
+  setTargetedEnemy(index: number): void {
+    const enemy = this.enemies[index];
+    if (!enemy || enemy.state.isDead) return;
+    // Convert full-list index to alive-list index for internal targeting
     const alive = this.aliveEnemies();
-    if (aliveIdx >= 0 && aliveIdx < alive.length) {
+    const aliveIdx = alive.indexOf(enemy);
+    if (aliveIdx >= 0) {
       this.targetedEnemyIndex = aliveIdx;
       this.emitFullState();
     }
@@ -1128,7 +1132,9 @@ export class CombatManager {
       if (scaled.damage > 0 && !scaled.isAoE) {
         const mid = match.tiles[Math.floor(match.tiles.length / 2)];
         const alive = this.aliveEnemies();
-        EventBus.emit(GameEvent.FLASH_LINE_TO_ENEMY, mid, match.tileType, this.targetedEnemyIndex, alive.length);
+        const target = alive[this.targetedEnemyIndex];
+        const fullIdx = target ? this.enemies.indexOf(target) : 0;
+        EventBus.emit(GameEvent.FLASH_LINE_TO_ENEMY, mid, match.tileType, fullIdx, this.enemies.length);
       }
 
       // Ricochet: destroy (1 + upgradeLevel) random tiles per ricochet tile matched
@@ -1209,8 +1215,7 @@ export class CombatManager {
 
   /** Emit a floating number on an enemy. */
   private floatOnEnemy(enemy: Enemy, text: string, color: string, fontSize?: number): void {
-    const alive = this.aliveEnemies();
-    EventBus.emit(GameEvent.FLOATING_NUMBER, 'enemy', alive.indexOf(enemy), text, color, fontSize);
+    EventBus.emit(GameEvent.FLOATING_NUMBER, 'enemy', this.enemies.indexOf(enemy), text, color, fontSize);
   }
 
   /** Emit a floating number on the player. */
@@ -1582,6 +1587,16 @@ export class CombatManager {
    * Try to summon a new enemy. Max 3 on field.
    * Boss summons use BossController.createBossMinion for SPEC-accurate minions.
    */
+  /** Add an enemy to the array, replacing a dead slot if possible, otherwise push. */
+  private addEnemyToSlot(enemy: Enemy): void {
+    const deadIdx = this.enemies.findIndex(e => e.state.isDead);
+    if (deadIdx >= 0) {
+      this.enemies[deadIdx] = enemy;
+    } else {
+      this.enemies.push(enemy);
+    }
+  }
+
   private trySummonEnemy(summoner: Enemy): void {
     if (this.aliveEnemies().length >= 3) return;
 
@@ -1592,7 +1607,7 @@ export class CombatManager {
         const bossMinion = new Enemy(minionDef);
         bossMinion.summoned = true;
         bossMinion.state.summoned = true;
-        this.enemies.push(bossMinion);
+        this.addEnemyToSlot(bossMinion);
         this.emitFullState();
         return;
       }
@@ -1617,7 +1632,7 @@ export class CombatManager {
     this.artifacts.onEnemySummoned(minion);
     this.damageDealtThisFight += Math.max(0, hpBeforeSummon - minion.state.health);
 
-    this.enemies.push(minion);
+    this.addEnemyToSlot(minion);
     this.emitFullState();
   }
 
@@ -1769,8 +1784,6 @@ export class CombatManager {
   }
 
   private buildState(): CombatState {
-    const alive = this.aliveEnemies();
-
     return {
       character: this.character,
       turnNumber: this.turnNumber,
@@ -1785,8 +1798,12 @@ export class CombatManager {
       sturdyStacks: this.player.sturdyStacks,
       venomousStacks: this.player.venomousStacks,
       thorns: this.player.thorns,
-      enemies: alive.map((e) => ({ ...e.state })),
-      targetedEnemyIndex: Math.min(this.targetedEnemyIndex, Math.max(0, alive.length - 1)),
+      enemies: this.enemies.map((e) => ({ ...e.state })),
+      targetedEnemyIndex: (() => {
+        const alive = this.aliveEnemies();
+        const target = alive[this.targetedEnemyIndex];
+        return target ? this.enemies.indexOf(target) : 0;
+      })(),
       phase: this.phase,
       abilityCharge: this.player.abilityCharge,
       abilityThreshold: this.player.abilityThreshold,
