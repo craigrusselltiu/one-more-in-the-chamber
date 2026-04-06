@@ -203,11 +203,6 @@ export default function App() {
     if (!game || !bootComplete) return;
 
     if (screen === 'combat' && prevScreenRef.current !== 'combat') {
-      // Ensure CombatScene is fully stopped before restarting
-      if (game.scene.isActive('CombatScene')) {
-        game.scene.stop('CombatScene');
-      }
-
       // Check if we have a pending snapshot to restore (mid-combat resume)
       const snapshot = consumePendingSnapshot();
       if (snapshot) {

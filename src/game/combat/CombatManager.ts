@@ -91,6 +91,8 @@ export class CombatManager {
   private swapsRemaining = 0;
   private targetedEnemyIndex = 0;
   private isDeadeyeActive = false;
+  /** Cache last emitted enemy states to avoid unnecessary React re-renders. */
+  private lastEmittedEnemies: import('../../types/combat').EnemyState[] = [];
   private deadeyeShotsRemaining = 0;
   private deadeyeMaxShots: number;
   private isBoss: boolean;
@@ -1798,7 +1800,7 @@ export class CombatManager {
       sturdyStacks: this.player.sturdyStacks,
       venomousStacks: this.player.venomousStacks,
       thorns: this.player.thorns,
-      enemies: this.enemies.map((e) => ({ ...e.state })),
+      enemies: this.buildEnemyStates(),
       targetedEnemyIndex: (() => {
         const alive = this.aliveEnemies();
         const target = alive[this.targetedEnemyIndex];
@@ -1819,6 +1821,28 @@ export class CombatManager {
       turnLimit: this.turnLimit,
       suppressedTileTypes: this.hazardManager.getSuppressedTypes(),
     };
+  }
+
+  /** Return cached enemy states if unchanged, avoiding React re-render churn. */
+  private buildEnemyStates(): import('../../types/combat').EnemyState[] {
+    const cached = this.lastEmittedEnemies;
+    let changed = cached.length !== this.enemies.length;
+    if (!changed) {
+      for (let i = 0; i < this.enemies.length; i++) {
+        const s = this.enemies[i].state;
+        const c = cached[i];
+        if (s.health !== c.health || s.isDead !== c.isDead || s.block !== c.block
+          || s.bountyStacks !== c.bountyStacks || s.venomStacks !== c.venomStacks
+          || s.vulnerable !== c.vulnerable || s.intent !== c.intent) {
+          changed = true;
+          break;
+        }
+      }
+    }
+    if (changed) {
+      this.lastEmittedEnemies = this.enemies.map((e) => ({ ...e.state }));
+    }
+    return this.lastEmittedEnemies;
   }
 
   private emitFullState(): void {

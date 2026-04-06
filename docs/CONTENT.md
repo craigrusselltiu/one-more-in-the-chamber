@@ -171,7 +171,7 @@ Trait level = number of artifacts held with that tag. Effects activate at breakp
 - 1 -- Bounty grants 10 gold when killing a non-summoned enemy.
 - 2 -- The last shot of Deadeye can be used on an enemy, dealing 2 damage per stack of Bounty.
 
-## Gambler
+## The Gambler
 - Reno exclusive
 - Flavor: something about chance
 - 
