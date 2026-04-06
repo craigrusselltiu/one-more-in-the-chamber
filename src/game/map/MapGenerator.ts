@@ -73,7 +73,7 @@ function assignNodeTypes(
   const targets: { type: MapNodeType; count: number }[] = [
     { type: 'elite', count: pick(3, 4) },
     { type: 'shop', count: pick(2, 3) },
-    { type: 'rest', count: pick(3, 4) },
+    { type: 'rest', count: pick(2, 3) },
     { type: 'event', count: pick(3, 6) },
   ];
 
@@ -126,7 +126,7 @@ export function generateMap(seed: string, act: Act): MapState {
     } else if (isLast) {
       count = 1;
     } else if (row === totalRows - 2) {
-      count = 2; // pre-boss rest sites
+      count = 1; // pre-boss rest site
     } else {
       count = 2 + Math.floor(rng() * 2); // 2-3
     }

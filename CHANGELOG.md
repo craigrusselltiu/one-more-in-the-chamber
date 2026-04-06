@@ -4,6 +4,17 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## v0.4.3
+
+### Added
+- Act 1 enemies: Tumbleweed Golem, Card Shark
+- Act 2 enemies: Powder Monkey, Mine Foreman, Canary Swarm
+- Act 3 enemies: Hangman, Phantom Rider, Dynamite Duchess, Sheriff's Shadow, Outlaw King (elite)
+- Saloon Brawler now elite-only in Act 3
+
+### Changed
+- Max campfires per map: 1 pre-boss + 2-3 elsewhere (was 2 + 3-4)
+
 ## v0.4.2
 
 ### Fixed

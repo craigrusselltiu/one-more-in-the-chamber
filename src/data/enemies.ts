@@ -37,6 +37,22 @@ export const ACT1_ENEMIES: Record<string, EnemyDefinition> = {
     maxDamage: 8,
     abilities: ['bury'],
   },
+  tumbleweed_golem: {
+    type: 'tumbleweed_golem',
+    name: 'Tumbleweed Golem',
+    health: 30,
+    minDamage: 6,
+    maxDamage: 12,
+    abilities: ['bury', 'summon'],
+  },
+  card_shark: {
+    type: 'card_shark',
+    name: 'Card Shark',
+    health: 35,
+    minDamage: 7,
+    maxDamage: 12,
+    abilities: ['lock', 'suppress'],
+  },
 };
 
 export const DUSTY_DAN: EnemyDefinition = {
@@ -85,6 +101,30 @@ export const ACT2_ENEMIES: Record<string, EnemyDefinition> = {
     maxDamage: 0,
     abilities: ['hazard'],
   },
+  powder_monkey: {
+    type: 'powder_monkey',
+    name: 'Powder Monkey',
+    health: 25,
+    minDamage: 8,
+    maxDamage: 14,
+    abilities: ['bomb'],
+  },
+  mine_foreman: {
+    type: 'mine_foreman',
+    name: 'Mine Foreman',
+    health: 70,
+    minDamage: 12,
+    maxDamage: 20,
+    abilities: ['lock', 'block', 'suppress'],
+  },
+  canary_swarm: {
+    type: 'canary_swarm',
+    name: 'Canary Swarm',
+    health: 10,
+    minDamage: 3,
+    maxDamage: 5,
+    abilities: ['bury'],
+  },
 };
 
 export const COPPERHEAD_CASSIDY: EnemyDefinition = {
@@ -124,6 +164,46 @@ export const ACT3_ENEMIES: Record<string, EnemyDefinition> = {
     minDamage: 15,
     maxDamage: 20,
     abilities: ['lock', 'bomb'],
+  },
+  hangman: {
+    type: 'hangman',
+    name: 'Hangman',
+    health: 90,
+    minDamage: 20,
+    maxDamage: 28,
+    abilities: ['lock', 'poison'],
+  },
+  phantom_rider: {
+    type: 'phantom_rider',
+    name: 'Phantom Rider',
+    health: 60,
+    minDamage: 15,
+    maxDamage: 22,
+    abilities: ['suppress', 'bury'],
+  },
+  dynamite_duchess: {
+    type: 'dynamite_duchess',
+    name: 'Dynamite Duchess',
+    health: 80,
+    minDamage: 18,
+    maxDamage: 25,
+    abilities: ['bomb', 'lock'],
+  },
+  sheriffs_shadow: {
+    type: 'sheriffs_shadow',
+    name: "Sheriff's Shadow",
+    health: 100,
+    minDamage: 20,
+    maxDamage: 30,
+    abilities: ['block', 'lock', 'suppress'],
+  },
+  outlaw_king: {
+    type: 'outlaw_king',
+    name: 'Outlaw King',
+    health: 120,
+    minDamage: 25,
+    maxDamage: 35,
+    abilities: ['block', 'summon'],
   },
 };
 
@@ -173,6 +253,8 @@ const ACT1_ENCOUNTER_TEMPLATES: EncounterTemplate[] = [
   { type: 'rattlesnake', minCount: 1, maxCount: 1 },
   { type: 'bandit', minCount: 1, maxCount: 2 },
   { type: 'vulture', minCount: 1, maxCount: 2 },
+  { type: 'tumbleweed_golem', minCount: 1, maxCount: 1 },
+  { type: 'card_shark', minCount: 1, maxCount: 1 },
 ];
 
 // --- Act 2 templates ---
@@ -182,13 +264,20 @@ const ACT2_ENCOUNTER_TEMPLATES: EncounterTemplate[] = [
   { type: 'dynamite_outlaw', minCount: 1, maxCount: 1 },
   { type: 'cave_bat', minCount: 3, maxCount: 3 },
   { type: 'mine_cart', minCount: 1, maxCount: 1 },
+  { type: 'powder_monkey', minCount: 1, maxCount: 2 },
+  { type: 'mine_foreman', minCount: 1, maxCount: 1 },
+  { type: 'canary_swarm', minCount: 3, maxCount: 3 },
 ];
 
-// --- Act 3 templates (Train Guard is elite-only, excluded from regular) ---
+// --- Act 3 templates (Saloon Brawler + Outlaw King are elite-only) ---
 
 const ACT3_ENCOUNTER_TEMPLATES: EncounterTemplate[] = [
   { type: 'corrupt_deputy', minCount: 1, maxCount: 2 },
-  { type: 'saloon_brawler', minCount: 1, maxCount: 1 },
+  { type: 'train_guard', minCount: 1, maxCount: 1 },
+  { type: 'hangman', minCount: 1, maxCount: 1 },
+  { type: 'phantom_rider', minCount: 1, maxCount: 2 },
+  { type: 'dynamite_duchess', minCount: 1, maxCount: 1 },
+  { type: 'sheriffs_shadow', minCount: 1, maxCount: 1 },
 ];
 
 // ---------------------------------------------------------------------------
