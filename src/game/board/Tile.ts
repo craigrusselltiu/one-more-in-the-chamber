@@ -594,6 +594,56 @@ export class Tile {
     });
   }
 
+  /** Scale all visuals of this tile. Used for shuffle animation. */
+  tweenScale(scale: number, duration: number): Promise<void> {
+    if (this.destroyed) return Promise.resolve();
+    duration = Math.round(duration / getSpeedMultiplier());
+    if (!useSettingsStore.getState().juiceAnimationsEnabled) return Promise.resolve();
+
+    const targets: Phaser.GameObjects.GameObject[] = [this.sprite];
+    if (this.overlay) targets.push(this.overlay);
+    targets.push(...this.outlineSprites);
+    targets.push(...this.lockOutline);
+    if (this.bombLabel) targets.push(this.bombLabel);
+    if (this.statusDot) targets.push(this.statusDot);
+    if (this.statusLabel) targets.push(this.statusLabel);
+    if (this.lockIcon) targets.push(this.lockIcon);
+    if (this.poisonIcon) targets.push(this.poisonIcon);
+
+    // Lock/status icons are at scale 1, main sprite/overlay/outlines at scale 2
+    const mainTargets: Phaser.GameObjects.GameObject[] = [this.sprite];
+    if (this.overlay) mainTargets.push(this.overlay);
+    mainTargets.push(...this.outlineSprites);
+
+    const smallTargets: Phaser.GameObjects.GameObject[] = [];
+    smallTargets.push(...this.lockOutline);
+    if (this.bombLabel) smallTargets.push(this.bombLabel);
+    if (this.statusDot) smallTargets.push(this.statusDot);
+    if (this.statusLabel) smallTargets.push(this.statusLabel);
+    if (this.lockIcon) smallTargets.push(this.lockIcon);
+    if (this.poisonIcon) smallTargets.push(this.poisonIcon);
+
+    return new Promise((resolve) => {
+      if (smallTargets.length > 0) {
+        this.scene.tweens.add({
+          targets: smallTargets,
+          scaleX: scale,
+          scaleY: scale,
+          duration,
+          ease: 'Cubic.easeInOut',
+        });
+      }
+      this.scene.tweens.add({
+        targets: mainTargets,
+        scaleX: scale * 2,
+        scaleY: scale * 2,
+        duration,
+        ease: 'Cubic.easeInOut',
+        onComplete: () => resolve(),
+      });
+    });
+  }
+
   animateClear(duration: number): Promise<void> {
     if (this.destroyed) return Promise.resolve();
     duration = Math.round(duration / getSpeedMultiplier());

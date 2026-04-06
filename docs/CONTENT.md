@@ -1,22 +1,22 @@
-# Tiles
-
-## Exclusive Tiles
-NOTE: Observe the difference between +1 to match total and +1 per tile. The tile pool for Acts 2, 3, and also the shop should be the Starter Tiles AND the Additional Tiles. Act 1 should only be limited to Starter Tiles.
-
-Buffs/debuffs:
+# Buffs/Debuffs
 - Rageful - Deal 1 extra damage per stack. Decrease stacks by 1 at the end of the turn.
 - Sturdy - Gain 1 extra block per stack. Decrease stacks by 1 at the end of the turn.
 - Ace - Add x0.25 multiplier per stack to the next non-Ace match.
-- Lucky - 1% crit chance per stack, removed when crit occurs.
+- Lucky - 1% crit chance per stack. (max 50)
 - Barricade - At the end of the turn, retain block and decrease stacks by 1.
 - Vulnerable - Take 50% extra damage from attacks. Decrease stacks by 1 at the end of the turn.
 - Venom - At the start of the turn, take damage equal to the number of stacks and decrease stacks by 1.
 - Bounty - When applying this or taking damage, if HP is lower than Bounty stacks, die.
 - Summoned - Dies when all non-summoned enemies have died.
 
+# Tiles
+
+## Exclusive Tiles
+NOTE: Observe the difference between +1 to match total and +1 per tile. The tile pool for Acts 2, 3, and also the shop should be the Starter Tiles AND the Additional Tiles. Act 1 should only be limited to Starter Tiles.
+
 ### Bounty
 - Rust exclusive
-- Behaviour: Apply 2 stacks of Bounty per 3-match, plus 1 per extra tile.
+- Behaviour: Apply 1 stack of Bounty per tile.
 - Upgrade: +2 stacks to match total per level
 - Flavor: "The S is silent."
 
@@ -127,8 +127,8 @@ Buffs/debuffs:
 - Flavor: "Flip the table. Take cover."
 
 ### Boulder
-- Behaviour: Deal 1 damage per block.
-- Upgrade: +1 damage to match total per level
+- Behaviour: Deal 1 damage per tile, plus 1 damage per block.
+- Upgrade: +1 damage per tile per level
 - Flavor: "Gravity does the rest."
 
 ### Cavalry
@@ -165,6 +165,12 @@ Buffs/debuffs:
 
 Trait level = number of artifacts held with that tag. Effects activate at breakpoints.
 
+## The Bounty Hunter
+- Rust exclusive
+- Flavor:
+- 1 -- Bounty grants 10 gold when killing a non-summoned enemy.
+- 2 -- The last shot of Deadeye can be used on an enemy, dealing 2 damage per stack of Bounty.
+
 ## Sheriff
 - Flavor: "The law is heavier than it looks."
 - 2 -- The first time you gain block each turn is doubled.
@@ -178,8 +184,10 @@ Trait level = number of artifacts held with that tag. Effects activate at breakp
 - 6 -- Tiles from 4+ match cascades trigger resource effects twice.
 
 ## Sniper
+- Flavor: something about 5-match
 
 ## Gambler
+- Flavor: something about chance
 
 ## Rattlesnake
 - Flavor: "Don't step on anything that hisses."
@@ -250,6 +258,20 @@ Trait level = number of artifacts held with that tag. Effects activate at breakp
 ---
 
 # Artifacts
+
+## Exclusive
+
+### Bamboo Canteen
+- Rust starting artifact
+- Tags: Bounty Hunter, Saloon Keeper
+- Effect: After completing combat, restore 6 HP.
+- Flavor: 
+
+### Fully Loaded
+- Rust exclusive artifact
+- Tags: Bounty Hunter, Outlaw
+- Effect: Rust only. Deadeye: 3 shots become 6.
+- Flavor: "Six in the chamber. No reloads."
 
 ## Outlaw
 
@@ -745,11 +767,6 @@ Trait level = number of artifacts held with that tag. Effects activate at breakp
 - Tags: --
 - Effect: +5 max HP. First match/fight: 2x resources.
 - Flavor: "Found it nailed above a saloon door."
-
-### Fully Loaded
-- Tags: --
-- Effect: Rust only. Deadeye: 3 shots become 6.
-- Flavor: "Six in the chamber. No reloads."
 
 ### Double Down
 - Tags: --

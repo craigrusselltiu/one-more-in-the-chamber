@@ -230,13 +230,10 @@ export class ResourceResolver {
         output.venomStacks = count + Math.round(upgradeBonus);
         break;
 
-      // --- Bounty (2 stacks per 3-match; +1 per extra tile beyond 3; 1 stack if single) ---
-      case 'bounty': {
-        const base3 = count >= 3 ? 2 : 1;
-        const extra = Math.max(0, count - 3);
-        output.bountyStacks = base3 + extra + Math.round(upgradeBonus);
+      // --- Bounty (1 stack per tile) ---
+      case 'bounty':
+        output.bountyStacks = count + Math.round(upgradeBonus);
         break;
-      }
 
       // --- Chip (50/50 gamble: per-tile damage or 0) ---
       case 'chip': {

@@ -102,9 +102,9 @@ export class Player {
     return mult;
   }
 
-  /** Add Lucky stacks. Each stack = +1% crit. Removed when crit occurs. */
+  /** Add Lucky stacks. Each stack = +1% crit (max 50). Removed when crit occurs. */
   addLuckyStacks(stacks: number): void {
-    this.luckyStacks += stacks;
+    this.luckyStacks = Math.min(50, this.luckyStacks + stacks);
   }
 
   /** Consume Lucky stacks when crit occurs. */

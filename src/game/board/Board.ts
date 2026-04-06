@@ -4,6 +4,7 @@ import { MatchDetector } from './MatchDetector';
 import { CascadeResolver } from './CascadeResolver';
 import type { GravityDirection } from './CascadeResolver';
 import type { TileType } from '../../types/game';
+import type { TileHazardState } from '../../types/tiles';
 import type { GridPosition, MatchResult, DestroyedTileInfo } from '../../types/combat';
 import type { SerializedBoard, SerializedTile } from '../../types/combatSnapshot';
 import { EventBus, GameEvent } from '../EventBus';
@@ -205,12 +206,6 @@ export class Board {
       const pos = this.pointerToGrid(pointer);
       if (!pos) return;
 
-      // Shuffle hold mode: click to toggle hold on tile
-      if (this.shuffleHoldMode) {
-        EventBus.emit(GameEvent.SHUFFLE_HOLD_TOGGLE, pos.row, pos.col);
-        return;
-      }
-
       // Deadeye mode: click to shoot a tile (pass pointer position for VFX)
       if (this.deadeyeMode) {
         EventBus.emit(GameEvent.DEADEYE_SHOOT, pos.row, pos.col, pointer.x, pointer.y);
@@ -402,7 +397,7 @@ export class Board {
 
     // After cascade: check for no valid moves
     if (!this.hasValidMoves()) {
-      this.reshuffle();
+      await this.reshuffleAnimated();
     }
 
     this.isResolving = false;
@@ -511,7 +506,7 @@ export class Board {
     const allMatches = [...matchResults, ...cascadeMatches];
 
     if (!this.hasValidMoves()) {
-      this.reshuffle();
+      await this.reshuffleAnimated();
     }
 
     this.isResolving = false;
@@ -573,7 +568,7 @@ export class Board {
     await this.fillEmptyTilesAnimated();
     const cascadeMatches = await this.cascadeResolver.resolve(this, onCascadeStep);
 
-    if (!this.hasValidMoves()) this.reshuffle();
+    if (!this.hasValidMoves()) await this.reshuffleAnimated();
     this.isResolving = false;
     return { valid: true, matches: [...matchResults, ...cascadeMatches] };
   }
@@ -634,7 +629,7 @@ export class Board {
     await this.fillEmptyTilesAnimated();
     const cascadeMatches = await this.cascadeResolver.resolve(this, onCascadeStep);
 
-    if (!this.hasValidMoves()) this.reshuffle();
+    if (!this.hasValidMoves()) await this.reshuffleAnimated();
     this.isResolving = false;
     return { valid: true, matches: [...matchResults, ...cascadeMatches] };
   }
@@ -716,7 +711,7 @@ export class Board {
     await this.fillEmptyTilesAnimated();
     const cascadeMatches = await this.cascadeResolver.resolve(this, onCascadeStep);
 
-    if (!this.hasValidMoves()) this.reshuffle();
+    if (!this.hasValidMoves()) await this.reshuffleAnimated();
     this.isResolving = false;
     return { valid: true, matches: [...matchResults, ...cascadeMatches] };
   }
@@ -1103,40 +1098,66 @@ export class Board {
    * Reshuffle the board until at least one valid move exists.
    * Preserves tile types but randomizes positions. Avoids initial matches.
    */
-  reshuffle(): void {
-    // Collect types from unlocked tiles only (locked tiles stay in place)
-    const types: TileType[] = [];
+  /** Collect full state (type + effects) from unlocked tiles and shuffle. */
+  private collectAndShuffleUnlocked(): {
+    unlocked: GridPosition[];
+    states: Array<{ type: TileType; isExplosive: boolean; isShowdown: boolean; hazard: TileHazardState | null }>;
+  } | null {
     const unlocked: GridPosition[] = [];
+    const states: Array<{ type: TileType; isExplosive: boolean; isShowdown: boolean; hazard: TileHazardState | null }> = [];
+
     for (let row = 0; row < BOARD_SIZE; row++) {
       for (let col = 0; col < BOARD_SIZE; col++) {
         const tile = this.grid[row][col];
         if (!tile) continue;
         const isLocked = tile.hazard?.type === 'lock' || tile.hazard?.type === 'hardened_lock';
         if (!isLocked) {
-          types.push(tile.type);
           unlocked.push({ row, col });
+          states.push({
+            type: tile.type,
+            isExplosive: tile.isExplosive,
+            isShowdown: tile.isShowdown,
+            hazard: tile.hazard,
+          });
         }
       }
     }
 
+    if (unlocked.length === 0) return null;
+
+    // Fisher-Yates shuffle
+    for (let i = states.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [states[i], states[j]] = [states[j], states[i]];
+    }
+
+    return { unlocked, states };
+  }
+
+  /** Apply shuffled state to unlocked tile positions. */
+  private applyShuffledState(
+    unlocked: GridPosition[],
+    states: Array<{ type: TileType; isExplosive: boolean; isShowdown: boolean; hazard: TileHazardState | null }>,
+  ): void {
+    for (let i = 0; i < unlocked.length; i++) {
+      const tile = this.grid[unlocked[i].row]?.[unlocked[i].col];
+      if (!tile || i >= states.length) continue;
+      const s = states[i];
+      tile.setType(s.type);
+      tile.isExplosive = s.isExplosive;
+      tile.isShowdown = s.isShowdown;
+      tile.hazard = s.hazard;
+    }
+  }
+
+  reshuffle(): void {
     let attempts = 0;
     const maxAttempts = 100;
 
     do {
-      // Fisher-Yates shuffle (only unlocked tile types)
-      for (let i = types.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [types[i], types[j]] = [types[j], types[i]];
-      }
-
-      // Reassign shuffled types to unlocked positions
-      for (let i = 0; i < unlocked.length; i++) {
-        const tile = this.grid[unlocked[i].row][unlocked[i].col];
-        if (tile && i < types.length) {
-          tile.setType(types[i]);
-        }
-      }
-
+      const result = this.collectAndShuffleUnlocked();
+      if (!result) return;
+      this.applyShuffledState(result.unlocked, result.states);
       this.removeInitialMatches();
       attempts++;
     } while (!this.hasValidMoves() && attempts < maxAttempts);
@@ -1145,6 +1166,42 @@ export class Board {
       this.destroyAllTiles();
       this.initGrid();
     }
+  }
+
+  /** Animated reshuffle: scale tiles down, shuffle state, scale back up. */
+  async reshuffleAnimated(): Promise<void> {
+    const result = this.collectAndShuffleUnlocked();
+    if (!result) return;
+
+    // Scale down unlocked tiles
+    const tiles = result.unlocked
+      .map(pos => this.grid[pos.row]?.[pos.col])
+      .filter((t): t is Tile => t != null);
+
+    await Promise.all(tiles.map(t => t.tweenScale(0, 150)));
+
+    // Apply shuffled state (with retry for valid moves)
+    let attempts = 0;
+    this.applyShuffledState(result.unlocked, result.states);
+    this.removeInitialMatches();
+    attempts++;
+
+    while (!this.hasValidMoves() && attempts < 100) {
+      const retry = this.collectAndShuffleUnlocked();
+      if (!retry) break;
+      this.applyShuffledState(retry.unlocked, retry.states);
+      this.removeInitialMatches();
+      attempts++;
+    }
+
+    if (!this.hasValidMoves()) {
+      this.destroyAllTiles();
+      this.initGrid();
+      return;
+    }
+
+    // Scale back up
+    await Promise.all(tiles.map(t => t.tweenScale(1, 150)));
   }
 
   private destroyAllTiles(): void {

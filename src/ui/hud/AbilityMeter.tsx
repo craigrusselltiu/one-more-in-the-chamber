@@ -7,7 +7,7 @@ import { Tooltip } from '../components/Tooltip';
  * AbilityMeter: charge bar spanning the full board width.
  *
  * Rust (Deadeye): 10-segment bar, shots remaining as gold dots when active.
- * Reno (Shuffle the Deck): 7-segment bar, hold count when active.
+ * Reno (Shuffle the Deck): 7-segment bar, instant reshuffle when activated.
  */
 export const AbilityMeter = memo(function AbilityMeter() {
   const character = useCombatStore((s) => s.character);
@@ -16,14 +16,11 @@ export const AbilityMeter = memo(function AbilityMeter() {
   const isDeadeyeActive = useCombatStore((s) => s.isDeadeyeActive);
   const shotsLeft = useCombatStore((s) => s.deadeyeShotsRemaining);
   const maxShots = useCombatStore((s) => s.deadeyeMaxShots);
-  const isShuffleHoldMode = useCombatStore((s) => s.isShuffleHoldMode);
-  const shuffleHoldsRemaining = useCombatStore((s) => s.shuffleHoldsRemaining);
-  const shuffleMaxHolds = useCombatStore((s) => s.shuffleMaxHolds);
   const phase = useCombatStore((s) => s.phase);
 
-  const isActive = isDeadeyeActive || isShuffleHoldMode;
+  const isActive = isDeadeyeActive;
   const ready = charge >= threshold && !isActive;
-  const canActivate = (ready || isShuffleHoldMode) && (phase === 'swap-phase' || phase === 'consumable-window');
+  const canActivate = ready && (phase === 'swap-phase' || phase === 'consumable-window');
 
   const handleActivate = useCallback(() => {
     if (canActivate) {
@@ -31,15 +28,27 @@ export const AbilityMeter = memo(function AbilityMeter() {
     }
   }, [canActivate]);
 
+  const handleCancel = useCallback(() => {
+    EventBus.emit(GameEvent.CANCEL_ABILITY);
+  }, []);
+
   const isReno = character === 'reno';
   const abilityName = isReno ? 'Shuffle the Deck' : 'Deadeye';
 
-  // During Deadeye, show shots remaining as gold dots
+  // During Deadeye, show shots remaining as gold dots + cancel button
   if (isDeadeyeActive) {
     return (
       <div className="mt-1">
-        <div className="text-[7px] text-yellow-400 font-bold text-center leading-none">
-          DEADEYE
+        <div className="flex items-center justify-center gap-2">
+          <div className="text-[7px] text-yellow-400 font-bold leading-none">
+            DEADEYE
+          </div>
+          <button
+            className="px-1.5 py-px text-[7px] text-red-400 bg-red-900/60 border border-red-700 hover:bg-red-800/60 pointer-events-auto leading-none"
+            onClick={handleCancel}
+          >
+            CANCEL
+          </button>
         </div>
         <div className="flex gap-px justify-center mt-px">
           {Array.from({ length: maxShots }, (_, i) => (
@@ -55,40 +64,6 @@ export const AbilityMeter = memo(function AbilityMeter() {
             />
           ))}
         </div>
-      </div>
-    );
-  }
-
-  // During Shuffle hold mode, show holds remaining
-  if (isShuffleHoldMode) {
-    const holdsUsed = shuffleMaxHolds - shuffleHoldsRemaining;
-    return (
-      <div className="mt-1">
-        <div className="text-[7px] text-yellow-400 font-bold text-center leading-none">
-          HOLD TILES ({holdsUsed}/{shuffleMaxHolds})
-        </div>
-        <div className="flex gap-px justify-center mt-px">
-          {Array.from({ length: shuffleMaxHolds }, (_, i) => (
-            <div
-              key={i}
-              className="rounded-full"
-              style={{
-                width: 6,
-                height: 6,
-                backgroundColor: i < holdsUsed ? '#FFD700' : '#333',
-                border: '1px solid #FFD700',
-              }}
-            />
-          ))}
-        </div>
-        <Tooltip text="Confirm shuffle (Space)" position="top">
-          <button
-            className="mt-0.5 px-2 py-px text-[7px] text-amber-300 bg-amber-900/60 border border-amber-700 hover:bg-amber-800/60 pointer-events-auto"
-            onClick={handleActivate}
-          >
-            SHUFFLE
-          </button>
-        </Tooltip>
       </div>
     );
   }

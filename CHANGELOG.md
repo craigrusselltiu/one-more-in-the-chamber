@@ -4,6 +4,28 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## v0.3.0
+
+### Added
+- Act 1 enemy sprites: coyote, bandit, vulture (Dusty Dan reuses bandit sprite)
+- Bounty Hunter trait (Rust exclusive, 2 breakpoints): bounty kill gold (tier 1), last deadeye shot targets enemy for 2x bounty stacks damage (tier 2)
+- Bamboo Canteen: Rust starting artifact, restores 6 HP after combat
+- Saloon Keeper trait tag (for future use)
+- Cancel button for Deadeye: retain charges if unused, reset to 0 if partly used
+- Animated board reshuffle: tiles scale down, shuffle, scale back up
+- Crit floating numbers display larger with exclamation mark (e.g. "-30!")
+
+### Changed
+- Lucky: 1% crit chance per stack, capped at 50 stacks max
+- Bounty: simplified to 1 stack per tile (was 2 per 3-match + 1 per extra)
+- Bounty keyword: "When applying this or taking damage, if HP is lower than Bounty stacks, die."
+- Bounty kill gold moved from base mechanic to Bounty Hunter(1) trait
+- Fully Loaded artifact: tags updated to Bounty Hunter + Outlaw
+- Reno's Shuffle the Deck reworked: instant reshuffle, no hold mode
+- Ability charges capped at threshold (excess charges discarded)
+- Board reshuffle preserves tile effects (explosive, showdown, bomb, poison)
+- Locked tiles excluded from reshuffle
+
 ## v0.2.0
 
 ### Added

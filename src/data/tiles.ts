@@ -84,7 +84,7 @@ export const TILE_DEFINITIONS: Record<TileType, TileDefinition> = {
     baseValue: 1,
     upgradeValue: 2,
     pool: 'exclusive',
-    description: 'Apply 2 Bounty stacks per 3-match, plus 1 per extra tile.',
+    description: 'Apply 1 Bounty stack per tile.',
     flavor: 'The S is silent.',
     upgradeText: '+2 stacks to match total per level',
   },

@@ -59,6 +59,7 @@ export const GameEvent = {
   TARGET_ENEMY: 'player:target-enemy',
   USE_CONSUMABLE: 'player:use-consumable',
   ACTIVATE_ABILITY: 'player:activate-ability',
+  CANCEL_ABILITY: 'player:cancel-ability',
   END_TURN_EARLY: 'player:end-turn-early',
 
   // Visual effects
@@ -72,6 +73,7 @@ export const GameEvent = {
   // Board input -> CombatManager
   SWAP_REQUESTED: 'board:swap-requested',
   DEADEYE_SHOOT: 'board:deadeye-shoot',
+  DEADEYE_SHOOT_ENEMY: 'board:deadeye-shoot-enemy',
   SHUFFLE_HOLD_TOGGLE: 'board:shuffle-hold-toggle',
   /** Enhanced VFX for a Deadeye shot: (x, y, tileColorHex) */
   DEADEYE_SHOT_VFX: 'vfx:deadeye-shot',

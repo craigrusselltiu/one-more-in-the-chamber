@@ -70,7 +70,9 @@ export type TraitId =
   | 'prospector'
   | 'sapper'
   | 'mustang'
-  | 'gunslinger';
+  | 'gunslinger'
+  | 'bounty_hunter'
+  | 'saloon_keeper';
 
 export interface ArtifactInstance {
   id: string;

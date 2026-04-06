@@ -79,4 +79,13 @@ export const TRAITS: TraitDefinition[] = [
       { threshold: 4, description: 'Crit multiplier 3x. Crit chance halves on trigger instead of resetting.' },
     ],
   },
+  {
+    id: 'bounty_hunter',
+    name: 'Bounty Hunter',
+    description: 'The bounty trait. Rust exclusive.',
+    breakpoints: [
+      { threshold: 1, description: 'Bounty grants 10 gold when killing a non-summoned enemy.' },
+      { threshold: 2, description: 'The last shot of Deadeye can be used on an enemy, dealing 2 damage per stack of Bounty.' },
+    ],
+  },
 ];

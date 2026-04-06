@@ -116,7 +116,7 @@ export class ArtifactSystem {
 
     // Lucky Bullet: +10 Lucky stacks at fight start
     if (this.has('lucky_bullet')) {
-      player.luckyStacks += 10;
+      player.addLuckyStacks(10);
     }
 
     // Fully Loaded: Deadeye 3 shots -> 6

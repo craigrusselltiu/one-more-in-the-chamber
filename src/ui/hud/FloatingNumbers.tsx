@@ -9,6 +9,7 @@ interface FloatingNumber {
   y: number;
   vx: number;
   startTime: number;
+  fontSize: number;
 }
 
 let nextId = 0;
@@ -26,6 +27,7 @@ export const FloatingNumbers = memo(function FloatingNumbers() {
     const index = (args[1] as number) ?? 0;
     const text = args[2] as string;
     const color = (args[3] as string) ?? '#ffffff';
+    const fontSize = (args[4] as number) ?? 13;
 
     // Position in the 960x540 virtual space
     let x: number;
@@ -49,7 +51,7 @@ export const FloatingNumbers = memo(function FloatingNumbers() {
 
     setNumbers((prev) => [
       ...prev,
-      { id: nextId++, text, color, x, y, vx: (Math.random() - 0.5) * 40, startTime: Date.now() },
+      { id: nextId++, text, color, x, y, vx: (Math.random() - 0.5) * 40, startTime: Date.now(), fontSize },
     ]);
   }, []);
 
@@ -91,7 +93,7 @@ export const FloatingNumbers = memo(function FloatingNumbers() {
               left: px,
               top: py,
               color: n.color,
-              fontSize: '13px',
+              fontSize: `${n.fontSize}px`,
               opacity: alpha,
               WebkitTextStroke: '3px #000',
               paintOrder: 'stroke fill',

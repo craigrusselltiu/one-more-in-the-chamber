@@ -55,7 +55,7 @@ export class TraitSystem {
 
     // Gunslinger(2): Start each fight with 15 Lucky stacks
     if (this.isActive('gunslinger', 2)) {
-      player.luckyStacks += 15;
+      player.addLuckyStacks(15);
     }
   }
 

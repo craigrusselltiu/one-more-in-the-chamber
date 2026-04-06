@@ -93,11 +93,6 @@ export class CombatManager {
   private isDeadeyeActive = false;
   private deadeyeShotsRemaining = 0;
   private deadeyeMaxShots: number;
-  /** Shuffle the Deck (Reno): hold mode active. */
-  private isShuffleHoldMode = false;
-  /** Positions held during Shuffle the Deck. */
-  private shuffleHeldPositions: import('../../types/combat').GridPosition[] = [];
-  private shuffleMaxHolds = 3;
   private isBoss: boolean;
   /** Turn limit for timed encounters. 0 = unlimited. */
   private turnLimit: number;
@@ -233,19 +228,15 @@ export class CombatManager {
     });
 
     on(GameEvent.ACTIVATE_ABILITY, () => {
-      if (this.isShuffleHoldMode) {
-        // Second press during hold mode: confirm shuffle
-        this.confirmShuffle();
-      } else if (this.character === 'reno') {
+      if (this.character === 'reno') {
         this.activateShuffle();
       } else {
         this.activateDeadeye();
       }
     });
 
-    on(GameEvent.SHUFFLE_HOLD_TOGGLE, (...args: unknown[]) => {
-      const [row, col] = args as number[];
-      this.toggleShuffleHold(row, col);
+    on(GameEvent.CANCEL_ABILITY, () => {
+      this.cancelAbility();
     });
 
     on(GameEvent.END_TURN_EARLY, () => {
@@ -260,6 +251,11 @@ export class CombatManager {
     on(GameEvent.DEADEYE_SHOOT, (...args: unknown[]) => {
       const [row, col, pointerX, pointerY] = args as number[];
       this.deadeyeShoot(row, col, pointerX, pointerY);
+    });
+
+    on(GameEvent.DEADEYE_SHOOT_ENEMY, (...args: unknown[]) => {
+      const [enemyIndex] = args as number[];
+      this.deadeyeShootEnemy(enemyIndex);
     });
   }
 
@@ -519,8 +515,10 @@ export class CombatManager {
       if (this.player.health <= 0) this.playerTookDamageThisFight = true;
     }
 
-    // Per-turn: +1 ability charge
-    this.player.abilityCharge++;
+    // Per-turn: +1 ability charge (capped at threshold)
+    if (this.player.abilityCharge < this.player.abilityThreshold) {
+      this.player.abilityCharge++;
+    }
 
     // Trait turn-start effects (Sheriff block, etc.)
     this.traits.onTurnStart(this.player);
@@ -792,6 +790,39 @@ export class CombatManager {
     this.emitFullState();
   }
 
+  /**
+   * Bounty Hunter(2): last Deadeye shot targets an enemy directly,
+   * dealing 2 damage per Bounty stack on that enemy.
+   */
+  async deadeyeShootEnemy(enemyIndex: number): Promise<void> {
+    if (!this.isDeadeyeActive || this.deadeyeShotsRemaining !== 1) return;
+    if (!this.traits.isActive('bounty_hunter', 2)) return;
+
+    const enemy = this.enemies[enemyIndex];
+    if (!enemy || enemy.state.isDead) return;
+
+    playDeadeyeShot();
+
+    const bountyDamage = enemy.state.bountyStacks * 2;
+    if (bountyDamage > 0) {
+      this.dealDamageToEnemy(enemy, bountyDamage, true);
+      this.emitEnemyHpChanges();
+    }
+
+    this.deadeyeShotsRemaining = 0;
+    this.board.setDeadeyeMode(false);
+    document.body.classList.remove('cursor-crosshair');
+    this.emitFullState();
+
+    this.endDeadeye();
+
+    if (this.isCombatOver()) {
+      this.endCombat();
+    }
+
+    this.emitFullState();
+  }
+
   private endDeadeye(): void {
     this.isDeadeyeActive = false;
     this.deadeyeShotsRemaining = 0;
@@ -802,56 +833,42 @@ export class CombatManager {
     this.emitFullState();
   }
 
+  /** Cancel the active ability. Retain charges if unused, reset to 0 if partly used. */
+  private cancelAbility(): void {
+    if (this.isDeadeyeActive) {
+      const usedShots = this.deadeyeMaxShots - this.deadeyeShotsRemaining;
+      this.isDeadeyeActive = false;
+      this.deadeyeShotsRemaining = 0;
+      this.board.setDeadeyeMode(false);
+      document.body.classList.remove('cursor-crosshair');
+      if (usedShots > 0) {
+        this.player.abilityCharge = 0;
+      }
+      // else: retain all charges (no shots fired)
+      EventBus.emit(GameEvent.ABILITY_CHARGE_CHANGE, this.player.abilityCharge, this.player.abilityThreshold);
+      this.emitFullState();
+    }
+  }
+
   // ---------------------------------------------------------------------------
   // Shuffle the Deck Ability (Reno)
   // ---------------------------------------------------------------------------
 
   /**
-   * Activate Shuffle the Deck: enter hold mode (select up to 3 tiles to keep).
+   * Activate Shuffle the Deck: immediately reshuffle all unlocked tiles.
    */
-  private activateShuffle(): boolean {
-    if (this.phase !== 'swap-phase' && this.phase !== 'consumable-window') return false;
-    if (!this.player.isDeadeyeReady()) return false; // reuses same charge check
+  private async activateShuffle(): Promise<void> {
+    if (this.phase !== 'swap-phase' && this.phase !== 'consumable-window') return;
+    if (!this.player.isDeadeyeReady()) return;
     this.player.activateDeadeye(); // consume charges
 
-    this.isShuffleHoldMode = true;
-    this.shuffleHeldPositions = [];
-    this.board.setShuffleHoldMode(true);
     this.emitFullState();
     EventBus.emit(GameEvent.ABILITY_CHARGE_CHANGE, this.player.abilityCharge, this.player.abilityThreshold);
-    return true;
-  }
 
-  private toggleShuffleHold(row: number, col: number): void {
-    if (!this.isShuffleHoldMode) return;
-
-    const idx = this.shuffleHeldPositions.findIndex(p => p.row === row && p.col === col);
-    if (idx >= 0) {
-      // Un-hold
-      this.shuffleHeldPositions.splice(idx, 1);
-      this.board.toggleShuffleHold(row, col);
-    } else if (this.shuffleHeldPositions.length < this.shuffleMaxHolds) {
-      // Hold
-      this.shuffleHeldPositions.push({ row, col });
-      this.board.toggleShuffleHold(row, col);
-    }
-    // else: at max holds, ignore
-    this.emitFullState();
-  }
-
-  /**
-   * Confirm the shuffle: randomize all non-held tiles, then cascade.
-   */
-  private async confirmShuffle(): Promise<void> {
-    if (!this.isShuffleHoldMode) return;
-
-    this.board.shuffleNonHeld();
-    this.isShuffleHoldMode = false;
-    this.board.setShuffleHoldMode(false);
-    this.emitFullState();
-
-    // Resolve cascades from the shuffle
+    // Animated reshuffle then cascade
     this.board.setIsResolving(true);
+    await this.board.reshuffleAnimated();
+
     this.ricochetTriggeredThisResolution = false;
     let cascadeSteps = 0;
     const onCascadeStep = this.makeCascadeStepHandler(() => ++cascadeSteps);
@@ -883,7 +900,7 @@ export class CombatManager {
    * Use a consumable by ID. Only valid during the consumable window.
    * Returns true if consumed.
    */
-  useConsumable(consumableId: string): boolean {
+  async useConsumable(consumableId: string): Promise<boolean> {
     if (this.phase !== 'consumable-window' && this.phase !== 'swap-phase') return false;
 
     switch (consumableId) {
@@ -923,7 +940,7 @@ export class CombatManager {
         this.hazardManager.clearAllOfType('hardened_lock');
         break;
       case 'tumbleweed':
-        this.board.reshuffle();
+        await this.board.reshuffleAnimated();
         break;
       case 'signal_flare':
         this.hazardManager.clearAllOfType('sand');
@@ -1095,7 +1112,7 @@ export class CombatManager {
         scaled.damage += this.player.block;
       }
 
-      this.applyResourceOutput(scaled);
+      this.applyResourceOutput(scaled, isCrit);
 
       // Motherlode Map: 4+ gold match converts adjacent tiles to gold
       this.artifacts.tryMotherlodeConvert(match, this.board);
@@ -1191,8 +1208,8 @@ export class CombatManager {
   }
 
   /** Emit a floating number on an enemy. */
-  private floatOnEnemy(enemy: Enemy, text: string, color: string): void {
-    EventBus.emit(GameEvent.FLOATING_NUMBER, 'enemy', this.enemies.indexOf(enemy), text, color);
+  private floatOnEnemy(enemy: Enemy, text: string, color: string, fontSize?: number): void {
+    EventBus.emit(GameEvent.FLOATING_NUMBER, 'enemy', this.enemies.indexOf(enemy), text, color, fontSize);
   }
 
   /** Emit a floating number on the player. */
@@ -1208,29 +1225,31 @@ export class CombatManager {
   }
 
   /** Deal damage to an enemy, handling pierce, and show floating number. */
-  private dealDamageToEnemy(enemy: Enemy, damage: number, pierce: boolean): void {
+  private dealDamageToEnemy(enemy: Enemy, damage: number, pierce: boolean, isCrit = false): void {
+    const critSize = isCrit ? 18 : undefined;
     if (pierce) {
       const hpBefore = enemy.state.health;
       enemy.state.health = Math.max(0, enemy.state.health - damage);
       if (enemy.state.health <= 0) enemy.state.isDead = true;
       const actual = hpBefore - enemy.state.health;
       this.damageDealtThisFight += actual;
-      this.floatOnEnemy(enemy, `-${actual}`, '#ff4444');
+      this.floatOnEnemy(enemy, isCrit ? `-${actual}!` : `-${actual}`, '#ff4444', critSize);
     } else {
       const { hpLost, blocked } = enemy.takeDamage(damage);
       this.damageDealtThisFight += hpLost;
       if (blocked > 0) this.floatOnEnemy(enemy, `-${blocked}`, '#6888A0');
-      if (hpLost > 0) this.floatOnEnemy(enemy, `-${hpLost}`, '#ff4444');
+      if (hpLost > 0) this.floatOnEnemy(enemy, isCrit ? `-${hpLost}!` : `-${hpLost}`, '#ff4444', critSize);
     }
     // Bounty kill check after damage
     this.handleBountyKill(enemy);
   }
 
-  /** Check and handle bounty kill: execute + 10 gold if non-summoned. Returns true if killed. */
+  /** Check and handle bounty kill: execute. Bounty Hunter(1): +10 gold if non-summoned. */
   private handleBountyKill(enemy: Enemy): boolean {
     if (enemy.checkBountyKill()) {
       this.floatOnEnemy(enemy, 'COLLECTED', '#FFD700');
-      if (!enemy.summoned) {
+      // Bounty Hunter(1): bounty kills on non-summoned enemies grant 10 gold
+      if (!enemy.summoned && this.traits.isActive('bounty_hunter', 1)) {
         this.player.addGold(10);
         this.floatOnPlayer('+10g', '#FFD700');
         EventBus.emit(GameEvent.GOLD_CHANGE, this.player.gold);
@@ -1240,7 +1259,7 @@ export class CombatManager {
     return false;
   }
 
-  private applyResourceOutput(output: ResourceOutput): void {
+  private applyResourceOutput(output: ResourceOutput, isCrit = false): void {
     // Rageful: bonus damage per stack
     const damage = output.damage > 0 ? output.damage + this.player.ragefulStacks : 0;
     // Sturdy: bonus block per stack
@@ -1256,22 +1275,22 @@ export class CombatManager {
             const current = this.aliveEnemies();
             if (current.length === 0) break;
             const target = current[Math.floor(Math.random() * current.length)];
-            this.dealDamageToEnemy(target, damage, false);
+            this.dealDamageToEnemy(target, damage, false, isCrit);
           }
         }
       } else if (output.isAoE) {
         for (const enemy of this.aliveEnemies()) {
-          this.dealDamageToEnemy(enemy, damage, false);
+          this.dealDamageToEnemy(enemy, damage, false, isCrit);
         }
       } else if (output.targetsHighestHp) {
         const target = this.getHighestHpEnemy();
-        if (target) this.dealDamageToEnemy(target, damage, output.piercesBlock);
+        if (target) this.dealDamageToEnemy(target, damage, output.piercesBlock, isCrit);
       } else if (output.piercesBlock) {
         const target = this.getTargetedAliveEnemy();
-        if (target) this.dealDamageToEnemy(target, damage, true);
+        if (target) this.dealDamageToEnemy(target, damage, true, isCrit);
       } else {
         const target = this.getTargetedAliveEnemy();
-        if (target) this.dealDamageToEnemy(target, damage, false);
+        if (target) this.dealDamageToEnemy(target, damage, false, isCrit);
       }
       this.emitEnemyHpChanges();
     }
@@ -1302,9 +1321,12 @@ export class CombatManager {
       EventBus.emit(GameEvent.PLAYER_HP_CHANGE, this.player.health, this.player.maxHealth);
     }
 
-    // Ability charges
+    // Ability charges (capped at threshold)
     if (output.abilityCharges > 0) {
-      this.player.abilityCharge += output.abilityCharges;
+      this.player.abilityCharge = Math.min(
+        this.player.abilityThreshold,
+        this.player.abilityCharge + output.abilityCharges,
+      );
       EventBus.emit(GameEvent.ABILITY_CHARGE_CHANGE, this.player.abilityCharge, this.player.abilityThreshold);
     }
 
@@ -1620,6 +1642,15 @@ export class CombatManager {
 
     this.setPhase('combat-end');
 
+    // Post-combat artifact effects
+    if (victory) {
+      // Bamboo Canteen: restore 6 HP after combat
+      if (this.artifacts.has('bamboo_canteen')) {
+        this.player.heal(6);
+        this.floatOnPlayer('+6', '#40D840');
+      }
+    }
+
     // Victory gold reward from enemies (randomized around a base)
     if (victory) {
       let base: number;
@@ -1757,9 +1788,12 @@ export class CombatManager {
       isDeadeyeActive: this.isDeadeyeActive,
       deadeyeShotsRemaining: this.deadeyeShotsRemaining,
       deadeyeMaxShots: this.deadeyeMaxShots,
-      isShuffleHoldMode: this.isShuffleHoldMode,
-      shuffleHoldsRemaining: this.shuffleMaxHolds - this.shuffleHeldPositions.length,
-      shuffleMaxHolds: this.shuffleMaxHolds,
+      canDeadeyeShootEnemy: this.isDeadeyeActive
+        && this.deadeyeShotsRemaining === 1
+        && this.traits.isActive('bounty_hunter', 2),
+      isShuffleHoldMode: false,
+      shuffleHoldsRemaining: 0,
+      shuffleMaxHolds: 0,
       turnLimit: this.turnLimit,
       suppressedTileTypes: this.hazardManager.getSuppressedTypes(),
     };

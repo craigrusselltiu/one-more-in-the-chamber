@@ -202,9 +202,16 @@ export const ARTIFACTS: ArtifactDefinition[] = [
   {
     id: 'fully_loaded',
     name: 'Fully Loaded',
-    description: 'Six chambers. All loaded. The title.',
-    tags: [],
-    effect: 'Red panda only. Deadeye: 3 shots become 6.',
+    description: 'Six in the chamber. No reloads.',
+    tags: ['bounty_hunter', 'outlaw'],
+    effect: 'Rust only. Deadeye: 3 shots become 6.',
+  },
+  {
+    id: 'bamboo_canteen',
+    name: 'Bamboo Canteen',
+    description: 'Rust starting artifact.',
+    tags: ['bounty_hunter', 'saloon_keeper'],
+    effect: 'After completing combat, restore 6 HP.',
   },
   {
     id: 'double_down',

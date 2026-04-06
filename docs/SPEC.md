@@ -68,7 +68,7 @@ Comedic but cool. Spaghetti Western filtered through a Saturday morning cartoon.
 - **3 swaps per turn** (default). Increased by artifacts/traits.
 - Swaps create matches (3+). Tiles clear, new tiles fall, cascades resolve automatically.
 - **End turn early** at any time.
-- **No valid moves** (no adjacent swap produces a match of 3+) = turn ends, board reshuffles (guaranteed valid move after), enemy still acts.
+- **No valid moves** (no adjacent swap produces a match of 3+) = turn ends, board reshuffles with animation (guaranteed valid move after), enemy still acts. Locked tiles stay in place. Tile effects (explosive, showdown, bomb, poison) follow their tiles during reshuffle.
 
 ### Turns and Swaps
 
@@ -109,7 +109,7 @@ Match bonuses (1.5x, 2.0x) apply to: damage, block, gold, healing. Do NOT apply 
 
 ### Crit System
 
-Global mechanic. Every fight starts at 0% crit chance. Crit chance is gained from Horseshoe tiles (+5%/tile), Gunslinger trait, and artifacts. When a crit triggers on a match, that match generates **2x resources**, then crit chance resets to 0%. Crit chance resets between fights.
+Global mechanic. Every fight starts at 0% crit chance. Crit chance is gained from Lucky stacks (1%/stack, max 50%), Gunslinger trait, and artifacts. When a crit triggers on a match, that match generates **2x resources**, then crit chance resets to 0%. Crit chance resets between fights. Crit damage floats slightly larger with an exclamation mark (e.g. "-30!").
 
 ### Combat Numbers
 
@@ -169,9 +169,9 @@ When an enemy is blocking, consider matching gold or setting up instead of wasti
 
 ### Character Ability — "Deadeye"
 
-**Charge:** +1 per player turn taken. Dynamite tiles add charges when cleared. Requires **10 charges** to activate. **Meter carries over between fights.**
+**Charge:** +1 per player turn taken. Dynamite tiles add charges when cleared. Requires **10 charges** to activate. **Meter carries over between fights.** Charges cap at the threshold (excess charges are lost).
 
-**Activation:** Crosshair cursor appears. Select **3 tiles** anywhere on the board (6 with Fully Loaded). Each selected tile is destroyed and generates its resource. Gravity + cascades resolve after each shot.
+**Activation:** Crosshair cursor appears. Select **3 tiles** anywhere on the board (6 with Fully Loaded). Each selected tile is destroyed and generates its resource. Gravity + cascades resolve after each shot. **Cancel:** Ability can be cancelled. If no shots were fired, all charges are retained. If any shots were fired, charges reset to 0.
 
 **Deadeye + Showdown:** Shooting a Showdown tile clears all tiles of a **random** type on the board.
 
@@ -239,7 +239,7 @@ After each act boss, choose **1 of 3**. **Already-chosen tiles cannot be offered
 | **Ace** | +0.25x multiplier | Adds to a running multiplier (base 1.0x). 3-match = 1.75x. **Stacks across matches within a fight.** Consumed on next non-Ace match — the multiplier applies to that match's resources, then resets to 1.0x. **Resets between fights. No cap.** Not affected by match bonuses. Displayed as a player status effect. | An ace up your sleeve. |
 | **Venom** | 1 venom stack | Applies venom to the targeted enemy. Venom stacks deal damage at the start of the enemy's turn equal to the current stack count, then decrease by 1. Stacks from all sources combine. A 3-match applies 3 stacks (enemy takes 3, then 2, then 1 = 6 total). | Snake venom. Slow death, certain death. |
 | **Ember** | 4 damage | Each cleared Ember has 25% chance to convert one adjacent **non-Ember** tile into Ember. Conversion happens after cascade resolution — converted tiles can be matched on subsequent cascades. Fire eats your other tiles. | Playing with fire. Rewarding and dangerous. |
-| **Horseshoe** | +5% crit chance | Each tile adds +5% crit (stacking). When a crit triggers, that match generates 2x resources, then crit chance resets to 0%. Resets between fights. | Feeling lucky, partner? |
+| **Horseshoe** | +1 Lucky stack | Each tile adds +1 Lucky stack (1% crit/stack, max 50%). When a crit triggers, that match generates 2x resources, then Lucky stacks reset to 0. Resets between fights. | Luck favors the prepared. |
 | **Fifty Cal** | 5 damage | Raw single-target damage. High base value, no special mechanic — pure firepower at the cost of board dilution. | One round. One hole. |
 
 ### Tile Upgrades
@@ -260,7 +260,7 @@ Permanently upgraded at rest sites for the rest of the run.
 | Ace | +0.25x/tile | +0.25x/tile |
 | Venom | 1 stack/tile | +1 bonus damage per venom tick |
 | Ember | 4 damage | +1 damage |
-| Horseshoe | +5% crit/tile | +5% crit/tile |
+| Horseshoe | +1 Lucky stack/tile | +1 stack to match total |
 | Fifty Cal | 5 damage | +1 damage |
 
 ---
@@ -315,6 +315,12 @@ Traits are powered by **artifact tags**. Each artifact has 0-2 trait tags. Your 
 |---|---|
 | 4 | Crit multiplier becomes 3x (from 2x). Crit chance halves on trigger instead of resetting to 0%. Chain crits become possible. |
 
+### Bounty Hunter — "The bounty trait" (1 / 2) — Rust exclusive
+
+| 1 | Bounty grants 10 gold when killing a non-summoned enemy. |
+|---|---|
+| 2 | The last shot of Deadeye can be used on an enemy, dealing 2 damage per stack of Bounty. |
+
 ---
 
 ## Artifacts
@@ -356,7 +362,8 @@ Each artifact has 0-2 trait tags. Collecting artifacts with the same tag is how 
 | Rigged Deck | Crits give 5 gold. | Gunslinger, Prospector | Lady luck pays well. |
 | Sharpshooter's Eye | +5% crit per swap used this turn. Resets at turn end. | Gunslinger, Outlaw | More shots, sharper aim. |
 | Silver Bullet | +20% crit vs bosses only. | Gunslinger, Sheriff | Save these for the big ones. |
-| **Fully Loaded** | **Red panda only.** Deadeye: 3 shots become 6. | *(none)* | Six chambers. All loaded. The title. |
+| **Fully Loaded** | **Rust only.** Deadeye: 3 shots become 6. | Bounty Hunter, Outlaw | Six in the chamber. No reloads. |
+| **Bamboo Canteen** | Rust starting artifact. After completing combat, restore 6 HP. | Bounty Hunter, Saloon Keeper | *(none)* |
 
 Target: **60-80 artifacts** (full game), **~20** (MVP).
 
@@ -569,7 +576,7 @@ Multi-step escalation. Stop at any point and keep what you've found.
 
 Small, scrappy, cowboy gear. The underdog. Pixel art with expressive reactions — flinch on hit, grin on big match, hat tip on boss kill.
 
-**Ability:** Deadeye (see Combat). **Exclusive artifact:** Fully Loaded.
+**Ability:** Deadeye (see Combat). **Exclusive artifact:** Fully Loaded. **Exclusive tile:** Bounty (apply 1 Bounty stack per tile; upgrade: +2 stacks to match total per level; flavor: "The S is silent.").
 
 ### Future Characters (post-MVP)
 

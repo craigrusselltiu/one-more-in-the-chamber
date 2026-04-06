@@ -24,6 +24,8 @@ export interface CombatState {
   isDeadeyeActive: boolean;
   deadeyeShotsRemaining: number;
   deadeyeMaxShots: number;
+  /** Bounty Hunter(2): last deadeye shot can target an enemy. */
+  canDeadeyeShootEnemy: boolean;
   /** Shuffle the Deck (Reno): hold mode is active. */
   isShuffleHoldMode: boolean;
   /** Number of holds remaining during Shuffle the Deck. */

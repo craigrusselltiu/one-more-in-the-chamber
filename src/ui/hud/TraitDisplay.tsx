@@ -18,6 +18,8 @@ const TRAIT_LABELS: Record<TraitId, string> = {
   sapper: 'Sapper',
   mustang: 'Mustang',
   gunslinger: 'Gunslinger',
+  bounty_hunter: 'Bounty Hunter',
+  saloon_keeper: 'Saloon Keeper',
 };
 
 /** Descriptions for each trait at each breakpoint threshold. */

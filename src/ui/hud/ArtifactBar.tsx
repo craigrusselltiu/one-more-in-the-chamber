@@ -13,6 +13,8 @@ const TRAIT_COLORS: Record<TraitId, string> = {
   sapper: '#D4A030',
   mustang: '#70B0D0',
   gunslinger: '#D06080',
+  bounty_hunter: '#C04040',
+  saloon_keeper: '#D4A870',
 };
 
 const DEFAULT_COLOR = '#808080';
