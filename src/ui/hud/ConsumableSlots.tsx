@@ -109,10 +109,9 @@ const ConsumableSlot = memo(function ConsumableSlot({
 
   const hasKeywords = filled && effect ? getReferencedKeywords(effect ?? '').length > 0 : false;
   const tooltipContent = filled ? (
-    <div style={{ fontSize: '9px' }}>
-      <span className="text-amber-300 font-bold">{name}</span>
-      <span className="text-stone-300">: </span>
-      <span className="text-stone-200">{colorizeKeywords(effect ?? '')}</span>
+    <div className="flex flex-col gap-0.5">
+      <div className="text-amber-300 font-bold whitespace-nowrap" style={{ fontSize: '10px' }}>{name}</div>
+      <div className="text-stone-200 whitespace-nowrap" style={{ fontSize: '9px' }}>{colorizeKeywords(effect ?? '')}</div>
     </div>
   ) : undefined;
   const keywordTooltip = hasKeywords && effect ? <KeywordSubTooltips text={effect} /> : undefined;
