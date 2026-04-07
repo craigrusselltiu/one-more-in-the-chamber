@@ -10,11 +10,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 - Change Name option in Settings (main menu only)
 - Changelog button on main menu with scrollable popup
 - Campfire background image on rest site screen
+- Shop background image (merchant_bg)
 
 ### Changed
 - Screen titles (shop, campfire, event, treasure, score) are bold, uppercase, with black outline
 - Ricochet upgrade text uses arrow format (e.g. "Destroy 1 → 2 tiles") with plural handling
 - Version label now reads "Pre-alpha v..."
+- Shop and campfire cards more opaque for readability
+- Shop and campfire background images darkened with overlay
 
 ## v0.4.9
 

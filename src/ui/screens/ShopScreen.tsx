@@ -175,7 +175,7 @@ export const ShopScreen = memo(function ShopScreen() {
   const maxSlots = hasSaddlebag ? 4 : 3;
 
   return (
-    <div className="flex flex-col items-center justify-center h-full bg-[#1a1a2e]/95" style={{ padding: '24px 0' }}>
+    <div className="flex flex-col items-center justify-center h-full" style={{ padding: '24px 0', backgroundImage: `linear-gradient(rgba(0,0,0,0.45), rgba(0,0,0,0.45)), url(${import.meta.env.BASE_URL}assets/merchant_bg.png)`, backgroundSize: 'cover', backgroundPosition: 'center' }}>
       <h2 className="text-xl text-amber-400 mb-4 font-bold uppercase" style={{ WebkitTextStroke: '4px #000', paintOrder: 'stroke fill' }}>General Store</h2>
 
       <div className="flex flex-col gap-4 px-2">
@@ -282,7 +282,7 @@ export const ShopScreen = memo(function ShopScreen() {
 
       <button
         onClick={handleLeave}
-        className="mt-4 px-6 py-2 bg-stone-700/50 text-stone-300 text-sm border border-stone-600 hover:bg-stone-600/50"
+        className="mt-4 px-6 py-2 bg-stone-700/80 text-stone-300 text-sm border border-stone-600 hover:bg-stone-600/50"
       >
         Leave Shop
       </button>
@@ -316,7 +316,7 @@ export const ShopScreen = memo(function ShopScreen() {
                   <Tooltip key={tile} content={keywordTooltip} secondContent={upgradeTooltip} position="bottom">
                     <button
                       onClick={() => handleSwapConfirm(tile)}
-                      className="flex items-center gap-2 p-2 border border-stone-600 bg-stone-800/50 hover:border-amber-600 hover:bg-stone-700/50 text-left w-full"
+                      className="flex items-center gap-2 p-2 border border-stone-600 bg-stone-800/80 hover:border-amber-600 hover:bg-stone-700/80 text-left w-full"
                     >
                       <SpriteIcon frame={TILE_FRAMES[tile]} scale={1} />
                       <span className="text-stone-200 text-sm">{def.label}</span>
@@ -328,7 +328,7 @@ export const ShopScreen = memo(function ShopScreen() {
             </div>
             <button
               onClick={() => setSwapPending(null)}
-              className="w-full px-4 py-1.5 bg-stone-700/50 text-stone-400 text-xs border border-stone-600 hover:bg-stone-600/50"
+              className="w-full px-4 py-1.5 bg-stone-700/80 text-stone-400 text-xs border border-stone-600 hover:bg-stone-600/50"
             >
               Cancel
             </button>
@@ -363,8 +363,8 @@ export const ShopScreen = memo(function ShopScreen() {
                         onClick={() => setUpgradeSelectedTile(tileType)}
                         className={`flex flex-col items-center p-3 w-28 border-2 transition-colors ${
                           isSelected
-                            ? 'border-amber-400 bg-amber-900/30'
-                            : 'border-stone-600 bg-stone-800/50 hover:border-stone-400'
+                            ? 'border-amber-400 bg-amber-900/50'
+                            : 'border-stone-600 bg-stone-800/80 hover:border-stone-400'
                         }`}
                       >
                         <SpriteIcon frame={TILE_FRAMES[tileType]} scale={2} className="mb-1" />
@@ -384,7 +384,7 @@ export const ShopScreen = memo(function ShopScreen() {
             <div className="flex gap-3 mt-4">
               <button
                 onClick={() => setUpgradePhase('none')}
-                className="px-4 py-2 bg-stone-700/50 text-stone-400 text-sm border border-stone-600 hover:bg-stone-600/50"
+                className="px-4 py-2 bg-stone-700/80 text-stone-400 text-sm border border-stone-600 hover:bg-stone-600/50"
               >
                 Back
               </button>
@@ -394,7 +394,7 @@ export const ShopScreen = memo(function ShopScreen() {
                 className={`px-6 py-2 text-sm border ${
                   upgradeSelectedTile
                     ? 'bg-amber-900/60 text-amber-300 border-amber-700 hover:bg-amber-800/60'
-                    : 'bg-stone-700/50 text-stone-500 border-stone-600 cursor-not-allowed'
+                    : 'bg-stone-700/80 text-stone-500 border-stone-600 cursor-not-allowed'
                 }`}
               >
                 Upgrade
@@ -466,7 +466,7 @@ function ShopCard({
           ? 'border-stone-700 bg-stone-800/30 opacity-40'
           : disabled
             ? 'border-stone-700 bg-stone-800/30 opacity-60 cursor-not-allowed'
-            : 'border-stone-600 bg-stone-800/50 hover:border-amber-600 hover:bg-stone-700/50'
+            : 'border-stone-600 bg-stone-800/80 hover:border-amber-600 hover:bg-stone-700/80'
       }`}
     >
       <span className="absolute top-1 right-1.5 text-yellow-400 font-bold" style={{ fontSize: '10px' }}>

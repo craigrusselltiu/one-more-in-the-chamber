@@ -50,7 +50,7 @@ export const RestSiteScreen = memo(function RestSiteScreen() {
   // Rested
   if (choice === 'rest') {
     return (
-      <div className="flex flex-col h-full" style={{ backgroundImage: `url(${import.meta.env.BASE_URL}assets/campfire_bg.png)`, backgroundSize: 'cover', backgroundPosition: 'center' }}><div className="flex-1 flex flex-col items-center justify-center">
+      <div className="flex flex-col h-full" style={{ backgroundImage: `linear-gradient(rgba(0,0,0,0.45), rgba(0,0,0,0.45)), url(${import.meta.env.BASE_URL}assets/campfire_bg.png)`, backgroundSize: 'cover', backgroundPosition: 'center' }}><div className="flex-1 flex flex-col items-center justify-center">
         <div className="mb-4"><SpriteIcon frame={NODE_FRAMES.campfire} scale={3} /></div>
         <h2 className="text-xl text-amber-400 mb-2 font-bold uppercase" style={{ WebkitTextStroke: '4px #000', paintOrder: 'stroke fill' }}>Rested</h2>
         <p className="text-stone-300 text-sm mb-4">
@@ -73,7 +73,7 @@ export const RestSiteScreen = memo(function RestSiteScreen() {
   if (choice === 'upgraded') {
     const tileDef = selectedTile ? TILE_DEFINITIONS[selectedTile] : null;
     return (
-      <div className="flex flex-col h-full" style={{ backgroundImage: `url(${import.meta.env.BASE_URL}assets/campfire_bg.png)`, backgroundSize: 'cover', backgroundPosition: 'center' }}><div className="flex-1 flex flex-col items-center justify-center">
+      <div className="flex flex-col h-full" style={{ backgroundImage: `linear-gradient(rgba(0,0,0,0.45), rgba(0,0,0,0.45)), url(${import.meta.env.BASE_URL}assets/campfire_bg.png)`, backgroundSize: 'cover', backgroundPosition: 'center' }}><div className="flex-1 flex flex-col items-center justify-center">
         <div className="mb-4"><SpriteIcon frame={UI_FRAMES.upgrade} scale={3} /></div>
         <h2 className="text-xl text-amber-400 mb-2 font-bold uppercase" style={{ WebkitTextStroke: '4px #000', paintOrder: 'stroke fill' }}>Upgraded</h2>
         <p className="text-stone-300 text-sm mb-4">
@@ -92,7 +92,7 @@ export const RestSiteScreen = memo(function RestSiteScreen() {
   // Upgrade tile selection
   if (choice === 'upgrade') {
     return (
-      <div className="flex flex-col h-full" style={{ backgroundImage: `url(${import.meta.env.BASE_URL}assets/campfire_bg.png)`, backgroundSize: 'cover', backgroundPosition: 'center' }}><div className="flex-1 flex flex-col items-center justify-center">
+      <div className="flex flex-col h-full" style={{ backgroundImage: `linear-gradient(rgba(0,0,0,0.45), rgba(0,0,0,0.45)), url(${import.meta.env.BASE_URL}assets/campfire_bg.png)`, backgroundSize: 'cover', backgroundPosition: 'center' }}><div className="flex-1 flex flex-col items-center justify-center">
         <h2 className="text-xl text-amber-400 mb-2 font-bold uppercase" style={{ WebkitTextStroke: '4px #000', paintOrder: 'stroke fill' }}>Upgrade a Tile</h2>
         <p className="text-stone-400 text-xs mb-4">
           Permanent +1 tier for the rest of the run
@@ -118,8 +118,8 @@ export const RestSiteScreen = memo(function RestSiteScreen() {
                   onClick={() => setSelectedTile(tileType)}
                   className={`flex flex-col items-center p-3 w-28 border-2 transition-colors ${
                     isSelected
-                      ? 'border-amber-400 bg-amber-900/30'
-                      : 'border-stone-600 bg-stone-800/50 hover:border-stone-400'
+                      ? 'border-amber-400 bg-amber-900/50'
+                      : 'border-stone-600 bg-stone-800/80 hover:border-stone-400'
                   }`}
                 >
                   <SpriteIcon frame={TILE_FRAMES[tileType]} scale={2} className="mb-1" />
@@ -139,7 +139,7 @@ export const RestSiteScreen = memo(function RestSiteScreen() {
         <div className="flex gap-3 mt-4">
           <button
             onClick={() => setChoice('none')}
-            className="px-4 py-2 bg-stone-700/50 text-stone-400 text-sm border border-stone-600 hover:bg-stone-600/50"
+            className="px-4 py-2 bg-stone-700/80 text-stone-400 text-sm border border-stone-600 hover:bg-stone-600/50"
           >
             Back
           </button>
@@ -149,7 +149,7 @@ export const RestSiteScreen = memo(function RestSiteScreen() {
             className={`px-6 py-2 text-sm border ${
               selectedTile
                 ? 'bg-amber-900/60 text-amber-300 border-amber-700 hover:bg-amber-800/60'
-                : 'bg-stone-700/50 text-stone-500 border-stone-600 cursor-not-allowed'
+                : 'bg-stone-700/80 text-stone-500 border-stone-600 cursor-not-allowed'
             }`}
           >
             Upgrade
@@ -161,7 +161,7 @@ export const RestSiteScreen = memo(function RestSiteScreen() {
 
   // Initial choice
   return (
-    <div className="flex flex-col h-full" style={{ backgroundImage: `url(${import.meta.env.BASE_URL}assets/campfire_bg.png)`, backgroundSize: 'cover', backgroundPosition: 'center' }}><div className="flex-1 flex flex-col items-center justify-center">
+    <div className="flex flex-col h-full" style={{ backgroundImage: `linear-gradient(rgba(0,0,0,0.45), rgba(0,0,0,0.45)), url(${import.meta.env.BASE_URL}assets/campfire_bg.png)`, backgroundSize: 'cover', backgroundPosition: 'center' }}><div className="flex-1 flex flex-col items-center justify-center">
       <div className="mb-4">
         <SpriteIcon frame={NODE_FRAMES.campfire} scale={3} />
       </div>
@@ -174,7 +174,7 @@ export const RestSiteScreen = memo(function RestSiteScreen() {
           className={`flex flex-col items-center p-4 w-40 border-2 ${
             isFullHealth
               ? 'border-stone-700 bg-stone-800/30 opacity-50 cursor-not-allowed'
-              : 'border-stone-600 bg-stone-800/50 hover:border-green-500 hover:bg-stone-700/50'
+              : 'border-stone-600 bg-stone-800/80 hover:border-green-500 hover:bg-stone-700/80'
           }`}
         >
           <SpriteIcon frame={UI_FRAMES.rest} scale={2} className="mb-1" />
@@ -186,7 +186,7 @@ export const RestSiteScreen = memo(function RestSiteScreen() {
 
         <button
           onClick={handleUpgrade}
-          className="flex flex-col items-center p-4 w-40 border-2 border-stone-600 bg-stone-800/50 hover:border-amber-500 hover:bg-stone-700/50"
+          className="flex flex-col items-center p-4 w-40 border-2 border-stone-600 bg-stone-800/80 hover:border-amber-500 hover:bg-stone-700/80"
         >
           <SpriteIcon frame={UI_FRAMES.upgrade} scale={2} className="mb-1" />
           <span className="text-stone-200 text-sm font-bold">Upgrade</span>
