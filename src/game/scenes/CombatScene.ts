@@ -175,6 +175,11 @@ export class CombatScene extends Phaser.Scene {
     this.board.playIntroAnimation().then(() => {
       this.board.setInputEnabled(true);
       this.combatManager.startTurn();
+    }).catch(() => {
+      // Fallback: if intro animation fails (e.g. scene restarted mid-tween),
+      // still enable input and start the turn so the player isn't stuck.
+      this.board.setInputEnabled(true);
+      this.combatManager.startTurn();
     });
   }
 

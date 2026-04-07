@@ -106,8 +106,34 @@ export default function App() {
   const [loadingDismissed, setLoadingDismissed] = useState(false);
   const prevScreenRef = useRef<Screen>('main-menu');
   const [wipePhase, setWipePhase] = useState<'none' | 'in' | 'out'>('none');
+  /** Ref mirror of wipePhase so the onAnimationEnd handler always reads the latest value. */
+  const wipePhaseRef = useRef<'none' | 'in' | 'out'>('none');
+  /** Safety timeout ID — forces wipe completion if animationend doesn't fire. */
+  const wipeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pendingScreenRef = useRef<Screen | null>(null);
   const applyScreenChangeRef = useRef<((next: Screen) => void) | null>(null);
+
+  /** Handle a wipe phase completion (shared by onAnimationEnd and safety timeout). */
+  const handleWipeComplete = useRef<(() => void) | null>(null);
+
+  /** Update wipe phase state + ref, and arm a safety timeout. */
+  const setWipePhaseWithFallback = (phase: 'none' | 'in' | 'out') => {
+    // Clear any existing safety timeout
+    if (wipeTimeoutRef.current) {
+      clearTimeout(wipeTimeoutRef.current);
+      wipeTimeoutRef.current = null;
+    }
+    wipePhaseRef.current = phase;
+    setWipePhase(phase);
+    // Arm a safety timeout for active animation phases.
+    // The CSS animation is 250ms; 500ms gives generous margin.
+    if (phase === 'in' || phase === 'out') {
+      wipeTimeoutRef.current = setTimeout(() => {
+        wipeTimeoutRef.current = null;
+        handleWipeComplete.current?.();
+      }, 500);
+    }
+  };
 
   // Restore persisted run from IndexedDB and start auto-save subscription
   useEffect(() => {
@@ -186,7 +212,7 @@ export default function App() {
       const next = args[0] as Screen;
       // Start wipe-in, store pending screen
       pendingScreenRef.current = next;
-      setWipePhase('in');
+      setWipePhaseWithFallback('in');
     };
 
     EventBus.on(GameEvent.SCREEN_CHANGE, handleScreenChange);
@@ -242,6 +268,9 @@ export default function App() {
             timedFailureDamage: encounter.timedFailureDamage,
             goldMultiplier: ascMods.goldMultiplier,
           };
+
+          // Clear any stale combat snapshot before starting fresh
+          clearCombatSnapshot(run.id).catch(() => {});
 
           // Reset combat store before starting
           useCombatStore.getState().reset();
@@ -387,6 +416,32 @@ export default function App() {
     return () => { document.removeEventListener('visibilitychange', handleVisibilityChange); };
   }, []);
 
+  // Keep the wipe completion handler up to date (uses ref to read latest phase).
+  handleWipeComplete.current = () => {
+    // Clear safety timeout since we're handling it now
+    if (wipeTimeoutRef.current) {
+      clearTimeout(wipeTimeoutRef.current);
+      wipeTimeoutRef.current = null;
+    }
+    const currentPhase = wipePhaseRef.current;
+    if (currentPhase === 'in') {
+      // Screen is covered -- swap content
+      if (pendingScreenRef.current && applyScreenChangeRef.current) {
+        applyScreenChangeRef.current(pendingScreenRef.current);
+        pendingScreenRef.current = null;
+      }
+      setWipePhaseWithFallback('out');
+    } else if (currentPhase === 'out') {
+      // Only finish wipe if no new screen change is pending
+      if (pendingScreenRef.current) {
+        // A new screen change arrived during wipe-out; start new wipe-in
+        setWipePhaseWithFallback('in');
+      } else {
+        setWipePhaseWithFallback('none');
+      }
+    }
+  };
+
   const { scale, offsetX, offsetY } = useGameScale();
 
   // Don't render until persisted run is loaded from IndexedDB
@@ -478,24 +533,7 @@ export default function App() {
         {wipePhase !== 'none' && (
           <div
             className={`absolute inset-0 bg-black z-[100] ${wipePhase === 'in' ? 'screen-wipe-in' : 'screen-wipe-out'}`}
-            onAnimationEnd={() => {
-              if (wipePhase === 'in') {
-                // Screen is covered -- swap content
-                if (pendingScreenRef.current && applyScreenChangeRef.current) {
-                  applyScreenChangeRef.current(pendingScreenRef.current);
-                  pendingScreenRef.current = null;
-                }
-                setWipePhase('out');
-              } else if (wipePhase === 'out') {
-                // Only finish wipe if no new screen change is pending
-                if (pendingScreenRef.current) {
-                  // A new screen change arrived during wipe-out; start new wipe-in
-                  setWipePhase('in');
-                } else {
-                  setWipePhase('none');
-                }
-              }
-            }}
+            onAnimationEnd={() => handleWipeComplete.current?.()}
           />
         )}
 
