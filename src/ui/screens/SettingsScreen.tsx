@@ -1,6 +1,7 @@
 import { memo, useState } from 'react';
 import { EventBus, GameEvent } from '../../game/EventBus';
 import { useSettingsStore } from '../../store/settingsStore';
+import { useMetaStore } from '../../store/metaStore';
 import type { GameSpeed } from '../../store/settingsStore';
 import type { Screen } from '../../App';
 
@@ -118,6 +119,20 @@ export const SettingsScreen = memo(function SettingsScreen() {
   const setMusicVolume = useSettingsStore((s) => s.setMusicVolume);
   const setSfxVolume = useSettingsStore((s) => s.setSfxVolume);
 
+  const playerName = useMetaStore((s) => s.meta.playerName);
+  const setPlayerName = useMetaStore((s) => s.setPlayerName);
+  const [editingName, setEditingName] = useState(false);
+  const [nameInput, setNameInput] = useState(playerName);
+
+  const confirmName = () => {
+    if (nameInput.trim()) {
+      setPlayerName(nameInput.trim());
+    } else {
+      setNameInput(playerName);
+    }
+    setEditingName(false);
+  };
+
   const handleBack = () => {
     EventBus.emit(GameEvent.SCREEN_CHANGE, 'main-menu' satisfies Screen);
   };
@@ -137,6 +152,42 @@ export const SettingsScreen = memo(function SettingsScreen() {
       {/* Settings list */}
       <div className="w-full max-w-[400px] px-4">
         <div className="border border-stone-700 bg-stone-800/30 divide-y divide-stone-700/50">
+          {/* Change Name */}
+          <div className="flex items-center justify-between w-full py-3 px-4">
+            <div className="flex flex-col gap-0.5">
+              <span className="text-sm text-stone-200">Name</span>
+              <span className="text-xs text-stone-500">Your display name</span>
+            </div>
+            {editingName ? (
+              <div className="flex gap-1 items-center ml-4">
+                <input
+                  type="text"
+                  value={nameInput}
+                  onChange={(e) => setNameInput(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === 'Enter') confirmName(); if (e.key === 'Escape') { setNameInput(playerName); setEditingName(false); } }}
+                  maxLength={20}
+                  autoFocus
+                  className="w-28 bg-stone-800/60 border border-stone-600 text-stone-200 text-xs px-2 py-1 outline-none focus:border-amber-600"
+                />
+                <button
+                  onClick={confirmName}
+                  className="px-2 py-1 text-xs border border-amber-700 bg-amber-900/60 text-amber-300 hover:bg-amber-800/60"
+                  style={{ cursor: 'pointer' }}
+                >
+                  OK
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={() => { setNameInput(playerName); setEditingName(true); }}
+                className="text-xs text-red-400 px-2 py-1 border border-stone-600 bg-stone-700/40 hover:bg-stone-600/40 ml-4"
+                style={{ cursor: 'pointer' }}
+              >
+                Change
+              </button>
+            )}
+          </div>
+
           <VolumeSlider label="Music Volume" value={musicVolume} onChange={setMusicVolume} />
           <VolumeSlider label="SFX Volume" value={sfxVolume} onChange={setSfxVolume} />
           <SpeedSelector value={gameSpeed} onChange={setGameSpeed} />

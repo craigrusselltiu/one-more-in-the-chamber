@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## v0.4.10
+
+### Added
+- Change Name option in Settings (main menu only)
+- Changelog button on main menu with scrollable popup
+
 ## v0.4.9
 
 ### Added

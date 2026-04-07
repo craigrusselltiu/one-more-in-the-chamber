@@ -5,6 +5,7 @@ import { useMetaStore } from '../../store/metaStore';
 import { checkForCombatResume } from '../../services/combatResume';
 import { calculateScore } from '../../utils/scoring';
 import { playHover } from '../../services/sfx';
+import changelogRaw from '../../../CHANGELOG.md?raw';
 
 import type { Screen } from '../../App';
 
@@ -70,6 +71,7 @@ export const MainMenu = memo(function MainMenu() {
   const clearRun = useRunStore((s) => s.clearRun);
   const hasActiveRun = run && run.status === 'active';
   const [showConfirm, setShowConfirm] = useState(false);
+  const [showChangelog, setShowChangelog] = useState(false);
   const playerName = useMetaStore((s) => s.meta.playerName);
   const setPlayerName = useMetaStore((s) => s.setPlayerName);
   const [nameInput, setNameInput] = useState('');
@@ -193,6 +195,7 @@ export const MainMenu = memo(function MainMenu() {
         <MenuButton label="New Game" onClick={handleNewGame} />
         <MenuButton label="Reputation Shop" disabled />
         <MenuButton label="Leaderboard" onClick={handleLeaderboard} />
+        <MenuButton label="Changelog" onClick={() => setShowChangelog(true)} />
         <MenuButton label="Settings" onClick={handleSettings} />
       </div>
 
@@ -221,6 +224,39 @@ export const MainMenu = memo(function MainMenu() {
         </div>
       )}
 
+
+      {/* Changelog popup */}
+      {showChangelog && (
+        <div
+          className="absolute inset-0 flex items-center justify-center bg-black/80 z-10"
+          onClick={(e) => { if (e.target === e.currentTarget) setShowChangelog(false); }}
+        >
+          <div className="border border-stone-600 bg-stone-900 p-5 flex flex-col" style={{ width: 500, maxHeight: 440 }}>
+            <h2 className="text-amber-400 text-sm font-bold mb-3 text-center">Changelog</h2>
+            <div className="overflow-y-auto flex-1 pr-2 text-xs" style={{ scrollbarWidth: 'thin' }}>
+              {changelogRaw
+                .split('\n')
+                .filter((_, i) => i > 4) // skip title + preamble
+                .map((line, i) => {
+                  if (line.startsWith('## '))
+                    return <h3 key={i} className="text-amber-400 font-bold mt-3 mb-1" style={{ fontSize: '13px' }}>{line.slice(3)}</h3>;
+                  if (line.startsWith('### '))
+                    return <h4 key={i} className="text-stone-400 font-bold mt-2 mb-0.5">{line.slice(4)}</h4>;
+                  if (line.startsWith('- '))
+                    return <p key={i} className="text-stone-300 ml-3 leading-relaxed">{'- '}{line.slice(2)}</p>;
+                  return null;
+                })}
+            </div>
+            <button
+              onClick={() => setShowChangelog(false)}
+              className="mt-3 px-6 py-1.5 text-xs bg-stone-700/50 text-stone-300 border border-stone-600 hover:bg-stone-600/50 self-center"
+              style={{ cursor: 'pointer' }}
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Name prompt -- shown once on first visit */}
       {!playerName && (
