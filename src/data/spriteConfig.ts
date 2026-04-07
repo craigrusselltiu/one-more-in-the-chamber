@@ -48,7 +48,16 @@ export const ARTIFACT_FRAMES: Record<string, number> = {
 
 /** Consumable sprite frames (by consumable ID). */
 export const CONSUMABLE_FRAMES: Record<string, number> = {
-  // Add consumable frame indices here as they are assigned
+  stick_of_tnt: 722,
+  wanted_flyer: 1245,
+  pocket_watch: 678,
+  strong_coffee: 371,
+  tonic: 666,
+  bandage: 912,
+  skeleton_key: 742,
+  tumbleweed: 1098,
+  signal_flare: 719,
+  snake_oil: 900,
 };
 
 /** Status effect / buff / debuff sprite frames. */

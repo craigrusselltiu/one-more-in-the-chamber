@@ -4,6 +4,22 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## v0.4.15
+
+### Added
+- Consumable and artifact sprites in merchant screen
+- Keyword highlighting in consumable tooltips (combat HUD and merchant)
+- Act 2 combat background (act2_bg)
+
+### Changed
+- Tonic renamed to Moonshine (display only, save-compatible)
+- Wanted Flyer effect text: "Apply 2 Vulnerable to target enemy."
+- Removed Moonshine (2x match), Barbed Wire, and Smoke Bomb consumables
+- Removed colored category backgrounds from consumable slots
+
+### Fixed
+- Merchant node no longer auto-completes when viewing map overlay from merchant
+
 ## v0.4.14
 
 ### Added

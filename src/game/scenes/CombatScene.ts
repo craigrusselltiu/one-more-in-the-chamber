@@ -24,6 +24,7 @@ function getEnemySlotPosition(aliveIndex: number): { x: number; y: number } {
   return { x: SLOT_X[slot] ?? 900, y: SLOT_Y[slot] ?? 280 };
 }
 import { useCombatStore } from '../../store/combatStore';
+import { useRunStore } from '../../store/runStore';
 
 /**
  * Workaround for Phaser scene.start() not reliably passing data to create()
@@ -80,9 +81,11 @@ export class CombatScene extends Phaser.Scene {
     this.cameras.main.setRoundPixels(true);
     this.cameras.main.setBackgroundColor('#2a1a0e');
 
-    // Combat background image (boss uses dusty_bg, regular uses act bg)
+    // Combat background image (boss uses dusty_bg, regular uses act-specific bg)
     const isBoss = data?.config?.isBoss || data?.snapshot?.isBoss;
-    const bgCandidates = isBoss ? ['dusty_bg', 'act1_bg'] : ['act1_bg'];
+    const act = useRunStore.getState().run?.currentAct ?? 1;
+    const actBg = `act${act}_bg`;
+    const bgCandidates = isBoss ? ['dusty_bg', actBg] : [actBg, 'act1_bg'];
     const bgKey = bgCandidates.find(k => this.textures.exists(k));
     if (bgKey) {
       const bg = this.add.image(GAME_WIDTH / 2, GAME_HEIGHT / 2, bgKey);

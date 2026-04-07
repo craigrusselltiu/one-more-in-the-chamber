@@ -932,13 +932,6 @@ export class CombatManager {
         this.player.heal(10);
         this.hazardManager.clearAllOfType('poison');
         break;
-      case 'barbed_wire':
-        this.player.thorns = 1;
-        break;
-      case 'moonshine':
-        this.nextMatchMultiplier = 2.0;
-        if (this.player.takeDamage(5).hpLost > 0) this.playerTookDamageThisFight = true;
-        break;
       case 'strong_coffee':
         this.nextMatchMultiplier = 1.5;
         break;
@@ -949,11 +942,6 @@ export class CombatManager {
       case 'wanted_flyer': {
         const target = this.getTargetedAliveEnemy();
         if (target) target.addVulnerable(2);
-        break;
-      }
-      case 'smoke_bomb': {
-        const target = this.getTargetedAliveEnemy();
-        if (target) target.skipNextAction = true;
         break;
       }
       case 'skeleton_key':

@@ -89,7 +89,7 @@ export const useRunStore = create<RunStore>((set, get) => ({
       }
     }
     if (loadouts.includes('scouts_pack')) {
-      consumables.push({ id: 'smoke_bomb' }, { id: 'signal_flare' });
+      consumables.push({ id: 'bandage' }, { id: 'signal_flare' });
     }
 
     // Character-specific starting artifacts

@@ -5,10 +5,10 @@ import { useRunStore } from '../../store/runStore';
 import { ARTIFACTS } from '../../data/artifacts';
 import { CONSUMABLES } from '../../data/consumables';
 import { ADDITIONAL_POOL, STARTER_POOL, TILE_DEFINITIONS } from '../../data/tiles';
-import { TILE_FRAMES, UI_FRAMES } from '../../data/spriteConfig';
+import { TILE_FRAMES, UI_FRAMES, CONSUMABLE_FRAMES, ARTIFACT_FRAMES } from '../../data/spriteConfig';
 import { SpriteIcon } from '../components/SpriteIcon';
 import { Tooltip } from '../components/Tooltip';
-import { KeywordSubTooltips, getReferencedKeywords, buildTileDescription, buildUpgradePreview } from '../components/KeywordText';
+import { KeywordSubTooltips, getReferencedKeywords, buildTileDescription, buildUpgradePreview, colorizeKeywords } from '../components/KeywordText';
 import { createSeededRandom, seededShuffle } from '../../utils/seededRandom';
 import type { TileType } from '../../types/game';
 import type { Screen } from '../../App';
@@ -185,10 +185,12 @@ export const MerchantScreen = memo(function MerchantScreen() {
             {stock.artifacts.map((item) => {
               const isSold = purchased.has(item.id);
               const canAfford = run.gold >= item.price;
+              const artId = item.id.replace('art-', '');
+              const artFrame = ARTIFACT_FRAMES[artId];
               return (
                 <MerchantCard
                   key={item.id}
-                  icon={<span className="text-lg text-purple-400">{'\u2726'}</span>}
+                  icon={artFrame != null ? <SpriteIcon frame={artFrame} scale={2} /> : <span className="text-lg text-purple-400">{'\u2726'}</span>}
                   name={item.name}
                   description={item.description}
                   price={item.price}
@@ -243,17 +245,22 @@ export const MerchantScreen = memo(function MerchantScreen() {
               const isSold = purchased.has(item.id);
               const canAfford = run.gold >= item.price;
               const full = run.consumables.length >= maxSlots;
+              const consId = item.id.replace('cons-', '');
+              const frame = CONSUMABLE_FRAMES[consId];
+              const hasKeywords = getReferencedKeywords(item.description).length > 0;
+              const keywordTooltip = hasKeywords ? <KeywordSubTooltips text={item.description} /> : undefined;
               return (
-                <MerchantCard
-                  key={item.id}
-                  icon={<span className="text-lg text-green-400">{'\u2764'}</span>}
-                  name={item.name}
-                  description={item.description}
-                  price={item.price}
-                  sold={isSold}
-                  disabled={isSold || !canAfford || full}
-                  onClick={() => handleBuy(item)}
-                />
+                <Tooltip key={item.id} content={keywordTooltip} position="bottom">
+                  <MerchantCard
+                    icon={frame != null ? <SpriteIcon frame={frame} scale={2} /> : <span className="text-lg text-green-400">{'\u2764'}</span>}
+                    name={item.name}
+                    description={<>{colorizeKeywords(item.description)}</>}
+                    price={item.price}
+                    sold={isSold}
+                    disabled={isSold || !canAfford || full}
+                    onClick={() => handleBuy(item)}
+                  />
+                </Tooltip>
               );
             })}
           </Section>

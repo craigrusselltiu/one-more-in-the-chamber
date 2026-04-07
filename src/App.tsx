@@ -178,6 +178,21 @@ export default function App() {
         if (nodeId) store.markNodeCompleted(nodeId);
       }
 
+      // Safeguard: if arriving at map and current node is a non-combat node
+      // that's visited but not completed (wipe race condition), complete it.
+      if (next === 'map') {
+        const store = useRunStore.getState();
+        const currentNode = store.run?.mapState?.nodes.find(
+          (n) => n.id === store.run?.currentNodeId,
+        );
+        if (currentNode && currentNode.visited && !currentNode.completed) {
+          const NON_COMBAT_TYPES = new Set(['merchant', 'campfire', 'event', 'treasure']);
+          if (NON_COMBAT_TYPES.has(currentNode.type)) {
+            store.markNodeCompleted(currentNode.id);
+          }
+        }
+      }
+
       lastAppliedScreen = next;
       setScreen(next);
 
@@ -554,7 +569,7 @@ export default function App() {
           className="absolute right-2 bottom-1 pointer-events-none z-[60]"
           style={{ fontSize: '9px', color: 'rgba(255,255,255,0.3)' }}
         >
-          Pre-alpha v0.4.14
+          Pre-alpha v0.4.15
         </span>
       </div>
     </div>

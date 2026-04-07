@@ -288,9 +288,6 @@ export function getActName(act: Act): string {
   return ACT_NAMES[act];
 }
 
-/** Non-combat node types that should auto-complete if visited but stuck. */
-const NON_COMBAT_TYPES: Set<MapNodeType> = new Set(['merchant', 'campfire', 'event', 'treasure']);
-
 /** Get reachable node IDs from current position (or start nodes if no position). */
 export function getReachableNodes(map: MapState): string[] {
   if (!map.currentNodeId) {
@@ -301,16 +298,8 @@ export function getReachableNodes(map: MapState): string[] {
   const current = map.nodes.find((n) => n.id === map.currentNodeId);
   if (!current) return [];
 
+  // If current node is not completed, allow retrying it
   if (!current.completed) {
-    // Safeguard: if a non-combat node is visited but not completed and
-    // the player is back on the map, auto-complete it so they aren't stuck.
-    // This can happen if a screen transition race condition prevents the
-    // normal completion path from firing.
-    if (current.visited && NON_COMBAT_TYPES.has(current.type)) {
-      current.completed = true;
-      return current.connections;
-    }
-    // Combat nodes: allow retrying
     return [current.id];
   }
 

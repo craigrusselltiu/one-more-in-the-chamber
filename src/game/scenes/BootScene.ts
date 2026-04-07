@@ -66,6 +66,7 @@ export class BootScene extends Phaser.Scene {
     this.load.audio('sfx_upgrade', `${base}assets/audio/sfx/upgrade.wav`);
     // Backgrounds
     this.load.image('act1_bg', `${base}assets/act1_bg.png`);
+    this.load.image('act2_bg', `${base}assets/act2_bg.png`);
     this.load.image('dusty_bg', `${base}assets/dusty_bg.png`);
     this.load.image('main_menu_bg', `${base}assets/main_menu_bg.png`);
     this.load.image('campfire_bg', `${base}assets/campfire_bg.png`);

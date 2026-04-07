@@ -17,18 +17,11 @@ export const CONSUMABLES: ConsumableDefinition[] = [
     effect: 'Clear entire row. Tiles generate resources; damage goes to targeted enemy.',
   },
   {
-    id: 'moonshine',
-    name: 'Moonshine',
-    category: 'offensive',
-    description: 'Fighting drunk.',
-    effect: '2x next match resources, take 5 damage.',
-  },
-  {
     id: 'wanted_flyer',
     name: 'Wanted Flyer',
     category: 'offensive',
     description: 'Price on their head.',
-    effect: 'Targeted enemy +50% damage taken, 2 turns.',
+    effect: 'Apply 2 Vulnerable to target enemy.',
   },
   {
     id: 'pocket_watch',
@@ -47,17 +40,10 @@ export const CONSUMABLES: ConsumableDefinition[] = [
   // Defensive
   {
     id: 'tonic',
-    name: 'Tonic',
+    name: 'Moonshine',
     category: 'defensive',
     description: 'Burns going down, patches you up.',
     effect: 'Heal 20 HP.',
-  },
-  {
-    id: 'barbed_wire',
-    name: 'Barbed Wire',
-    category: 'defensive',
-    description: 'They ran right into it.',
-    effect: 'Gain thorns: reflect 100% of next enemy attack back. Consumed on trigger.',
   },
   {
     id: 'bandage',
@@ -73,13 +59,6 @@ export const CONSUMABLES: ConsumableDefinition[] = [
     category: 'utility',
     description: 'Every lock has a key.',
     effect: 'Unlock all locked tiles.',
-  },
-  {
-    id: 'smoke_bomb',
-    name: 'Smoke Bomb',
-    category: 'utility',
-    description: 'Swinging at air.',
-    effect: 'Targeted enemy skips next action.',
   },
   {
     id: 'tumbleweed',

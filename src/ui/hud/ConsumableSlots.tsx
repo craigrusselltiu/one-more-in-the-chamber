@@ -6,12 +6,7 @@ import { CONSUMABLES } from '../../data/consumables';
 import { SpriteIcon } from '../components/SpriteIcon';
 import { Tooltip } from '../components/Tooltip';
 import { CONSUMABLE_FRAMES } from '../../data/spriteConfig';
-
-const CATEGORY_COLORS: Record<string, string> = {
-  offensive: '#D04040',
-  defensive: '#6888A0',
-  utility: '#D4A030',
-};
+import { colorizeKeywords, getReferencedKeywords, KeywordSubTooltips } from '../components/KeywordText';
 
 /**
  * ConsumableSlots: 3 fixed square slots (4 with Saddlebag) near the player.
@@ -66,7 +61,7 @@ interface ConsumableSlotProps {
 const ConsumableSlot = memo(function ConsumableSlot({
   index,
   name,
-  category,
+  category: _category,
   effect,
   filled,
   canUse,
@@ -109,16 +104,22 @@ const ConsumableSlot = memo(function ConsumableSlot({
     return () => document.removeEventListener('mousedown', close);
   }, [showMenu]);
 
-  const bgColor = filled && category
-    ? CATEGORY_COLORS[category] ?? '#555'
-    : 'transparent';
+  const bgColor = filled ? '#333' : 'transparent';
   const borderColor = canUse ? '#FFD700' : '#555';
 
-  const tooltipText = filled ? `${name}: ${effect}` : 'Empty slot';
+  const hasKeywords = filled && effect ? getReferencedKeywords(effect ?? '').length > 0 : false;
+  const tooltipContent = filled ? (
+    <div style={{ fontSize: '9px' }}>
+      <span className="text-amber-300 font-bold">{name}</span>
+      <span className="text-stone-300">: </span>
+      <span className="text-stone-200">{colorizeKeywords(effect ?? '')}</span>
+    </div>
+  ) : undefined;
+  const keywordTooltip = hasKeywords && effect ? <KeywordSubTooltips text={effect} /> : undefined;
 
   return (
     <div className="relative">
-      <Tooltip text={tooltipText} position="bottom">
+      <Tooltip text={!filled ? 'Empty slot' : undefined} content={tooltipContent} secondContent={keywordTooltip} position="bottom">
         <button
           ref={buttonRef}
           onClick={handleClick}

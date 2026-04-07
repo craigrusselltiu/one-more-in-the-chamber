@@ -170,7 +170,7 @@ export const EventScreen = memo(function EventScreen() {
         break;
       case 'gain_consumables_merchant_penalty':
         addConsumable({ id: 'tonic' });
-        addConsumable({ id: 'smoke_bomb' });
+        addConsumable({ id: 'bandage' });
         setDisplayText('You took his gear. Merchants will charge you more this act.');
         break;
       case 'heal_and_intel':
@@ -179,7 +179,7 @@ export const EventScreen = memo(function EventScreen() {
         break;
       case 'trade_consumables':
         addConsumable({ id: 'tonic' });
-        addConsumable({ id: 'smoke_bomb' });
+        addConsumable({ id: 'bandage' });
         setDisplayText('A fair trade. You got some useful supplies.');
         break;
       case 'bonus_swap_next_fight':
@@ -231,7 +231,7 @@ export const EventScreen = memo(function EventScreen() {
             updateHealth(20);
             setDisplayText('The vial glows faintly. You feel much better.');
           } else if (roll < 0.66) {
-            addConsumable({ id: 'moonshine' });
+            addConsumable({ id: 'tonic' });
             setDisplayText('Strong stuff. You pocket the moonshine for later.');
           } else {
             updateHealth(-10);
@@ -251,9 +251,9 @@ export const EventScreen = memo(function EventScreen() {
         updateGold(20);
         setDisplayText('The coyotes scatter. You find cached loot inside.');
         break;
-      case 'gain_smoke_bomb':
-        addConsumable({ id: 'smoke_bomb' });
-        setDisplayText('You crept past without a sound and found a smoke bomb.');
+      case 'gain_bandage':
+        addConsumable({ id: 'bandage' });
+        setDisplayText('You crept past without a sound and found some bandages.');
         break;
       case 'none':
         setDisplayText('You move on.');

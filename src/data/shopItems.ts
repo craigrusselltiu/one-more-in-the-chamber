@@ -172,7 +172,7 @@ export const SHOP_ITEMS: ShopItemDefinition[] = [
   {
     id: 'shop_loadout_healers_kit',
     name: "Healer's Kit",
-    description: 'Start each run with a Tonic.',
+    description: 'Start each run with a Moonshine.',
     cost: 150,
     category: 'loadout',
     unlockId: 'healers_kit',

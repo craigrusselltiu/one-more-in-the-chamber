@@ -311,7 +311,7 @@ export const EVENTS: EventDefinition[] = [
       "Painted wagon, jars of strange liquids. The seller's grin has too many teeth.",
     choices: [
       {
-        label: 'Buy tonic (-15 gold)',
+        label: 'Buy moonshine (-15 gold)',
         description: 'Heal 30 HP.',
         effect: 'buy_tonic',
       },
@@ -322,7 +322,7 @@ export const EVENTS: EventDefinition[] = [
       },
       {
         label: 'Threaten him',
-        description: '+1 Tonic, +1 Bandage. Merchants cost +15% this act.',
+        description: '+1 Moonshine, +1 Bandage. Merchants cost +15% this act.',
         effect: 'threaten_merchant',
       },
     ],
@@ -340,8 +340,8 @@ export const EVENTS: EventDefinition[] = [
       },
       {
         label: 'Sneak past',
-        description: 'No cost. +1 Smoke Bomb.',
-        effect: 'gain_smoke_bomb',
+        description: 'No cost. +1 Bandage.',
+        effect: 'gain_bandage',
       },
     ],
   },

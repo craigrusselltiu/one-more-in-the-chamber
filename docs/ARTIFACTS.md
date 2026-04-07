@@ -35,7 +35,7 @@
 
 ### Twin Revolvers
 - Tags: Outlaw
-- Effect: Bullets hit 2x at 60% each (120% average).
+- Effect: Bullets deal 50% more damage, but has a 10% chance to miss.
 - Flavor: "Two guns. Twice the fun."
 
 ### Bandit's Bandana
