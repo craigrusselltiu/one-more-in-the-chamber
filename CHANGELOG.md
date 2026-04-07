@@ -20,6 +20,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 - Rigged Deck tag changed from Desperado to Prospector
 - Chip base damage increased from 5 to 6
 - Double showdown swap delay reduced from 100ms to 20ms
+- Leaderboard now shows which character (Rust/Reno) was used for each score
 
 ## v0.4.13
 

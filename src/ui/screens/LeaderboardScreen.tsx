@@ -84,6 +84,7 @@ export const LeaderboardScreen = memo(function LeaderboardScreen() {
             <div className="flex items-center px-3 py-2 border-b border-stone-600 bg-stone-700/30">
               <span className="w-8 text-stone-400 text-xs">#</span>
               <span className="flex-1 text-stone-400 text-xs">Player</span>
+              <span className="w-14 text-center text-stone-400 text-xs">Char</span>
               <span className="w-14 text-right text-stone-400 text-xs">Asc</span>
               <span className="w-24 text-right text-stone-400 text-xs">Score</span>
             </div>
@@ -104,6 +105,9 @@ export const LeaderboardScreen = memo(function LeaderboardScreen() {
                     {entry.playerName}
                   </span>
                 </div>
+                <span className="w-14 text-center text-stone-400 text-xs">
+                  {entry.character === 'reno' ? 'Reno' : 'Rust'}
+                </span>
                 <span className="w-14 text-right text-stone-400 text-xs">
                   {entry.ascensionLevel > 0 ? `A${entry.ascensionLevel}` : '-'}
                 </span>
