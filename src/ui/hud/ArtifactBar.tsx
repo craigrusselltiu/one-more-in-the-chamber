@@ -18,6 +18,8 @@ const TRAIT_COLORS: Record<TraitId, string> = {
   saloon_keeper: '#D4A870',
   desperado: '#B060D0',
   high_roller: '#FFD700',
+  sniper: '#7090B8',
+  dead_man_walking: '#808080',
 };
 
 const DEFAULT_COLOR = '#808080';

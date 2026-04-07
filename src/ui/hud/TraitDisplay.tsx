@@ -21,36 +21,25 @@ const TRAIT_LABELS: Record<TraitId, string> = {
   saloon_keeper: 'Saloon Keeper',
   desperado: 'Desperado',
   high_roller: 'High Roller',
+  sniper: 'Sniper',
+  dead_man_walking: 'Dead Man Walking',
 };
 
 /** Descriptions for each trait at each breakpoint threshold. */
 const TRAIT_DESCRIPTIONS: Record<string, Record<number, string>> = {
-  outlaw: {
-    2: '4+ matches deal 30% bonus damage.',
-    4: '4+ matches apply 1 Vulnerable to targeted enemy.',
-    6: 'Tiles from 4+ match cascades trigger resource effects twice.',
-  },
   sheriff: {
-    2: 'The first time you gain block each turn is doubled.',
+    2: 'Double the first time you gain block each turn.',
     4: 'At the start of combat, gain 5 Sturdy.',
     6: 'Block reflects 100% of absorbed damage back to attacker.',
   },
-  rattlesnake: {
-    1: 'Immune to poison tile damage and debuffs.',
-    3: 'Matching poison tiles deals damage + applies venom.',
+  outlaw: {
+    2: 'Killing an enemy grants 1 Rageful.',
+    5: 'At the start of Boss encounters, gain 3 Rageful and apply 2 Vulnerable to all enemies.',
   },
   prospector: {
-    2: 'Non-gold matches: 15% chance to generate 1 gold.',
-    4: 'Gold matches: double gold + 2 block.',
-    6: 'Turn end: deal 50% of gold earned this fight as damage.',
-  },
-  sapper: {
-    1: 'Bombs deal +2 bonus damage when detonated.',
-    2: 'Bomb countdowns start 1 turn higher.',
-    3: 'Every 4th match spawns a player-side bomb tile.',
-  },
-  mustang: {
-    4: '+1 swap per turn. Non-adjacent swaps allowed. 5+ lasso matches: +50% damage.',
+    2: 'On any match, 20% chance to generate 1 gold.',
+    4: 'Whenever you gain gold during combat, deal 1 damage to a random enemy.',
+    6: 'Deal 10% of your current gold as extra damage.',
   },
   gunslinger: {
     2: 'Bullet, .50 Cal, Buckshot, and Ricochet tiles deal 1 extra damage per tile.',
@@ -58,7 +47,26 @@ const TRAIT_DESCRIPTIONS: Record<string, Record<number, string>> = {
   },
   saloon_keeper: {
     2: 'Consumables heal 5 HP on use.',
-    4: 'At the start of combat, gain a random consumable.',
+    5: 'At the start of combat, gain a random consumable.',
+  },
+  sapper: {
+    1: 'Enemy bomb timers are increased by 2.',
+    5: 'Explosive tile radius is increased by 1.',
+  },
+  sniper: {
+    4: 'On 5-match, gain 1 swap for that turn.',
+  },
+  dead_man_walking: {
+    3: 'Whenever you would take damage, take 1 less damage.',
+    5: 'If HP is below 20%, all damage is doubled.',
+    7: 'Once per fight, taking lethal damage instead sets HP to 10 and grants 20 block.',
+  },
+  rattlesnake: {
+    1: 'Immune to poison tile damage and debuffs.',
+    3: 'Matching poison tiles deals damage + applies venom.',
+  },
+  mustang: {
+    4: '+1 swap per turn. Non-adjacent swaps allowed. 5+ lasso matches: +50% damage.',
   },
 };
 

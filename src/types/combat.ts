@@ -61,6 +61,8 @@ export interface EnemyState {
   summoned: boolean;
   intent: EnemyIntent;
   isDead: boolean;
+  /** Internal flag to prevent processing the same death multiple times. */
+  _deathProcessed?: boolean;
 }
 
 export type EnemyIntentType =

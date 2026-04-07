@@ -73,7 +73,9 @@ export type TraitId =
   | 'gunslinger'
   | 'saloon_keeper'
   | 'desperado'
-  | 'high_roller';
+  | 'high_roller'
+  | 'sniper'
+  | 'dead_man_walking';
 
 export interface ArtifactInstance {
   id: string;

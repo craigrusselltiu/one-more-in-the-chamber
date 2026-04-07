@@ -185,11 +185,15 @@ export class CombatManager {
     this.board.setActiveTileTypes(config.activeTileTypes);
 
     // Apply fight-start effects
-    this.traits.onFightStart(this.player);
+    this.traits.onFightStart(this.player, this.isBoss, this.enemies);
     this.artifacts.onFightStart(this.player);
 
-    // Saloon Keeper(4): grant a random consumable at combat start
-    if (this.traits.isActive('saloon_keeper', 4)) {
+    // Set trait-driven player flags
+    this.player.damageReduction = this.traits.getDamageReduction();
+    this.player.deadManWalkingAvailable = this.traits.isActive('dead_man_walking', 7);
+
+    // Saloon Keeper(5): grant a random consumable at combat start
+    if (this.traits.isActive('saloon_keeper', 5)) {
       this.grantRandomConsumable();
     }
 
@@ -360,6 +364,8 @@ export class CombatManager {
         critChance: 0, // deprecated, kept for snapshot compat
         thorns: this.player.thorns,
         shedSkinAvailable: this.player.shedSkinAvailable,
+        deadManWalkingAvailable: this.player.deadManWalkingAvailable,
+        damageReduction: this.player.damageReduction,
         gold: this.player.gold,
         goldThisFight: this.player.goldThisFight,
         abilityCharge: this.player.abilityCharge,
@@ -412,6 +418,8 @@ export class CombatManager {
     // critChance deprecated — Lucky stacks are the crit chance now
     this.player.thorns = sp.thorns;
     this.player.shedSkinAvailable = sp.shedSkinAvailable ?? false;
+    this.player.deadManWalkingAvailable = sp.deadManWalkingAvailable ?? false;
+    this.player.damageReduction = sp.damageReduction ?? 0;
     this.player.goldThisFight = sp.goldThisFight;
 
     // Restore enemies
@@ -1187,10 +1195,16 @@ export class CombatManager {
         this.resolveSaloonAdjacent(match);
       }
 
-      // Check if an enemy died from this match
+      // Check if an enemy died from this match + Outlaw(2) rageful on kill
       for (const enemy of this.enemies) {
-        if (enemy.state.isDead) {
+        if (enemy.state.isDead && !enemy.state._deathProcessed) {
           this.enemyDiedThisSwap = true;
+          enemy.state._deathProcessed = true;
+          const ragefulGain = this.traits.onEnemyKilled();
+          if (ragefulGain > 0) {
+            this.player.ragefulStacks += ragefulGain;
+            this.floatOnPlayer(`+${ragefulGain} RGF`, '#D04040');
+          }
         }
       }
 
@@ -1359,6 +1373,16 @@ export class CombatManager {
       this.player.addGold(scaledGold);
 
       EventBus.emit(GameEvent.GOLD_CHANGE, this.player.gold);
+
+      // Prospector(4): gaining gold deals 1 damage to a random enemy
+      if (this.traits.goldDealsDamage()) {
+        const alive = this.aliveEnemies();
+        if (alive.length > 0) {
+          const target = alive[Math.floor(Math.random() * alive.length)];
+          this.dealDamageToEnemy(target, 1, false);
+          this.emitEnemyHpChanges();
+        }
+      }
     }
 
     // Healing

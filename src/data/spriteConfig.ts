@@ -92,20 +92,24 @@ export const TRAIT_FRAMES: Record<string, number> = {
   saloon_keeper: 499,
   desperado: 1080,
   high_roller: 1162,
+  sniper: 906,
+  dead_man_walking: 824,
 };
 
 /** Trait breakpoint thresholds (in order). */
 export const TRAIT_BREAKPOINTS: Record<string, number[]> = {
-  outlaw: [2, 4, 6],
+  outlaw: [2, 5],
   sheriff: [2, 4, 6],
   rattlesnake: [1, 3],
   prospector: [2, 4, 6],
-  sapper: [1, 2, 3],
+  sapper: [1, 5],
   mustang: [4],
   gunslinger: [2, 4],
-  saloon_keeper: [2, 4],
+  saloon_keeper: [2, 5],
   desperado: [],
   high_roller: [],
+  sniper: [4],
+  dead_man_walking: [3, 5, 7],
 };
 
 /** Tile hazard overlay icons. */

@@ -50,6 +50,8 @@ export interface SerializedPlayer {
   critChance: number;
   thorns: number;
   shedSkinAvailable?: boolean;
+  deadManWalkingAvailable?: boolean;
+  damageReduction?: number;
   gold: number;
   goldThisFight: number;
   abilityCharge: number;

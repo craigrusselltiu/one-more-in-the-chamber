@@ -4,6 +4,21 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## v0.4.14
+
+### Added
+- Sniper trait: (4) on 5-match, gain 1 swap for that turn
+- Dead Man Walking trait: (3) take 1 less damage, (5) below 20% HP doubles damage, (7) survive lethal with 10 HP + 20 block
+
+### Changed
+- Outlaw trait reworked: (2) killing enemy grants 1 Rageful, (5) boss start: 3 Rageful + 2 Vulnerable to all
+- Prospector trait reworked: (2) any match 20% gold, (4) gold gain deals 1 damage, (6) +10% gold as extra damage
+- Sapper trait simplified: (1) enemy bomb timers +2, (5) explosive radius +1
+- Saloon Keeper threshold changed: (5) random consumable at combat start (was 4)
+- Reno's Coin reworked: hit chance 50% → 75%, damage doubled, flat 1 HP on miss (no escalation)
+- Rigged Deck tag changed from Desperado to Prospector
+- Double showdown swap delay reduced from 100ms to 20ms
+
 ## v0.4.13
 
 ### Added

@@ -609,7 +609,7 @@ export class Board {
       }
     }
 
-    const destroyed = await this.destroyTilesWithEffects(allPositions, { staggerMs: 100 });
+    const destroyed = await this.destroyTilesWithEffects(allPositions, { staggerMs: 20 });
 
     // Build match results grouped by type
     const byType = new Map<TileType, number>();

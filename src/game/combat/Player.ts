@@ -27,6 +27,10 @@ export class Player {
   tookDamageThisTurn = false;
   /** Shed Skin: once/fight survive lethal damage with 1 HP. */
   shedSkinAvailable = false;
+  /** Dead Man Walking(3): flat damage reduction per hit. */
+  damageReduction = 0;
+  /** Dead Man Walking(7): once/fight lethal → 10 HP + 20 block. */
+  deadManWalkingAvailable = false;
 
   constructor(
     health: number,
@@ -52,6 +56,11 @@ export class Player {
   takeDamage(amount: number): { hpLost: number; blocked: number; thornsDamage: number } {
     let remaining = amount;
 
+    // Dead Man Walking(3): flat damage reduction
+    if (this.damageReduction > 0) {
+      remaining = Math.max(0, remaining - this.damageReduction);
+    }
+
     // Block absorption
     let blocked = 0;
     if (this.block > 0) {
@@ -63,6 +72,13 @@ export class Player {
     // Apply damage to HP
     this.health = Math.max(0, this.health - remaining);
     if (remaining > 0) this.tookDamageThisTurn = true;
+
+    // Dead Man Walking(7): survive lethal → 10 HP + 20 block (once per fight)
+    if (this.health <= 0 && this.deadManWalkingAvailable) {
+      this.health = 10;
+      this.block += 20;
+      this.deadManWalkingAvailable = false;
+    }
 
     // Shed Skin: survive lethal damage with 1 HP (once per fight)
     if (this.health <= 0 && this.shedSkinAvailable) {

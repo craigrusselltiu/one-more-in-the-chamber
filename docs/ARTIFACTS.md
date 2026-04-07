@@ -23,7 +23,7 @@
 ### Reno's Coin
 - Reno exclusive artifact
 - Tags: Desperado, High Roller
-- Effect: Chip damage doubled. On miss, lose 1 HP (increases by 1 per miss permanently).
+- Effect: Chip damage is doubled and hit chance is increased to 75%. On miss, lose 1 HP.
 - Flavor: "Double or nothing. Emphasis on nothing."
 
 ## Outlaw

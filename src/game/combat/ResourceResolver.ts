@@ -18,6 +18,8 @@ export interface ResourceOutput {
   sturdyStacks: number;
   /** Whether a Chip tile hit (true) or missed (false). Undefined for non-chip tiles. */
   chipHit?: boolean;
+  /** The damage Chip would deal if it hit (used by Reno's Coin re-roll). */
+  chipDamageIfHit?: number;
   /** Double Down artifact: HP penalty on chip miss. */
   doubleDownPenalty?: number;
   isAoE: boolean;
@@ -241,6 +243,7 @@ export class ResourceResolver {
         const hit = Math.random() < 0.5;
         output.damage = hit ? total : 0;
         output.chipHit = hit;
+        output.chipDamageIfHit = total;
         break;
       }
 

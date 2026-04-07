@@ -249,13 +249,17 @@ export class ArtifactSystem {
       modified.venomStacks += 1;
     }
 
-    // Reno's Coin: chip damage doubled on hit, self-damage on miss
+    // Reno's Coin: hit chance 50%→75%, damage doubled, flat 1 HP on miss
     if (this.has('renos_coin') && match.tileType === 'chip') {
+      // Re-roll misses: 50% of the 50% miss chance converts to hit (75% total)
+      if (!modified.chipHit && Math.random() < 0.5) {
+        modified.chipHit = true;
+        modified.damage = modified.chipDamageIfHit ?? 0;
+      }
       if (modified.chipHit) {
         modified.damage *= 2;
       } else {
-        modified.doubleDownPenalty = this.doubleDownMissPenalty;
-        this.doubleDownMissPenalty++;
+        modified.doubleDownPenalty = 1;
       }
     }
 
