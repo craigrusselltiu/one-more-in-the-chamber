@@ -87,8 +87,8 @@ export interface ConsumableInstance {
 export type MapNodeType =
   | 'combat'
   | 'elite'
-  | 'shop'
-  | 'rest'
+  | 'merchant'
+  | 'campfire'
   | 'event'
   | 'treasure'
   | 'boss';

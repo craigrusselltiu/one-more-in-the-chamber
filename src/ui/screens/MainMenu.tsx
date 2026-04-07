@@ -119,8 +119,8 @@ export const MainMenu = memo(function MainMenu() {
     const currentNode = currentRun?.mapState?.nodes.find((n) => n.id === currentRun?.currentNodeId);
     if (currentNode && currentNode.visited && !currentNode.completed) {
       const screenMap: Record<string, Screen> = {
-        shop: 'shop',
-        rest: 'rest-site',
+        merchant: 'merchant',
+        campfire: 'campfire',
         event: 'event',
         treasure: 'treasure',
       };

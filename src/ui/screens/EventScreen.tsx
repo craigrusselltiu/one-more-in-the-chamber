@@ -66,8 +66,8 @@ export const EventScreen = memo(function EventScreen() {
         updateGold(30);
         setDisplayText('You gained 30 gold. The next elite will be tougher.');
         break;
-      case 'shop_normalize':
-        setDisplayText('Shop prices return to normal.');
+      case 'merchant_normalize':
+        setDisplayText('Merchant prices return to normal.');
         break;
       case 'lose_hp_gain_artifact':
         updateHealth(-10);
@@ -132,11 +132,11 @@ export const EventScreen = memo(function EventScreen() {
         break;
       }
       case 'help_merchant':
-        setDisplayText('The merchant thanks you. Shops will have more stock.');
+        setDisplayText('The merchant thanks you. Merchants will have more stock.');
         break;
       case 'rob_merchant':
         updateGold(15);
-        setDisplayText('You took what you needed. Next shop costs more.');
+        setDisplayText('You took what you needed. Next merchant costs more.');
         break;
       case 'climb_well':
         updateHealth(-10);
@@ -168,10 +168,10 @@ export const EventScreen = memo(function EventScreen() {
         updateGold(25);
         setDisplayText('You dug him out. He hands you gold and shares a trick of the trade.');
         break;
-      case 'gain_consumables_shop_penalty':
+      case 'gain_consumables_merchant_penalty':
         addConsumable({ id: 'tonic' });
         addConsumable({ id: 'smoke_bomb' });
-        setDisplayText('You took his gear. Shops will charge you more this act.');
+        setDisplayText('You took his gear. Merchants will charge you more this act.');
         break;
       case 'heal_and_intel':
         updateHealth(15);
@@ -190,8 +190,8 @@ export const EventScreen = memo(function EventScreen() {
         addConsumable({ id: 'tonic' });
         setDisplayText('You scavenged gold and a tonic from the wreckage.');
         break;
-      case 'shop_discount':
-        setDisplayText('The survivors are grateful. Next shop will offer better prices.');
+      case 'merchant_discount':
+        setDisplayText('The survivors are grateful. Next merchant will offer better prices.');
         break;
       case 'bury_heal_gold':
         updateHealth(10);
@@ -245,7 +245,7 @@ export const EventScreen = memo(function EventScreen() {
       case 'threaten_merchant':
         addConsumable({ id: 'tonic' });
         addConsumable({ id: 'bandage' });
-        setDisplayText('He hands over the goods. Shops will charge more this act.');
+        setDisplayText('He hands over the goods. Merchants will charge more this act.');
         break;
       case 'smoke_out_den':
         updateGold(20);

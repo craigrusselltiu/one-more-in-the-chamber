@@ -36,12 +36,12 @@ const COLS = 7;
  *   Row 11 (pre-boss) = rest, Row 12 = boss.
  *
  * Target counts (excluding fixed rows):
- *   rest: 3-4, elite: 3-4, shop: 2-3, event: 3-6
+ *   campfire: 3-4, elite: 3-4, merchant: 2-3, event: 3-6
  *   Remainder = combat.
  *
  * Constraints:
- *   - No elite/shop/rest in rows 1-2 (first 2 rows after start).
- *   - No consecutive (same row or adjacent rows) elite, shop, or rest.
+ *   - No elite/merchant/campfire in rows 1-2 (first 2 rows after start).
+ *   - No consecutive (same row or adjacent rows) elite, merchant, or campfire.
  */
 function assignNodeTypes(
   nodes: MapNode[],
@@ -55,7 +55,7 @@ function assignNodeTypes(
   for (const node of nodes) {
     if (node.row === 0) node.type = 'combat';
     else if (node.row === treasureRow) node.type = 'treasure';
-    else if (node.row === totalRows - 2) node.type = 'rest';
+    else if (node.row === totalRows - 2) node.type = 'campfire';
     else if (node.row === totalRows - 1) node.type = 'boss';
     else node.type = 'combat'; // default, will be overwritten
   }
@@ -72,16 +72,16 @@ function assignNodeTypes(
   const pick = (min: number, max: number) => min + Math.floor(rng() * (max - min + 1));
   const targets: { type: MapNodeType; count: number }[] = [
     { type: 'elite', count: pick(3, 4) },
-    { type: 'shop', count: pick(2, 3) },
-    { type: 'rest', count: pick(2, 3) },
+    { type: 'merchant', count: pick(2, 3) },
+    { type: 'campfire', count: pick(2, 3) },
     { type: 'event', count: pick(3, 6) },
   ];
 
   // 4. Check if placing a type at a node violates constraints
-  const NO_CONSECUTIVE: Set<MapNodeType> = new Set(['rest', 'shop', 'elite']);
+  const NO_CONSECUTIVE: Set<MapNodeType> = new Set(['campfire', 'merchant', 'elite']);
   const canPlace = (node: MapNode, type: MapNodeType): boolean => {
-    // Row restriction: no elite/rest in first 2 rows (shops allowed)
-    if ((type === 'elite' || type === 'rest') && node.row <= 2) return false;
+    // Row restriction: no elite/campfire in first 2 rows (merchants allowed)
+    if ((type === 'elite' || type === 'campfire') && node.row <= 2) return false;
     // No consecutive: check same row, prev row, next row
     if (NO_CONSECUTIVE.has(type)) {
       for (const other of nodes) {

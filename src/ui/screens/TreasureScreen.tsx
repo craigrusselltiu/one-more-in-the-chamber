@@ -53,17 +53,16 @@ export const TreasureScreen = memo(function TreasureScreen() {
   };
 
   return (
-    <div className="flex flex-col items-center justify-center bg-[#1a1a2e]" style={{ width: 960, height: 540 }}>
+    <div className="flex flex-col items-center justify-center" style={{ width: 960, height: 540, backgroundImage: `linear-gradient(rgba(0,0,0,0.45), rgba(0,0,0,0.45)), url(${import.meta.env.BASE_URL}assets/treasure_bg.png)`, backgroundSize: 'cover', backgroundPosition: 'center' }}>
       <div className="text-center mb-8">
         <h2 className="text-lg text-amber-400 font-bold uppercase" style={{ WebkitTextStroke: '4px #000', paintOrder: 'stroke fill' }}>Treasure Found</h2>
-        <p className="text-[10px] text-stone-500 mt-1">Something worth keeping.</p>
       </div>
 
       <div
         className="flex flex-col items-center w-48 mb-8"
         style={{
           border: '2px solid #b45309',
-          backgroundColor: 'rgba(120, 53, 15, 0.3)',
+          backgroundColor: 'rgba(120, 53, 15, 0.6)',
           padding: '16px 12px',
         }}
       >
@@ -80,13 +79,13 @@ export const TreasureScreen = memo(function TreasureScreen() {
       <div className="flex gap-3">
         <button
           onClick={handleTake}
-          className="px-6 py-1.5 text-xs bg-amber-900/60 text-amber-300 border border-amber-700 hover:bg-amber-800/60"
+          className="px-6 py-1.5 text-xs bg-amber-900/80 text-amber-300 border border-amber-700 hover:bg-amber-800/80"
         >
           Take It
         </button>
         <button
           onClick={handleSkip}
-          className="px-6 py-1.5 text-xs bg-stone-800/50 text-stone-400 border border-stone-700 hover:bg-stone-700/50"
+          className="px-6 py-1.5 text-xs bg-stone-800/80 text-stone-400 border border-stone-700 hover:bg-stone-700/80"
         >
           Skip
         </button>

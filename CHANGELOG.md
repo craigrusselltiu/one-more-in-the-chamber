@@ -4,6 +4,17 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## v0.4.11
+
+### Added
+- Treasure background image on treasure screen
+
+### Changed
+- In-run shop renamed to "merchant" throughout code, map nodes, and UI (title: "GENERAL MERCHANT")
+- Rest site renamed to "campfire" throughout code, map nodes, and UI
+- ShopScreen.tsx → MerchantScreen.tsx, RestSiteScreen.tsx → CampfireScreen.tsx
+- Treasure screen: removed subtitle, more opaque artifact card and buttons
+
 ## v0.4.10
 
 ### Added

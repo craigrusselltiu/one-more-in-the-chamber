@@ -25,7 +25,7 @@
 
 Every mechanic, artifact, enemy, and flavour text should feel *thematically motivated*. Nothing exists purely as a number — it tells a micro-story.
 
-**Good:** "Stolen Badge — +2 block/turn, but shop prices +10%." You stole it, you're wanted, merchants charge more. The mechanic *is* the narrative.
+**Good:** "Stolen Badge — +2 block/turn, but merchant prices +10%." You stole it, you're wanted, merchants charge more. The mechanic *is* the narrative.
 
 **Bad:** "Iron Ring — +2 block/turn." Same effect, no story, no personality.
 
@@ -207,7 +207,7 @@ One animation at a time. Effects apply mechanically regardless of animation stat
 
 ## Tile System
 
-Two **separate pools**: the starter pool (run start) and the additional pool (between acts / shops).
+Two **separate pools**: the starter pool (run start) and the additional pool (between acts / merchants).
 
 ### Core Tiles (always present, cannot be removed)
 
@@ -215,11 +215,11 @@ Two **separate pools**: the starter pool (run start) and the additional pool (be
 |---|---|---|
 | **Bullet** | 2 damage | Primary single-target offence. |
 | **Iron** | 1 block | Absorbs damage this turn. Expires at turn end. |
-| **Gold** | 1 gold | Currency for shops. Mid-fight greed play. |
+| **Gold** | 1 gold | Currency for merchants. Mid-fight greed play. |
 
 ### Starter Pool (choose 1 of 3 offered, from pool of 4)
 
-Exclusive to run start. Cannot be gained from shops or between-act rewards. 3 of 4 are offered each run (random). Defines early-game identity.
+Exclusive to run start. Cannot be gained from merchants or between-act rewards. 3 of 4 are offered each run (random). Defines early-game identity.
 
 | Tile | Per-tile | Mechanic | Sauce |
 |---|---|---|---|
@@ -228,9 +228,9 @@ Exclusive to run start. Cannot be gained from shops or between-act rewards. 3 of
 | **Dynamite** | +1 ability charge per match tile above 2 | Match-size-based charging: a 3-match = 1 charge, 4-match = 2 charges, 5-match = 3 charges. Upgrades add flat bonus charges per match. Gets Deadeye online fast and often. | Volatile but useful. Light the fuse on your special move. |
 | **Stampede** | 1 damage (all enemies) | Each tile cleared deals 1 damage to **every** enemy on the field. A 3-match = 3 damage to all. Less efficient than Bullet vs single targets, devastating against groups. | The ground shakes. So do they. |
 
-### Additional Pool (gained between acts, swappable at shops)
+### Additional Pool (gained between acts, swappable at merchants)
 
-After each act boss, choose **1 of 3**. **Already-chosen tiles cannot be offered.** Shops allow **swapping** a non-core, non-starter tile for a different one from this pool.
+After each act boss, choose **1 of 3**. **Already-chosen tiles cannot be offered.** Merchants allow **swapping** a non-core, non-starter tile for a different one from this pool.
 
 | Tile | Per-tile | Mechanic | Sauce |
 |---|---|---|---|
@@ -319,7 +319,7 @@ Traits are powered by **artifact tags**. Each artifact has 0-2 trait tags. Your 
 
 ## Artifacts
 
-Found at: **elite combat** (pick 1 of 3), **shops**, **treasure nodes**, **events**. Regular combat does NOT drop artifacts. Cannot be discarded or sold. ~10 expected per full run.
+Found at: **elite combat** (pick 1 of 3), **merchants**, **treasure nodes**, **events**. Regular combat does NOT drop artifacts. Cannot be discarded or sold. ~10 expected per full run.
 
 ### Trait Tagging
 
@@ -329,7 +329,7 @@ Each artifact has 0-2 trait tags. Collecting artifacts with the same tag is how 
 
 | Name | Effect | Tags | Sauce |
 |---|---|---|---|
-| Stolen Badge | +2 block/turn, shops +10%. | Sheriff, Outlaw | Wanted fugitive. Merchants charge extra. |
+| Stolen Badge | +2 block/turn, merchants +10%. | Sheriff, Outlaw | Wanted fugitive. Merchants charge extra. |
 | Worn Lasso | Once/fight non-adjacent swap. | Mustang | Fraying rope. One use before it snaps. |
 | Rattlesnake Fang Necklace | 3 damage on poison match. | Rattlesnake | Pulled the fang. Bites for you now. |
 | Stick of Dynamite | Once/fight clear entire row. | Sapper | Light the fuse, clear the path. |
@@ -489,12 +489,12 @@ Slay the Spire-style branching node map. ~12-15 nodes per act with branching pat
 |---|---|
 | **Combat** | Gold + 25% consumable chance. No artifact. |
 | **Elite** | Pick 1 of 3 artifacts + gold + 25% consumable. Board modifier active. |
-| **Shop** | Buy artifacts, consumables, or **swap** a non-core/non-starter tile. |
-| **Rest Site** | Choose: **rest** (heal 30% max HP) or **upgrade a tile** (permanent +1 tier for the run). |
+| **Merchant** | Buy artifacts, consumables, or **swap** a non-core/non-starter tile. |
+| **Campfire** | Choose: **rest** (heal 30% max HP) or **upgrade a tile** (permanent +1 tier for the run). |
 | **Event** | Narrative encounter with choices. See Events. |
 | **Treasure** | Free artifact (pick 1 of 3). Can be skipped. Guaranteed once per act, mid-act. |
 
-### Shop Pricing
+### Merchant Pricing
 
 | Category | Price Range | Stock |
 |---|---|---|
@@ -526,7 +526,7 @@ Target: ~15-20 events (full game), ~4-6 (MVP).
 
 ### The Wanted Board
 *"Your face on a poster. Pretty good likeness."*
-- **Tear down:** Normalise shop prices.
+- **Tear down:** Normalise merchant prices.
 - **Leave up:** +30 gold, next elite +20% HP.
 
 ### The Snake Charmer
@@ -549,8 +549,8 @@ Multi-step escalation. Stop at any point and keep what you've found.
 
 ### The Broken Cart
 *"Merchant's cart, busted wheel, goods scattered."*
-- **Help:** -1 consumable, shops stock +1 item rest of run.
-- **Rob:** +2 consumables, +15 gold, next shop +20%.
+- **Help:** -1 consumable, merchants stock +1 item rest of run.
+- **Rob:** +2 consumables, +15 gold, next merchant +20%.
 
 ### The Old Well
 *"Deep well. Something jingling below."*
@@ -606,7 +606,7 @@ Difficulty modifiers per level (cumulative):
 - Enemy HP: +10% per level
 - Enemy damage: +5% per level
 - Gold earned (from tiles): -5% per level (floor 50%)
-- Shop prices: +5% per level
+- Merchant prices: +5% per level
 
 ---
 
@@ -667,8 +667,8 @@ one-more-in-the-chamber/
 │   │   ├── screens/
 │   │   │   ├── MainMenu.tsx
 │   │   │   ├── MapScreen.tsx
-│   │   │   ├── ShopScreen.tsx
-│   │   │   ├── RestSiteScreen.tsx
+│   │   │   ├── MerchantScreen.tsx
+│   │   │   ├── CampfireScreen.tsx
 │   │   │   ├── EventScreen.tsx
 │   │   │   └── ScoreScreen.tsx
 │   │   └── hud/
@@ -949,10 +949,10 @@ All placeholder rendering is behind a single abstraction layer per entity type (
 - [ ] Act 1 boss (Dusty) — phases, block, gravity shift, summon.
 - [ ] ~20 artifacts across 7 traits. Trait breakpoints.
 - [ ] 13 consumables (3 limit, 25% drop, pre-swap window only).
-- [ ] Tile upgrades at rest sites.
+- [ ] Tile upgrades at campfires.
 - [ ] Status effect display rows (player + enemy).
 - [ ] Branching map (Act 1, ~12 nodes). Guaranteed treasure mid-act, campfire pre-boss.
-- [ ] Combat, elite (board modifiers), shop, rest site, treasure.
+- [ ] Combat, elite (board modifiers), merchant, campfire, treasure.
 - [ ] ~4 events.
 - [ ] Scoring.
 - [ ] IndexedDB offline save. Supabase auth (email + Google). Sync on login (no remote overwrite).
@@ -983,4 +983,4 @@ All placeholder rendering is behind a single abstraction layer per entity type (
 - Cascade speed tuning (target ~200-300ms per step, needs playtesting).
 - Ascension modifier values may need tuning via playtesting.
 - Reputation amounts per run and unlock costs (TBD via playtesting).
-- Shop price fine-tuning within established ranges.
+- Merchant price fine-tuning within established ranges.

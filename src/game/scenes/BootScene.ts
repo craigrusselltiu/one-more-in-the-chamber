@@ -168,11 +168,11 @@ export class BootScene extends Phaser.Scene {
           }
           break;
         }
-        case 'shop':
+        case 'merchant':
         case 'event':
           setTrack('shop_theme');
           break;
-        case 'rest-site':
+        case 'campfire':
         case 'treasure':
           // Keep map music
           break;

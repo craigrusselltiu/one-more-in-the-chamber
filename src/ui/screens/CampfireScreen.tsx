@@ -11,9 +11,9 @@ import type { TileType } from '../../types/game';
 import type { Screen } from '../../App';
 
 /**
- * RestSiteScreen: choose rest (heal 30% max HP) or upgrade a tile.
+ * CampfireScreen: choose rest (heal 30% max HP) or upgrade a tile.
  */
-export const RestSiteScreen = memo(function RestSiteScreen() {
+export const CampfireScreen = memo(function CampfireScreen() {
   const run = useRunStore((s) => s.run);
   const updateHealth = useRunStore((s) => s.updateHealth);
   const upgradeTile = useRunStore((s) => s.upgradeTile);

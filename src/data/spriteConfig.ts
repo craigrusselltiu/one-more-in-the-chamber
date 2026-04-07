@@ -73,8 +73,7 @@ export const STATUS_FRAMES: Record<string, number> = {
 export const NODE_FRAMES: Record<string, number> = {
   combat: 1166,
   elite: 206,
-  shop: 1159,
-  rest: 720,
+  merchant: 1159,
   campfire: 720,
   event: 629,
   treasure: 691,

@@ -5,8 +5,8 @@ import { MainMenu } from './ui/screens/MainMenu';
 import { CharacterSelectScreen } from './ui/screens/CharacterSelectScreen';
 import { TileSelectScreen } from './ui/screens/TileSelectScreen';
 import { MapScreen } from './ui/screens/MapScreen';
-import { ShopScreen } from './ui/screens/ShopScreen';
-import { RestSiteScreen } from './ui/screens/RestSiteScreen';
+import { MerchantScreen } from './ui/screens/MerchantScreen';
+import { CampfireScreen } from './ui/screens/CampfireScreen';
 import { EventScreen } from './ui/screens/EventScreen';
 import { ScoreScreen } from './ui/screens/ScoreScreen';
 import { TreasureScreen } from './ui/screens/TreasureScreen';
@@ -49,8 +49,8 @@ export type Screen =
   | 'tile-select'
   | 'combat'
   | 'map'
-  | 'shop'
-  | 'rest-site'
+  | 'merchant'
+  | 'campfire'
   | 'event'
   | 'score'
   | 'treasure'
@@ -158,7 +158,7 @@ export default function App() {
     // Wait for BootScene to finish loading all assets
     EventBus.on(GameEvent.BOOT_COMPLETE, () => setBootComplete(true));
 
-    const NON_COMBAT_NODE_SCREENS: Set<Screen> = new Set(['shop', 'rest-site', 'event', 'treasure']);
+    const NON_COMBAT_NODE_SCREENS: Set<Screen> = new Set(['merchant', 'campfire', 'event', 'treasure']);
 
     applyScreenChangeRef.current = (next: Screen) => {
       const prev = prevScreenRef.current;
@@ -453,7 +453,7 @@ export default function App() {
 
   // Screens that show the unified TopBar + ArtifactBar (all in-run screens)
   const IN_RUN_SCREENS: Set<Screen> = new Set([
-    'combat', 'map', 'shop', 'rest-site', 'event', 'treasure', 'tile-select',
+    'combat', 'map', 'merchant', 'campfire', 'event', 'treasure', 'tile-select',
   ]);
   const showTopBar = IN_RUN_SCREENS.has(screen);
 
@@ -509,8 +509,8 @@ export default function App() {
             {screen === 'main-menu' && <MainMenu />}
             {screen === 'character-select' && <CharacterSelectScreen />}
             {screen === 'map' && <MapScreen />}
-            {screen === 'shop' && <ShopScreen />}
-            {screen === 'rest-site' && <RestSiteScreen />}
+            {screen === 'merchant' && <MerchantScreen />}
+            {screen === 'campfire' && <CampfireScreen />}
             {screen === 'event' && <EventScreen />}
             {screen === 'score' && <ScoreScreen />}
             {screen === 'reputation-shop' && <ReputationShopScreen />}

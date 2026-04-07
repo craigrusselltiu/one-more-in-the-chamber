@@ -206,7 +206,7 @@ function AscensionSelector({
           <span>HP +{Math.round((mods.enemyHpMultiplier - 1) * 100)}%</span>
           <span>DMG +{Math.round((mods.enemyDamageMultiplier - 1) * 100)}%</span>
           <span>Gold -{Math.round((1 - mods.goldMultiplier) * 100)}%</span>
-          <span>Prices +{Math.round((mods.shopPriceMultiplier - 1) * 100)}%</span>
+          <span>Prices +{Math.round((mods.merchantPriceMultiplier - 1) * 100)}%</span>
         </div>
       )}
     </div>

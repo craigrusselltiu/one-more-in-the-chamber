@@ -7,7 +7,7 @@ import type { EnemyDefinition } from '../types/combat';
  *   - Enemy HP:       +10% per level
  *   - Enemy damage:   +5%  per level
  *   - Gold earned:    -5%  per level (floor 50%)
- *   - Shop prices:    +5%  per level
+ *   - Merchant prices: +5%  per level
  *
  * Specifics TBD via playtesting -- these are initial values.
  */
@@ -19,8 +19,8 @@ export interface AscensionModifiers {
   enemyDamageMultiplier: number;
   /** Multiplier for gold earned from tiles and combat rewards. */
   goldMultiplier: number;
-  /** Multiplier for shop prices. */
-  shopPriceMultiplier: number;
+  /** Multiplier for merchant prices. */
+  merchantPriceMultiplier: number;
 }
 
 /** Compute cumulative ascension modifiers for a given level (0-20). */
@@ -30,7 +30,7 @@ export function getAscensionModifiers(level: number): AscensionModifiers {
     enemyHpMultiplier: 1 + 0.1 * clamped,
     enemyDamageMultiplier: 1 + 0.05 * clamped,
     goldMultiplier: Math.max(0.5, 1 - 0.05 * clamped),
-    shopPriceMultiplier: 1 + 0.05 * clamped,
+    merchantPriceMultiplier: 1 + 0.05 * clamped,
   };
 }
 

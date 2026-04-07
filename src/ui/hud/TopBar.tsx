@@ -18,8 +18,8 @@ import type { Screen } from '../../App';
 const NODE_TYPE_COLORS: Record<MapNodeType, string> = {
   combat: 'text-red-400',
   elite: 'text-amber-400',
-  shop: 'text-blue-400',
-  rest: 'text-green-400',
+  merchant: 'text-blue-400',
+  campfire: 'text-green-400',
   event: 'text-purple-400',
   treasure: 'text-yellow-400',
   boss: 'text-red-500',
@@ -28,8 +28,8 @@ const NODE_TYPE_COLORS: Record<MapNodeType, string> = {
 const NODE_TYPE_LABELS: Record<MapNodeType, string> = {
   combat: 'Combat',
   elite: 'Elite',
-  shop: 'Shop',
-  rest: 'Campfire',
+  merchant: 'Merchant',
+  campfire: 'Campfire',
   event: 'Event',
   treasure: 'Treasure',
   boss: 'Boss',

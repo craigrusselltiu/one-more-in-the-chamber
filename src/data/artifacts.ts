@@ -17,7 +17,7 @@ export const ARTIFACTS: ArtifactDefinition[] = [
     name: 'Stolen Badge',
     description: 'Wanted fugitive. Merchants charge extra.',
     tags: ['sheriff', 'outlaw'],
-    effect: '+2 block/turn, shops +10%.',
+    effect: '+2 block/turn, merchants +10%.',
   },
   {
     id: 'worn_lasso',

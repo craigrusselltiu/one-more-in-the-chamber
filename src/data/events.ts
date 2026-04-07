@@ -32,8 +32,8 @@ export const EVENTS: EventDefinition[] = [
     choices: [
       {
         label: 'Tear down',
-        description: 'Normalise shop prices.',
-        effect: 'shop_normalize',
+        description: 'Normalise merchant prices.',
+        effect: 'merchant_normalize',
       },
       {
         label: 'Leave up',
@@ -83,12 +83,12 @@ export const EVENTS: EventDefinition[] = [
     choices: [
       {
         label: 'Help',
-        description: '-1 consumable, shops stock +1 item.',
+        description: '-1 consumable, merchants stock +1 item.',
         effect: 'help_merchant',
       },
       {
         label: 'Rob',
-        description: '+2 consumables, +15 gold, next shop +20%.',
+        description: '+2 consumables, +15 gold, next merchant +20%.',
         effect: 'rob_merchant',
       },
     ],
@@ -212,8 +212,8 @@ export const EVENTS: EventDefinition[] = [
       },
       {
         label: 'Take his gear',
-        description: '+2 random consumables. Shops cost +10% this act.',
-        effect: 'gain_consumables_shop_penalty',
+        description: '+2 random consumables. Merchants cost +10% this act.',
+        effect: 'gain_consumables_merchant_penalty',
       },
     ],
   },
@@ -258,8 +258,8 @@ export const EVENTS: EventDefinition[] = [
       },
       {
         label: 'Check for survivors',
-        description: 'Next shop: all items -25%.',
-        effect: 'shop_discount',
+        description: 'Next merchant: all items -25%.',
+        effect: 'merchant_discount',
       },
     ],
   },
@@ -322,7 +322,7 @@ export const EVENTS: EventDefinition[] = [
       },
       {
         label: 'Threaten him',
-        description: '+1 Tonic, +1 Bandage. Shops cost +15% this act.',
+        description: '+1 Tonic, +1 Bandage. Merchants cost +15% this act.',
         effect: 'threaten_merchant',
       },
     ],

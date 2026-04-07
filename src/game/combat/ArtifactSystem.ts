@@ -8,7 +8,7 @@ import type { Enemy } from './Enemy';
  * ArtifactSystem: applies individual artifact effects at combat hook points.
  *
  * Each artifact's runtime behavior is implemented here.
- * Artifacts are found at elite combat, shops, treasure nodes, and events.
+ * Artifacts are found at elite combat, merchants, treasure nodes, and events.
  * They cannot be discarded or sold.
  */
 export class ArtifactSystem {
@@ -320,13 +320,13 @@ export class ArtifactSystem {
   }
 
   // ---------------------------------------------------------------------------
-  // Shop Price Modifier
+  // Merchant Price Modifier
   // ---------------------------------------------------------------------------
 
-  /** Get shop price multiplier from artifacts. */
-  getShopPriceMultiplier(): number {
+  /** Get merchant price multiplier from artifacts. */
+  getMerchantPriceMultiplier(): number {
     let multiplier = 1.0;
-    // Stolen Badge: shops +10%
+    // Stolen Badge: merchants +10%
     if (this.has('stolen_badge')) {
       multiplier += 0.1;
     }

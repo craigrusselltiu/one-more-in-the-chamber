@@ -78,7 +78,7 @@ export function playTreasure(): void {
   play('sfx_treasure', 0.5);
 }
 
-export function playShop(): void {
+export function playMerchant(): void {
   play('sfx_shop', 0.5);
 }
 

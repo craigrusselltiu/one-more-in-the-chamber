@@ -12,8 +12,8 @@ const SPRITE_SHEET_COLS = 36;
 const NODE_LABELS: Record<MapNodeType, string> = {
   combat: 'Combat',
   elite: 'Elite',
-  shop: 'Shop',
-  rest: 'Campfire',
+  merchant: 'Merchant',
+  campfire: 'Campfire',
   event: 'Event',
   treasure: 'Treasure',
   boss: 'Boss',
@@ -338,8 +338,8 @@ function navigateToNode(node: MapNode) {
   const screenMap: Record<MapNodeType, Screen> = {
     combat: 'combat',
     elite: 'combat',
-    shop: 'shop',
-    rest: 'rest-site',
+    merchant: 'merchant',
+    campfire: 'campfire',
     event: 'event',
     treasure: 'treasure',
     boss: 'combat',

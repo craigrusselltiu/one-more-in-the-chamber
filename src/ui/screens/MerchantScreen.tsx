@@ -1,5 +1,5 @@
 import { memo, useEffect, useMemo, useState } from 'react';
-import { playShop, playUpgrade } from '../../services/sfx';
+import { playMerchant, playUpgrade } from '../../services/sfx';
 import { EventBus, GameEvent } from '../../game/EventBus';
 import { useRunStore } from '../../store/runStore';
 import { ARTIFACTS } from '../../data/artifacts';
@@ -14,7 +14,7 @@ import type { TileType } from '../../types/game';
 import type { Screen } from '../../App';
 import { getAscensionModifiers } from '../../data/ascension';
 
-interface ShopItem {
+interface MerchantItem {
   type: 'artifact' | 'consumable' | 'tile_swap' | 'upgrade';
   id: string;
   name: string;
@@ -23,7 +23,7 @@ interface ShopItem {
   tileLevel?: number;
 }
 
-export const ShopScreen = memo(function ShopScreen() {
+export const MerchantScreen = memo(function MerchantScreen() {
   const run = useRunStore((s) => s.run);
   const updateGold = useRunStore((s) => s.updateGold);
   const addArtifact = useRunStore((s) => s.addArtifact);
@@ -31,18 +31,18 @@ export const ShopScreen = memo(function ShopScreen() {
   const swapTileType = useRunStore((s) => s.swapTileType);
   const upgradeTile = useRunStore((s) => s.upgradeTile);
   const [purchased, setPurchased] = useState<Set<string>>(new Set());
-  const [swapPending, setSwapPending] = useState<ShopItem | null>(null);
+  const [swapPending, setSwapPending] = useState<MerchantItem | null>(null);
   const [upgradePhase, setUpgradePhase] = useState<'none' | 'selecting' | 'upgraded'>('none');
   const [upgradeSelectedTile, setUpgradeSelectedTile] = useState<TileType | null>(null);
 
-  useEffect(() => { playShop(); }, []);
+  useEffect(() => { playMerchant(); }, []);
 
   const stock = useMemo(() => {
-    if (!run) return { consumables: [] as ShopItem[], artifacts: [] as ShopItem[], tiles: [] as ShopItem[] };
-    const rand = createSeededRandom(`${run.seed}-shop-${run.currentNodeId}`);
-    const priceMult = getAscensionModifiers(run.ascensionLevel).shopPriceMultiplier;
+    if (!run) return { consumables: [] as MerchantItem[], artifacts: [] as MerchantItem[], tiles: [] as MerchantItem[] };
+    const rand = createSeededRandom(`${run.seed}-merchant-${run.currentNodeId}`);
+    const priceMult = getAscensionModifiers(run.ascensionLevel).merchantPriceMultiplier;
 
-    const consumables: ShopItem[] = [];
+    const consumables: MerchantItem[] = [];
     const shuffledConsumables = seededShuffle(CONSUMABLES, rand);
     for (let i = 0; i < Math.min(3, shuffledConsumables.length); i++) {
       const c = shuffledConsumables[i];
@@ -55,7 +55,7 @@ export const ShopScreen = memo(function ShopScreen() {
       });
     }
 
-    const artifacts: ShopItem[] = [];
+    const artifacts: MerchantItem[] = [];
     const ownedIds = new Set(run.artifacts.map((a) => a.id));
     const availableArtifacts = ARTIFACTS.filter((a) => !ownedIds.has(a.id) && (!a.exclusive || a.exclusive === run.character));
     const shuffledArtifacts = seededShuffle(availableArtifacts, rand);
@@ -70,7 +70,7 @@ export const ShopScreen = memo(function ShopScreen() {
       });
     }
 
-    const tiles: ShopItem[] = [];
+    const tiles: MerchantItem[] = [];
     const swappableTiles = run.activeTileTypes.filter(
       (t) => t !== 'tumbleweed' && t !== 'showdown' && t !== 'fools_gold',
     );
@@ -93,7 +93,7 @@ export const ShopScreen = memo(function ShopScreen() {
       }
     }
 
-    // Upgrade card (250g, once per shop)
+    // Upgrade card (250g, once per merchant)
     const upgradePrice = Math.round(250 * priceMult);
     const hasUpgradeableTiles = run.activeTileTypes.some((t) => TILE_DEFINITIONS[t]?.upgradeText);
     if (hasUpgradeableTiles) {
@@ -117,7 +117,7 @@ export const ShopScreen = memo(function ShopScreen() {
     );
   }, [run]);
 
-  const handleBuy = (item: ShopItem) => {
+  const handleBuy = (item: MerchantItem) => {
     if (!run || run.gold < item.price || purchased.has(item.id)) return;
 
     if (item.type === 'tile_swap') {
@@ -176,7 +176,7 @@ export const ShopScreen = memo(function ShopScreen() {
 
   return (
     <div className="flex flex-col items-center justify-center h-full" style={{ padding: '24px 0', backgroundImage: `linear-gradient(rgba(0,0,0,0.45), rgba(0,0,0,0.45)), url(${import.meta.env.BASE_URL}assets/merchant_bg.png)`, backgroundSize: 'cover', backgroundPosition: 'center' }}>
-      <h2 className="text-xl text-amber-400 mb-4 font-bold uppercase" style={{ WebkitTextStroke: '4px #000', paintOrder: 'stroke fill' }}>General Store</h2>
+      <h2 className="text-xl text-amber-400 mb-4 font-bold uppercase" style={{ WebkitTextStroke: '4px #000', paintOrder: 'stroke fill' }}>General Merchant</h2>
 
       <div className="flex flex-col gap-4 px-2">
         {/* Row 1: Artifacts | Tile */}
@@ -186,7 +186,7 @@ export const ShopScreen = memo(function ShopScreen() {
               const isSold = purchased.has(item.id);
               const canAfford = run.gold >= item.price;
               return (
-                <ShopCard
+                <MerchantCard
                   key={item.id}
                   icon={<span className="text-lg text-purple-400">{'\u2726'}</span>}
                   name={item.name}
@@ -220,7 +220,7 @@ export const ShopScreen = memo(function ShopScreen() {
               ) : undefined;
               return (
                 <Tooltip content={keywordTooltip} secondContent={upgradeTooltip} position="bottom">
-                  <ShopCard
+                  <MerchantCard
                     icon={<SpriteIcon frame={TILE_FRAMES[tileType]} scale={2} />}
                     name={tileItem.name}
                     subtitle={level > 0 ? `Lv ${level + 1}` : undefined}
@@ -244,7 +244,7 @@ export const ShopScreen = memo(function ShopScreen() {
               const canAfford = run.gold >= item.price;
               const full = run.consumables.length >= maxSlots;
               return (
-                <ShopCard
+                <MerchantCard
                   key={item.id}
                   icon={<span className="text-lg text-green-400">{'\u2764'}</span>}
                   name={item.name}
@@ -265,7 +265,7 @@ export const ShopScreen = memo(function ShopScreen() {
               const isSold = purchased.has(upgradeItem.id);
               const canAfford = run.gold >= upgradeItem.price;
               return (
-                <ShopCard
+                <MerchantCard
                   icon={<SpriteIcon frame={UI_FRAMES.upgrade} scale={2} />}
                   name={upgradeItem.name}
                   description={upgradeItem.description}
@@ -284,7 +284,7 @@ export const ShopScreen = memo(function ShopScreen() {
         onClick={handleLeave}
         className="mt-4 px-6 py-2 bg-stone-700/80 text-stone-300 text-sm border border-stone-600 hover:bg-stone-600/50"
       >
-        Leave Shop
+        Leave
       </button>
 
       {/* Tile swap picker overlay */}
@@ -419,7 +419,7 @@ export const ShopScreen = memo(function ShopScreen() {
                 onClick={() => setUpgradePhase('none')}
                 className="px-6 py-2 bg-amber-900/60 text-amber-300 text-sm border border-amber-700 hover:bg-amber-800/60"
               >
-                Back to Shop
+                Back to Merchant
               </button>
             </div>
           </div>
@@ -438,7 +438,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
   );
 }
 
-function ShopCard({
+function MerchantCard({
   icon,
   name,
   subtitle,

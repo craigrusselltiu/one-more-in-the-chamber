@@ -145,6 +145,128 @@ NOTE: Observe the difference between +1 to match total and +1 per tile. The tile
 - Behaviour: At the start of combat, transforms into a random tile you don't own for the rest of combat.
 - Flavor: "Now you see it. Now you don't. Now it's something else."
 
+## New Tile Ideas
+
+### Cactus
+- Behaviour: Gain 1 block per tile. Deal 1 damage back to any enemy that attacks you this turn.
+- Upgrade: +1 reflected damage to match total per level
+- Flavor: "Touch it. I dare you."
+
+### Dynamite
+- Behaviour: 1 ability charge per 3-match, plus 1 per extra tile.
+- Upgrade: +1 charge to match total per level
+- Flavor: "Volatile but useful. Light the fuse on your special move."
+
+### Moonshine
+- Behaviour: Deal 3 damage per tile to yourself. Deal 6 damage per tile to the targeted enemy.
+- Upgrade: +2 enemy damage to match total per level
+- Flavor: "Burns both ways."
+
+### Wanted
+- Behaviour: Apply 1 Vulnerable per tile to the targeted enemy.
+- Upgrade: +1 stack to match total per level
+- Flavor: "Dead or alive. Preferably dead."
+
+### Loot
+- Behaviour: Earn 1 gold per tile. Heal 1 HP per tile.
+- Upgrade: +1 gold to match total per level
+- Flavor: "A little bit of everything."
+
+### Sandstorm
+- Behaviour: Bury 1 random enemy tile per 3-match, plus 1 per extra tile. Deal 1 damage per tile.
+- Upgrade: +1 damage to match total per level
+- Flavor: "Can't hit what you can't see."
+
+### Branding Iron
+- Behaviour: Deal 2 damage per tile. Apply 1 Rageful to yourself.
+- Upgrade: +2 damage to match total per level
+- Flavor: "Mark them. Then finish them."
+
+### Last Stand
+- Behaviour: Deal damage per tile equal to your missing HP (max HP minus current HP), divided by 10.
+- Upgrade: +1 flat damage to match total per level
+- Flavor: "Nothing left to lose."
+
+### Tequila
+- Behaviour: Gain 2 block per tile. Heal 1 HP per 3-match, plus 1 per extra tile.
+- Upgrade: +1 block to match total per level
+- Flavor: "Liquid armor."
+
+### Quickdraw
+- Behaviour: Deal 1 damage per tile. If this is the first match of the turn, deal double damage.
+- Upgrade: +1 damage per tile per level
+- Flavor: "Fastest hand in the west."
+
+### Rope
+- Behaviour: Deal 1 damage per tile. Lock 1 random enemy tile per 3-match.
+- Upgrade: +1 damage to match total per level
+- Flavor: "Tie them down."
+
+### Skull
+- Behaviour: Deal 3 damage per tile. If the target dies this match, heal 5 HP.
+- Upgrade: +1 damage per tile per level
+- Flavor: "Death pays a bounty."
+
+### Gambit
+- Behaviour: Deal 4 damage per tile. Lose 1 block per tile matched.
+- Upgrade: +2 damage to match total per level
+- Flavor: "Drop your guard. Swing harder."
+
+### Smoke Bomb
+- Behaviour: 25% dodge chance per tile for this turn (caps at 75%).
+- Upgrade: +5% dodge per tile per level
+- Flavor: "Disappear into the haze."
+
+### Duelist
+- Behaviour: Deal 3 damage per tile, but only if there is exactly 1 enemy alive.
+- Upgrade: +2 damage to match total per level
+- Flavor: "One on one. The way it should be."
+
+### Spur
+- Behaviour: +1 swap this turn per 4+ match (max 1 per turn). Deal 1 damage per tile.
+- Upgrade: +1 damage to match total per level
+- Flavor: "Kick the horse. Move faster."
+
+### Grave
+- Behaviour: Deal 2 damage per tile. +2 bonus damage per dead enemy this fight.
+- Upgrade: +1 damage per tile per level
+- Flavor: "The more they fall, the harder you hit."
+
+### Bandolier
+- Behaviour: Store 1 charge per tile (max 10). On next Bullet match, add stored charges as bonus damage and reset.
+- Upgrade: +1 max storage per level
+- Flavor: "Save your rounds. Make them count."
+
+### Peyote
+- Behaviour: Gain 2 block per tile. Gain 1 Lucky per tile.
+- Upgrade: +1 block to match total per level
+- Flavor: "The spirits protect you."
+
+### Rattlesnake Bite
+- Behaviour: Apply 2 Venom per tile. Pierces block.
+- Upgrade: +1 venom to match total per level
+- Flavor: "No antidote out here."
+
+### Telegraph
+- Behaviour: Reveal all buried tiles on the board. Deal 1 damage per buried tile revealed.
+- Upgrade: +1 damage per revealed tile per level
+- Flavor: "Message received."
+
+### Stampede Horn
+- Behaviour: Deal 1 damage to ALL enemies per tile. Apply 1 Vulnerable to all enemies.
+- Upgrade: +1 damage to match total per level
+- Flavor: "The herd doesn't care who's in the way."
+
+### Prospector's Pick
+- Behaviour: Earn 2 gold per tile. 25% chance per tile to convert 1 adjacent tile to Gold.
+- Upgrade: +1 gold to match total per level
+- Flavor: "Strike it rich. One swing at a time."
+
+### Coffin Nail
+- Behaviour: Deal 1 damage per tile. If the enemy has Venom, deal +1 damage per Venom stack.
+- Upgrade: +1 base damage to match total per level
+- Flavor: "Seal the deal."
+
 ## Special Tiles
 
 ### Showdown
