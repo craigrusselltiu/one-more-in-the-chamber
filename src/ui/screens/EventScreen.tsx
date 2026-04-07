@@ -295,7 +295,7 @@ export const EventScreen = memo(function EventScreen() {
       <div className="flex-1 flex flex-col items-center justify-center">
       <div className="max-w-md w-full px-4">
         {/* Event title */}
-        <h2 className="text-xl text-amber-400 mb-3 text-center">{event.title}</h2>
+        <h2 className="text-xl text-amber-400 mb-3 text-center font-bold uppercase" style={{ WebkitTextStroke: '4px #000', paintOrder: 'stroke fill' }}>{event.title}</h2>
 
         {/* Flavour text / result text */}
         <div className="border border-stone-600 bg-stone-800/50 p-4 mb-4">

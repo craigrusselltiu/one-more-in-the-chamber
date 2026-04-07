@@ -55,7 +55,7 @@ export const TreasureScreen = memo(function TreasureScreen() {
   return (
     <div className="flex flex-col items-center justify-center bg-[#1a1a2e]" style={{ width: 960, height: 540 }}>
       <div className="text-center mb-8">
-        <h2 className="text-lg text-amber-400 font-bold">Treasure Found</h2>
+        <h2 className="text-lg text-amber-400 font-bold uppercase" style={{ WebkitTextStroke: '4px #000', paintOrder: 'stroke fill' }}>Treasure Found</h2>
         <p className="text-[10px] text-stone-500 mt-1">Something worth keeping.</p>
       </div>
 

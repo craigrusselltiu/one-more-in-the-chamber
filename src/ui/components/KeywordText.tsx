@@ -210,8 +210,11 @@ export function buildTileDescription(type: TileType, upgradeLevel: number): Reac
     }
 
     // --- Ricochet: upgrade changes destroyed tile count ---
-    case 'ricochet':
-      return [...seg('Deal 1 damage per tile. Destroy 1 random other tile per 3-match', false), ...flatBonus(upgradeLevel, 1), ...seg(', plus 1 per extra tile.', false)];
+    case 'ricochet': {
+      const destroyCount = 1 + upgradeLevel * 1;
+      const tileWord = destroyCount > 1 ? 'tiles' : 'tile';
+      return [...seg('Deal 1 damage per tile. Destroy ', false), ...seg(`${destroyCount}`, upgraded), ...seg(` random other ${tileWord} per 3-match, plus 1 per extra tile.`, false)];
+    }
 
     // --- Rattler: upgrade splits between damage and venom ---
     case 'rattler':
@@ -300,8 +303,11 @@ export function buildUpgradePreview(type: TileType, currentLevel: number): React
       return [...seg('Gain ', false), ...arrowUpgrade(oldVal, newVal), ...seg(' block per tile and 1 Barricade.', false)];
     case 'chip':
       return [...seg('50% chance to deal ', false), ...arrowUpgrade(oldVal, newVal), ...seg(' damage per tile; 50% chance to deal 0.', false)];
-    case 'ricochet':
-      return [...seg('Deal 1 damage per tile. Destroy 1 random other tile per 3-match', false), ...flatBonusPreview(currentLevel, 1), ...seg(', plus 1 per extra tile.', false)];
+    case 'ricochet': {
+      const oldDestroy = 1 + currentLevel;
+      const newDestroy = 1 + currentLevel + 1;
+      return [...seg('Deal 1 damage per tile. Destroy ', false), ...arrowUpgrade(oldDestroy, newDestroy), ...seg(' random other tiles per 3-match, plus 1 per extra tile.', false)];
+    }
     case 'boulder':
       return [...seg('Deal ', false), ...arrowUpgrade(oldVal, newVal), ...seg(' damage per tile, plus 1 damage per block.', false)];
 

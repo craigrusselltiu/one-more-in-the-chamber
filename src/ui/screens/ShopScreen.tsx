@@ -176,7 +176,7 @@ export const ShopScreen = memo(function ShopScreen() {
 
   return (
     <div className="flex flex-col items-center justify-center h-full bg-[#1a1a2e]/95" style={{ padding: '24px 0' }}>
-      <h2 className="text-xl text-amber-400 mb-4">General Store</h2>
+      <h2 className="text-xl text-amber-400 mb-4 font-bold uppercase" style={{ WebkitTextStroke: '4px #000', paintOrder: 'stroke fill' }}>General Store</h2>
 
       <div className="flex flex-col gap-4 px-2">
         {/* Row 1: Artifacts | Tile */}
@@ -340,7 +340,7 @@ export const ShopScreen = memo(function ShopScreen() {
       {upgradePhase === 'selecting' && (
         <div className="absolute inset-0 flex flex-col bg-[#1a1a2e]/95 z-10">
           <div className="flex-1 flex flex-col items-center justify-center">
-            <h2 className="text-xl text-amber-400 mb-2">Upgrade a Tile</h2>
+            <h2 className="text-xl text-amber-400 mb-2 font-bold uppercase" style={{ WebkitTextStroke: '4px #000', paintOrder: 'stroke fill' }}>Upgrade a Tile</h2>
             <p className="text-stone-400 text-xs mb-4">Permanent +1 tier for the rest of the run</p>
 
             <div className="grid grid-cols-4 gap-3 justify-items-center">
@@ -411,7 +411,7 @@ export const ShopScreen = memo(function ShopScreen() {
           <div className="absolute inset-0 flex flex-col bg-[#1a1a2e]/95 z-10">
             <div className="flex-1 flex flex-col items-center justify-center">
               <div className="mb-4"><SpriteIcon frame={UI_FRAMES.upgrade} scale={3} /></div>
-              <h2 className="text-xl text-amber-400 mb-2">Upgraded</h2>
+              <h2 className="text-xl text-amber-400 mb-2 font-bold uppercase" style={{ WebkitTextStroke: '4px #000', paintOrder: 'stroke fill' }}>Upgraded</h2>
               <p className="text-stone-300 text-sm mb-4">
                 {tileDef?.label ?? 'Tile'} has been upgraded.
               </p>

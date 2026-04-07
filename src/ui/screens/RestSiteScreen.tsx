@@ -50,9 +50,9 @@ export const RestSiteScreen = memo(function RestSiteScreen() {
   // Rested
   if (choice === 'rest') {
     return (
-      <div className="flex flex-col h-full bg-[#1a1a2e]/95"><div className="flex-1 flex flex-col items-center justify-center">
+      <div className="flex flex-col h-full" style={{ backgroundImage: `url(${import.meta.env.BASE_URL}assets/campfire_bg.png)`, backgroundSize: 'cover', backgroundPosition: 'center' }}><div className="flex-1 flex flex-col items-center justify-center">
         <div className="mb-4"><SpriteIcon frame={NODE_FRAMES.campfire} scale={3} /></div>
-        <h2 className="text-xl text-amber-400 mb-2">Rested</h2>
+        <h2 className="text-xl text-amber-400 mb-2 font-bold uppercase" style={{ WebkitTextStroke: '4px #000', paintOrder: 'stroke fill' }}>Rested</h2>
         <p className="text-stone-300 text-sm mb-4">
           You rest by the fire. Healed {healAmount} HP.
         </p>
@@ -73,9 +73,9 @@ export const RestSiteScreen = memo(function RestSiteScreen() {
   if (choice === 'upgraded') {
     const tileDef = selectedTile ? TILE_DEFINITIONS[selectedTile] : null;
     return (
-      <div className="flex flex-col h-full bg-[#1a1a2e]/95"><div className="flex-1 flex flex-col items-center justify-center">
+      <div className="flex flex-col h-full" style={{ backgroundImage: `url(${import.meta.env.BASE_URL}assets/campfire_bg.png)`, backgroundSize: 'cover', backgroundPosition: 'center' }}><div className="flex-1 flex flex-col items-center justify-center">
         <div className="mb-4"><SpriteIcon frame={UI_FRAMES.upgrade} scale={3} /></div>
-        <h2 className="text-xl text-amber-400 mb-2">Upgraded</h2>
+        <h2 className="text-xl text-amber-400 mb-2 font-bold uppercase" style={{ WebkitTextStroke: '4px #000', paintOrder: 'stroke fill' }}>Upgraded</h2>
         <p className="text-stone-300 text-sm mb-4">
           {tileDef?.label ?? 'Tile'} has been upgraded.
         </p>
@@ -92,8 +92,8 @@ export const RestSiteScreen = memo(function RestSiteScreen() {
   // Upgrade tile selection
   if (choice === 'upgrade') {
     return (
-      <div className="flex flex-col h-full bg-[#1a1a2e]/95"><div className="flex-1 flex flex-col items-center justify-center">
-        <h2 className="text-xl text-amber-400 mb-2">Upgrade a Tile</h2>
+      <div className="flex flex-col h-full" style={{ backgroundImage: `url(${import.meta.env.BASE_URL}assets/campfire_bg.png)`, backgroundSize: 'cover', backgroundPosition: 'center' }}><div className="flex-1 flex flex-col items-center justify-center">
+        <h2 className="text-xl text-amber-400 mb-2 font-bold uppercase" style={{ WebkitTextStroke: '4px #000', paintOrder: 'stroke fill' }}>Upgrade a Tile</h2>
         <p className="text-stone-400 text-xs mb-4">
           Permanent +1 tier for the rest of the run
         </p>
@@ -161,11 +161,11 @@ export const RestSiteScreen = memo(function RestSiteScreen() {
 
   // Initial choice
   return (
-    <div className="flex flex-col h-full bg-[#1a1a2e]/95"><div className="flex-1 flex flex-col items-center justify-center">
+    <div className="flex flex-col h-full" style={{ backgroundImage: `url(${import.meta.env.BASE_URL}assets/campfire_bg.png)`, backgroundSize: 'cover', backgroundPosition: 'center' }}><div className="flex-1 flex flex-col items-center justify-center">
       <div className="mb-4">
         <SpriteIcon frame={NODE_FRAMES.campfire} scale={3} />
       </div>
-      <h2 className="text-xl text-amber-400 mb-6">Campfire</h2>
+      <h2 className="text-xl text-amber-400 mb-6 font-bold uppercase" style={{ WebkitTextStroke: '4px #000', paintOrder: 'stroke fill' }}>Campfire</h2>
 
       <div className="flex gap-4">
         <button

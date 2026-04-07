@@ -155,7 +155,7 @@ export const ScoreScreen = memo(function ScoreScreen() {
 
   return (
     <div className="flex flex-col items-center justify-center h-full bg-[#1a1a2e]/95 px-8">
-      <h2 className="text-xl text-amber-400 mb-0.5">
+      <h2 className="text-xl text-amber-400 mb-0.5 font-bold uppercase" style={{ WebkitTextStroke: '4px #000', paintOrder: 'stroke fill' }}>
         {score.completed ? 'Victory' : 'Defeat'}
       </h2>
       <p className="text-stone-400 mb-4" style={{ fontSize: '10px' }}>
