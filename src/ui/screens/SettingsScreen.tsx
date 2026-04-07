@@ -2,6 +2,8 @@ import { memo, useState } from 'react';
 import { EventBus, GameEvent } from '../../game/EventBus';
 import { useSettingsStore } from '../../store/settingsStore';
 import { useMetaStore } from '../../store/metaStore';
+import { useAuthStore } from '../../store/authStore';
+import { logout } from '../../services/auth';
 import type { GameSpeed } from '../../store/settingsStore';
 import type { Screen } from '../../App';
 
@@ -124,6 +126,17 @@ export const SettingsScreen = memo(function SettingsScreen() {
   const [editingName, setEditingName] = useState(false);
   const [nameInput, setNameInput] = useState(playerName);
 
+  const isLoggedIn = useAuthStore((s) => s.isLoggedIn);
+  const authDisplayName = useAuthStore((s) => s.displayName);
+
+  const handleLogout = async () => {
+    await logout();
+  };
+
+  const handleSignIn = () => {
+    EventBus.emit(GameEvent.SCREEN_CHANGE, 'auth' satisfies Screen);
+  };
+
   const confirmName = () => {
     if (nameInput.trim()) {
       setPlayerName(nameInput.trim());
@@ -203,6 +216,42 @@ export const SettingsScreen = memo(function SettingsScreen() {
             checked={juiceAnimationsEnabled}
             onChange={setJuiceAnimations}
           />
+        </div>
+      </div>
+
+      {/* Account section */}
+      <div className="w-full max-w-[400px] px-4 mt-4">
+        <h3 className="text-xs text-stone-500 uppercase tracking-widest mb-1 px-1">Account</h3>
+        <div className="border border-stone-700 bg-stone-800/30">
+          {isLoggedIn ? (
+            <div className="flex items-center justify-between w-full py-3 px-4">
+              <div className="flex flex-col gap-0.5">
+                <span className="text-sm text-stone-200">Signed in</span>
+                <span className="text-xs text-stone-500">{authDisplayName ?? 'Unknown'}</span>
+              </div>
+              <button
+                onClick={handleLogout}
+                className="text-xs text-red-400 px-2 py-1 border border-stone-600 bg-stone-700/40 hover:bg-red-900/30 ml-4"
+                style={{ cursor: 'pointer' }}
+              >
+                Sign Out
+              </button>
+            </div>
+          ) : (
+            <div className="flex items-center justify-between w-full py-3 px-4">
+              <div className="flex flex-col gap-0.5">
+                <span className="text-sm text-stone-200">Not signed in</span>
+                <span className="text-xs text-stone-500">Sign in to sync progress</span>
+              </div>
+              <button
+                onClick={handleSignIn}
+                className="text-xs text-amber-400 px-2 py-1 border border-amber-700 bg-amber-900/40 hover:bg-amber-800/40 ml-4"
+                style={{ cursor: 'pointer' }}
+              >
+                Sign In
+              </button>
+            </div>
+          )}
         </div>
       </div>
 

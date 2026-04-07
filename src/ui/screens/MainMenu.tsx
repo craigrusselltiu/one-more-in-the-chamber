@@ -2,6 +2,7 @@ import { memo, useState } from 'react';
 import { EventBus, GameEvent } from '../../game/EventBus';
 import { useRunStore } from '../../store/runStore';
 import { useMetaStore } from '../../store/metaStore';
+import { useAuthStore } from '../../store/authStore';
 import { checkForCombatResume } from '../../services/combatResume';
 import { calculateScore } from '../../utils/scoring';
 import { playHover } from '../../services/sfx';
@@ -75,6 +76,8 @@ export const MainMenu = memo(function MainMenu() {
   const playerName = useMetaStore((s) => s.meta.playerName);
   const setPlayerName = useMetaStore((s) => s.setPlayerName);
   const [nameInput, setNameInput] = useState('');
+  const isLoggedIn = useAuthStore((s) => s.isLoggedIn);
+  const displayName = useAuthStore((s) => s.displayName);
 
   const handleNewGame = () => {
 
@@ -151,8 +154,11 @@ export const MainMenu = memo(function MainMenu() {
   };
 
   const handleSettings = () => {
-
     EventBus.emit(GameEvent.SCREEN_CHANGE, 'settings' satisfies Screen);
+  };
+
+  const handleAuth = () => {
+    EventBus.emit(GameEvent.SCREEN_CHANGE, 'auth' satisfies Screen);
   };
 
   return (
@@ -174,6 +180,22 @@ export const MainMenu = memo(function MainMenu() {
         style={{ width: 280, imageRendering: 'auto' }}
         draggable={false}
       />
+
+      {/* Logged-in badge -- top right */}
+      {isLoggedIn && displayName && (
+        <div className="absolute right-4 top-4 flex items-center gap-2">
+          <span
+            className="text-xs text-stone-400"
+            style={{
+              WebkitTextStroke: '2px #000',
+              paintOrder: 'stroke fill',
+            }}
+          >
+            {displayName}
+          </span>
+          <span className="w-2 h-2 rounded-full bg-green-500 inline-block" />
+        </div>
+      )}
 
       {/* Welcome text -- just under the title image */}
       {playerName && (
@@ -201,6 +223,9 @@ export const MainMenu = memo(function MainMenu() {
         <MenuButton label="Leaderboard" onClick={handleLeaderboard} />
         <MenuButton label="Changelog" onClick={() => setShowChangelog(true)} />
         <MenuButton label="Settings" onClick={handleSettings} />
+        {!isLoggedIn && (
+          <MenuButton label="Sign In" onClick={handleAuth} />
+        )}
       </div>
 
       {/* Confirmation dialog */}

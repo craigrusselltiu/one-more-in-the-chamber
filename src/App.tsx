@@ -13,6 +13,7 @@ import { TreasureScreen } from './ui/screens/TreasureScreen';
 import { ReputationShopScreen } from './ui/screens/ReputationShopScreen';
 import { LeaderboardScreen } from './ui/screens/LeaderboardScreen';
 import { SettingsScreen } from './ui/screens/SettingsScreen';
+import { AuthScreen } from './ui/screens/AuthScreen';
 import { CombatHUD } from './ui/hud/CombatHUD';
 import { FloatingNumbers } from './ui/hud/FloatingNumbers';
 import { TopBar } from './ui/hud/TopBar';
@@ -57,7 +58,8 @@ export type Screen =
   | 'treasure'
   | 'reputation-shop'
   | 'leaderboard'
-  | 'settings';
+  | 'settings'
+  | 'auth';
 
 const ENCOUNTER_ROLLERS: Record<Act, { regular: (r?: () => number) => EnemyDefinition[]; elite: (r?: () => number) => EnemyDefinition[] }> = {
   1: { regular: rollAct1Encounter, elite: rollAct1EliteEncounter },
@@ -540,6 +542,7 @@ export default function App() {
             {screen === 'reputation-shop' && <ReputationShopScreen />}
             {screen === 'leaderboard' && <LeaderboardScreen />}
             {screen === 'settings' && <SettingsScreen />}
+            {screen === 'auth' && <AuthScreen />}
           </div>
         )}
 
