@@ -222,7 +222,7 @@ export const ARTIFACTS: ArtifactDefinition[] = [
     name: "Reno's Coin",
     description: 'Double or nothing. Emphasis on nothing.',
     tags: ['desperado', 'high_roller'],
-    effect: 'Chip damage is doubled and hit chance is increased to 75%. On miss, lose 1 HP.',
+    effect: 'Chip damage is doubled. If Chip would miss, recast Chip. On miss, lose 1 HP.',
     exclusive: 'reno',
   },
 
