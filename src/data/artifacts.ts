@@ -206,7 +206,7 @@ export const ARTIFACTS: ArtifactDefinition[] = [
     name: "Rust's Cylinder",
     description: 'Six in the chamber. No reloads.',
     tags: ['gunslinger', 'outlaw'],
-    effect: 'Increase Deadeye shots to 6. The last shot can now be used on an enemy, dealing 2 damage per stack of Bounty.',
+    effect: 'Increase Deadeye shots to 6. The last shot can now be used on an enemy, dealing 1 damage per stack of Bounty.',
     exclusive: 'red_panda',
   },
   {
@@ -230,7 +230,7 @@ export const ARTIFACTS: ArtifactDefinition[] = [
     id: 'rigged_deck',
     name: 'Rigged Deck',
     description: 'Bad luck is still luck.',
-    tags: ['desperado'],
+    tags: ['prospector'],
     effect: 'Chip misses generate 2 gold.',
     exclusive: 'reno',
   },

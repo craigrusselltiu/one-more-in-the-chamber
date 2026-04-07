@@ -31,8 +31,9 @@ const TRAIT_DESCRIPTIONS: Record<string, Record<number, string>> = {
     6: 'Tiles from 4+ match cascades trigger resource effects twice.',
   },
   sheriff: {
-    2: 'Iron matches +30% block. +2 block per turn.',
-    5: 'Block reflects 100% of absorbed damage back to attacker.',
+    2: 'The first time you gain block each turn is doubled.',
+    4: 'At the start of combat, gain 5 Sturdy.',
+    6: 'Block reflects 100% of absorbed damage back to attacker.',
   },
   rattlesnake: {
     1: 'Immune to poison tile damage and debuffs.',
@@ -52,8 +53,8 @@ const TRAIT_DESCRIPTIONS: Record<string, Record<number, string>> = {
     4: '+1 swap per turn. Non-adjacent swaps allowed. 5+ lasso matches: +50% damage.',
   },
   gunslinger: {
-    2: 'Start each fight with 15% crit. Crits deal 3 bonus flat damage.',
-    4: 'Crit multiplier 3x. Crit chance halves instead of resetting.',
+    2: 'Bullet, .50 Cal, Buckshot, and Ricochet tiles deal 1 extra damage per tile.',
+    4: 'Gain 1 Lucky for every Bullet, .50 Cal, Buckshot, or Ricochet matched.',
   },
   saloon_keeper: {
     2: 'Consumables heal 5 HP on use.',

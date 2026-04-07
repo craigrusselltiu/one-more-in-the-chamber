@@ -49,6 +49,7 @@ export interface SerializedPlayer {
   venomousStacks?: number;
   critChance: number;
   thorns: number;
+  shedSkinAvailable?: boolean;
   gold: number;
   goldThisFight: number;
   abilityCharge: number;

@@ -123,6 +123,11 @@ export class ArtifactSystem {
     if (this.has('rusts_cylinder')) {
       player.deadeyeShots = 6;
     }
+
+    // Shed Skin: once/fight survive lethal damage with 1 HP
+    if (this.has('shed_skin')) {
+      player.shedSkinAvailable = true;
+    }
   }
 
   /** Get number of Deadeye shots (3 default, 6 with Rust's Cylinder). */

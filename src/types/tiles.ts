@@ -14,6 +14,17 @@ export interface TileDefinition {
   flavor?: string;
   /** Upgrade description shown in campfire. Tiles without this can't be upgraded. */
   upgradeText?: string;
+  /**
+   * Resolution priority when multiple matches resolve in the same swap.
+   * Lower numbers resolve first. Default 3.
+   *   0 = buffs/stacks (ace, horseshoe, venom, bounty, shank)
+   *   1 = block (iron, barricade)
+   *   2 = healing (whiskey, saloon)
+   *   3 = standard damage (bullet, buckshot, stampede, chain, etc.)
+   *   4 = scaling damage (boulder, tombstone, duel)
+   *   5 = resource/utility (gold, battery, cavalry)
+   */
+  resolveOrder?: number;
 }
 
 export interface TileState {

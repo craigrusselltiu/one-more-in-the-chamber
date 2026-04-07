@@ -65,6 +65,27 @@ export const FloatingNumbers = memo(function FloatingNumbers() {
     return () => { EventBus.off(GameEvent.FLOATING_NUMBER, handleFloat); };
   }, [handleFloat]);
 
+  // Auto-float gold changes by listening to GOLD_CHANGE
+  const prevGoldRef = { current: -1 };
+  useEffect(() => {
+    const handleGoldChange = (...args: unknown[]) => {
+      const newGold = args[0] as number;
+      if (prevGoldRef.current < 0) {
+        // First emission — just store, don't float
+        prevGoldRef.current = newGold;
+        return;
+      }
+      const delta = newGold - prevGoldRef.current;
+      prevGoldRef.current = newGold;
+      if (delta === 0) return;
+      const text = delta > 0 ? `+${delta}` : `${delta}`;
+      const color = delta > 0 ? '#FFD700' : '#ff4444';
+      handleFloat('topbar', 0, text, color, 13);
+    };
+    EventBus.on(GameEvent.GOLD_CHANGE, handleGoldChange);
+    return () => { EventBus.off(GameEvent.GOLD_CHANGE, handleGoldChange); };
+  }, [handleFloat]);
+
   // Animation loop: update positions and remove expired numbers
   useEffect(() => {
     if (numbers.length === 0) return;

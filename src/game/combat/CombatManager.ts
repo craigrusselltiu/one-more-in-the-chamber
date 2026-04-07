@@ -11,7 +11,7 @@ import { TraitSystem } from './TraitSystem';
 import { ArtifactSystem } from './ArtifactSystem';
 import type { ResourceOutput } from './ResourceResolver';
 import { BoardHazardManager } from '../board/BoardHazardManager';
-import { TILE_COLORS } from '../../data/tiles';
+import { TILE_COLORS, TILE_DEFINITIONS } from '../../data/tiles';
 import { chooseEnemyIntent, chooseMineCartTimedIntent, executeBoardManipulation } from './EnemyAI';
 import { BossController } from './BossController';
 import {
@@ -141,7 +141,7 @@ export class CombatManager {
     this.deadeyeMaxShots = config.deadeyeShots ?? this.artifacts.getDeadeyeShots();
 
     // Character-specific ability threshold
-    const abilityThreshold = config.character === 'reno' ? 4 : 6;
+    const abilityThreshold = config.character === 'reno' ? 5 : 6;
 
     // Initialize player from run state
     this.player = new Player(
@@ -359,6 +359,7 @@ export class CombatManager {
         venomousStacks: this.player.venomousStacks,
         critChance: 0, // deprecated, kept for snapshot compat
         thorns: this.player.thorns,
+        shedSkinAvailable: this.player.shedSkinAvailable,
         gold: this.player.gold,
         goldThisFight: this.player.goldThisFight,
         abilityCharge: this.player.abilityCharge,
@@ -390,7 +391,7 @@ export class CombatManager {
 
     // Restore player
     const sp = snapshot.player;
-    const threshold = (snapshot.character ?? this.character) === 'reno' ? 4 : 6;
+    const threshold = (snapshot.character ?? this.character) === 'reno' ? 5 : 6;
     this.player = new Player(
       sp.health,
       sp.maxHealth,
@@ -410,6 +411,7 @@ export class CombatManager {
     this.player.venomousStacks = sp.venomousStacks ?? 0;
     // critChance deprecated — Lucky stacks are the crit chance now
     this.player.thorns = sp.thorns;
+    this.player.shedSkinAvailable = sp.shedSkinAvailable ?? false;
     this.player.goldThisFight = sp.goldThisFight;
 
     // Restore enemies
@@ -800,8 +802,8 @@ export class CombatManager {
   }
 
   /**
-   * Bounty Hunter(2): last Deadeye shot targets an enemy directly,
-   * dealing 2 damage per Bounty stack on that enemy.
+   * Rust's Cylinder: last Deadeye shot targets an enemy directly,
+   * dealing 1 damage per Bounty stack on that enemy.
    */
   async deadeyeShootEnemy(enemyIndex: number): Promise<void> {
     if (!this.isDeadeyeActive || this.deadeyeShotsRemaining !== 1) return;
@@ -812,7 +814,7 @@ export class CombatManager {
 
     playDeadeyeShot();
 
-    const bountyDamage = enemy.state.bountyStacks * 2;
+    const bountyDamage = enemy.state.bountyStacks * 1;
     if (bountyDamage > 0) {
       this.dealDamageToEnemy(enemy, bountyDamage, true);
       this.emitEnemyHpChanges();
@@ -1056,7 +1058,16 @@ export class CombatManager {
   // ---------------------------------------------------------------------------
 
   private processMatches(matches: MatchResult[], comboMultiplier = 1.0): void {
-    for (const match of matches) {
+    // Sort by resolveOrder so interactions are consistent (e.g. block before boulder).
+    const sorted = matches.length > 1
+      ? [...matches].sort((a, b) => {
+        const aOrder = TILE_DEFINITIONS[a.tileType]?.resolveOrder ?? 3;
+        const bOrder = TILE_DEFINITIONS[b.tileType]?.resolveOrder ?? 3;
+        return aOrder - bOrder;
+      })
+      : matches;
+
+    for (const match of sorted) {
       // Warrant (suppress): suppressed tile types produce zero output entirely.
       // Skip all trait/artifact/crit/multiplier processing so nothing leaks through.
       if (this.hazardManager.isSuppressed(match.tileType)) {
@@ -1248,11 +1259,6 @@ export class CombatManager {
     EventBus.emit(GameEvent.FLOATING_NUMBER, 'player', 0, text, color);
   }
 
-  /** Emit a floating number near the top bar (e.g. gold indicator). */
-  private floatOnTopBar(text: string, color: string): void {
-    EventBus.emit(GameEvent.FLOATING_NUMBER, 'topbar', 0, text, color);
-  }
-
   /** Get the highest-HP alive enemy. */
   private getHighestHpEnemy(): Enemy | null {
     const alive = this.aliveEnemies();
@@ -1292,7 +1298,7 @@ export class CombatManager {
       // Bounty kills on non-summoned enemies grant 10 gold
       if (!enemy.summoned) {
         this.player.addGold(10);
-        this.floatOnTopBar('+10', '#FFD700');
+
         EventBus.emit(GameEvent.GOLD_CHANGE, this.player.gold);
       }
       return true;
@@ -1351,7 +1357,7 @@ export class CombatManager {
     if (output.gold > 0) {
       const scaledGold = Math.max(1, Math.round(output.gold * this.goldMultiplier));
       this.player.addGold(scaledGold);
-      this.floatOnTopBar(`+${scaledGold}`, '#FFD700');
+
       EventBus.emit(GameEvent.GOLD_CHANGE, this.player.gold);
     }
 
@@ -1452,7 +1458,7 @@ export class CombatManager {
       if (this.artifacts.has('rigged_deck')) {
         const missGold = Math.max(1, Math.round(2 * this.goldMultiplier));
         this.player.addGold(missGold);
-        this.floatOnTopBar(`+${missGold}`, '#FFD700');
+
         EventBus.emit(GameEvent.GOLD_CHANGE, this.player.gold);
       }
     }
@@ -1727,7 +1733,7 @@ export class CombatManager {
       let goldReward = base + Math.floor(Math.random() * (range * 2 + 1)) - range;
       goldReward = Math.max(1, Math.round(goldReward * this.goldMultiplier));
       this.player.addGold(goldReward);
-      this.floatOnTopBar(`+${goldReward}`, '#FFD700');
+
       EventBus.emit(GameEvent.GOLD_CHANGE, this.player.gold);
     }
 

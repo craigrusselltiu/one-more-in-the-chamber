@@ -356,7 +356,7 @@ Each artifact has 0-2 trait tags. Collecting artifacts with the same tag is how 
 | Rigged Deck | Crits give 5 gold. | Gunslinger, Prospector | Lady luck pays well. |
 | Sharpshooter's Eye | +5% crit per swap used this turn. Resets at turn end. | Gunslinger, Outlaw | More shots, sharper aim. |
 | Silver Bullet | +20% crit vs bosses only. | Gunslinger, Sheriff | Save these for the big ones. |
-| **Rust's Cylinder** | **Rust only.** Increase Deadeye shots to 6. Last shot can target an enemy for 2 damage per Bounty stack. | Gunslinger, Outlaw | Six in the chamber. No reloads. |
+| **Rust's Cylinder** | **Rust only.** Increase Deadeye shots to 6. Last shot can target an enemy for 1 damage per Bounty stack. | Gunslinger, Outlaw | Six in the chamber. No reloads. |
 | **Bamboo Canteen** | Rust starting artifact. After completing combat, restore 6 HP. | Outlaw, Saloon Keeper | *(none)* |
 
 Target: **60-80 artifacts** (full game), **~20** (MVP).

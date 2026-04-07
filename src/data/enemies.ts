@@ -200,9 +200,9 @@ export const ACT3_ENEMIES: Record<string, EnemyDefinition> = {
   outlaw_king: {
     type: 'outlaw_king',
     name: 'Outlaw King',
-    health: 120,
-    minDamage: 25,
-    maxDamage: 35,
+    health: 90,
+    minDamage: 20,
+    maxDamage: 28,
     abilities: ['block', 'summon'],
   },
 };

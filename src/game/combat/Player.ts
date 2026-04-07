@@ -25,6 +25,8 @@ export class Player {
   tileUpgrades: Partial<Record<TileType, number>>;
   /** Whether the player took damage this turn (for Barricade check). */
   tookDamageThisTurn = false;
+  /** Shed Skin: once/fight survive lethal damage with 1 HP. */
+  shedSkinAvailable = false;
 
   constructor(
     health: number,
@@ -61,6 +63,12 @@ export class Player {
     // Apply damage to HP
     this.health = Math.max(0, this.health - remaining);
     if (remaining > 0) this.tookDamageThisTurn = true;
+
+    // Shed Skin: survive lethal damage with 1 HP (once per fight)
+    if (this.health <= 0 && this.shedSkinAvailable) {
+      this.health = 1;
+      this.shedSkinAvailable = false;
+    }
 
     // Thorns: reflect 100% of the incoming attack back (consumed on trigger)
     let thornsDamage = 0;
@@ -102,7 +110,7 @@ export class Player {
     return mult;
   }
 
-  /** Add Lucky stacks. Each stack = +1% crit (max 50). Removed when crit occurs. */
+  /** Add Lucky stacks. Each stack = +1% chance for 1.5x damage (max 50). Removed when crit occurs. */
   addLuckyStacks(stacks: number): void {
     this.luckyStacks = Math.min(50, this.luckyStacks + stacks);
   }

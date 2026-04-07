@@ -29,8 +29,9 @@ export const TRAITS: TraitDefinition[] = [
     name: 'Sheriff',
     description: 'The block trait.',
     breakpoints: [
-      { threshold: 2, description: '+2 block at turn start. Iron matches +30% block.' },
-      { threshold: 5, description: 'Block reflects 100% of absorbed damage back to attacker.' },
+      { threshold: 2, description: 'The first time you gain block each turn is doubled.' },
+      { threshold: 4, description: 'At the start of combat, gain 5 Sturdy.' },
+      { threshold: 6, description: 'Block reflects 100% of absorbed damage back to attacker.' },
     ],
   },
   {
@@ -73,10 +74,10 @@ export const TRAITS: TraitDefinition[] = [
   {
     id: 'gunslinger',
     name: 'Gunslinger',
-    description: 'The crit trait.',
+    description: 'The gun tile trait.',
     breakpoints: [
-      { threshold: 2, description: 'Start fights with 15% crit. Crits deal 3 bonus flat damage.' },
-      { threshold: 4, description: 'Crit multiplier 3x. Crit chance halves on trigger instead of resetting.' },
+      { threshold: 2, description: 'Bullet, .50 Cal, Buckshot, and Ricochet tiles deal 1 extra damage per tile.' },
+      { threshold: 4, description: 'Gain 1 Lucky stack for every Bullet, .50 Cal, Buckshot, or Ricochet matched.' },
     ],
   },
   {

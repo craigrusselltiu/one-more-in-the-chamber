@@ -31,7 +31,7 @@ const STATUS_TO_KEYWORD: Record<string, string> = {
 /** Descriptions for effects not in keywords.ts. */
 const EXTRA_DESCRIPTIONS: Record<string, { name: string; color: string; description: string }> = {
   block: { name: 'Block', color: '#6888A0', description: 'Absorbs incoming damage.' },
-  crit: { name: 'Crit', color: '#D06080', description: 'Chance to deal double damage.' },
+  crit: { name: 'Crit', color: '#D06080', description: 'Chance to deal 1.5x damage.' },
   thorns: { name: 'Thorns', color: '#C04040', description: 'Reflect damage to attackers.' },
   cracked_ground: { name: 'Cracked Ground', color: '#808080', description: 'Cascade damage is nullified.' },
   summoned: { name: 'Summoned', color: '#E0C880', description: 'Dies when all non-summoned enemies have died.' },

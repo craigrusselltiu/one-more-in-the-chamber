@@ -15,7 +15,7 @@ export const KEYWORDS: Record<string, KeywordDefinition> = {
   },
   Lucky: {
     color: '#C8A040',
-    description: '1% chance per stack to deal double damage. (max 50)',
+    description: '1% chance per stack to deal 1.5x damage. (max 50)',
   },
   Barricade: {
     color: '#8B7355',

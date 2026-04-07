@@ -20,6 +20,8 @@ export class TraitSystem {
   private matchCountThisFight = 0;
   /** Tracks swaps used this turn for Sharpshooter's Eye (via Gunslinger). */
   private swapsUsedThisTurn = 0;
+  /** Sheriff(2): whether the first block gain this turn has been doubled. */
+  private sheriffBlockUsedThisTurn = false;
 
   constructor(traitCounts: Partial<Record<TraitId, number>>) {
     this.counts = { ...traitCounts };
@@ -31,9 +33,10 @@ export class TraitSystem {
   }
 
   /** Restore internal state from a mid-combat snapshot. */
-  restoreState(matchCount: number, swapsUsed: number): void {
+  restoreState(matchCount: number, swapsUsed: number, sheriffBlockUsed = false): void {
     this.matchCountThisFight = matchCount;
     this.swapsUsedThisTurn = swapsUsed;
+    this.sheriffBlockUsedThisTurn = sheriffBlockUsed;
   }
 
   /** Check if a trait has reached a given breakpoint threshold. */
@@ -53,9 +56,9 @@ export class TraitSystem {
   onFightStart(player: Player): void {
     this.matchCountThisFight = 0;
 
-    // Gunslinger(2): Start each fight with 15 Lucky stacks
-    if (this.isActive('gunslinger', 2)) {
-      player.addLuckyStacks(15);
+    // Sheriff(4): gain 5 Sturdy at fight start
+    if (this.isActive('sheriff', 4)) {
+      player.sturdyStacks += 5;
     }
   }
 
@@ -63,14 +66,10 @@ export class TraitSystem {
   // Turn Start
   // ---------------------------------------------------------------------------
 
-  /** Apply turn-start effects. Returns bonus block to add. */
-  onTurnStart(player: Player): void {
+  /** Apply turn-start effects. */
+  onTurnStart(_player: Player): void {
     this.swapsUsedThisTurn = 0;
-
-    // Sheriff(2): +2 block at turn start
-    if (this.isActive('sheriff', 2)) {
-      player.addBlock(2);
-    }
+    this.sheriffBlockUsedThisTurn = false;
   }
 
   /** Get extra swaps per turn from traits. */
@@ -135,9 +134,10 @@ export class TraitSystem {
 
     // --- Sheriff ---
 
-    // Sheriff(2): Iron matches +30% block
-    if (match.tileType === 'iron' && this.isActive('sheriff', 2)) {
-      modified.block = Math.round(modified.block * 1.3);
+    // Sheriff(2): first block gain each turn is doubled
+    if (modified.block > 0 && !this.sheriffBlockUsedThisTurn && this.isActive('sheriff', 2)) {
+      modified.block *= 2;
+      this.sheriffBlockUsedThisTurn = true;
     }
 
     // --- Prospector ---
@@ -169,6 +169,20 @@ export class TraitSystem {
       modified.damage = Math.round(modified.damage * 1.5);
     }
 
+    // --- Gunslinger ---
+    const isGunTile = match.tileType === 'bullet' || match.tileType === 'fifty_cal'
+      || match.tileType === 'buckshot' || match.tileType === 'ricochet';
+
+    // Gunslinger(2): Gun tiles deal 1 extra damage per tile
+    if (isGunTile && this.isActive('gunslinger', 2)) {
+      modified.damage += match.length;
+    }
+
+    // Gunslinger(4): Gain 1 Lucky stack per gun tile matched
+    if (isGunTile && this.isActive('gunslinger', 4)) {
+      modified.luckyStacks += match.length;
+    }
+
     return modified;
   }
 
@@ -181,20 +195,9 @@ export class TraitSystem {
    * Returns the crit multiplier and whether crit chance halves or resets.
    */
   getCritConfig(): { multiplier: number; bonusFlatDamage: number; halveOnTrigger: boolean } {
-    let multiplier = 2.0;
-    let bonusFlatDamage = 0;
-    let halveOnTrigger = false;
-
-    // Gunslinger(2): Crits deal 3 bonus flat damage
-    if (this.isActive('gunslinger', 2)) {
-      bonusFlatDamage = 3;
-    }
-
-    // Gunslinger(4): Crit multiplier 3x, halve instead of reset
-    if (this.isActive('gunslinger', 4)) {
-      multiplier = 3.0;
-      halveOnTrigger = true;
-    }
+    const multiplier = 1.5;
+    const bonusFlatDamage = 0;
+    const halveOnTrigger = false;
 
     return { multiplier, bonusFlatDamage, halveOnTrigger };
   }
@@ -236,7 +239,7 @@ export class TraitSystem {
    * Sheriff(5): Block reflects 100% of absorbed damage back to attacker.
    */
   blockReflectsDamage(): boolean {
-    return this.isActive('sheriff', 5);
+    return this.isActive('sheriff', 6);
   }
 
   // ---------------------------------------------------------------------------

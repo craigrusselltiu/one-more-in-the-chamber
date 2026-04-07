@@ -83,7 +83,7 @@ export const NODE_FRAMES: Record<string, number> = {
 /** Trait icons (by trait ID). */
 export const TRAIT_FRAMES: Record<string, number> = {
   outlaw: 303,
-  sheriff: 610,
+  sheriff: 168,
   rattlesnake: 1241,
   prospector: 656,
   sapper: 938,
@@ -97,7 +97,7 @@ export const TRAIT_FRAMES: Record<string, number> = {
 /** Trait breakpoint thresholds (in order). */
 export const TRAIT_BREAKPOINTS: Record<string, number[]> = {
   outlaw: [2, 4, 6],
-  sheriff: [2, 5],
+  sheriff: [2, 4, 6],
   rattlesnake: [1, 3],
   prospector: [2, 4, 6],
   sapper: [1, 2, 3],

@@ -4,6 +4,23 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## v0.4.13
+
+### Added
+- Tile resolve ordering system: tiles resolve in priority order (buffs > block > healing > damage > scaling > utility)
+- Shed Skin artifact now functional: once/fight survive lethal damage with 1 HP
+- Split CONTENT.md into TILES.md, TRAITS.md, ARTIFACTS.md, ENEMIES.md
+
+### Changed
+- Lucky crit multiplier reduced from 2x to 1.5x
+- Gunslinger trait reworked: (2) gun tiles +1 damage per tile, (4) gain 1 Lucky per gun tile matched
+- Sheriff trait reworked: (2) first block gain each turn doubled, (4) gain 5 Sturdy at combat start, (6) block reflects damage
+- Rust's Cylinder last shot damage reduced from 2 to 1 per Bounty stack
+- Reno ability charge threshold increased from 4 to 5
+- Outlaw King nerfed: 120 HP → 90, 25-35 dmg → 20-28
+- Rigged Deck tag changed from Desperado to Prospector
+- Gold float numbers driven by GOLD_CHANGE event (auto-float, no manual calls)
+
 ## v0.4.12
 
 ### Changed
