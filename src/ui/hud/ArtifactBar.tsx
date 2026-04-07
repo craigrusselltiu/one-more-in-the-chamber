@@ -22,6 +22,21 @@ const TRAIT_COLORS: Record<TraitId, string> = {
   dead_man_walking: '#808080',
 };
 
+const TRAIT_NAMES: Record<string, string> = {
+  outlaw: 'Outlaw',
+  sheriff: 'Sheriff',
+  rattlesnake: 'Rattlesnake',
+  prospector: 'Prospector',
+  sapper: 'Sapper',
+  mustang: 'Mustang',
+  gunslinger: 'Gunslinger',
+  saloon_keeper: 'Saloon Keeper',
+  desperado: 'Desperado',
+  high_roller: 'High Roller',
+  sniper: 'Sniper',
+  dead_man_walking: 'Dead Man Walking',
+};
+
 const DEFAULT_COLOR = '#808080';
 
 /**
@@ -46,10 +61,10 @@ export const ArtifactBar = memo(function ArtifactBar() {
         return (
           <Tooltip key={`${inst.id}-${i}`} position="bottom" content={def ? (
             <div className="flex flex-col gap-0.5">
-              <div className="font-bold text-amber-400" style={{ fontSize: '10px' }}>
+              <div className="font-bold text-amber-400 whitespace-nowrap" style={{ fontSize: '10px' }}>
                 {def.name}
                 {inst.tags.length > 0 && (
-                  <span className="text-stone-400 font-normal ml-1">({inst.tags.join(', ')})</span>
+                  <span className="text-stone-400 font-normal ml-1">({inst.tags.map(t => TRAIT_NAMES[t] ?? t).join(', ')})</span>
                 )}
               </div>
               <div className="text-stone-200 whitespace-nowrap" style={{ fontSize: '9px' }}>{def.effect}</div>

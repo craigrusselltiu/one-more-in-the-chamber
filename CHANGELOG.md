@@ -4,6 +4,17 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## v0.4.16
+
+### Changed
+- Artifact tooltips show Name (Tags), Effect, and Flavor on 3 single lines with capitalized tag names
+- Wanted Flyer text: "Apply 2 Vulnerable to target enemy." with keyword tooltip
+
+### Fixed
+- Merchant purchases now persist across main menu / refresh (sold-out items stay sold)
+- Summoning an enemy no longer shifts the player's target
+- Infinite loop crash in MerchantScreen from unstable Zustand selector
+
 ## v0.4.15
 
 ### Added

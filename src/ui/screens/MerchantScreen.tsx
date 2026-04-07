@@ -30,7 +30,13 @@ export const MerchantScreen = memo(function MerchantScreen() {
   const addConsumable = useRunStore((s) => s.addConsumable);
   const swapTileType = useRunStore((s) => s.swapTileType);
   const upgradeTile = useRunStore((s) => s.upgradeTile);
-  const [purchased, setPurchased] = useState<Set<string>>(new Set());
+  const addMerchantPurchase = useRunStore((s) => s.addMerchantPurchase);
+  const nodeId = run?.currentNodeId;
+  const merchantPurchases = useRunStore((s) => s.run?.merchantPurchases);
+  const purchased = useMemo(
+    () => new Set(nodeId ? (merchantPurchases?.[nodeId] ?? []) : []),
+    [merchantPurchases, nodeId],
+  );
   const [swapPending, setSwapPending] = useState<MerchantItem | null>(null);
   const [upgradePhase, setUpgradePhase] = useState<'none' | 'selecting' | 'upgraded'>('none');
   const [upgradeSelectedTile, setUpgradeSelectedTile] = useState<TileType | null>(null);
@@ -142,7 +148,7 @@ export const MerchantScreen = memo(function MerchantScreen() {
       addConsumable({ id: consumableId });
     }
 
-    setPurchased((prev) => new Set([...prev, item.id]));
+    if (run.currentNodeId) addMerchantPurchase(run.currentNodeId, item.id);
   };
 
   const handleSwapConfirm = (oldTile: TileType) => {
@@ -150,7 +156,7 @@ export const MerchantScreen = memo(function MerchantScreen() {
     const newTile = swapPending.id.replace('swap-', '') as TileType;
     updateGold(-swapPending.price);
     swapTileType(oldTile, newTile, swapPending.tileLevel);
-    setPurchased((prev) => new Set([...prev, swapPending.id]));
+    if (run.currentNodeId) addMerchantPurchase(run.currentNodeId, swapPending.id);
     setSwapPending(null);
   };
 
@@ -161,7 +167,7 @@ export const MerchantScreen = memo(function MerchantScreen() {
     updateGold(-upgradeItem.price);
     upgradeTile(upgradeSelectedTile);
     playUpgrade();
-    setPurchased((prev) => new Set([...prev, 'upgrade']));
+    if (run.currentNodeId) addMerchantPurchase(run.currentNodeId, 'upgrade');
     setUpgradePhase('upgraded');
   };
 

@@ -42,6 +42,7 @@ interface RunStore {
   markNodeVisited: (nodeId: string) => void;
   resetNodeVisited: (nodeId: string) => void;
   markNodeCompleted: (nodeId: string) => void;
+  addMerchantPurchase: (nodeId: string, itemId: string) => void;
   advanceAct: () => void;
   setMapState: (map: MapState) => void;
   endRun: (completed: boolean) => void;
@@ -313,6 +314,19 @@ export const useRunStore = create<RunStore>((set, get) => ({
         run: {
           ...state.run,
           mapState: { ...state.run.mapState, nodes },
+        },
+      };
+    }),
+
+  addMerchantPurchase: (nodeId, itemId) =>
+    set((state) => {
+      if (!state.run) return state;
+      const prev = state.run.merchantPurchases ?? {};
+      const nodeItems = [...(prev[nodeId] ?? []), itemId];
+      return {
+        run: {
+          ...state.run,
+          merchantPurchases: { ...prev, [nodeId]: nodeItems },
         },
       };
     }),

@@ -1661,11 +1661,21 @@ export class CombatManager {
    */
   /** Add an enemy to the array, replacing a dead slot if possible, otherwise push. */
   private addEnemyToSlot(enemy: Enemy): void {
+    // Preserve current target across the slot change
+    const prevTarget = this.getTargetedAliveEnemy();
+
     const deadIdx = this.enemies.findIndex(e => e.state.isDead);
     if (deadIdx >= 0) {
       this.enemies[deadIdx] = enemy;
     } else {
       this.enemies.push(enemy);
+    }
+
+    // Restore target index so summoning doesn't shift the player's target
+    if (prevTarget) {
+      const alive = this.aliveEnemies();
+      const restored = alive.indexOf(prevTarget);
+      if (restored >= 0) this.targetedEnemyIndex = restored;
     }
   }
 

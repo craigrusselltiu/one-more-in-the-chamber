@@ -22,6 +22,8 @@ export interface RunState {
   flawlessFights: number;
   bossesDefeated: number;
   mapState: MapState | null;
+  /** Tracks purchased item IDs per merchant node to persist across remounts. */
+  merchantPurchases?: Record<string, string[]>;
   status: 'active' | 'completed' | 'abandoned';
 }
 
