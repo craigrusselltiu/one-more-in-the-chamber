@@ -4,6 +4,23 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## v0.4.12
+
+### Changed
+- Whiskey tile base heal increased from 1 to 2 HP per 3-match
+- Saloon adjacency now generates base (Lv0) resources instead of upgraded
+- Gold floats appear near the top bar gold indicator instead of on the player
+- Gold float text no longer shows trailing "g"
+- Floating numbers render above the top bar (z-index fix)
+- Battery, Whiskey, Saloon upgrade text shows inline value instead of confusing "plus X"
+
+### Fixed
+- Bamboo Canteen post-combat heal now updates the HP bar
+- Map node stuck bug: screen wipe race condition could skip marking non-combat nodes as completed
+- Safeguard: non-combat nodes auto-complete if visited but stuck incomplete on map
+- Safeguard: unknown node types on Continue mark completed instead of soft-locking
+- Save migration: old saves with "shop"/"rest" node types auto-migrate to "merchant"/"campfire"
+
 ## v0.4.11
 
 ### Added

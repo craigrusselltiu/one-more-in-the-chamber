@@ -203,7 +203,8 @@ export class ResourceResolver {
 
       // --- Healing (per 3-match; +1 per extra tile) ---
       case 'whiskey':
-        output.healing = Math.max(0, count - 2) + Math.round(upgradeBonus);
+        // Base 2 HP for 3-match, +1 per extra tile
+        output.healing = 2 + Math.max(0, count - 3) + Math.round(upgradeBonus);
         break;
 
       case 'saloon':

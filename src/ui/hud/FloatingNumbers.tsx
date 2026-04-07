@@ -79,7 +79,7 @@ export const FloatingNumbers = memo(function FloatingNumbers() {
   }, [numbers.length > 0]);
 
   return (
-    <div className="absolute inset-0 pointer-events-none z-50 overflow-hidden">
+    <div className="absolute inset-0 pointer-events-none z-[150] overflow-hidden">
       {numbers.map((n) => {
         const elapsed = (Date.now() - n.startTime) / 1000;
         const t = elapsed;

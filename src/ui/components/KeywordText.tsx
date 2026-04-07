@@ -243,24 +243,30 @@ export function buildTileDescription(type: TileType, upgradeLevel: number): Reac
     }
     case 'stampede':
       return [...seg('Deal 1 damage to ALL enemies per tile', false), ...flatBonus(upgradeLevel, uv), ...seg('.', false)];
-    case 'battery':
-      return [...seg('Gain 1 ability charge per 3-match', false), ...flatBonus(upgradeLevel, uv), ...seg(', plus 1 per extra tile.', false)];
+    case 'battery': {
+      const bv = 1 + upgradeLevel * uv;
+      return [...seg('Gain ', false), ...seg(`${bv}`, upgraded), ...seg(' ability charge per 3-match, plus 1 per extra tile.', false)];
+    }
     case 'venom':
       return [...seg('Apply 1 Venom per tile', false), ...flatBonus(upgradeLevel, uv), ...seg('.', false)];
     case 'prairie_fire':
       return [...seg('Deal 2 damage per tile', false), ...flatBonus(upgradeLevel, uv), ...seg('. Each tile has a 50% chance to convert 1 adjacent tile to Ember.', false)];
     case 'chain':
       return [...seg('Deal 1 damage per tile', false), ...flatBonus(upgradeLevel, uv), ...seg('. Each Chain match adds +1 damage to ALL Chain tiles for this combat.', false)];
-    case 'whiskey':
-      return [...seg('Heals 1 HP per 3-match', false), ...flatBonus(upgradeLevel, uv), ...seg(', plus 1 per extra tile.', false)];
+    case 'whiskey': {
+      const bv = 2 + upgradeLevel * uv;
+      return [...seg('Heals ', false), ...seg(`${bv}`, upgraded), ...seg(' HP per 3-match, plus 1 per extra tile.', false)];
+    }
     case 'ace':
       return [...seg('Gain 1 stack of Ace per tile', false), ...flatBonus(upgradeLevel, uv), ...seg('.', false)];
     case 'horseshoe':
       return [...seg('Gain 1 stack of Lucky per tile', false), ...flatBonus(upgradeLevel, uv), ...seg('.', false)];
     case 'tombstone':
       return [...seg('Deal 2 damage per tile', false), ...flatBonus(upgradeLevel, uv), ...seg('. Deals double damage when target is below 30% HP.', false)];
-    case 'saloon':
-      return [...seg('Heal 1 HP per 3-match', false), ...flatBonus(upgradeLevel, uv), ...seg(', plus 1 per extra tile. Generate the resources of adjacent tiles.', false)];
+    case 'saloon': {
+      const bv = 1 + upgradeLevel * uv;
+      return [...seg('Heal ', false), ...seg(`${bv}`, upgraded), ...seg(' HP per 3-match, plus 1 per extra tile. Generate the base resources of adjacent tiles.', false)];
+    }
     case 'shank':
       return [...seg('Deal 1 damage per tile', false), ...flatBonus(upgradeLevel, uv), ...seg(' and apply 1 Vulnerable.', false)];
     case 'cavalry':
@@ -335,24 +341,33 @@ export function buildUpgradePreview(type: TileType, currentLevel: number): React
     }
     case 'stampede':
       return [...seg('Deal 1 damage to ALL enemies per tile', false), ...flatBonusPreview(currentLevel, uv), ...seg('.', false)];
-    case 'battery':
-      return [...seg('Gain 1 ability charge per 3-match', false), ...flatBonusPreview(currentLevel, uv), ...seg(', plus 1 per extra tile.', false)];
+    case 'battery': {
+      const oldBv = 1 + currentLevel * uv;
+      const newBv = 1 + (currentLevel + 1) * uv;
+      return [...seg('Gain ', false), ...arrowUpgrade(oldBv, newBv), ...seg(' ability charge per 3-match, plus 1 per extra tile.', false)];
+    }
     case 'venom':
       return [...seg('Apply 1 Venom per tile', false), ...flatBonusPreview(currentLevel, uv), ...seg('.', false)];
     case 'prairie_fire':
       return [...seg('Deal 2 damage per tile', false), ...flatBonusPreview(currentLevel, uv), ...seg('. Each tile has a 50% chance to convert 1 adjacent tile to Ember.', false)];
     case 'chain':
       return [...seg('Deal 1 damage per tile', false), ...flatBonusPreview(currentLevel, uv), ...seg('. Each Chain match adds +1 damage to ALL Chain tiles for this combat.', false)];
-    case 'whiskey':
-      return [...seg('Heals 1 HP per 3-match', false), ...flatBonusPreview(currentLevel, uv), ...seg(', plus 1 per extra tile.', false)];
+    case 'whiskey': {
+      const oldBv = 2 + currentLevel * uv;
+      const newBv = 2 + (currentLevel + 1) * uv;
+      return [...seg('Heals ', false), ...arrowUpgrade(oldBv, newBv), ...seg(' HP per 3-match, plus 1 per extra tile.', false)];
+    }
     case 'ace':
       return [...seg('Gain 1 stack of Ace per tile', false), ...flatBonusPreview(currentLevel, uv), ...seg('.', false)];
     case 'horseshoe':
       return [...seg('Gain 1 stack of Lucky per tile', false), ...flatBonusPreview(currentLevel, uv), ...seg('.', false)];
     case 'tombstone':
       return [...seg('Deal 2 damage per tile', false), ...flatBonusPreview(currentLevel, uv), ...seg('. Deals double damage when target is below 30% HP.', false)];
-    case 'saloon':
-      return [...seg('Heal 1 HP per 3-match', false), ...flatBonusPreview(currentLevel, uv), ...seg(', plus 1 per extra tile. Generate the resources of adjacent tiles.', false)];
+    case 'saloon': {
+      const oldBv = 1 + currentLevel * uv;
+      const newBv = 1 + (currentLevel + 1) * uv;
+      return [...seg('Heal ', false), ...arrowUpgrade(oldBv, newBv), ...seg(' HP per 3-match, plus 1 per extra tile. Generate the base resources of adjacent tiles.', false)];
+    }
     case 'shank':
       return [...seg('Deal 1 damage per tile', false), ...flatBonusPreview(currentLevel, uv), ...seg(' and apply 1 Vulnerable.', false)];
     case 'cavalry':

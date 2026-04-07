@@ -5,9 +5,32 @@
 
 import { useRunStore } from '../store/runStore';
 import { saveRun, loadActiveRun } from './localSave';
-import type { RunState } from '../types/game';
+import type { RunState, MapNodeType } from '../types/game';
 
 let unsubscribe: (() => void) | null = null;
+
+/** Migrate old node type names from before the rename. */
+const NODE_TYPE_MIGRATION: Record<string, MapNodeType> = {
+  shop: 'merchant',
+  rest: 'campfire',
+};
+
+/** Migrate a persisted run to handle schema changes. */
+function migrateRun(run: RunState): RunState {
+  if (!run.mapState) return run;
+  let migrated = false;
+  for (const node of run.mapState.nodes) {
+    const replacement = NODE_TYPE_MIGRATION[node.type];
+    if (replacement) {
+      (node as { type: MapNodeType }).type = replacement;
+      migrated = true;
+    }
+  }
+  if (migrated) {
+    console.info('[persist] migrated old node types (shop→merchant, rest→campfire)');
+  }
+  return run;
+}
 
 /**
  * Load the active run from IndexedDB into the run store.
@@ -18,7 +41,8 @@ export async function loadPersistedRun(): Promise<boolean> {
   try {
     const data = await loadActiveRun();
     if (data && typeof data === 'object' && 'id' in data) {
-      useRunStore.getState().restoreRun(data as RunState);
+      const run = migrateRun(data as RunState);
+      useRunStore.getState().restoreRun(run);
       return true;
     }
   } catch {

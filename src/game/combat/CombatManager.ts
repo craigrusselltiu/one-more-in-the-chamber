@@ -1231,8 +1231,8 @@ export class CombatManager {
         const tile = grid[r]?.[c];
         if (!tile || tile.type === 'saloon' || tile.type === 'showdown' || tile.type === 'tumbleweed' || tile.type === 'fools_gold') continue;
 
-        const upgradeLevel = this.player.getUpgradeLevel(tile.type);
-        const output = this.resolver.resolveSingle(tile.type, upgradeLevel);
+        // Saloon generates base (Lv0) resources of adjacent tiles
+        const output = this.resolver.resolveSingle(tile.type, 0);
         this.applyResourceOutput(output);
       }
     }
@@ -1246,6 +1246,11 @@ export class CombatManager {
   /** Emit a floating number on the player. */
   private floatOnPlayer(text: string, color: string): void {
     EventBus.emit(GameEvent.FLOATING_NUMBER, 'player', 0, text, color);
+  }
+
+  /** Emit a floating number near the top bar (e.g. gold indicator). */
+  private floatOnTopBar(text: string, color: string): void {
+    EventBus.emit(GameEvent.FLOATING_NUMBER, 'topbar', 0, text, color);
   }
 
   /** Get the highest-HP alive enemy. */
@@ -1287,7 +1292,7 @@ export class CombatManager {
       // Bounty kills on non-summoned enemies grant 10 gold
       if (!enemy.summoned) {
         this.player.addGold(10);
-        this.floatOnPlayer('+10g', '#FFD700');
+        this.floatOnTopBar('+10', '#FFD700');
         EventBus.emit(GameEvent.GOLD_CHANGE, this.player.gold);
       }
       return true;
@@ -1346,7 +1351,7 @@ export class CombatManager {
     if (output.gold > 0) {
       const scaledGold = Math.max(1, Math.round(output.gold * this.goldMultiplier));
       this.player.addGold(scaledGold);
-      this.floatOnPlayer(`+${scaledGold}g`, '#FFD700');
+      this.floatOnTopBar(`+${scaledGold}`, '#FFD700');
       EventBus.emit(GameEvent.GOLD_CHANGE, this.player.gold);
     }
 
@@ -1447,7 +1452,7 @@ export class CombatManager {
       if (this.artifacts.has('rigged_deck')) {
         const missGold = Math.max(1, Math.round(2 * this.goldMultiplier));
         this.player.addGold(missGold);
-        this.floatOnPlayer(`+${missGold}g`, '#FFD700');
+        this.floatOnTopBar(`+${missGold}`, '#FFD700');
         EventBus.emit(GameEvent.GOLD_CHANGE, this.player.gold);
       }
     }
@@ -1708,6 +1713,7 @@ export class CombatManager {
       if (this.artifacts.has('bamboo_canteen')) {
         this.player.heal(6);
         this.floatOnPlayer('+6', '#40D840');
+        EventBus.emit(GameEvent.PLAYER_HP_CHANGE, this.player.health, this.player.maxHealth);
       }
     }
 
@@ -1721,7 +1727,7 @@ export class CombatManager {
       let goldReward = base + Math.floor(Math.random() * (range * 2 + 1)) - range;
       goldReward = Math.max(1, Math.round(goldReward * this.goldMultiplier));
       this.player.addGold(goldReward);
-      this.floatOnPlayer(`+${goldReward}g`, '#FFD700');
+      this.floatOnTopBar(`+${goldReward}`, '#FFD700');
       EventBus.emit(GameEvent.GOLD_CHANGE, this.player.gold);
     }
 

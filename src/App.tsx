@@ -160,8 +160,15 @@ export default function App() {
 
     const NON_COMBAT_NODE_SCREENS: Set<Screen> = new Set(['merchant', 'campfire', 'event', 'treasure']);
 
+    /** Tracks the last screen applied by the wipe system (updated synchronously). */
+    let lastAppliedScreen: Screen = 'main-menu';
+
     applyScreenChangeRef.current = (next: Screen) => {
-      const prev = prevScreenRef.current;
+      // Use lastAppliedScreen instead of prevScreenRef (which updates async
+      // in a useEffect). This avoids a race where rapid transitions or the
+      // safety timeout fire before the effect updates prevScreenRef, causing
+      // the non-combat node completion check to see a stale value.
+      const prev = lastAppliedScreen;
 
       // Mark non-combat nodes completed when returning to map
       if (next === 'map' && NON_COMBAT_NODE_SCREENS.has(prev)) {
@@ -170,6 +177,7 @@ export default function App() {
         if (nodeId) store.markNodeCompleted(nodeId);
       }
 
+      lastAppliedScreen = next;
       setScreen(next);
 
       // Act 1: choose 5th tile before first map visit
@@ -542,7 +550,7 @@ export default function App() {
           className="absolute right-2 bottom-1 pointer-events-none z-[60]"
           style={{ fontSize: '9px', color: 'rgba(255,255,255,0.3)' }}
         >
-          Pre-alpha v0.4.10
+          Pre-alpha v0.4.12
         </span>
       </div>
     </div>

@@ -136,6 +136,10 @@ export const MainMenu = memo(function MainMenu() {
         EventBus.emit(GameEvent.SCREEN_CHANGE, 'combat');
         return;
       }
+
+      // Unknown node type (corrupt save or old schema): mark completed so
+      // the player isn't permanently stuck, then fall through to map.
+      useRunStore.getState().markNodeCompleted(currentNode.id);
     }
 
     EventBus.emit(GameEvent.SCREEN_CHANGE, 'map');
