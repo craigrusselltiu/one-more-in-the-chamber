@@ -9,10 +9,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 ### Changed
 - Whiskey tile base heal increased from 1 to 2 HP per 3-match
 - Saloon adjacency now generates base (Lv0) resources instead of upgraded
-- Gold floats appear near the top bar gold indicator instead of on the player
-- Gold float text no longer shows trailing "g"
+- Gold floats appear next to the top bar gold indicator, drift right and fade
 - Floating numbers render above the top bar (z-index fix)
 - Battery, Whiskey, Saloon upgrade text shows inline value instead of confusing "plus X"
+- Preload all background images (campfire, merchant, treasure, main menu) during loading screen
 
 ### Fixed
 - Bamboo Canteen post-combat heal now updates the HP bar

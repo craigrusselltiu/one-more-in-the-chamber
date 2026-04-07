@@ -81,7 +81,7 @@ NOTE: Observe the difference between +1 to match total and +1 per tile. The tile
 - Flavor: "Links in the chain. More you match, harder they hit."
 
 ### Whiskey
-- Behaviour: Heals 1 HP per 3-match, plus 1 per extra tile.
+- Behaviour: Heals 2 HP per 3-match, plus 1 per extra tile.
 - Upgrade: +1 heal to match total per level
 - Flavor: "The cowboy's medicine."
 
@@ -106,7 +106,7 @@ NOTE: Observe the difference between +1 to match total and +1 per tile. The tile
 - Flavor: "Dead men pay debts."
 
 ### Saloon
-- Behaviour: Heal 1 HP per 3-match, plus 1 per extra tile. Generate the resources of adjacent tiles.
+- Behaviour: Heal 1 HP per 3-match, plus 1 per extra tile. Generate the base resources of adjacent tiles.
 - Upgrade: +1 heal per match total per level
 - Flavor: "Belly up to the bar. Drinks are on the house."
 

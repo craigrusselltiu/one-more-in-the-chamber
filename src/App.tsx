@@ -14,6 +14,7 @@ import { ReputationShopScreen } from './ui/screens/ReputationShopScreen';
 import { LeaderboardScreen } from './ui/screens/LeaderboardScreen';
 import { SettingsScreen } from './ui/screens/SettingsScreen';
 import { CombatHUD } from './ui/hud/CombatHUD';
+import { FloatingNumbers } from './ui/hud/FloatingNumbers';
 import { TopBar } from './ui/hud/TopBar';
 import { ArtifactBar } from './ui/hud/ArtifactBar';
 import { OfflineIndicator } from './ui/components/OfflineIndicator';
@@ -526,6 +527,9 @@ export default function App() {
             {screen === 'settings' && <SettingsScreen />}
           </div>
         )}
+
+        {/* Floating numbers: rendered at top level so they appear above TopBar */}
+        {screen === 'combat' && <FloatingNumbers />}
 
         {/* Loading screen -- shown until assets are loaded, then slides left */}
         {!loadingDismissed && (

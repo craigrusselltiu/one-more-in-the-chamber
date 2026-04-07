@@ -10,6 +10,7 @@ interface FloatingNumber {
   vx: number;
   startTime: number;
   fontSize: number;
+  target: 'player' | 'enemy' | 'topbar';
 }
 
 let nextId = 0;
@@ -39,9 +40,9 @@ export const FloatingNumbers = memo(function FloatingNumbers() {
       x = 80 + Math.random() * 96;
       y = 190 + Math.random() * 96;
     } else if (target === 'topbar') {
-      // Top bar gold indicator area
-      x = 840 + Math.random() * 20;
-      y = 10;
+      // Just right of the gold indicator
+      x = 890;
+      y = 14;
     } else {
       // Enemy sprite areas: zig-zag layout matching EnemyTargeting.
       // Alive index -> visual slot: 0->center(1), 1->top(0), 2->bottom(2)
@@ -55,7 +56,7 @@ export const FloatingNumbers = memo(function FloatingNumbers() {
 
     setNumbers((prev) => [
       ...prev,
-      { id: nextId++, text, color, x, y, vx: (Math.random() - 0.5) * 40, startTime: Date.now(), fontSize },
+      { id: nextId++, text, color, x, y, vx: target === 'topbar' ? (Math.random() - 0.5) * 10 : (Math.random() - 0.5) * 40, startTime: Date.now(), fontSize, target },
     ]);
   }, []);
 
@@ -83,9 +84,11 @@ export const FloatingNumbers = memo(function FloatingNumbers() {
       {numbers.map((n) => {
         const elapsed = (Date.now() - n.startTime) / 1000;
         const t = elapsed;
-        const gravity = 150;
-        const startVy = -50;
-        const px = n.x + n.vx * t;
+        // Topbar floats drift left and stay level; others pop up then arc down
+        const startVy = n.target === 'topbar' ? 0 : -50;
+        const gravity = n.target === 'topbar' ? 0 : 150;
+        const dx = n.target === 'topbar' ? 10 * t : n.vx * t;
+        const px = n.x + dx;
         const py = n.y + startVy * t + 0.5 * gravity * t * t;
         const alpha = Math.max(0, 1 - elapsed);
 

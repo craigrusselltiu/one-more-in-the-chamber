@@ -67,6 +67,10 @@ export class BootScene extends Phaser.Scene {
     // Backgrounds
     this.load.image('act1_bg', `${base}assets/act1_bg.png`);
     this.load.image('dusty_bg', `${base}assets/dusty_bg.png`);
+    this.load.image('main_menu_bg', `${base}assets/main_menu_bg.png`);
+    this.load.image('campfire_bg', `${base}assets/campfire_bg.png`);
+    this.load.image('merchant_bg', `${base}assets/merchant_bg.png`);
+    this.load.image('treasure_bg', `${base}assets/treasure_bg.png`);
     // Sprites
     this.load.spritesheet('items_sheet', `${base}assets/sprites/items_sheet.png`, {
       frameWidth: 16,
