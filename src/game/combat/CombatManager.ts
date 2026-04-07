@@ -1471,6 +1471,20 @@ export class CombatManager {
     // Chip miss/hit feedback
     if (output.chipHit === true) {
       this.floatOnPlayer('HIT', '#B060D0');
+      // Rigged Deck: 50% chance chip hit also hits another enemy
+      if (this.artifacts.has('rigged_deck') && Math.random() < 0.5) {
+        const alive = this.aliveEnemies();
+        const targeted = this.getTargetedAliveEnemy();
+        const others = alive.filter(e => e !== targeted);
+        if (others.length > 0) {
+          const bonus = others[Math.floor(Math.random() * others.length)];
+          const dmg = output.damage > 0 ? output.damage : 0;
+          if (dmg > 0) {
+            this.dealDamageToEnemy(bonus, dmg, false, isCrit);
+            this.emitEnemyHpChanges();
+          }
+        }
+      }
     } else if (output.chipHit === false) {
       const target = this.getTargetedAliveEnemy();
       if (target) {

@@ -11,7 +11,7 @@ NOTE: Observe the difference between +1 to match total and +1 per tile. The tile
 
 ### Chip
 - Reno exclusive
-- Behaviour: 50% chance to deal 5 damage per tile; 50% chance to deal 0.
+- Behaviour: 50% chance to deal 6 damage per tile; 50% chance to deal 0.
 - Upgrade: +1 damage per tile per level
 - Flavor: "What's the most you ever lost on a coin toss?"
 

@@ -44,14 +44,12 @@ Trait level = number of artifacts held with that tag. Effects activate at breakp
 - 5 -- If HP is below 20%, all damage is doubled.
 - 7 -- Once per fight, taking lethal damage instead sets HP to 10 and grant 20 block.
 
-## High Roller
+## Desperado
 - Flavor: "Go big or go home."
 - 2 -- 
 
 ## Hunter
 - Flavor: deal more damage to animals?
-
-## Desperado
 
 ## Rattlesnake
 - Flavor: "Don't step on anything that hisses."

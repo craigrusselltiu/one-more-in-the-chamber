@@ -16,7 +16,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 - Sapper trait simplified: (1) enemy bomb timers +2, (5) explosive radius +1
 - Saloon Keeper threshold changed: (5) random consumable at combat start (was 4)
 - Reno's Coin reworked: hit chance 50% → 75%, damage doubled, flat 1 HP on miss (no escalation)
+- Rigged Deck reworked: chip hits have 50% chance to hit another enemy; misses still generate 2 gold
 - Rigged Deck tag changed from Desperado to Prospector
+- Chip base damage increased from 5 to 6
 - Double showdown swap delay reduced from 100ms to 20ms
 
 ## v0.4.13

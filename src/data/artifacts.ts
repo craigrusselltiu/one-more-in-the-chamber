@@ -231,7 +231,7 @@ export const ARTIFACTS: ArtifactDefinition[] = [
     name: 'Rigged Deck',
     description: 'Bad luck is still luck.',
     tags: ['prospector'],
-    effect: 'Chip misses generate 2 gold.',
+    effect: 'Chip hits have a 50% chance to hit another enemy. Chip misses generate 2 gold.',
     exclusive: 'reno',
   },
 

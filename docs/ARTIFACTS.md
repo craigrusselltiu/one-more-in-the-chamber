@@ -3,7 +3,7 @@
 ## Exclusive
 
 ### Bamboo Canteen
-- Rust starting artifact
+- Rust exclusive starting artifact
 - Tags: Saloon Keeper
 - Effect: After completing combat, restore 6 HP.
 - Flavor: "Bamboo doesn't rust."
@@ -15,9 +15,9 @@
 - Flavor: "Six in the chamber. No reloads."
 
 ### Rigged Deck
-- Reno starting artifact
+- Reno exclusive starting artifact
 - Tags: Prospector
-- Effect: Chip misses generate 2 gold.
+- Effect: Chip hits have a 50% chance to hit another enemy. Chip misses generate 2 gold.
 - Flavor: "Bad luck is still luck."
 
 ### Reno's Coin
@@ -30,18 +30,18 @@
 
 ### Stolen Badge
 - Tags: Sheriff, Outlaw
-- Effect: +2 block/turn, merchants +10%.
+- Effect: At the start of combat, gain 20 block. Merchants cost 10% more.
 - Flavor: "Wanted fugitive. Merchants charge extra."
-
-### Bandit's Bandana
-- Tags: Outlaw
-- Effect: 4+ matches: 25% chance for 1 gold.
-- Flavor: "Pockets sewn shut? Not these ones."
 
 ### Twin Revolvers
 - Tags: Outlaw
 - Effect: Bullets hit 2x at 60% each (120% average).
 - Flavor: "Two guns. Twice the fun."
+
+### Bandit's Bandana
+- Tags: Outlaw
+- Effect: 4+ matches: 25% chance for 1 gold.
+- Flavor: "Pockets sewn shut? Not these ones."
 
 ### Train Heist Map
 - Tags: Outlaw
