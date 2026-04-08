@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## v0.4.17
+
+### Fixed
+- Boss fight save/load no longer allows infinite treasure exploits
+- Continuing a run after boss victory correctly resumes at treasure or tile selection
+- Shuffling the board no longer removes bury (sand) visuals from tiles
+
 ## v0.4.16
 
 ### Changed

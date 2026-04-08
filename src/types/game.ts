@@ -24,6 +24,8 @@ export interface RunState {
   mapState: MapState | null;
   /** Tracks purchased item IDs per merchant node to persist across remounts. */
   merchantPurchases?: Record<string, string[]>;
+  /** True after boss treasure is taken/skipped but before act advances. */
+  bossRewardTaken?: boolean;
   status: 'active' | 'completed' | 'abandoned';
 }
 

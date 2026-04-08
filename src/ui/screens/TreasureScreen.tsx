@@ -37,6 +37,7 @@ export const TreasureScreen = memo(function TreasureScreen() {
     if (taken) return;
     setTaken(true);
     addArtifact({ id: artifact.id, tags: artifact.tags });
+    if (isBossReward) useRunStore.getState().markBossRewardTaken();
     const next = getNextScreen();
     if (next === 'score') {
       useRunStore.getState().endRun(true);
@@ -45,6 +46,7 @@ export const TreasureScreen = memo(function TreasureScreen() {
   };
 
   const handleSkip = () => {
+    if (isBossReward) useRunStore.getState().markBossRewardTaken();
     const next = getNextScreen();
     if (next === 'score') {
       useRunStore.getState().endRun(true);

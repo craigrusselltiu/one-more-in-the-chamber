@@ -43,6 +43,7 @@ interface RunStore {
   resetNodeVisited: (nodeId: string) => void;
   markNodeCompleted: (nodeId: string) => void;
   addMerchantPurchase: (nodeId: string, itemId: string) => void;
+  markBossRewardTaken: () => void;
   advanceAct: () => void;
   setMapState: (map: MapState) => void;
   endRun: (completed: boolean) => void;
@@ -331,6 +332,12 @@ export const useRunStore = create<RunStore>((set, get) => ({
       };
     }),
 
+  markBossRewardTaken: () =>
+    set((state) => {
+      if (!state.run) return state;
+      return { run: { ...state.run, bossRewardTaken: true } };
+    }),
+
   advanceAct: () =>
     set((state) => {
       if (!state.run || state.run.currentAct >= 3) return state;
@@ -342,6 +349,7 @@ export const useRunStore = create<RunStore>((set, get) => ({
           currentAct: nextAct,
           currentNodeId: null,
           health: state.run.maxHealth,
+          bossRewardTaken: false,
           mapState,
         },
       };

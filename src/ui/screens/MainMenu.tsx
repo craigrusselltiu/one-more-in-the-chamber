@@ -142,6 +142,18 @@ export const MainMenu = memo(function MainMenu() {
       useRunStore.getState().markNodeCompleted(currentNode.id);
     }
 
+    // Boss completed but act not yet advanced (quit between boss victory and tile pick)
+    if (currentNode && currentNode.completed && currentNode.type === 'boss') {
+      if (currentRun!.currentAct === 3) {
+        EventBus.emit(GameEvent.SCREEN_CHANGE, 'score');
+        useRunStore.getState().endRun(true);
+        return;
+      }
+      // Reward already taken -> tile select; otherwise -> treasure
+      EventBus.emit(GameEvent.SCREEN_CHANGE, currentRun!.bossRewardTaken ? 'tile-select' : 'treasure');
+      return;
+    }
+
     EventBus.emit(GameEvent.SCREEN_CHANGE, 'map');
   };
 

@@ -103,10 +103,13 @@ export class Tile {
 
   setType(newType: TileType): void {
     this.type = newType;
-    const frame = TILE_FRAMES[this.type];
-    this.sprite.setFrame(frame);
-    if (this.overlay) this.overlay.setFrame(frame);
-    for (const s of this.outlineSprites) s.setFrame(frame);
+    // Sand tiles keep the sand frame -- only update visuals for non-buried tiles
+    if (this._hazard?.type !== 'sand') {
+      const frame = TILE_FRAMES[this.type];
+      this.sprite.setFrame(frame);
+      if (this.overlay) this.overlay.setFrame(frame);
+      for (const s of this.outlineSprites) s.setFrame(frame);
+    }
     this.updateOverlay();
   }
 
