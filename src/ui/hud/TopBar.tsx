@@ -113,7 +113,7 @@ export const TopBar = memo(function TopBar({ mapDisabled }: { showMapButton?: bo
           )}
         </div>
         {ascensionLevel > 0 && (
-          <span className="absolute left-1/2 -translate-x-1/2 text-stone-500 font-bold">Ascension {ascensionLevel}</span>
+          <span className="absolute left-1/2 -translate-x-1/2 text-stone-500 font-bold z-10">Ascension {ascensionLevel}</span>
         )}
         <div className="flex items-center gap-2">
           <span className="text-stone-500">{formatTimer(elapsed)}</span>
