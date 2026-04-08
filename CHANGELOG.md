@@ -14,6 +14,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 - Merchant purchases now persist across main menu / refresh (sold-out items stay sold)
 - Summoning an enemy no longer shifts the player's target
 - Infinite loop crash in MerchantScreen from unstable Zustand selector
+- Boss enemies no longer have ascension HP scaling applied multiple times on save/load
 
 ## v0.4.15
 

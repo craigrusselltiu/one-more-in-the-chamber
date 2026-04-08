@@ -81,7 +81,7 @@ interface EncounterInfo {
 function rollEncounter(act: Act, nodeType: MapNodeType, seed?: string, nodeId?: string): EncounterInfo {
   const rand = seed && nodeId ? createSeededRandom(`${seed}-encounter-${nodeId}`) : undefined;
   if (nodeType === 'boss') {
-    return { enemies: [BOSSES[act]], isElite: false, isBoss: true };
+    return { enemies: [{ ...BOSSES[act] }], isElite: false, isBoss: true };
   }
   const rollers = ENCOUNTER_ROLLERS[act];
   if (nodeType === 'elite') {

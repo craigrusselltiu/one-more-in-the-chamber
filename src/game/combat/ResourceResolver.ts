@@ -240,7 +240,7 @@ export class ResourceResolver {
 
       // --- Chip (50/50 gamble: per-tile damage or 0) ---
       case 'chip': {
-        const hit = Math.random() < 0.6;
+        const hit = Math.random() < 0.5;
         output.damage = hit ? total : 0;
         output.chipHit = hit;
         output.chipDamageIfHit = total;
