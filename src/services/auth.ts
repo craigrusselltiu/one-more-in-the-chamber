@@ -1,11 +1,13 @@
 /**
  * Authentication service.
- * Email + Google login via Supabase. Fully optional -- game works offline without auth.
+ * Email + social login (Google, GitHub, Discord) via Supabase.
+ * Fully optional -- game works offline without auth.
  */
 
 import { getSupabase } from './supabase';
 import { syncOnLogin } from './syncService';
-import type { Session, User } from '@supabase/supabase-js';
+import { useAuthStore } from '../store/authStore';
+import type { Session, User, Provider } from '@supabase/supabase-js';
 
 export interface AuthState {
   isLoggedIn: boolean;
@@ -21,6 +23,11 @@ const state: AuthState = {
 
 let initialized = false;
 
+/** Push current state into the Zustand store so React components re-render. */
+function notifyStore(): void {
+  useAuthStore.getState().setAuth(state.isLoggedIn, state.userId, state.displayName);
+}
+
 function applySession(session: Session | null): void {
   if (session?.user) {
     state.isLoggedIn = true;
@@ -35,6 +42,7 @@ function applySession(session: Session | null): void {
     state.userId = null;
     state.displayName = null;
   }
+  notifyStore();
 }
 
 /** Initialize auth listener. Call once at app startup. */
@@ -43,7 +51,10 @@ export async function initAuth(): Promise<void> {
   initialized = true;
 
   const sb = getSupabase();
-  if (!sb) return;
+  if (!sb) {
+    useAuthStore.getState().setLoading(false);
+    return;
+  }
 
   // Restore existing session
   const { data } = await sb.auth.getSession();
@@ -85,12 +96,25 @@ export async function loginWithEmail(
   return { error: error?.message ?? null };
 }
 
-export async function loginWithGoogle(): Promise<{ error: string | null }> {
+/** Generic OAuth login -- works for any Supabase-supported provider. */
+async function loginWithOAuth(provider: Provider): Promise<{ error: string | null }> {
   const sb = getSupabase();
   if (!sb) return { error: 'Supabase not configured' };
 
-  const { error } = await sb.auth.signInWithOAuth({ provider: 'google' });
+  const { error } = await sb.auth.signInWithOAuth({ provider });
   return { error: error?.message ?? null };
+}
+
+export function loginWithGoogle(): Promise<{ error: string | null }> {
+  return loginWithOAuth('google');
+}
+
+export function loginWithGithub(): Promise<{ error: string | null }> {
+  return loginWithOAuth('github');
+}
+
+export function loginWithDiscord(): Promise<{ error: string | null }> {
+  return loginWithOAuth('discord');
 }
 
 export async function logout(): Promise<void> {
@@ -99,6 +123,7 @@ export async function logout(): Promise<void> {
   state.isLoggedIn = false;
   state.userId = null;
   state.displayName = null;
+  notifyStore();
 }
 
 /** Get the current Supabase User, if any. */
