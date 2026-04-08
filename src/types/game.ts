@@ -18,6 +18,8 @@ export interface RunState {
   abilityCharge: number;
   totalDamageDealt: number;
   runStartedAt: number;
+  /** Accumulated play time in seconds (only ticks during active gameplay). */
+  playTimeSeconds: number;
   longestCascade: number;
   flawlessFights: number;
   bossesDefeated: number;

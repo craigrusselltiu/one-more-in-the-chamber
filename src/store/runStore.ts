@@ -34,6 +34,7 @@ interface RunStore {
   swapTileType: (oldType: TileType, newType: TileType, newLevel?: number) => void;
   upgradeTile: (type: TileType) => void;
   setTileUpgrade: (type: TileType, level: number) => void;
+  tickPlayTime: () => void;
   addDamageDealt: (amount: number) => void;
   updateLongestCascade: (steps: number) => void;
   addFlawlessFight: () => void;
@@ -125,6 +126,7 @@ export const useRunStore = create<RunStore>((set, get) => ({
         abilityCharge: 0,
         totalDamageDealt: 0,
         runStartedAt: Date.now(),
+        playTimeSeconds: 0,
         longestCascade: 0,
         flawlessFights: 0,
         bossesDefeated: 0,
@@ -234,6 +236,12 @@ export const useRunStore = create<RunStore>((set, get) => ({
       if (level > 0) tileUpgrades[type] = level;
       else delete tileUpgrades[type];
       return { run: { ...state.run, tileUpgrades } };
+    }),
+
+  tickPlayTime: () =>
+    set((state) => {
+      if (!state.run) return state;
+      return { run: { ...state.run, playTimeSeconds: (state.run.playTimeSeconds ?? 0) + 1 } };
     }),
 
   addDamageDealt: (amount) =>

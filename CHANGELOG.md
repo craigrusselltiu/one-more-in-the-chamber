@@ -6,6 +6,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
 ## v0.4.17
 
+### Added
+- Ascension level indicator in top bar center (hidden at ascension 0)
+
+### Changed
+- Run timer only ticks during active gameplay (pauses on menus)
+- Chip tile uses marble bag (3 hits / 3 misses per 6 draws) instead of pure random
+
 ### Fixed
 - Boss fight save/load no longer allows infinite treasure exploits
 - Continuing a run after boss victory correctly resumes at treasure or tile selection

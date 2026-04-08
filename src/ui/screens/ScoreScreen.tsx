@@ -70,9 +70,8 @@ export const ScoreScreen = memo(function ScoreScreen() {
 
     // Multipliers
     const ascensionMultiplier = 1.0 + 0.2 * run.ascensionLevel;
-    const runDurationSeconds = Math.floor((Date.now() - run.runStartedAt) / 1000);
     // Time multiplier only applies to completed runs (beat Act 3)
-    const timeMultiplier = completed ? computeTimeMultiplier(runDurationSeconds) : 1.0;
+    const timeMultiplier = completed ? computeTimeMultiplier(run.playTimeSeconds ?? 0) : 1.0;
 
     const finalScore = Math.round((baseScore + bonusPoints) * ascensionMultiplier * timeMultiplier);
 
@@ -82,7 +81,7 @@ export const ScoreScreen = memo(function ScoreScreen() {
       ascensionMultiplier,
       timeMultiplier,
       finalScore,
-      runDurationSeconds,
+      runDurationSeconds: run.playTimeSeconds ?? 0,
       nodesVisited: nodesCompleted,
       bossNodes,
       combatNodes,

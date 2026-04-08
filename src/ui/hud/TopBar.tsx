@@ -55,14 +55,16 @@ export const TopBar = memo(function TopBar({ mapDisabled }: { showMapButton?: bo
   const health = run?.health ?? 100;
   const maxHealth = run?.maxHealth ?? 100;
   const gold = run?.gold ?? 0;
-  const runStartedAt = run?.runStartedAt ?? 0;
+  const ascensionLevel = run?.ascensionLevel ?? 0;
+  const playTimeSeconds = run?.playTimeSeconds ?? 0;
   const [showMap, setShowMap] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [showTiles, setShowTiles] = useState(false);
   const mirageType = useCombatStore((s) => s.mirageType);
   const [seedCopied, setSeedCopied] = useState(false);
-  const [elapsed, setElapsed] = useState(0);
+  const [elapsed, setElapsed] = useState(playTimeSeconds);
   const endRun = useRunStore((s) => s.endRun);
+  const tickPlayTime = useRunStore((s) => s.tickPlayTime);
 
   // Derive current node type
   const currentNodeType: MapNodeType | null = (() => {
@@ -71,15 +73,15 @@ export const TopBar = memo(function TopBar({ mapDisabled }: { showMapButton?: bo
     return node?.type ?? null;
   })();
 
-  // Update elapsed timer every second
+  // Tick play time every second (only while TopBar is mounted = player is in-run)
   useEffect(() => {
-    if (!runStartedAt) return;
-    setElapsed(Math.floor((Date.now() - runStartedAt) / 1000));
+    setElapsed(playTimeSeconds);
     const id = setInterval(() => {
-      setElapsed(Math.floor((Date.now() - runStartedAt) / 1000));
+      tickPlayTime();
+      setElapsed((prev) => prev + 1);
     }, 1000);
     return () => clearInterval(id);
-  }, [runStartedAt]);
+  }, []);
 
   const handleGiveUp = () => {
     setShowSettings(false);
@@ -110,6 +112,9 @@ export const TopBar = memo(function TopBar({ mapDisabled }: { showMapButton?: bo
             </span>
           )}
         </div>
+        {ascensionLevel > 0 && (
+          <span className="absolute left-1/2 -translate-x-1/2 text-stone-500 font-bold">Ascension {ascensionLevel}</span>
+        )}
         <div className="flex items-center gap-2">
           <span className="text-stone-500">{formatTimer(elapsed)}</span>
           <Tooltip text="Health" position="bottom">

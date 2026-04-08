@@ -27,8 +27,7 @@ export function calculateScore(run: RunState): number {
   const bonusPoints = goldBonus + artifactBonus + traitBonus + damageBonus + cascadeBonus + flawlessBonus;
 
   const ascensionMultiplier = 1.0 + 0.2 * run.ascensionLevel;
-  const runDurationSeconds = Math.floor((Date.now() - run.runStartedAt) / 1000);
-  const timeMultiplier = completed ? computeTimeMultiplier(runDurationSeconds) : 1.0;
+  const timeMultiplier = completed ? computeTimeMultiplier(run.playTimeSeconds ?? 0) : 1.0;
 
   return Math.round((baseScore + bonusPoints) * ascensionMultiplier * timeMultiplier);
 }

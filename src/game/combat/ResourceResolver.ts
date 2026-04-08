@@ -47,10 +47,26 @@ export class ResourceResolver {
   chainBonusThisFight = 0;
   /** Whether cavalry bonus swap has been granted this turn. */
   cavalrySwapUsedThisTurn = false;
+  /** Chip marble bag: hits remaining / draws remaining out of 6. */
+  private chipHitsLeft = 0;
+  private chipDrawsLeft = 0;
+
+  private drawChipHit(): boolean {
+    if (this.chipDrawsLeft <= 0) {
+      this.chipHitsLeft = 3;
+      this.chipDrawsLeft = 6;
+    }
+    const hit = Math.random() < this.chipHitsLeft / this.chipDrawsLeft;
+    if (hit) this.chipHitsLeft--;
+    this.chipDrawsLeft--;
+    return hit;
+  }
 
   resetFight(): void {
     this.chainBonusThisFight = 0;
     this.cavalrySwapUsedThisTurn = false;
+    this.chipHitsLeft = 0;
+    this.chipDrawsLeft = 0;
   }
 
   resetTurn(): void {
@@ -240,7 +256,7 @@ export class ResourceResolver {
 
       // --- Chip (50/50 gamble: per-tile damage or 0) ---
       case 'chip': {
-        const hit = Math.random() < 0.5;
+        const hit = this.drawChipHit();
         output.damage = hit ? total : 0;
         output.chipHit = hit;
         output.chipDamageIfHit = total;
