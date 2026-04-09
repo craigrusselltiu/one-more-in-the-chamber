@@ -1,7 +1,6 @@
 import { memo } from 'react';
 import type { EnemyIntent as EnemyIntentType } from '../../types/combat';
 import { SpriteIcon } from '../components/SpriteIcon';
-import { Tooltip } from '../components/Tooltip';
 import { INTENT_FRAMES, INTENT_COLORS } from '../../data/spriteConfig';
 
 interface EnemyIntentProps {
@@ -29,8 +28,7 @@ export const EnemyIntent = memo(function EnemyIntent({ intent }: EnemyIntentProp
   }
 
   return (
-    <Tooltip text={intent.description} position="top">
-      <div className="flex items-center justify-center gap-0.5 px-1 py-px">
+    <div className="flex items-center justify-center gap-1 px-1 py-px">
         {actions.map((action, i) => {
           const frame = INTENT_FRAMES[action.kind];
           const color = INTENT_COLORS[action.kind] ?? '#808080';
@@ -77,6 +75,5 @@ export const EnemyIntent = memo(function EnemyIntent({ intent }: EnemyIntentProp
           );
         })}
       </div>
-    </Tooltip>
   );
 });

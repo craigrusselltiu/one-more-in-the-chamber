@@ -5,6 +5,8 @@ import { HealthBar } from './HealthBar';
 import { BlockBadge } from './BlockBadge';
 import { StatusEffects } from './StatusEffects';
 import { EnemyIntent } from './EnemyIntent';
+import { Tooltip } from '../components/Tooltip';
+import { ALL_ENEMIES } from '../../data/enemies';
 import type { EnemyState } from '../../types/combat';
 
 /** Map enemy type to sprite file. Dusty Dan reuses the bandit sprite. */
@@ -139,36 +141,33 @@ const EnemySlot = memo(function EnemySlot({
       {/* Intent above sprite */}
       <EnemyIntent intent={enemy.intent} />
 
-      {/* Enemy sprite with shadow */}
-      {ENEMY_SPRITES[enemy.enemyType] ? (
-        <div className={`relative mb-0.5 shrink-0${isTargeted ? ' enemy-targeted' : ''}${shaking ? ' enemy-shake' : ''}`} style={{ width: 96, height: 96 }}>
-          <img
-            src={`${import.meta.env.BASE_URL}assets/sprites/shadow.png`}
-            alt=""
-            className="absolute bottom-0 left-1/2 -translate-x-1/2"
-            style={{ width: 80, imageRendering: 'pixelated', opacity: 0.5 }}
-          />
-          <img
-            src={`${import.meta.env.BASE_URL}assets/sprites/${ENEMY_SPRITES[enemy.enemyType]}`}
-            alt={enemy.enemyType}
-            style={{ width: 96, height: 96, imageRendering: 'pixelated', objectFit: 'contain' }}
-          />
-        </div>
-      ) : (
-        <div
-          className={`border border-stone-600 border-dashed mb-0.5 flex items-center justify-center shrink-0${isTargeted ? ' enemy-targeted' : ''}`}
-          style={{ width: 96, height: 96 }}
-        >
-          <span className="text-stone-600 capitalize" style={{ fontSize: '8px' }}>
-            {enemy.enemyType.slice(0, 4)}
-          </span>
-        </div>
-      )}
-
-      {/* Enemy name */}
-      <div className="text-[8px] text-stone-300 leading-none mb-0.5 capitalize">
-        {enemy.enemyType}
-      </div>
+      {/* Enemy sprite with shadow + name tooltip */}
+      <Tooltip text={ALL_ENEMIES[enemy.enemyType]?.name ?? enemy.enemyType} position="top">
+        {ENEMY_SPRITES[enemy.enemyType] ? (
+          <div className={`relative mb-0.5 shrink-0${isTargeted ? ' enemy-targeted' : ''}${shaking ? ' enemy-shake' : ''}`} style={{ width: 96, height: 96 }}>
+            <img
+              src={`${import.meta.env.BASE_URL}assets/sprites/shadow.png`}
+              alt=""
+              className="absolute bottom-0 left-1/2 -translate-x-1/2"
+              style={{ width: 80, imageRendering: 'pixelated', opacity: 0.5 }}
+            />
+            <img
+              src={`${import.meta.env.BASE_URL}assets/sprites/${ENEMY_SPRITES[enemy.enemyType]}`}
+              alt={enemy.enemyType}
+              style={{ width: 96, height: 96, imageRendering: 'pixelated', objectFit: 'contain' }}
+            />
+          </div>
+        ) : (
+          <div
+            className={`border border-stone-600 border-dashed mb-0.5 flex items-center justify-center shrink-0${isTargeted ? ' enemy-targeted' : ''}`}
+            style={{ width: 96, height: 96 }}
+          >
+            <span className="text-stone-600 capitalize" style={{ fontSize: '8px' }}>
+              {enemy.enemyType.slice(0, 4)}
+            </span>
+          </div>
+        )}
+      </Tooltip>
 
       {/* HP bar centered, block badge overlaid to the left */}
       <div className="relative">
