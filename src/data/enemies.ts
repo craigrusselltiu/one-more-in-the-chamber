@@ -477,9 +477,10 @@ function rollPresetEncounter(
     const type = isSummoned ? key.replace(':summoned', '') : key;
     const def = normalPool[type] ?? ALL_ENEMIES[type];
     if (!def) return { type, name: type, health: 20, minDamage: 5, maxDamage: 10, abilities: [] };
-    const enemy = { ...def };
+    const enemy = { ...def, _summoned: false };
     if (isSummoned) {
       enemy.health = Math.max(1, Math.round(def.health / 3));
+      enemy._summoned = true;
     }
     return enemy;
   });

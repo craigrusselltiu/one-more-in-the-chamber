@@ -198,9 +198,9 @@ export const HAZARD_FRAMES: Record<string, number> = {
 
 /** Intent action icons for enemy moves. */
 export const INTENT_FRAMES: Record<string, number> = {
-  attack: 1166,
-  multi_attack: 1166,
-  block: 196,
+  attack: 3,
+  multi_attack: 3,
+  block: 198,
   lock: 738,
   lock_row: 738,
   lock_column: 738,
@@ -210,8 +210,8 @@ export const INTENT_FRAMES: Record<string, number> = {
   bury: 1120,
   suppress: 1206,
   fools_gold: 1155,
-  summon: 704,
-  heal: 687,
+  summon: 747,
+  heal: 912,
   gain_rageful: 814,
   gain_terrified: 1206,
   shuffle_rows: 266,

@@ -160,7 +160,12 @@ export class CombatManager {
 
     // Initialize enemies
     for (const def of config.enemies) {
-      this.enemies.push(new Enemy(def));
+      const enemy = new Enemy(def);
+      if ((def as unknown as Record<string, unknown>)._summoned) {
+        enemy.summoned = true;
+        enemy.state.summoned = true;
+      }
+      this.enemies.push(enemy);
     }
 
     // Boss controller for phase-based bosses
