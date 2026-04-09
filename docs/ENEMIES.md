@@ -1,48 +1,97 @@
+# Moves
+
+## Normal Moves
+- Attack - deal damage to the player
+- Multi-attack - deal damage X times to the player, e.g. 4x2 = 4 damage twice
+- Block - gain block
+- Lock - could be X tiles, or 1 row/column
+- Apply Poison X - poison the player directly
+- Poison X Tiles - poison hazard on tiles
+- Bomb
+- Bury
+- Fool's Gold
+- Suppress
+
+## Exclusive Moves
+- Gravity Shift - Dusty exclusive, shifts gravity clockwise, e.g. if gravity is down, shifts it left
+
 # Act 1 -- The Dusty Trail
+
+## Summoned Enemies
+- Summoned enemies have the same moveset as their non-summoned versions, but cannot summon themselves.
+- Summoned enemies are summoned with HP equal to 1/3 of the non-summoned version's Max HP.
+- If there are no more enemy slots, enemies should not summon.
 
 ## Normal Enemies
 
+### Bandit
+- Base HP: 45
+- Moves:
+    - Attack 12, Lock 3
+    - Multi-attack 6x2
+    - Attack 6, Block 12
+    - Gain 2 Rageful
+    - Summon 1 Bandit
+- NOTE: If dropped below 50% HP, will try to block.
+
 ### Coyote
-- HP: 20
-- Damage: 5-10
-- Moves: ATK, SUMMON
-- Flavor: "Travels in packs. Howls for backup."
+- Base HP: 32
+- Moves:
+    - Attack 7
+    - Attack 5, Gain 2 Rageful
+    - Block 7, Bury 2
+    - Summon 1 Coyote
+- NOTE: If alone, always summons.
 
 ### Rattlesnake
-- HP: 40
-- Damage: 8-15
-- Moves: ATK, POISON, DEF
-- Flavor: "Coiled and waiting. The board is its hunting ground."
-
-### Bandit
-- HP: 45
-- Damage: 8-15
-- Moves: ATK, LOCK, DEF
-- Flavor: "Locks your tiles. Blocks your shots. Hits when you're stuck."
+- Base HP: 40
+- Start of fight: Poison 3
+- Moves:
+    - Attack 11, Apply Poison 2
+    - Multi-attack 2x3, Poison 3 Tiles
+    - Block 14
+    - Poison 5
 
 ### Vulture
-- HP: 25
-- Damage: 5-8
-- Moves: ATK, BURY
-- Flavor: "Circles overhead. Buries your options."
+- Base HP: 40
+- Moves:
+    - Attack 11, Apply Poison 2
+    - Multi-attack 2x3, Poison 3 Tiles
+    - Block 14
+    - Summon 1 Coyote
 
 ## Elite Enemies
 
 ### Tumbleweed Golem
-- HP: 30
-- Damage: 6-12
-- Moves: ATK, BURY, SUMMON
-- Flavor: "A ball of dust, teeth, and bad intentions."
+- Base HP: 84
+- Start of fight: Lock 1 row and 1 column
+- Moves:
+    - Attack 16, Lock 1 row
+    - Multi-attack 5x3, Block 9, Lock 3
+    - Block 18, Transform 5 tiles into Tumbleweeds
+    - Summon 1 Coyote
 
 ### Card Shark
-- HP: 35
-- Damage: 7-12
-- Moves: ATK, LOCK, SUPPRESS
-- Flavor: "Cheats at everything."
+- Base HP: 84
+- Start of fight: Lock 1 row and 1 column
+- Moves:
+    - Attack 16, Lock 1 row
+    - Multi-attack 5x3, Block 9, Lock 3
+    - Block 18, Transform 5 tiles into Tumbleweeds
+    - Summon 1 Coyote
 
-**Boss: "Dusty" Dan McGraw** -- 150 HP, 10-20 damage.
-- Moves: ATK, LOCK, SUMMON, BOMB, GRAV shift
-- Flavor: "The dust does what he says."
+## Bosses
+
+### "Dusty" Dan McGraw
+- Base HP: 196
+- Moves:
+    - Gravity Shift, Block 12
+    - Gravity Shift, Attack 14
+    - Gravity Shift, Lock 1 row
+    - Gravity Shift, Lock 1 column
+    - Summon 1 Coyote
+    - Summon 1 Bandit
+- NOTE: The first move he does is Summon 1 Bandit and Summon 1 Coyote
 
 ## Act 2 -- The Canyon
 

@@ -5,7 +5,7 @@
 ### Bamboo Canteen
 - Rust exclusive starting artifact
 - Tags: Saloon Keeper
-- Rarity: Uncommon
+- Rarity: Rare
 - Effect: After completing combat, restore 6 HP.
 - Flavor: "Bamboo doesn't rust."
 

@@ -88,6 +88,11 @@ export class BoardHazardManager {
     return this.placeRandomHazard({ type: 'poison' }, adjusted);
   }
 
+  /** Suppress N random non-hazarded tiles. Matching suppressed tiles generates no resources. */
+  placeRandomSuppress(count: number): HazardPlacement[] {
+    return this.placeRandomHazard({ type: 'suppress' }, count);
+  }
+
   /** Place a bomb on N random non-hazarded tiles with a countdown. */
   placeRandomBombs(count: number, countdown = 3): HazardPlacement[] {
     return this.placeRandomHazard({ type: 'bomb', countdown }, count);
@@ -320,6 +325,9 @@ export class BoardHazardManager {
           } else {
             tile.refreshStatusIndicator();
           }
+        } else if (hazType === 'suppress') {
+          tile.hazard = null;
+          freed.push(n);
         } else if (hazType === 'sand' || (hazType === 'poison' && clearPoison)) {
           tile.hazard = null;
           freed.push(n);

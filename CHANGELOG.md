@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## v0.5.3
+
+### Changed
+- Suppress (warrant) reworked from board-level tile type suppression to per-tile hazard with gray VFX overlay
+- Suppressed tiles are now cleared by matching adjacent tiles (like locks)
+- Enemy suppress intents now place 3 suppress hazards on random tiles
+- Rattlesnake base HP reduced to 38 (was 48), Bandit base HP reduced to 43 (was 54)
+
 ## v0.5.2
 
 ### Changed

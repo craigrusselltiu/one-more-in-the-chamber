@@ -16,7 +16,7 @@ export const ACT1_ENEMIES: Record<string, EnemyDefinition> = {
   rattlesnake: {
     type: 'rattlesnake',
     name: 'Rattlesnake',
-    health: 48,
+    health: 38,
     minDamage: 8,
     maxDamage: 15,
     abilities: ['poison', 'block'],
@@ -24,7 +24,7 @@ export const ACT1_ENEMIES: Record<string, EnemyDefinition> = {
   bandit: {
     type: 'bandit',
     name: 'Bandit',
-    health: 54,
+    health: 43,
     minDamage: 8,
     maxDamage: 15,
     abilities: ['lock', 'block'],

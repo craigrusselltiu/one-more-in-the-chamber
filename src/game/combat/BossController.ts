@@ -378,7 +378,7 @@ export class BossController {
   private isabellaPerTurn(
     hazardManager: BoardHazardManager,
     boss?: Enemy,
-    activeTileTypes?: TileType[],
+    _activeTileTypes?: TileType[],
   ): void {
     switch (this.phase) {
       case 1: {
@@ -392,10 +392,8 @@ export class BossController {
       case 2:
         // 2-hit locks (need 2 adjacent matches to free) instead of row locks
         hazardManager.placeRandomLocks(2, 2);
-        // Warrants -- suppress 2 tile types (refreshes each turn to keep 2 suppressed)
-        if (activeTileTypes) {
-          hazardManager.suppressRandomTypes(2, activeTileTypes, 2);
-        }
+        // Suppress 3 random tiles per turn
+        hazardManager.placeRandomSuppress(3);
         // Passive block continues in Phase 2
         boss?.addBlock(10);
         break;

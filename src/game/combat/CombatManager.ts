@@ -565,8 +565,6 @@ export class CombatManager {
     this.swapsUsedThisTurn = 0;
     this.resolver.resetTurn();
 
-    // Tick suppress (warrant) durations -- expires at start of player turn
-    this.hazardManager.tickSuppressions();
     this.hazardManager.resetTurnArtifactState();
 
     // Venomous tick: player takes damage equal to stacks, stacks decrease by 1
@@ -1163,9 +1161,8 @@ export class CombatManager {
       : matches;
 
     for (const match of sorted) {
-      // Warrant (suppress): suppressed tile types produce zero output entirely.
-      // Skip all trait/artifact/crit/multiplier processing so nothing leaks through.
-      if (this.hazardManager.isSuppressed(match.tileType)) {
+      // Suppress hazard: if any tile in the match was suppressed, produce zero output.
+      if (match.suppressCount && match.suppressCount > 0) {
         const zero = this.resolver.emptyOutput();
         EventBus.emit(GameEvent.MATCH_RESOLVED, match, zero);
         continue;
@@ -1933,14 +1930,8 @@ export class CombatManager {
           break;
         case 'board-manipulation':
           if (enemy.state.intent.description.startsWith('SUPPRESS')) {
-            // Suppress (warrant): handled here because it needs player's active tile types
-            const count = enemy.state.intent.value ?? 1;
-            const suppressed = this.hazardManager.suppressRandomTypes(
-              count,
-              this.player.activeTileTypes,
-            );
-            if (suppressed.length > 0) {
-            }
+            // Suppress: place suppress hazard on 3 random tiles
+            this.hazardManager.placeRandomSuppress(3);
           } else {
             executeBoardManipulation(enemy, enemy.state.intent, this.hazardManager, this.traits.getBombCountdownBonus());
           }
@@ -2242,7 +2233,7 @@ export class CombatManager {
       shuffleHoldsRemaining: 0,
       shuffleMaxHolds: 0,
       turnLimit: this.turnLimit,
-      suppressedTileTypes: this.hazardManager.getSuppressedTypes(),
+      suppressedTileTypes: [],
       mirageType: this.board.getMirageType(),
     };
   }

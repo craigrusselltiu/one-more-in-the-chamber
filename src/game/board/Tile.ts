@@ -196,6 +196,10 @@ export class Tile {
       tint = 0xff8800;
       overlayAlpha = 0.15 + breath * 0.2;
       outlineAlpha = 0.5 + breath * 0.4;
+    } else if (this._hazard?.type === 'suppress') {
+      tint = 0x808080;
+      overlayAlpha = 0.2 + breath * 0.15;
+      outlineAlpha = 0.4 + breath * 0.3;
     } else if (this._hazard?.type === 'bomb') {
       tint = 0xff2020;
       overlayAlpha = 0.15 + breath * 0.25;
@@ -226,7 +230,7 @@ export class Tile {
 
     if (this.hintUntil > 0 && time >= this.hintUntil) {
       this.hintUntil = 0;
-      if (!this.isShowdown && !this.isExplosive && !this.isShadow && this._hazard?.type !== 'bomb' && this._hazard?.type !== 'poison') {
+      if (!this.isShowdown && !this.isExplosive && !this.isShadow && this._hazard?.type !== 'bomb' && this._hazard?.type !== 'poison' && this._hazard?.type !== 'suppress') {
         this.destroyOverlay();
         this.destroyOutline();
       }
@@ -259,7 +263,7 @@ export class Tile {
   }
 
   private updateOverlay(): void {
-    const needsOverlay = this.isShowdown || this.isExplosive || this.isShadow || this._hazard?.type === 'bomb' || this._hazard?.type === 'poison' || this.hintUntil > 0;
+    const needsOverlay = this.isShowdown || this.isExplosive || this.isShadow || this._hazard?.type === 'bomb' || this._hazard?.type === 'poison' || this._hazard?.type === 'suppress' || this.hintUntil > 0;
     const cx = this.sprite.x;
     const cy = this.sprite.y;
     const frame = TILE_FRAMES[this.type];

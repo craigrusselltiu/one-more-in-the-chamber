@@ -134,7 +134,7 @@ export const STATUS_FRAMES: Record<string, number> = {
   grace: 827,
   poisoned: 828,
   bounty: 1245,
-  terrified: 1104,
+  terrified: 1206,
   ready: 3,
   chain: 730,
   summoned: 704,

@@ -1,6 +1,6 @@
 import { memo } from 'react';
 import { useRunStore } from '../../store/runStore';
-import { ARTIFACTS, RARITY_COLORS } from '../../data/artifacts';
+import { ARTIFACTS, RARITY_BREATHE_CLASS } from '../../data/artifacts';
 import { ARTIFACT_FRAMES } from '../../data/spriteConfig';
 import { SpriteIcon } from '../components/SpriteIcon';
 import { Tooltip } from '../components/Tooltip';
@@ -68,8 +68,8 @@ export const ArtifactBar = memo(function ArtifactBar() {
         return (
           <Tooltip key={`${inst.id}-${i}`} position="bottom" content={def ? (
             <div className="flex flex-col gap-0.5">
-              <div className="font-bold whitespace-nowrap" style={{ fontSize: '10px', color: RARITY_COLORS[def.rarity ?? 'common'] }}>
-                {def.name}
+              <div className="whitespace-nowrap" style={{ fontSize: '10px' }}>
+                <span className={RARITY_BREATHE_CLASS[def.rarity ?? 'common']}>{def.name}</span>
                 {inst.tags.length > 0 && (
                   <span className="font-normal ml-1">
                     ({inst.tags.map((t, ti) => (

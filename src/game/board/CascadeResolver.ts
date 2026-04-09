@@ -77,11 +77,12 @@ export class CascadeResolver {
       }
 
       // Apply match metadata (fool's gold, poison counts) from prepareClear
-      for (const { matchIndex, foolsGoldCount, poisonCount, shadowCount, bombCount } of matchMetadata) {
+      for (const { matchIndex, foolsGoldCount, poisonCount, shadowCount, bombCount, suppressCount } of matchMetadata) {
         if (foolsGoldCount > 0) matches[matchIndex].foolsGoldCount = foolsGoldCount;
         if (poisonCount > 0) matches[matchIndex].poisonCount = poisonCount;
         if (shadowCount > 0) matches[matchIndex].shadowCount = shadowCount;
         if (bombCount > 0) matches[matchIndex].bombCount = bombCount;
+        if (suppressCount > 0) matches[matchIndex].suppressCount = suppressCount;
       }
 
       // Apply this step's effects immediately (damage, block, gold, etc.)
@@ -129,7 +130,7 @@ export class CascadeResolver {
   ): {
     allPositions: GridPosition[];
     firePositions: GridPosition[];
-    matchMetadata: Array<{ matchIndex: number; foolsGoldCount: number; poisonCount: number; shadowCount: number; bombCount: number }>;
+    matchMetadata: Array<{ matchIndex: number; foolsGoldCount: number; poisonCount: number; shadowCount: number; bombCount: number; suppressCount: number }>;
   } {
     const grid = board.getGrid();
     const size = board.getBoardSize();
@@ -139,7 +140,7 @@ export class CascadeResolver {
     const collected = new Set<string>();
     const allPositions: GridPosition[] = [];
     const firePositions: GridPosition[] = [];
-    const matchMetadata: Array<{ matchIndex: number; foolsGoldCount: number; poisonCount: number; shadowCount: number; bombCount: number }> = [];
+    const matchMetadata: Array<{ matchIndex: number; foolsGoldCount: number; poisonCount: number; shadowCount: number; bombCount: number; suppressCount: number }> = [];
 
     const addPos = (r: number, c: number) => {
       const key = posKey(r, c);
@@ -158,6 +159,7 @@ export class CascadeResolver {
       let poisonCount = 0;
       let shadowCount = 0;
       let bombCount = 0;
+      let suppressCount = 0;
       for (const pos of match.tiles) {
         addPos(pos.row, pos.col);
         const tile = grid[pos.row]?.[pos.col];
@@ -165,11 +167,12 @@ export class CascadeResolver {
           if (tile.hazard?.type === 'fools_gold') fgCount++;
           if (tile.hazard?.type === 'poison') poisonCount++;
           if (tile.hazard?.type === 'bomb') bombCount++;
+          if (tile.hazard?.type === 'suppress') suppressCount++;
           if (tile.isShadow) shadowCount++;
         }
       }
-      if (fgCount > 0 || poisonCount > 0 || shadowCount > 0 || bombCount > 0) {
-        matchMetadata.push({ matchIndex: i, foolsGoldCount: fgCount, poisonCount, shadowCount, bombCount });
+      if (fgCount > 0 || poisonCount > 0 || shadowCount > 0 || bombCount > 0 || suppressCount > 0) {
+        matchMetadata.push({ matchIndex: i, foolsGoldCount: fgCount, poisonCount, shadowCount, bombCount, suppressCount });
       }
     }
 

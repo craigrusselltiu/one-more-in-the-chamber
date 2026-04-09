@@ -124,6 +124,8 @@ export interface MatchResult {
   shadowCount?: number;
   /** Number of bomb tiles defused in this match (Blasting Pan gold). */
   bombCount?: number;
+  /** Number of suppressed tiles in this match (produces no resources). */
+  suppressCount?: number;
   /** True if this match was created from chain destruction (explosive/showdown), not a direct match. */
   isChainDestruction?: boolean;
 }

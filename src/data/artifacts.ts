@@ -52,7 +52,7 @@ export const ARTIFACTS: ArtifactDefinition[] = [
     tags: ['saloon_keeper'],
     effect: 'After completing combat, restore 6 HP.',
     exclusive: 'red_panda',
-    rarity: 'uncommon',
+    rarity: 'rare',
   },
   {
     id: 'rusts_cylinder',
