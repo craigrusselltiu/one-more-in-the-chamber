@@ -25,6 +25,7 @@ export interface SerializedTile {
   col: number;
   isExplosive: boolean;
   isShowdown: boolean;
+  isShadow?: boolean;
   hazard: TileHazardState | null;
 }
 
@@ -46,7 +47,10 @@ export interface SerializedPlayer {
   barricadeStacks?: number;
   ragefulStacks?: number;
   sturdyStacks?: number;
-  venomousStacks?: number;
+  graceStacks?: number;
+  poisonedStacks?: number;
+  readyStacks?: number;
+  chainStacks?: number;
   critChance: number;
   thorns: number;
   shedSkinAvailable?: boolean;
@@ -122,6 +126,8 @@ export interface CombatSnapshot {
 
   // Subsystem state for exploit-free restore
   matchCountThisFight: number;
+  damageDealtThisTurn?: boolean;
+  undertakerDoubleDamageReady?: boolean;
   firstMatchThisFight: boolean;
   lassoUsedThisFight: boolean;
 

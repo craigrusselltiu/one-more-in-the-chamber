@@ -1,40 +1,47 @@
 import { memo } from 'react';
 import { useRunStore } from '../../store/runStore';
-import { ARTIFACTS } from '../../data/artifacts';
+import { ARTIFACTS, RARITY_COLORS } from '../../data/artifacts';
 import { ARTIFACT_FRAMES } from '../../data/spriteConfig';
 import { SpriteIcon } from '../components/SpriteIcon';
 import { Tooltip } from '../components/Tooltip';
+import { colorizeKeywords } from '../components/KeywordText';
 import type { TraitId } from '../../types/game';
 
 /** Primary color for each trait tag. */
 const TRAIT_COLORS: Record<TraitId, string> = {
   outlaw: '#D04040',
   sheriff: '#6888A0',
-  rattlesnake: '#60A040',
   prospector: '#E0C880',
   sapper: '#D4A030',
   mustang: '#70B0D0',
   gunslinger: '#D06080',
   saloon_keeper: '#D4A870',
   desperado: '#B060D0',
-  high_roller: '#FFD700',
   sniper: '#7090B8',
   dead_man_walking: '#808080',
+  tracker: '#C8A040',
+  preacher: '#A0C8FF',
+  antivenom: '#60A040',
+  undertaker: '#606060',
+  rattlesnake: '#80C040',
 };
 
 const TRAIT_NAMES: Record<string, string> = {
   outlaw: 'Outlaw',
   sheriff: 'Sheriff',
-  rattlesnake: 'Rattlesnake',
   prospector: 'Prospector',
   sapper: 'Sapper',
   mustang: 'Mustang',
   gunslinger: 'Gunslinger',
   saloon_keeper: 'Saloon Keeper',
   desperado: 'Desperado',
-  high_roller: 'High Roller',
   sniper: 'Sniper',
   dead_man_walking: 'Dead Man Walking',
+  tracker: 'Tracker',
+  preacher: 'Preacher',
+  antivenom: 'Antivenom',
+  undertaker: 'Undertaker',
+  rattlesnake: 'Rattlesnake',
 };
 
 const DEFAULT_COLOR = '#808080';
@@ -61,13 +68,20 @@ export const ArtifactBar = memo(function ArtifactBar() {
         return (
           <Tooltip key={`${inst.id}-${i}`} position="bottom" content={def ? (
             <div className="flex flex-col gap-0.5">
-              <div className="font-bold text-amber-400 whitespace-nowrap" style={{ fontSize: '10px' }}>
+              <div className="font-bold whitespace-nowrap" style={{ fontSize: '10px', color: RARITY_COLORS[def.rarity ?? 'common'] }}>
                 {def.name}
                 {inst.tags.length > 0 && (
-                  <span className="text-stone-400 font-normal ml-1">({inst.tags.map(t => TRAIT_NAMES[t] ?? t).join(', ')})</span>
+                  <span className="font-normal ml-1">
+                    ({inst.tags.map((t, ti) => (
+                      <span key={t}>
+                        {ti > 0 && <span className="text-stone-500">, </span>}
+                        <span style={{ color: TRAIT_COLORS[t] ?? '#a8a29e' }}>{TRAIT_NAMES[t] ?? t}</span>
+                      </span>
+                    ))})
+                  </span>
                 )}
               </div>
-              <div className="text-stone-200 whitespace-nowrap" style={{ fontSize: '9px' }}>{def.effect}</div>
+              <div className="text-stone-200 whitespace-nowrap" style={{ fontSize: '9px' }}>{colorizeKeywords(def.effect)}</div>
               {def.description && (
                 <div className="text-stone-500 italic whitespace-nowrap" style={{ fontSize: '8px' }}>"{def.description}"</div>
               )}

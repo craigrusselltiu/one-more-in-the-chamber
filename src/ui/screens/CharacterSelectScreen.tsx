@@ -3,6 +3,8 @@ import { EventBus, GameEvent } from '../../game/EventBus';
 import { useRunStore } from '../../store/runStore';
 import { useMetaStore } from '../../store/metaStore';
 import { getAscensionModifiers } from '../../data/ascension';
+import { SpriteIcon } from '../components/SpriteIcon';
+import { UI_FRAMES } from '../../data/spriteConfig';
 
 import type { CharacterId } from '../../types/game';
 import type { Screen } from '../../App';
@@ -14,8 +16,10 @@ interface CharacterInfo {
   name: string;
   hp: number;
   ability: string;
+  abilityCharge: number;
   abilityDescription: string;
   sprite: string;
+  bg: string;
 }
 
 const CHARACTERS: CharacterInfo[] = [
@@ -24,18 +28,22 @@ const CHARACTERS: CharacterInfo[] = [
     name: 'Rust',
     hp: 100,
     ability: 'Deadeye',
+    abilityCharge: 6,
     abilityDescription:
-      'Charge by matching tiles. When full, activate to fire 3 targeted shots that destroy individual tiles of your choice.',
+      'Shoot any 3 tiles on the board. Each tile destroyed generates its resources.',
     sprite: 'rust.png',
+    bg: 'rust_bg.png',
   },
   {
     id: 'reno',
     name: 'Reno',
     hp: 100,
-    ability: 'Shuffle the Deck',
+    ability: 'False Shuffle',
+    abilityCharge: 5,
     abilityDescription:
-      'Charges faster (7 turns). Hold up to 3 tiles, then shuffle the rest of the board. Cascades resolve normally.',
+      'Shuffle the board.',
     sprite: 'reno.png',
+    bg: 'reno_bg.png',
   },
 ];
 
@@ -48,6 +56,7 @@ export const CharacterSelectScreen = memo(function CharacterSelectScreen() {
   const [customSeed, setCustomSeed] = useState('');
 
   const maxSelectable = Math.min(highestCleared + 1, MAX_ASCENSION);
+  const char = CHARACTERS.find((c) => c.id === selectedCharacter) ?? CHARACTERS[0];
 
   const handleConfirm = () => {
     setPendingNewGame({ character: selectedCharacter, ascensionLevel });
@@ -57,89 +66,142 @@ export const CharacterSelectScreen = memo(function CharacterSelectScreen() {
   };
 
   const handleBack = () => {
-
     EventBus.emit(GameEvent.SCREEN_CHANGE, 'main-menu' satisfies Screen);
   };
 
   return (
-    <div className="flex flex-col items-center justify-center bg-[#1a1a2e]" style={{ width: 960, height: 540 }}>
+    <div
+      className="relative flex flex-col overflow-hidden"
+      style={{
+        width: 960,
+        height: 540,
+        backgroundImage: `url(${import.meta.env.BASE_URL}assets/${char.bg})`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        transition: 'background-image 0.3s',
+      }}
+    >
       {/* Title */}
-      <div className="text-center mb-6">
-        <h2 className="text-lg text-amber-400 font-bold">Choose Your Character</h2>
-        <p className="text-[10px] text-stone-500 mt-1">
-          Each character has a unique ability.
-        </p>
+      <div className="text-center mt-8">
+        <h2
+          className="text-xl text-amber-400 font-bold uppercase"
+          style={{ WebkitTextStroke: '4px #000', paintOrder: 'stroke fill' }}
+        >
+          Choose Your Character
+        </h2>
       </div>
 
-      {/* Character cards */}
-      <div className="flex gap-4 mb-6">
-        {CHARACTERS.map((char) => {
-          const isSelected = selectedCharacter === char.id;
+      {/* Character tabs on the left edge */}
+      <div className="absolute -left-2 top-1/2 -translate-y-1/2 flex flex-col gap-2">
+        {CHARACTERS.map((c) => {
+          const isSelected = selectedCharacter === c.id;
           return (
             <button
-              key={char.id}
-              onClick={() => setSelectedCharacter(char.id)}
-              className="flex flex-col items-center w-52 text-left"
+              key={c.id}
+              onClick={() => setSelectedCharacter(c.id)}
+              className="flex items-center gap-2"
               style={{
+                padding: '10px 16px 10px 48px',
+                backgroundColor: isSelected ? 'rgba(120, 53, 15, 0.8)' : 'rgba(28, 25, 23, 0.8)',
                 border: `2px solid ${isSelected ? '#f59e0b' : '#44403c'}`,
-                backgroundColor: isSelected ? 'rgba(120, 53, 15, 0.4)' : 'rgba(28, 25, 23, 0.8)',
-                padding: '12px 10px',
-                transform: isSelected ? 'translateY(-4px)' : 'none',
-                transition: 'all 0.15s',
+                borderLeft: 'none',
+                borderRadius: '0 6px 6px 0',
+                transform: isSelected ? 'translateX(0)' : 'translateX(-20px)',
+                transition: 'transform 0.15s',
+                minWidth: 170,
               }}
             >
               <img
-                src={`${import.meta.env.BASE_URL}assets/sprites/${char.sprite}`}
-                alt={char.name}
-                style={{ width: 64, height: 64, imageRendering: 'pixelated', objectFit: 'cover' }}
-                className="mb-1"
+                src={`${import.meta.env.BASE_URL}assets/sprites/${c.sprite}`}
+                alt={c.name}
+                style={{ width: 40, height: 40, imageRendering: 'pixelated', objectFit: 'cover' }}
               />
-              <span className="text-amber-300 text-sm font-bold mb-2">
-                {char.name}
+              <span
+                className="text-sm font-bold"
+                style={{
+                  color: isSelected ? '#fcd34d' : '#a8a29e',
+                  WebkitTextStroke: '2px #000',
+                  paintOrder: 'stroke fill',
+                }}
+              >
+                {c.name}
               </span>
-              <div className="w-full flex flex-col gap-1.5">
-                <div className="flex items-center gap-2">
-                  <span className="text-stone-500" style={{ fontSize: '10px' }}>HP</span>
-                  <span className="text-red-400 text-xs font-bold">{char.hp}</span>
-                </div>
-                <div className="flex flex-col gap-0.5">
-                  <span className="text-amber-400 text-xs font-bold">{char.ability}</span>
-                  <span className="text-stone-400 leading-tight" style={{ fontSize: '9px' }}>
-                    {char.abilityDescription}
-                  </span>
-                </div>
-              </div>
             </button>
           );
         })}
       </div>
 
-      {/* Ascension selector */}
-      {maxSelectable > 0 && (
-        <AscensionSelector
-          level={ascensionLevel}
-          maxLevel={maxSelectable}
-          onChange={setAscensionLevel}
-        />
-      )}
-
-      {/* Seed input */}
-      <div className="flex items-center gap-2 mt-4">
-        <span className="text-stone-500 text-xs">Seed:</span>
-        <input
-          type="text"
-          value={customSeed}
-          onChange={(e) => setCustomSeed(e.target.value)}
-          placeholder="random"
-          className="bg-stone-800/60 border border-stone-600 text-stone-300 text-xs px-2 py-1 w-36 outline-none focus:border-amber-600"
-        />
+      {/* Character info - center bottom */}
+      <div className="absolute bottom-20 left-1/2 -translate-x-1/2 flex flex-col items-center">
+        <span
+          className="text-lg font-bold uppercase tracking-wide"
+          style={{
+            color: '#fcd34d',
+            WebkitTextStroke: '3px #000',
+            paintOrder: 'stroke fill',
+          }}
+        >
+          {char.name}
+        </span>
+        <div className="flex items-center gap-1 mt-1" style={{ marginLeft: -8 }}>
+          <SpriteIcon frame={UI_FRAMES.health} scale={1} />
+          <span
+            className="text-red-400 text-sm font-bold"
+            style={{ WebkitTextStroke: '2px #000', paintOrder: 'stroke fill' }}
+          >
+            {char.hp}
+          </span>
+        </div>
+        <span
+          className="text-amber-400 text-xs font-bold mt-1"
+          style={{ WebkitTextStroke: '2px #000', paintOrder: 'stroke fill' }}
+        >
+          {char.ability} ({char.abilityCharge} charge)
+        </span>
+        <span
+          className="text-stone-300 text-center mt-1 leading-tight max-w-xs"
+          style={{ fontSize: '9px', WebkitTextStroke: '1px #000', paintOrder: 'stroke fill' }}
+        >
+          {char.abilityDescription}
+        </span>
       </div>
 
-      {/* Buttons */}
-      <div className="flex gap-3 mt-3">
+      {/* Settings panel - bottom left */}
+      <div
+        className="absolute bottom-4 left-4 flex flex-col gap-3"
+        style={{
+          backgroundColor: 'rgba(20, 16, 12, 0.75)',
+          border: '1px solid #44403c',
+          borderRadius: 4,
+          padding: '10px 14px',
+          minWidth: 240,
+        }}
+      >
+        {maxSelectable > 0 && (
+          <AscensionSelector
+            level={ascensionLevel}
+            maxLevel={maxSelectable}
+            onChange={setAscensionLevel}
+          />
+        )}
+        <div className="flex items-center gap-2">
+          <span className="text-stone-500 text-xs font-bold uppercase" style={{ fontSize: '9px' }}>Seed</span>
+          <input
+            type="text"
+            value={customSeed}
+            onChange={(e) => setCustomSeed(e.target.value)}
+            placeholder="random"
+            className="bg-stone-900/80 border border-stone-600 text-stone-300 text-xs px-2 py-1 w-32 outline-none focus:border-amber-600"
+            style={{ borderRadius: 2 }}
+          />
+        </div>
+      </div>
+
+      {/* Back / Confirm - bottom right */}
+      <div className="absolute bottom-6 right-4 flex gap-3">
         <button
           onClick={handleBack}
-          className="px-4 py-1.5 text-xs bg-stone-800/50 text-stone-400 border border-stone-700 hover:bg-stone-700/50"
+          className="px-4 py-1.5 text-xs bg-stone-800/80 text-stone-400 border border-stone-700 hover:bg-stone-700/80"
         >
           Back
         </button>
@@ -147,7 +209,7 @@ export const CharacterSelectScreen = memo(function CharacterSelectScreen() {
           onClick={handleConfirm}
           className="px-5 py-1.5 text-xs bg-amber-900/60 text-amber-300 border border-amber-700 hover:bg-amber-800/60"
         >
-          Start
+          Confirm
         </button>
       </div>
     </div>
@@ -167,9 +229,9 @@ function AscensionSelector({
   const mods = getAscensionModifiers(level);
 
   return (
-    <div className="flex flex-col items-center gap-1">
-      <div className="flex items-center gap-3">
-        <span className="text-stone-400 text-xs">Ascension</span>
+    <div className="flex flex-col gap-1">
+      <div className="flex items-center gap-2">
+        <span className="text-stone-500 text-xs font-bold uppercase" style={{ fontSize: '9px' }}>Ascension</span>
         <button
           onClick={() => onChange(Math.max(0, level - 1))}
           disabled={level <= 0}
@@ -178,10 +240,11 @@ function AscensionSelector({
               ? 'text-amber-300 border-amber-700 bg-amber-900/40 hover:bg-amber-800/50'
               : 'text-stone-600 border-stone-700 bg-stone-800/30 cursor-not-allowed'
           }`}
+          style={{ borderRadius: 2 }}
         >
           -
         </button>
-        <span className="text-amber-300 text-sm w-6 text-center font-bold">
+        <span className="text-amber-300 text-sm w-5 text-center font-bold">
           {level}
         </span>
         <button
@@ -192,23 +255,22 @@ function AscensionSelector({
               ? 'text-amber-300 border-amber-700 bg-amber-900/40 hover:bg-amber-800/50'
               : 'text-stone-600 border-stone-700 bg-stone-800/30 cursor-not-allowed'
           }`}
+          style={{ borderRadius: 2 }}
         >
           +
         </button>
         {level > 0 && (
-          <span className="text-stone-500" style={{ fontSize: '10px' }}>
-            Score x{scoreMultiplier}
+          <span className="text-amber-400/70" style={{ fontSize: '9px' }}>
+            x{scoreMultiplier}
           </span>
         )}
       </div>
-      {level > 0 && (
-        <div className="flex gap-3 text-stone-500" style={{ fontSize: '9px' }}>
-          <span>HP +{Math.round((mods.enemyHpMultiplier - 1) * 100)}%</span>
-          <span>DMG +{Math.round((mods.enemyDamageMultiplier - 1) * 100)}%</span>
-          <span>Gold -{Math.round((1 - mods.goldMultiplier) * 100)}%</span>
-          <span>Prices +{Math.round((mods.merchantPriceMultiplier - 1) * 100)}%</span>
-        </div>
-      )}
+      <div className="flex gap-2 text-stone-500" style={{ fontSize: '8px', minHeight: 12, visibility: level > 0 ? 'visible' : 'hidden' }}>
+        <span>HP +{Math.round((mods.enemyHpMultiplier - 1) * 100)}%</span>
+        <span>DMG +{Math.round((mods.enemyDamageMultiplier - 1) * 100)}%</span>
+        <span>Gold -{Math.round((1 - mods.goldMultiplier) * 100)}%</span>
+        <span>Price +{Math.round((mods.merchantPriceMultiplier - 1) * 100)}%</span>
+      </div>
     </div>
   );
 }

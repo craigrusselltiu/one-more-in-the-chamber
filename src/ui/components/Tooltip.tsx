@@ -1,4 +1,5 @@
-import { memo, useState, useRef, useEffect, type ReactNode } from 'react';
+import { memo, useState, useRef, useEffect, useCallback, type ReactNode } from 'react';
+import { createPortal } from 'react-dom';
 
 interface TooltipProps {
   /** Simple string tooltip text. */
@@ -10,55 +11,75 @@ interface TooltipProps {
   children: ReactNode;
   /** Position relative to the element. Default 'top'. */
   position?: 'top' | 'bottom';
+  /** Gap in pixels between trigger and tooltip. Default 8 (top) or 30 (bottom). */
+  gap?: number;
+  /** Horizontal alignment. Default 'center'. */
+  align?: 'center' | 'left';
 }
 
 /**
  * Tooltip: wrap any element to show a styled tooltip on hover.
- * Supports both simple text and rich ReactNode content.
- *
- * Usage:
- *   <Tooltip text="Block: 5"><BlockBadge /></Tooltip>
- *   <Tooltip content={<div>Rich <b>content</b></div>}><Icon /></Tooltip>
+ * Renders via portal to escape stacking contexts (transform, z-index).
  */
-export const Tooltip = memo(function Tooltip({ text, content, secondContent, children, position = 'top' }: TooltipProps) {
+export const Tooltip = memo(function Tooltip({ text, content, secondContent, children, position = 'top', gap, align = 'center' }: TooltipProps) {
   const [visible, setVisible] = useState(false);
-  const timeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
-  const tooltipRef = useRef<HTMLDivElement>(null);
   const wrapperRef = useRef<HTMLDivElement>(null);
+  const tooltipRef = useRef<HTMLDivElement>(null);
+  const [pos, setPos] = useState<{ left: number; top: number } | null>(null);
 
-  const show = () => {
-    clearTimeout(timeoutRef.current);
-    setVisible(true);
-  };
-
-  const hide = () => {
-    clearTimeout(timeoutRef.current);
-    setVisible(false);
-  };
+  const show = useCallback(() => setVisible(true), []);
+  const hide = useCallback(() => setVisible(false), []);
 
   const tooltipBody = content ?? text;
 
-  // Clamp tooltip position to stay within the scaled viewport (960x540)
+  // Position the portal tooltip relative to the trigger element
+  useEffect(() => {
+    if (!visible || !wrapperRef.current) return;
+    const rect = wrapperRef.current.getBoundingClientRect();
+    // Find the scaled viewport container to compute offset
+    const viewport = wrapperRef.current.closest('.overflow-hidden') as HTMLElement | null;
+    const vRect = viewport?.getBoundingClientRect();
+    const scale = vRect ? vRect.width / 960 : 1;
+
+    const x = align === 'left'
+      ? (rect.left - (vRect?.left ?? 0)) / scale
+      : (rect.left + rect.width / 2 - (vRect?.left ?? 0)) / scale;
+    if (position === 'top') {
+      const y = (rect.top - (vRect?.top ?? 0)) / scale;
+      setPos({ left: x, top: y });
+    } else {
+      const y = (rect.bottom - (vRect?.top ?? 0)) / scale;
+      setPos({ left: x, top: y });
+    }
+  }, [visible, position]);
+
+  // Clamp tooltip to viewport bounds
   useEffect(() => {
     if (!visible || !tooltipRef.current || !wrapperRef.current) return;
     const tip = tooltipRef.current;
-    const wrapper = wrapperRef.current;
-
-    const viewport = wrapper.closest('.overflow-hidden') as HTMLElement | null;
+    const viewport = wrapperRef.current.closest('.overflow-hidden') as HTMLElement | null;
     if (!viewport) return;
 
     const vRect = viewport.getBoundingClientRect();
     const tRect = tip.getBoundingClientRect();
+    const scale = vRect.width / 960;
 
     if (tRect.left < vRect.left) {
-      tip.style.left = '0';
-      tip.style.transform = 'none';
+      const offset = (vRect.left - tRect.left) / scale;
+      tip.style.transform = `translateX(calc(-50% + ${offset}px))`;
     } else if (tRect.right > vRect.right) {
-      tip.style.left = 'auto';
-      tip.style.right = '0';
-      tip.style.transform = 'none';
+      const offset = (tRect.right - vRect.right) / scale;
+      tip.style.transform = `translateX(calc(-50% - ${offset}px))`;
     }
-  }, [visible, text, content, secondContent]);
+  }, [visible, pos]);
+
+  // Find the portal target (the scaled viewport container)
+  const getPortalTarget = (): HTMLElement | null => {
+    if (!wrapperRef.current) return null;
+    return wrapperRef.current.closest('.overflow-hidden') as HTMLElement | null;
+  };
+
+  const portalTarget = visible ? getPortalTarget() : null;
 
   return (
     <div
@@ -68,15 +89,16 @@ export const Tooltip = memo(function Tooltip({ text, content, secondContent, chi
       onMouseLeave={hide}
     >
       {children}
-      {visible && (tooltipBody || secondContent) && (
+      {visible && (tooltipBody || secondContent) && pos && portalTarget && createPortal(
         <div
           ref={tooltipRef}
-          className="absolute left-1/2 z-50 pointer-events-none flex flex-col items-start gap-1"
+          className="absolute pointer-events-none flex flex-col items-start gap-1"
           style={{
-            transform: 'translateX(-50%)',
+            zIndex: 9999,
+            left: pos.left,
             ...(position === 'top'
-              ? { bottom: '100%', marginBottom: 4 }
-              : { top: '100%', marginTop: 4 }),
+              ? { top: pos.top, transform: align === 'left' ? 'translateY(-100%)' : 'translate(-50%, -100%)', marginTop: -4 }
+              : { top: pos.top, transform: align === 'left' ? 'none' : 'translateX(-50%)', marginTop: gap ?? 8 }),
           }}
         >
           {tooltipBody && (
@@ -95,7 +117,8 @@ export const Tooltip = memo(function Tooltip({ text, content, secondContent, chi
               {secondContent}
             </div>
           )}
-        </div>
+        </div>,
+        portalTarget,
       )}
     </div>
   );

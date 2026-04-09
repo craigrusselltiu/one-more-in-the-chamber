@@ -1,4 +1,4 @@
-import { memo, useCallback } from 'react';
+import { memo, useCallback, useState, useEffect } from 'react';
 import { EventBus, GameEvent } from '../../game/EventBus';
 import { useCombatStore, getEnemyStatusEffects } from '../../store/combatStore';
 import { HealthBar } from './HealthBar';
@@ -75,6 +75,19 @@ const EnemySlot = memo(function EnemySlot({
   isTargeted,
   canShootEnemy,
 }: EnemySlotProps) {
+  const [shaking, setShaking] = useState(false);
+
+  useEffect(() => {
+    const handler = (...args: unknown[]) => {
+      if (args[0] === enemy?.id) {
+        setShaking(true);
+        setTimeout(() => setShaking(false), 300);
+      }
+    };
+    EventBus.on(GameEvent.ENEMY_ACTION, handler);
+    return () => { EventBus.off(GameEvent.ENEMY_ACTION, handler); };
+  }, [enemy?.id]);
+
   const handleClick = useCallback(() => {
     if (enemy && !enemy.isDead) {
       if (canShootEnemy) {
@@ -107,14 +120,21 @@ const EnemySlot = memo(function EnemySlot({
       {/* Intent above sprite */}
       <EnemyIntent intent={enemy.intent} />
 
-      {/* Enemy sprite */}
+      {/* Enemy sprite with shadow */}
       {ENEMY_SPRITES[enemy.enemyType] ? (
-        <img
-          src={`${import.meta.env.BASE_URL}assets/sprites/${ENEMY_SPRITES[enemy.enemyType]}`}
-          alt={enemy.enemyType}
-          className={`mb-0.5 shrink-0${isTargeted ? ' enemy-targeted' : ''}`}
-          style={{ width: 96, height: 96, imageRendering: 'pixelated', objectFit: 'contain' }}
-        />
+        <div className={`relative mb-0.5 shrink-0${isTargeted ? ' enemy-targeted' : ''}${shaking ? ' enemy-shake' : ''}`} style={{ width: 96, height: 96 }}>
+          <img
+            src={`${import.meta.env.BASE_URL}assets/sprites/shadow.png`}
+            alt=""
+            className="absolute bottom-0 left-1/2 -translate-x-1/2"
+            style={{ width: 80, imageRendering: 'pixelated', opacity: 0.5 }}
+          />
+          <img
+            src={`${import.meta.env.BASE_URL}assets/sprites/${ENEMY_SPRITES[enemy.enemyType]}`}
+            alt={enemy.enemyType}
+            style={{ width: 96, height: 96, imageRendering: 'pixelated', objectFit: 'contain' }}
+          />
+        </div>
       ) : (
         <div
           className={`border border-stone-600 border-dashed mb-0.5 flex items-center justify-center shrink-0${isTargeted ? ' enemy-targeted' : ''}`}

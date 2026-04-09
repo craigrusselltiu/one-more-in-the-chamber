@@ -81,11 +81,12 @@ export class CombatScene extends Phaser.Scene {
     this.cameras.main.setRoundPixels(true);
     this.cameras.main.setBackgroundColor('#2a1a0e');
 
-    // Combat background image (boss uses dusty_bg, regular uses act-specific bg)
+    // Combat background: boss-specific bg per act, regular uses act bg
     const isBoss = data?.config?.isBoss || data?.snapshot?.isBoss;
     const act = useRunStore.getState().run?.currentAct ?? 1;
     const actBg = `act${act}_bg`;
-    const bgCandidates = isBoss ? ['dusty_bg', actBg] : [actBg, 'act1_bg'];
+    const bossBgMap: Record<number, string> = { 1: 'dusty_bg', 2: 'copperhead_bg', 3: 'ironeye_bg' };
+    const bgCandidates = isBoss ? [bossBgMap[act], actBg] : [actBg, 'act1_bg'];
     const bgKey = bgCandidates.find(k => this.textures.exists(k));
     if (bgKey) {
       const bg = this.add.image(GAME_WIDTH / 2, GAME_HEIGHT / 2, bgKey);
@@ -237,9 +238,16 @@ export class CombatScene extends Phaser.Scene {
 
   /** Draw an 8x8 checkered grid behind the board for visual clarity. */
   private drawCheckerboard(x: number, y: number, size: number): void {
+    // Board background image behind the checkerboard
+    if (this.textures.exists('board_bg')) {
+      const bg = this.add.image(Math.round(x + size / 2), Math.round(y + size / 2), 'board_bg');
+      bg.setDisplaySize(size + 72, size + 72);
+      bg.setDepth(-2);
+    }
+
     const cellSize = size / 8;
     const lightColor = 0xd2b48c; // tan
-    const darkColor = 0xb8956a;  // slightly darker tan
+    const darkColor = 0x4a3520;  // dark brown
     for (let row = 0; row < 8; row++) {
       for (let col = 0; col < 8; col++) {
         const color = (row + col) % 2 === 0 ? lightColor : darkColor;

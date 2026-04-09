@@ -11,7 +11,7 @@ export interface KeywordDefinition {
 export const KEYWORDS: Record<string, KeywordDefinition> = {
   Ace: {
     color: '#E0C880',
-    description: 'Add x0.25 multiplier to the next non-Ace match.',
+    description: 'Add x0.25 multiplier per stack to the next non-Ace non-cascade match.',
   },
   Lucky: {
     color: '#C8A040',
@@ -33,16 +33,32 @@ export const KEYWORDS: Record<string, KeywordDefinition> = {
     color: '#6888A0',
     description: 'Gain 1 extra block per stack. Decrease stacks by 1 at the end of the turn.',
   },
-  Venom: {
-    color: '#60A040',
-    description: 'At the start of the turn, take damage equal to the number of stacks and decrease stacks by 1.',
+  Grace: {
+    color: '#A0C8FF',
+    description: 'Negate the next instance of damage taken. Does not prevent Poison.',
   },
-  Venomous: {
+  Poison: {
     color: '#40ff40',
-    description: 'At the start of the turn, lose HP equal to stacks and decrease stacks by 1.',
+    description: 'At the start of the turn, take damage equal to the number of stacks and decrease stacks by 1.',
   },
   Bounty: {
     color: '#C04040',
     description: 'When applying this or taking damage, if HP is lower than Bounty stacks, die.\nWhen this kills a non-summoned enemy, gain 10 gold.',
+  },
+  Shadow: {
+    color: '#6b2fa0',
+    description: 'When matched, fires a shadow bolt dealing 4 damage to a random enemy.',
+  },
+  Chain: {
+    color: '#A08040',
+    description: 'Gain 1 extra damage per Chain tile per stack.',
+  },
+  Ready: {
+    color: '#D4A030',
+    description: 'Your next non-cascade attack deals 50% more damage. (max 1)',
+  },
+  Terrified: {
+    color: '#8B4789',
+    description: 'Deal 50% less damage. Decrease stacks by 1 at the end of the turn.',
   },
 };

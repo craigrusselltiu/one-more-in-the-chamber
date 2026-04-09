@@ -343,6 +343,7 @@ export function executeBoardManipulation(
   enemy: Enemy,
   intent: EnemyIntent,
   hazardManager: BoardHazardManager,
+  bombCountdownBonus = 0,
 ): string {
   const def = enemy.getDefinition();
   const desc = intent.description;
@@ -367,7 +368,7 @@ export function executeBoardManipulation(
 
   if (desc.startsWith('BOMB')) {
     const count = intent.value ?? 1;
-    hazardManager.placeRandomBombs(count);
+    hazardManager.placeRandomBombs(count, 3 + bombCountdownBonus);
     return `${def.name} places ${count} bombs`;
   }
 

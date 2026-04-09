@@ -52,8 +52,8 @@ NOTE: Observe the difference between +1 to match total and +1 per tile. The tile
 - Upgrade: +1 charge to match total per level
 - Flavor: "Juice for the iron. Every spark counts."
 
-### Venom
-- Behaviour: Apply 1 Venom per tile.
+### Waste
+- Behaviour: Apply 1 Poison per tile.
 - Upgrade: +1 stack to match total per level
 - Flavor: "Slow poison. The patient killer's weapon."
 
@@ -105,10 +105,10 @@ NOTE: Observe the difference between +1 to match total and +1 per tile. The tile
 - Flavor: "That's not a knife."
 
 ### Rattler
-- Behaviour: Deal 2 damage per tile and apply 1 Venom. Pierces block.
-- Upgrade: +1 damage and venom stack to match total per level
+- Behaviour: Deal 2 damage per tile and apply 1 Poison. Pierces block.
+- Upgrade: +1 damage and poison stack to match total per level
 - Flavor: "Fangs out. Bite first, ask questions never."
-- Note: if all enemies die by venom at turn start, the player has won the combat
+- Note: if all enemies die by poison at turn start, the player has won the combat
 
 ### Barricade
 - Behaviour: Gain 2 block per tile and 1 Barricade.
@@ -232,7 +232,7 @@ NOTE: Observe the difference between +1 to match total and +1 per tile. The tile
 - Flavor: "The spirits protect you."
 
 ### Rattlesnake Bite
-- Behaviour: Apply 2 Venom per tile. Pierces block.
+- Behaviour: Apply 2 Poison per tile. Pierces block.
 - Upgrade: +1 venom to match total per level
 - Flavor: "No antidote out here."
 
@@ -252,7 +252,7 @@ NOTE: Observe the difference between +1 to match total and +1 per tile. The tile
 - Flavor: "Strike it rich. One swing at a time."
 
 ### Coffin Nail
-- Behaviour: Deal 1 damage per tile. If the enemy has Venom, deal +1 damage per Venom stack.
+- Behaviour: Deal 1 damage per tile. If the enemy has Poison, deal +1 damage per Poison stack.
 - Upgrade: +1 base damage to match total per level
 - Flavor: "Seal the deal."
 

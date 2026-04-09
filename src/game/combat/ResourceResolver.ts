@@ -8,7 +8,7 @@ export interface ResourceOutput {
   gold: number;
   healing: number;
   abilityCharges: number;
-  venomStacks: number;
+  poisonStacks: number;
   aceStacks: number;
   luckyStacks: number;
   barricadeStacks: number;
@@ -16,6 +16,7 @@ export interface ResourceOutput {
   bountyStacks: number;
   ragefulStacks: number;
   sturdyStacks: number;
+  chainStacks: number;
   /** Whether a Chip tile hit (true) or missed (false). Undefined for non-chip tiles. */
   chipHit?: boolean;
   /** The damage Chip would deal if it hit (used by Reno's Coin re-roll). */
@@ -43,8 +44,6 @@ const PER_TILE_UPGRADE: Set<TileType> = new Set([
  * "When a tile is cleared by any means, it generates its own resource."
  */
 export class ResourceResolver {
-  /** Persistent chain damage bonus that increases per Chain match in a fight. */
-  chainBonusThisFight = 0;
   /** Whether cavalry bonus swap has been granted this turn. */
   cavalrySwapUsedThisTurn = false;
   /** Chip marble bag: hits remaining / draws remaining out of 6. */
@@ -63,7 +62,6 @@ export class ResourceResolver {
   }
 
   resetFight(): void {
-    this.chainBonusThisFight = 0;
     this.cavalrySwapUsedThisTurn = false;
     this.chipHitsLeft = 0;
     this.chipDrawsLeft = 0;
@@ -160,7 +158,7 @@ export class ResourceResolver {
 
       case 'prairie_fire':
         output.damage = total;
-        // Spread effect handled by CascadeResolver (like ember was)
+        // Spread effect handled by CascadeResolver
         break;
 
       case 'tombstone':
@@ -175,7 +173,7 @@ export class ResourceResolver {
 
       case 'rattler':
         output.damage = total;
-        output.venomStacks = count + Math.round(upgradeBonus);
+        output.poisonStacks = count + Math.round(upgradeBonus);
         output.piercesBlock = true;
         break;
 
@@ -197,12 +195,10 @@ export class ResourceResolver {
         output.damage = total;
         break;
 
-      case 'chain': {
-        const chainTotal = Math.round(baseTotal + upgradeBonus) + this.chainBonusThisFight * count;
-        output.damage = chainTotal;
-        this.chainBonusThisFight += 1; // +1 per Chain match this combat
+      case 'chain':
+        output.damage = total;
+        output.chainStacks = 1;
         break;
-      }
 
       // --- Block tiles ---
       case 'iron':
@@ -245,8 +241,8 @@ export class ResourceResolver {
         output.luckyStacks = count + Math.round(upgradeBonus);
         break;
 
-      case 'venom':
-        output.venomStacks = count + Math.round(upgradeBonus);
+      case 'waste':
+        output.poisonStacks = count + Math.round(upgradeBonus);
         break;
 
       // --- Bounty (1+upgrade stacks per tile) ---
@@ -282,7 +278,7 @@ export class ResourceResolver {
       gold: 0,
       healing: 0,
       abilityCharges: 0,
-      venomStacks: 0,
+      poisonStacks: 0,
       aceStacks: 0,
       luckyStacks: 0,
       barricadeStacks: 0,
@@ -290,6 +286,7 @@ export class ResourceResolver {
       bountyStacks: 0,
       ragefulStacks: 0,
       sturdyStacks: 0,
+      chainStacks: 0,
       isAoE: false,
       piercesBlock: false,
       targetsHighestHp: false,

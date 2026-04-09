@@ -67,9 +67,13 @@ export class BootScene extends Phaser.Scene {
     // Backgrounds
     this.load.image('act1_bg', `${base}assets/act1_bg.png`);
     this.load.image('act2_bg', `${base}assets/act2_bg.png`);
+    this.load.image('act3_bg', `${base}assets/act3_bg.png`);
     this.load.image('dusty_bg', `${base}assets/dusty_bg.png`);
+    this.load.image('copperhead_bg', `${base}assets/copperhead_bg.png`);
+    this.load.image('ironeye_bg', `${base}assets/ironeye_bg.png`);
     this.load.image('main_menu_bg', `${base}assets/main_menu_bg.png`);
     this.load.image('campfire_bg', `${base}assets/campfire_bg.png`);
+    this.load.image('board_bg', `${base}assets/board_bg.png`);
     this.load.image('merchant_bg', `${base}assets/merchant_bg.png`);
     this.load.image('treasure_bg', `${base}assets/treasure_bg.png`);
     // Sprites
@@ -178,7 +182,7 @@ export class BootScene extends Phaser.Scene {
           setTrack('shop_theme');
           break;
         case 'campfire':
-        case 'treasure':
+        case 'artifact':
           // Keep map music
           break;
         case 'score':

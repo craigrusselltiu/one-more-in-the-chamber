@@ -24,10 +24,11 @@ export class Enemy {
       health: definition.health,
       maxHealth: definition.health,
       block: 0,
-      venomStacks: 0,
+      poisonStacks: 0,
       vulnerable: 0,
       crackedGround: 0,
       bountyStacks: 0,
+      terrifiedStacks: 0,
       summoned: false,
       intent: { type: 'attack', value: 0, description: '' },
       isDead: false,
@@ -146,15 +147,15 @@ export class Enemy {
   }
 
   /**
-   * Venom tick: damage equal to stack count + bonus from upgrades, then stacks decrease by 1.
-   * @param bonusDamagePerTick - flat bonus from venom tile upgrades (+1 per upgrade level)
+   * Poison tick: damage equal to stack count + bonus from upgrades, then stacks decrease by 1.
+   * @param bonusDamagePerTick - flat bonus from waste tile upgrades (+1 per upgrade level)
    * Returns damage dealt.
    */
-  tickVenom(bonusDamagePerTick = 0): number {
-    if (this.state.venomStacks <= 0) return 0;
-    const damage = this.state.venomStacks + bonusDamagePerTick;
+  tickPoison(bonusDamagePerTick = 0): number {
+    if (this.state.poisonStacks <= 0) return 0;
+    const damage = this.state.poisonStacks + bonusDamagePerTick;
     this.state.health = Math.max(0, this.state.health - damage);
-    this.state.venomStacks--;
+    this.state.poisonStacks--;
     if (this.state.health <= 0) {
       this.state.isDead = true;
     }
@@ -165,8 +166,8 @@ export class Enemy {
     this.state.block += amount;
   }
 
-  addVenom(stacks: number): void {
-    this.state.venomStacks += stacks;
+  addPoison(stacks: number): void {
+    this.state.poisonStacks += stacks;
   }
 
   addVulnerable(stacks: number): void {
@@ -175,6 +176,10 @@ export class Enemy {
 
   addBounty(stacks: number): void {
     this.state.bountyStacks += stacks;
+  }
+
+  addTerrified(stacks: number): void {
+    this.state.terrifiedStacks += stacks;
   }
 
   /** Check if bounty kill threshold is met: HP <= bountyStacks. */

@@ -1,4 +1,4 @@
-import { memo } from 'react';
+import { memo, useState, useEffect } from 'react';
 import { CombatBridge } from './CombatBridge';
 import { PlayerPanel } from './PlayerPanel';
 import { EnemyTargeting } from './EnemyTargeting';
@@ -9,6 +9,7 @@ import { EndTurnButton } from './EndTurnButton';
 import { TraitDisplay } from './TraitDisplay';
 import { useCombatStore } from '../../store/combatStore';
 import { useRunStore } from '../../store/runStore';
+import { EventBus, GameEvent } from '../../game/EventBus';
 
 /**
  * CombatHUD: React overlay during combat.
@@ -92,6 +93,34 @@ export const CombatHUD = memo(function CombatHUD() {
         </div>
       </div>
 
+      <TurnBanner />
     </div>
   );
 });
+
+/** Large text banner that fades in and out for "ENEMY TURN" / "YOUR TURN". */
+function TurnBanner() {
+  const [text, setText] = useState<string | null>(null);
+
+  useEffect(() => {
+    const handler = (...args: unknown[]) => {
+      setText(args[0] as string);
+      setTimeout(() => setText(null), 800);
+    };
+    EventBus.on(GameEvent.TURN_BANNER, handler);
+    return () => { EventBus.off(GameEvent.TURN_BANNER, handler); };
+  }, []);
+
+  if (!text) return null;
+
+  return (
+    <div className="absolute inset-x-0 flex justify-center pointer-events-none" style={{ zIndex: 50, top: '25%' }}>
+      <span
+        className="text-4xl text-white font-bold uppercase turn-banner-text"
+        style={{ WebkitTextStroke: '6px #000', paintOrder: 'stroke fill' }}
+      >
+        {text}
+      </span>
+    </div>
+  );
+}

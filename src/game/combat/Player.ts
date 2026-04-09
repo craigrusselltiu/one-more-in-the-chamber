@@ -14,7 +14,10 @@ export class Player {
   barricadeStacks = 0;
   ragefulStacks = 0;
   sturdyStacks = 0;
-  venomousStacks = 0;
+  graceStacks = 0;
+  poisonedStacks = 0;
+  readyStacks = 0;
+  chainStacks = 0;
   thorns = 0;
   gold = 0;
   goldThisFight = 0;
@@ -29,7 +32,7 @@ export class Player {
   shedSkinAvailable = false;
   /** Dead Man Walking(3): flat damage reduction per hit. */
   damageReduction = 0;
-  /** Dead Man Walking(7): once/fight lethal → 10 HP + 20 block. */
+  /** Dead Man Walking(7): once/combat lethal → heal 20% max HP. */
   deadManWalkingAvailable = false;
 
   constructor(
@@ -56,6 +59,12 @@ export class Player {
   takeDamage(amount: number): { hpLost: number; blocked: number; thornsDamage: number } {
     let remaining = amount;
 
+    // Grace: negate entire damage instance
+    if (this.graceStacks > 0 && remaining > 0) {
+      this.graceStacks--;
+      return { hpLost: 0, blocked: 0, thornsDamage: 0 };
+    }
+
     // Dead Man Walking(3): flat damage reduction
     if (this.damageReduction > 0) {
       remaining = Math.max(0, remaining - this.damageReduction);
@@ -73,16 +82,15 @@ export class Player {
     this.health = Math.max(0, this.health - remaining);
     if (remaining > 0) this.tookDamageThisTurn = true;
 
-    // Dead Man Walking(7): survive lethal → 10 HP + 20 block (once per fight)
+    // Dead Man Walking(7): survive lethal → heal 20% max HP (once per combat)
     if (this.health <= 0 && this.deadManWalkingAvailable) {
-      this.health = 10;
-      this.block += 20;
+      this.health = Math.max(1, Math.floor(this.maxHealth * 0.2));
       this.deadManWalkingAvailable = false;
     }
 
-    // Shed Skin: survive lethal damage with 1 HP (once per fight)
+    // Shed Skin: survive lethal damage, heal 50% max HP (once per fight, artifact self-destructs)
     if (this.health <= 0 && this.shedSkinAvailable) {
-      this.health = 1;
+      this.health = Math.max(1, Math.floor(this.maxHealth * 0.5));
       this.shedSkinAvailable = false;
     }
 
@@ -124,6 +132,18 @@ export class Player {
     this.aceStacks = 0;
     this.aceMultiplier = 1.0;
     return mult;
+  }
+
+  /** Add Ready stacks (max 1). Next non-cascade attack deals 50% more damage. */
+  addReady(stacks: number): void {
+    this.readyStacks = Math.min(1, this.readyStacks + stacks);
+  }
+
+  /** Consume Ready on non-cascade attack. Returns 1.5 if ready, 1.0 otherwise. */
+  consumeReady(): number {
+    if (this.readyStacks <= 0) return 1.0;
+    this.readyStacks = 0;
+    return 1.5;
   }
 
   /** Add Lucky stacks. Each stack = +1% chance for 1.5x damage (max 50). Removed when crit occurs. */
@@ -169,7 +189,9 @@ export class Player {
     this.barricadeStacks = 0;
     this.ragefulStacks = 0;
     this.sturdyStacks = 0;
-    this.venomousStacks = 0;
+    this.poisonedStacks = 0;
+    this.readyStacks = 0;
+    this.chainStacks = 0;
     this.thorns = 0;
     this.goldThisFight = 0;
   }

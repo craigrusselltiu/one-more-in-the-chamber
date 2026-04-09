@@ -22,10 +22,14 @@ const STATUS_TO_KEYWORD: Record<string, string> = {
   barricade: 'Barricade',
   rageful: 'Rageful',
   sturdy: 'Sturdy',
-  venomous: 'Venomous',
+  grace: 'Grace',
+  poisoned: 'Poison',
   vulnerable: 'Vulnerable',
-  venom: 'Venom',
+  poison: 'Poison',
   bounty: 'Bounty',
+  terrified: 'Terrified',
+  ready: 'Ready',
+  chain: 'Chain',
 };
 
 /** Descriptions for effects not in keywords.ts. */

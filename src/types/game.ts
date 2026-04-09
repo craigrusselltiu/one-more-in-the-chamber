@@ -26,8 +26,12 @@ export interface RunState {
   mapState: MapState | null;
   /** Tracks purchased item IDs per merchant node to persist across remounts. */
   merchantPurchases?: Record<string, string[]>;
+  /** Snapshot of owned artifact IDs + active tile types at first merchant visit, keyed by nodeId. */
+  merchantSnapshots?: Record<string, { ownedArtifactIds: string[]; activeTileTypes: TileType[] }>;
   /** True after boss treasure is taken/skipped but before act advances. */
   bossRewardTaken?: boolean;
+  /** True after elite treasure is taken/skipped. */
+  eliteRewardTaken?: boolean;
   status: 'active' | 'completed' | 'abandoned';
 }
 
@@ -47,7 +51,7 @@ export type TileType =
   | 'stampede'
   | 'buckshot'
   | 'battery'
-  | 'venom'
+  | 'waste'
   | 'prairie_fire'
   // Additional
   | 'chain'
@@ -72,16 +76,19 @@ export type TileType =
 export type TraitId =
   | 'outlaw'
   | 'sheriff'
-  | 'rattlesnake'
   | 'prospector'
   | 'sapper'
   | 'mustang'
   | 'gunslinger'
   | 'saloon_keeper'
   | 'desperado'
-  | 'high_roller'
   | 'sniper'
-  | 'dead_man_walking';
+  | 'dead_man_walking'
+  | 'tracker'
+  | 'preacher'
+  | 'antivenom'
+  | 'undertaker'
+  | 'rattlesnake';
 
 export interface ArtifactInstance {
   id: string;
@@ -98,7 +105,7 @@ export type MapNodeType =
   | 'merchant'
   | 'campfire'
   | 'event'
-  | 'treasure'
+  | 'artifact'
   | 'boss';
 
 export interface MapNode {

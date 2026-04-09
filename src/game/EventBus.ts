@@ -62,6 +62,10 @@ export const GameEvent = {
   CANCEL_ABILITY: 'player:cancel-ability',
   END_TURN_EARLY: 'player:end-turn-early',
 
+  // Enemy turn
+  ENEMY_ACTION: 'enemy:action',
+  TURN_BANNER: 'turn:banner',
+
   // Visual effects
   FLASH_LINE: 'vfx:flash-line',
   FLASH_LINE_TO_ENEMY: 'vfx:flash-line-to-enemy',

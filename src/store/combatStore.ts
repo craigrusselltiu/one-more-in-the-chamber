@@ -19,7 +19,10 @@ interface CombatStore {
   barricadeStacks: number;
   ragefulStacks: number;
   sturdyStacks: number;
-  venomousStacks: number;
+  graceStacks: number;
+  poisonedStacks: number;
+  readyStacks: number;
+  chainStacks: number;
   thorns: number;
 
   // Ability
@@ -73,7 +76,10 @@ const initialState = {
   barricadeStacks: 0,
   ragefulStacks: 0,
   sturdyStacks: 0,
-  venomousStacks: 0,
+  graceStacks: 0,
+  poisonedStacks: 0,
+  readyStacks: 0,
+  chainStacks: 0,
   thorns: 0,
   abilityCharge: 0,
   abilityThreshold: 10,
@@ -110,7 +116,10 @@ export const useCombatStore = create<CombatStore>((set) => ({
       barricadeStacks: state.barricadeStacks,
       ragefulStacks: state.ragefulStacks,
       sturdyStacks: state.sturdyStacks,
-      venomousStacks: state.venomousStacks,
+      graceStacks: state.graceStacks,
+      poisonedStacks: state.poisonedStacks,
+      readyStacks: state.readyStacks,
+      chainStacks: state.chainStacks,
       thorns: state.thorns,
       abilityCharge: state.abilityCharge,
       abilityThreshold: state.abilityThreshold,
@@ -160,7 +169,10 @@ export function getPlayerStatusEffects(store: CombatStore): PlayerStatusEffect[]
   if (store.barricadeStacks > 0) effects.push({ type: 'barricade', value: store.barricadeStacks });
   if (store.ragefulStacks > 0) effects.push({ type: 'rageful', value: store.ragefulStacks });
   if (store.sturdyStacks > 0) effects.push({ type: 'sturdy', value: store.sturdyStacks });
-  if (store.venomousStacks > 0) effects.push({ type: 'venomous', value: store.venomousStacks });
+  if (store.graceStacks > 0) effects.push({ type: 'grace', value: store.graceStacks });
+  if (store.poisonedStacks > 0) effects.push({ type: 'poisoned', value: store.poisonedStacks });
+  if (store.readyStacks > 0) effects.push({ type: 'ready', value: store.readyStacks });
+  if (store.chainStacks > 0) effects.push({ type: 'chain', value: store.chainStacks });
   if (store.thorns > 0) effects.push({ type: 'thorns', value: store.thorns });
   return effects;
 }
@@ -169,10 +181,11 @@ export function getPlayerStatusEffects(store: CombatStore): PlayerStatusEffect[]
 export function getEnemyStatusEffects(enemy: EnemyState): EnemyStatusEffect[] {
   const effects: EnemyStatusEffect[] = [];
   if (enemy.block > 0) effects.push({ type: 'block', value: enemy.block });
-  if (enemy.venomStacks > 0) effects.push({ type: 'venom', value: enemy.venomStacks });
+  if (enemy.poisonStacks > 0) effects.push({ type: 'poison', value: enemy.poisonStacks });
   if (enemy.vulnerable > 0) effects.push({ type: 'vulnerable', value: enemy.vulnerable });
   if (enemy.crackedGround > 0) effects.push({ type: 'cracked_ground', value: enemy.crackedGround });
   if (enemy.bountyStacks > 0) effects.push({ type: 'bounty', value: enemy.bountyStacks });
+  if (enemy.terrifiedStacks > 0) effects.push({ type: 'terrified', value: enemy.terrifiedStacks });
   if (enemy.summoned) effects.push({ type: 'summoned', value: 1 });
   return effects;
 }

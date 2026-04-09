@@ -14,7 +14,10 @@ export interface CombatState {
   barricadeStacks: number;
   ragefulStacks: number;
   sturdyStacks: number;
-  venomousStacks: number;
+  graceStacks: number;
+  poisonedStacks: number;
+  readyStacks: number;
+  chainStacks: number;
   thorns: number;
   enemies: EnemyState[];
   targetedEnemyIndex: number;
@@ -26,9 +29,9 @@ export interface CombatState {
   deadeyeMaxShots: number;
   /** Bounty Hunter(2): last deadeye shot can target an enemy. */
   canDeadeyeShootEnemy: boolean;
-  /** Shuffle the Deck (Reno): hold mode is active. */
+  /** False Shuffle (Reno): hold mode is active. */
   isShuffleHoldMode: boolean;
-  /** Number of holds remaining during Shuffle the Deck. */
+  /** Number of holds remaining during False Shuffle. */
   shuffleHoldsRemaining: number;
   shuffleMaxHolds: number;
   /** Turn limit for timed encounters (e.g. Mine Cart). 0 = no limit. */
@@ -54,10 +57,11 @@ export interface EnemyState {
   health: number;
   maxHealth: number;
   block: number;
-  venomStacks: number;
+  poisonStacks: number;
   vulnerable: number;
   crackedGround: number;
   bountyStacks: number;
+  terrifiedStacks: number;
   summoned: boolean;
   intent: EnemyIntent;
   isDead: boolean;
@@ -85,16 +89,20 @@ export type PlayerStatusEffect =
   | { type: 'barricade'; value: number }
   | { type: 'rageful'; value: number }
   | { type: 'sturdy'; value: number }
-  | { type: 'venomous'; value: number }
+  | { type: 'grace'; value: number }
+  | { type: 'poisoned'; value: number }
+  | { type: 'ready'; value: number }
+  | { type: 'chain'; value: number }
   | { type: 'crit'; value: number }
   | { type: 'thorns'; value: number };
 
 export type EnemyStatusEffect =
   | { type: 'block'; value: number }
-  | { type: 'venom'; value: number }
+  | { type: 'poison'; value: number }
   | { type: 'vulnerable'; value: number }
   | { type: 'cracked_ground'; value: number }
   | { type: 'bounty'; value: number }
+  | { type: 'terrified'; value: number }
   | { type: 'summoned'; value: number };
 
 export interface MatchResult {
@@ -103,14 +111,21 @@ export interface MatchResult {
   length: number;
   isExplosive: boolean;
   isShowdown: boolean;
+  isShadow: boolean;
   isCross: boolean;
   /** Intersection points for cross clears (L/T/+ patterns). */
   crossIntersections: GridPosition[];
   matchBonus: number;
   /** Number of fool's gold tiles in this match (set by CascadeResolver before clearing). */
   foolsGoldCount?: number;
-  /** Number of poison tiles in this match (each applies 1 venomous stack to player). */
+  /** Number of poison tiles in this match (each applies 1 poison stack to player). */
   poisonCount?: number;
+  /** Number of shadow tiles in this match (each fires a shadow bolt for 4 damage). */
+  shadowCount?: number;
+  /** Number of bomb tiles defused in this match (Blasting Pan gold). */
+  bombCount?: number;
+  /** True if this match was created from chain destruction (explosive/showdown), not a direct match. */
+  isChainDestruction?: boolean;
 }
 
 export interface GridPosition {
@@ -126,7 +141,7 @@ export interface DestroyedTileInfo {
 
 export interface BoardHazard {
   position: GridPosition;
-  type: 'lock' | 'hardened_lock' | 'poison' | 'bomb' | 'sand' | 'fools_gold';
+  type: 'lock' | 'poison' | 'bomb' | 'sand' | 'fools_gold';
   countdown?: number;
 }
 

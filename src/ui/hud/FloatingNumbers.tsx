@@ -123,9 +123,10 @@ export const FloatingNumbers = memo(function FloatingNumbers() {
               color: n.color,
               fontSize: `${n.fontSize}px`,
               opacity: alpha,
-              WebkitTextStroke: '3px #000',
+              WebkitTextStroke: '2px #000',
               paintOrder: 'stroke fill',
               transform: 'translate(-50%, -50%)',
+              whiteSpace: 'nowrap',
             }}
           >
             {n.text}

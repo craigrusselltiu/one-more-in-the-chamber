@@ -37,19 +37,55 @@ export class BoardHazardManager {
   // Placement
   // ---------------------------------------------------------------------------
 
-  /** Lock N random non-hazarded tiles. */
-  placeRandomLocks(count: number): HazardPlacement[] {
-    return this.placeRandomHazard({ type: 'lock' }, count);
+  /** Lock N random tiles. Free tiles get a new lock; already-locked tiles gain +1 hits. */
+  placeRandomLocks(count: number, initialHits = 1): HazardPlacement[] {
+    const free = this.getFreeTiles();
+    const locked = this.getLockedTiles();
+    const placements: HazardPlacement[] = [];
+
+    for (let i = 0; i < count; i++) {
+      let pos: GridPosition | undefined;
+      if (free.length > 0) {
+        pos = free.splice(Math.floor(Math.random() * free.length), 1)[0];
+      } else if (locked.length > 0) {
+        pos = locked.splice(Math.floor(Math.random() * locked.length), 1)[0];
+      } else {
+        break;
+      }
+
+      const tile = this.board.getGrid()[pos.row][pos.col];
+      if (!tile) continue;
+
+      if (tile.hazard?.type === 'lock') {
+        tile.hazard.hits += initialHits;
+        tile.refreshStatusIndicator();
+      } else {
+        tile.hazard = { type: 'lock', hits: initialHits };
+      }
+      placements.push({ position: pos, hazard: { ...tile.hazard } });
+    }
+
+    return placements;
   }
 
-  /** Place hardened locks on N random non-hazarded tiles. Requires `hits` adjacent matches to free. */
-  placeRandomHardenedLocks(count: number, hits = 2): HazardPlacement[] {
-    return this.placeRandomHazard({ type: 'hardened_lock', hits }, count);
+  /** If true, first poison placement per turn is reduced by 1 (Snakeskin Boots). */
+  snakeskinActive = false;
+  private snakeskinUsedThisTurn = false;
+
+  /** Reset per-turn artifact state. */
+  resetTurnArtifactState(): void {
+    this.snakeskinUsedThisTurn = false;
   }
 
-  /** Poison N random non-hazarded tiles. */
+  /** Poison N random non-hazarded tiles. Snakeskin Boots reduces first batch by 1. */
   placeRandomPoison(count: number): HazardPlacement[] {
-    return this.placeRandomHazard({ type: 'poison' }, count);
+    let adjusted = count;
+    if (this.snakeskinActive && !this.snakeskinUsedThisTurn && adjusted > 0) {
+      this.snakeskinUsedThisTurn = true;
+      adjusted--;
+    }
+    if (adjusted <= 0) return [];
+    return this.placeRandomHazard({ type: 'poison' }, adjusted);
   }
 
   /** Place a bomb on N random non-hazarded tiles with a countdown. */
@@ -62,12 +98,16 @@ export class BoardHazardManager {
     return this.placeRandomHazard({ type: 'sand' }, count);
   }
 
+  /** If true, fool's gold placement is blocked (Fool's Magnifying Glass). */
+  foolsGoldImmune = false;
+
   /**
    * Place fool's gold on N random non-gold, non-hazarded tiles.
    * Converts the tile's type to 'gold' so it looks identical, then marks
    * it with a hidden fools_gold hazard. When matched, gold output is zeroed.
    */
   placeRandomFoolsGold(count: number): HazardPlacement[] {
+    if (this.foolsGoldImmune) return [];
     const candidates = this.getNonGoldFreeTiles();
     const placements: HazardPlacement[] = [];
 
@@ -85,45 +125,57 @@ export class BoardHazardManager {
     return placements;
   }
 
-  /** Lock an entire column. */
+  /** Lock an entire column. Already-locked tiles gain +1 hits. */
   lockColumn(col: number): HazardPlacement[] {
     const placements: HazardPlacement[] = [];
     const grid = this.board.getGrid();
     for (let row = 0; row < BOARD_SIZE; row++) {
       const tile = grid[row]?.[col];
-      if (tile && !tile.hazard) {
-        tile.hazard = { type: 'lock' };
-        placements.push({ position: { row, col }, hazard: { type: 'lock' } });
-      }
+      if (!tile) continue;
+      if (tile.hazard?.type === 'lock') {
+        tile.hazard.hits++;
+        tile.refreshStatusIndicator();
+      } else if (!tile.hazard) {
+        tile.hazard = { type: 'lock', hits: 1 };
+      } else continue;
+      placements.push({ position: { row, col }, hazard: { ...tile.hazard } });
     }
     return placements;
   }
 
-  /** Lock the bottom row. */
+  /** Lock the bottom row. Already-locked tiles gain +1 hits. */
   lockBottomRow(): HazardPlacement[] {
     const placements: HazardPlacement[] = [];
     const grid = this.board.getGrid();
     const row = BOARD_SIZE - 1;
     for (let col = 0; col < BOARD_SIZE; col++) {
       const tile = grid[row]?.[col];
-      if (tile && !tile.hazard) {
-        tile.hazard = { type: 'lock' };
-        placements.push({ position: { row, col }, hazard: { type: 'lock' } });
-      }
+      if (!tile) continue;
+      if (tile.hazard?.type === 'lock') {
+        tile.hazard.hits++;
+        tile.refreshStatusIndicator();
+      } else if (!tile.hazard) {
+        tile.hazard = { type: 'lock', hits: 1 };
+      } else continue;
+      placements.push({ position: { row, col }, hazard: { ...tile.hazard } });
     }
     return placements;
   }
 
-  /** Lock an entire row. */
+  /** Lock an entire row. Already-locked tiles gain +1 hits. */
   lockRow(row: number): HazardPlacement[] {
     const placements: HazardPlacement[] = [];
     const grid = this.board.getGrid();
     for (let col = 0; col < BOARD_SIZE; col++) {
       const tile = grid[row]?.[col];
-      if (tile && !tile.hazard) {
-        tile.hazard = { type: 'lock' };
-        placements.push({ position: { row, col }, hazard: { type: 'lock' } });
-      }
+      if (!tile) continue;
+      if (tile.hazard?.type === 'lock') {
+        tile.hazard.hits++;
+        tile.refreshStatusIndicator();
+      } else if (!tile.hazard) {
+        tile.hazard = { type: 'lock', hits: 1 };
+      } else continue;
+      placements.push({ position: { row, col }, hazard: { ...tile.hazard } });
     }
     return placements;
   }
@@ -241,7 +293,7 @@ export class BoardHazardManager {
    * After a match resolves, check if any hazarded tiles are adjacent to
    * matched tiles and should be freed. Call this after each match step.
    */
-  resolveAdjacentHazards(matchedPositions: GridPosition[]): GridPosition[] {
+  resolveAdjacentHazards(matchedPositions: GridPosition[], clearPoison = false): GridPosition[] {
     const grid = this.board.getGrid();
     const freed: GridPosition[] = [];
     const seen = new Set<string>();
@@ -257,14 +309,10 @@ export class BoardHazardManager {
         if (!tile || !tile.hazard) continue;
 
         const hazType = tile.hazard.type;
-        // Lock: match adjacent to free
-        // Hardened lock: decrement hits; free when hits reach 0
+        // Lock: decrement hits; free when hits reach 0
         // Sand: match adjacent to reveal
         // Bomb: matching the bomb tile itself defuses; adjacent matches don't defuse
-        if (hazType === 'lock' || hazType === 'sand') {
-          tile.hazard = null;
-          freed.push(n);
-        } else if (hazType === 'hardened_lock') {
+        if (hazType === 'lock') {
           tile.hazard.hits--;
           if (tile.hazard.hits <= 0) {
             tile.hazard = null;
@@ -272,6 +320,9 @@ export class BoardHazardManager {
           } else {
             tile.refreshStatusIndicator();
           }
+        } else if (hazType === 'sand' || (hazType === 'poison' && clearPoison)) {
+          tile.hazard = null;
+          freed.push(n);
         }
       }
     }
@@ -328,6 +379,20 @@ export class BoardHazardManager {
     }
 
     return placements;
+  }
+
+  private getLockedTiles(): GridPosition[] {
+    const grid = this.board.getGrid();
+    const locked: GridPosition[] = [];
+    for (let row = 0; row < BOARD_SIZE; row++) {
+      for (let col = 0; col < BOARD_SIZE; col++) {
+        const tile = grid[row][col];
+        if (tile?.hazard?.type === 'lock') {
+          locked.push({ row, col });
+        }
+      }
+    }
+    return locked;
   }
 
   private getFreeTiles(): GridPosition[] {

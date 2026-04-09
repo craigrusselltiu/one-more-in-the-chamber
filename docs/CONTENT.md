@@ -1,13 +1,39 @@
-# Buffs/Debuffs
+# Notes
+Bullet tiles - Bullet, .50 Cal, Buckshot, and Ricochet
+
+# Buffs
 - Rageful - Deal 1 extra damage per stack. Decrease stacks by 1 at the end of the turn.
 - Sturdy - Gain 1 extra block per stack. Decrease stacks by 1 at the end of the turn.
-- Ace - Add x0.25 multiplier per stack to the next non-Ace match.
+- Ace - Add x0.25 multiplier per stack to the next non-Ace non-casade match.
 - Lucky - 1% chance per stack to deal 1.5x damage. (max 50)
 - Barricade - At the end of the turn, retain block and decrease stacks by 1.
+- Grace - Negate the next instance of damage taken.
+- Resourceful - Double all non-damage resources this turn. Decrease stacks by 1 at the end of the turn.
+- Ready - Your next non-cascade attack deals 50% more damage. (max 1)
+- Chain - Gain 1 extra damage per Chain tile per stack.
+
+# Debuffs
 - Vulnerable - Take 50% extra damage from attacks. Decrease stacks by 1 at the end of the turn.
-- Venom - At the start of the turn, take damage equal to the number of stacks and decrease stacks by 1.
+- Poison - At the start of the turn, take damage equal to the number of stacks and decrease stacks by 1.
 - Bounty - When applying this or taking damage, if HP is lower than Bounty stacks, die.
 - Summoned - Dies when all non-summoned enemies have died.
+- Terrified - Deal 50% less damage. Decrease stacks by 1 at the end of the turn.
+
+# Tile Augments
+
+## Positive:
+- Explosive -- 4+ match creates an explosive tile; matching it destroys surrounding tiles
+- Showdown -- special tile created from 5+ matches; enhanced effect
+- Shadow -- when creating match with this tile, shoot a shadow bolt dealing 4 damage to a random enemy
+
+## Hazards:
+- Lock -- tile can't be swapped or matched until freed (match adjacent)
+- Hardened Lock -- like lock but requires multiple adjacent matches to break
+- Poison -- matching it applies Poison stacks to the player
+- Bomb -- countdown timer; explodes and damages player if not defused
+- Sand -- tile can't be swapped (but can still be matched/cascaded into)
+- Fool's Gold -- disguised tile that wastes a match (no resources generated)
+- Suppressed -- when creating a match with this tile, that match does nothing
 
 # Consumables
 
@@ -34,7 +60,7 @@
 - Flavor: "Wake up and hit harder."
 
 ### Chili Pepper
-- Effect: +3 damage to next match. Apply 1 venom to targeted enemy.
+- Effect: +3 damage to next match. Apply 1 Poison to targeted enemy.
 - Flavor: "Hot enough to burn twice."
 
 ### Shotgun Shell
@@ -60,7 +86,7 @@
 - Flavor: "Patch the wounds. Clean the mess."
 
 ### Snake Antidote
-- Effect: Cleanse all venom from yourself. Heal 5 HP.
+- Effect: Cleanse all poison from yourself. Heal 5 HP.
 - Flavor: "The rattler's bane."
 
 ### Dust Cover

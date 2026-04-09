@@ -122,7 +122,7 @@ export const MainMenu = memo(function MainMenu() {
         merchant: 'merchant',
         campfire: 'campfire',
         event: 'event',
-        treasure: 'treasure',
+        treasure: 'artifact',
       };
       const screen = screenMap[currentNode.type];
       if (screen) {
@@ -150,7 +150,13 @@ export const MainMenu = memo(function MainMenu() {
         return;
       }
       // Reward already taken -> tile select; otherwise -> treasure
-      EventBus.emit(GameEvent.SCREEN_CHANGE, currentRun!.bossRewardTaken ? 'tile-select' : 'treasure');
+      EventBus.emit(GameEvent.SCREEN_CHANGE, currentRun!.bossRewardTaken ? 'tile-select' : 'artifact');
+      return;
+    }
+
+    // Elite completed but reward not yet taken/skipped
+    if (currentNode && currentNode.completed && currentNode.type === 'elite' && !currentRun!.eliteRewardTaken) {
+      EventBus.emit(GameEvent.SCREEN_CHANGE, 'artifact');
       return;
     }
 

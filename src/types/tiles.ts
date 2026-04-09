@@ -33,12 +33,12 @@ export interface TileState {
   col: number;
   isExplosive: boolean;
   isShowdown: boolean;
+  isShadow: boolean;
   hazard: TileHazardState | null;
 }
 
 export type TileHazardState =
-  | { type: 'lock' }
-  | { type: 'hardened_lock'; hits: number }
+  | { type: 'lock'; hits: number }
   | { type: 'poison' }
   | { type: 'bomb'; countdown: number }
   | { type: 'sand' }

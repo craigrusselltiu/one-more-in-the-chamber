@@ -2,17 +2,32 @@ import { memo, useEffect, useMemo, useState } from 'react';
 import { playMerchant, playUpgrade } from '../../services/sfx';
 import { EventBus, GameEvent } from '../../game/EventBus';
 import { useRunStore } from '../../store/runStore';
-import { ARTIFACTS } from '../../data/artifacts';
+import { ARTIFACTS, RARITY_COLORS_DIM, RARITY_LABELS, RARITY_BREATHE_CLASS } from '../../data/artifacts';
 import { CONSUMABLES } from '../../data/consumables';
 import { ADDITIONAL_POOL, STARTER_POOL, TILE_DEFINITIONS } from '../../data/tiles';
 import { TILE_FRAMES, UI_FRAMES, CONSUMABLE_FRAMES, ARTIFACT_FRAMES } from '../../data/spriteConfig';
 import { SpriteIcon } from '../components/SpriteIcon';
 import { Tooltip } from '../components/Tooltip';
-import { KeywordSubTooltips, getReferencedKeywords, buildTileDescription, buildUpgradePreview, colorizeKeywords } from '../components/KeywordText';
+import { buildTileDescription, buildUpgradePreview, colorizeKeywords } from '../components/KeywordText';
 import { createSeededRandom, seededShuffle } from '../../utils/seededRandom';
-import type { TileType } from '../../types/game';
+import { weightedArtifactPickN } from '../../utils/weightedSelection';
+import type { TileType, TraitId } from '../../types/game';
 import type { Screen } from '../../App';
 import { getAscensionModifiers } from '../../data/ascension';
+
+const TRAIT_COLORS: Record<TraitId, string> = {
+  outlaw: '#D04040', sheriff: '#6888A0', prospector: '#E0C880', sapper: '#D4A030',
+  mustang: '#70B0D0', gunslinger: '#D06080', saloon_keeper: '#D4A870', desperado: '#B060D0',
+  sniper: '#7090B8', dead_man_walking: '#808080', tracker: '#C8A040', preacher: '#A0C8FF',
+  antivenom: '#60A040', undertaker: '#606060', rattlesnake: '#80C040',
+};
+const TRAIT_NAMES: Record<string, string> = {
+  outlaw: 'Outlaw', sheriff: 'Sheriff', prospector: 'Prospector', sapper: 'Sapper',
+  mustang: 'Mustang', gunslinger: 'Gunslinger', saloon_keeper: 'Saloon Keeper',
+  desperado: 'Desperado', sniper: 'Sniper', dead_man_walking: 'Dead Man Walking',
+  tracker: 'Tracker', preacher: 'Preacher', antivenom: 'Antivenom', undertaker: 'Undertaker',
+  rattlesnake: 'Rattlesnake',
+};
 
 interface MerchantItem {
   type: 'artifact' | 'consumable' | 'tile_swap' | 'upgrade';
@@ -40,11 +55,29 @@ export const MerchantScreen = memo(function MerchantScreen() {
   const [swapPending, setSwapPending] = useState<MerchantItem | null>(null);
   const [upgradePhase, setUpgradePhase] = useState<'none' | 'selecting' | 'upgraded'>('none');
   const [upgradeSelectedTile, setUpgradeSelectedTile] = useState<TileType | null>(null);
+  const [swapSelectedTile, setSwapSelectedTile] = useState<TileType | null>(null);
 
   useEffect(() => { playMerchant(); }, []);
 
+  // On first visit to this merchant node, save a snapshot of owned artifacts + active tiles.
+  // On remount (quit+resume), use the saved snapshot so stock doesn't re-roll.
+  const merchantSnapshots = useRunStore((s) => s.run?.merchantSnapshots);
+  const setMerchantSnapshot = useRunStore((s) => s.setMerchantSnapshot);
+
+  const snapshot = useMemo(() => {
+    if (!run || !nodeId) return null;
+    const existing = merchantSnapshots?.[nodeId];
+    if (existing) return existing;
+    const snap = {
+      ownedArtifactIds: run.artifacts.map(a => a.id),
+      activeTileTypes: [...run.activeTileTypes],
+    };
+    setMerchantSnapshot(nodeId, snap);
+    return snap;
+  }, [nodeId]);
+
   const stock = useMemo(() => {
-    if (!run) return { consumables: [] as MerchantItem[], artifacts: [] as MerchantItem[], tiles: [] as MerchantItem[] };
+    if (!run || !snapshot) return { consumables: [] as MerchantItem[], artifacts: [] as MerchantItem[], tiles: [] as MerchantItem[] };
     const rand = createSeededRandom(`${run.seed}-merchant-${run.currentNodeId}`);
     const priceMult = getAscensionModifiers(run.ascensionLevel).merchantPriceMultiplier;
 
@@ -57,31 +90,33 @@ export const MerchantScreen = memo(function MerchantScreen() {
         id: `cons-${c.id}`,
         name: c.name,
         description: c.effect,
-        price: Math.round((15 + Math.floor(rand() * 16)) * priceMult),
+        price: Math.round((17 + Math.floor(rand() * 18)) * priceMult),
       });
     }
 
     const artifacts: MerchantItem[] = [];
-    const ownedIds = new Set(run.artifacts.map((a) => a.id));
+    const ownedIds = new Set(snapshot.ownedArtifactIds);
     const availableArtifacts = ARTIFACTS.filter((a) => !ownedIds.has(a.id) && (!a.exclusive || a.exclusive === run.character));
-    const shuffledArtifacts = seededShuffle(availableArtifacts, rand);
-    for (let i = 0; i < Math.min(3, shuffledArtifacts.length); i++) {
-      const a = shuffledArtifacts[i];
+    const desperadoActive = (run.traitCounts?.desperado ?? 0) >= 2;
+    const pickedArtifacts = weightedArtifactPickN(availableArtifacts, 3, rand, desperadoActive);
+    for (let i = 0; i < pickedArtifacts.length; i++) {
+      const a = pickedArtifacts[i];
       artifacts.push({
         type: 'artifact',
         id: `art-${a.id}`,
         name: a.name,
         description: a.effect,
-        price: Math.round((100 + Math.floor(rand() * 76)) * priceMult),
+        price: Math.round((110 + Math.floor(rand() * 84)) * priceMult),
       });
     }
 
     const tiles: MerchantItem[] = [];
-    const swappableTiles = run.activeTileTypes.filter(
+    const snapTileTypes = snapshot.activeTileTypes;
+    const swappableTiles = snapTileTypes.filter(
       (t) => t !== 'tumbleweed' && t !== 'showdown' && t !== 'fools_gold',
     );
     if (swappableTiles.length > 0) {
-      const available = [...STARTER_POOL, ...ADDITIONAL_POOL].filter((t) => !run.activeTileTypes.includes(t));
+      const available = [...STARTER_POOL, ...ADDITIONAL_POOL].filter((t) => !snapTileTypes.includes(t));
       if (available.length > 0) {
         const swapTile = seededShuffle(available, rand)[0];
         const def = TILE_DEFINITIONS[swapTile];
@@ -93,15 +128,15 @@ export const MerchantScreen = memo(function MerchantScreen() {
           id: `swap-${swapTile}`,
           name: def.label,
           description: def.description,
-          price: Math.round((50 + Math.floor(rand() * 26)) * priceMult),
+          price: Math.round((55 + Math.floor(rand() * 29)) * priceMult),
           tileLevel,
         });
       }
     }
 
     // Upgrade card (250g, once per merchant)
-    const upgradePrice = Math.round(250 * priceMult);
-    const hasUpgradeableTiles = run.activeTileTypes.some((t) => TILE_DEFINITIONS[t]?.upgradeText);
+    const upgradePrice = Math.round(300 * priceMult);
+    const hasUpgradeableTiles = snapTileTypes.some((t) => TILE_DEFINITIONS[t]?.upgradeText);
     if (hasUpgradeableTiles) {
       tiles.push({
         type: 'upgrade',
@@ -114,7 +149,7 @@ export const MerchantScreen = memo(function MerchantScreen() {
 
     return { consumables, artifacts, tiles };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [run?.seed, run?.currentNodeId, run?.character]);
+  }, [run?.seed, run?.currentNodeId, run?.character, snapshot]);
 
   const swappableTiles = useMemo(() => {
     if (!run) return [];
@@ -128,6 +163,7 @@ export const MerchantScreen = memo(function MerchantScreen() {
 
     if (item.type === 'tile_swap') {
       setSwapPending(item);
+      setSwapSelectedTile(null);
       return;
     }
 
@@ -178,7 +214,7 @@ export const MerchantScreen = memo(function MerchantScreen() {
   if (!run) return null;
 
   const hasSaddlebag = run.artifacts.some((a) => a.id === 'saddlebag');
-  const maxSlots = hasSaddlebag ? 4 : 3;
+  const maxSlots = hasSaddlebag ? 5 : 3;
 
   return (
     <div className="flex flex-col items-center justify-center h-full" style={{ padding: '24px 0', backgroundImage: `linear-gradient(rgba(0,0,0,0.45), rgba(0,0,0,0.45)), url(${import.meta.env.BASE_URL}assets/merchant_bg.png)`, backgroundSize: 'cover', backgroundPosition: 'center' }}>
@@ -193,17 +229,35 @@ export const MerchantScreen = memo(function MerchantScreen() {
               const canAfford = run.gold >= item.price;
               const artId = item.id.replace('art-', '');
               const artFrame = ARTIFACT_FRAMES[artId];
+              const artDef = ARTIFACTS.find(a => a.id === artId);
+              const tags = artDef?.tags ?? [];
+              const traitTooltip = tags.length > 0 ? (
+                <span style={{ fontSize: '9px' }}>
+                  <span className="text-stone-400">Traits: </span>
+                  {tags.map((tag, i) => (
+                    <span key={tag}>
+                      {i > 0 && <span className="text-stone-500">, </span>}
+                      <span style={{ color: TRAIT_COLORS[tag] }}>{TRAIT_NAMES[tag]}</span>
+                    </span>
+                  ))}
+                </span>
+              ) : undefined;
+              const iconEl = artFrame != null ? <SpriteIcon frame={artFrame} scale={2} /> : <span className="text-lg text-purple-400">{'\u2726'}</span>;
               return (
-                <MerchantCard
-                  key={item.id}
-                  icon={artFrame != null ? <SpriteIcon frame={artFrame} scale={2} /> : <span className="text-lg text-purple-400">{'\u2726'}</span>}
-                  name={item.name}
-                  description={item.description}
-                  price={item.price}
-                  sold={isSold}
-                  disabled={isSold || !canAfford}
-                  onClick={() => handleBuy(item)}
-                />
+                <Tooltip key={item.id} content={traitTooltip} position="bottom" gap={30}>
+                  <MerchantCard
+                    icon={iconEl}
+                    name={item.name}
+                    nameClass={`text-xs ${RARITY_BREATHE_CLASS[artDef?.rarity ?? 'common']}`}
+                    subtitle={RARITY_LABELS[artDef?.rarity ?? 'common']}
+                    subtitleColor={RARITY_COLORS_DIM[artDef?.rarity ?? 'common']}
+                    description={<>{colorizeKeywords(item.description)}</>}
+                    price={item.price}
+                    sold={isSold}
+                    disabled={isSold || !canAfford}
+                    onClick={() => handleBuy(item)}
+                  />
+                </Tooltip>
               );
             })}
           </Section>
@@ -217,8 +271,6 @@ export const MerchantScreen = memo(function MerchantScreen() {
               const tileType = tileItem.id.replace('swap-', '') as TileType;
               const def = TILE_DEFINITIONS[tileType];
               const level = tileItem.tileLevel ?? 0;
-              const hasKeywords = getReferencedKeywords(def.description).length > 0;
-              const keywordTooltip = hasKeywords ? <KeywordSubTooltips text={def.description} /> : undefined;
               const upgradeTooltip = def.upgradeText ? (
                 <div className="whitespace-nowrap" style={{ fontSize: '8px', lineHeight: 1.3 }}>
                   <span className="text-stone-400 font-bold">Upgrade</span>
@@ -227,7 +279,7 @@ export const MerchantScreen = memo(function MerchantScreen() {
                 </div>
               ) : undefined;
               return (
-                <Tooltip content={keywordTooltip} secondContent={upgradeTooltip} position="bottom">
+                <Tooltip content={upgradeTooltip} position="bottom" gap={30}>
                   <MerchantCard
                     icon={<SpriteIcon frame={TILE_FRAMES[tileType]} scale={2} />}
                     name={tileItem.name}
@@ -253,20 +305,17 @@ export const MerchantScreen = memo(function MerchantScreen() {
               const full = run.consumables.length >= maxSlots;
               const consId = item.id.replace('cons-', '');
               const frame = CONSUMABLE_FRAMES[consId];
-              const hasKeywords = getReferencedKeywords(item.description).length > 0;
-              const keywordTooltip = hasKeywords ? <KeywordSubTooltips text={item.description} /> : undefined;
               return (
-                <Tooltip key={item.id} content={keywordTooltip} position="bottom">
-                  <MerchantCard
-                    icon={frame != null ? <SpriteIcon frame={frame} scale={2} /> : <span className="text-lg text-green-400">{'\u2764'}</span>}
-                    name={item.name}
-                    description={<>{colorizeKeywords(item.description)}</>}
-                    price={item.price}
-                    sold={isSold}
-                    disabled={isSold || !canAfford || full}
-                    onClick={() => handleBuy(item)}
-                  />
-                </Tooltip>
+                <MerchantCard
+                  key={item.id}
+                  icon={frame != null ? <SpriteIcon frame={frame} scale={2} /> : <span className="text-lg text-green-400">{'\u2764'}</span>}
+                  name={item.name}
+                  description={<>{colorizeKeywords(item.description)}</>}
+                  price={item.price}
+                  sold={isSold}
+                  disabled={isSold || !canAfford || full}
+                  onClick={() => handleBuy(item)}
+                />
               );
             })}
           </Section>
@@ -301,57 +350,103 @@ export const MerchantScreen = memo(function MerchantScreen() {
       </button>
 
       {/* Tile swap picker overlay */}
-      {swapPending && (
-        <div className="absolute inset-0 flex items-center justify-center bg-black/70 z-10">
-          <div className="bg-[#1a1a2e] border border-stone-600 p-4 w-72">
-            <h3 className="text-sm text-amber-400 mb-1">Choose tile to swap away</h3>
-            <p className="text-xs text-stone-400 mb-3">
-              Replacing with{' '}
-              <span className="text-blue-300">
-                {TILE_DEFINITIONS[swapPending.id.replace('swap-', '') as TileType].label}
-              </span>{' '}
-              for <span className="text-yellow-400">{swapPending.price}g</span>
-            </p>
-            <div className="flex flex-col gap-2 mb-3">
-              {swappableTiles.map((tile) => {
-                const def = TILE_DEFINITIONS[tile];
-                const level = run?.tileUpgrades[tile] ?? 0;
-                const hasKeywords = getReferencedKeywords(def.description).length > 0;
-                const keywordTooltip = hasKeywords ? <KeywordSubTooltips text={def.description} /> : undefined;
-                const upgradeTooltip = def.upgradeText ? (
-                  <div className="whitespace-nowrap" style={{ fontSize: '8px', lineHeight: 1.3 }}>
-                    <span className="text-stone-400 font-bold">Upgrade</span>
-                    <span className="text-stone-400"> - </span>
-                    <span className="text-amber-300">{def.upgradeText}</span>
-                  </div>
-                ) : undefined;
-                return (
-                  <Tooltip key={tile} content={keywordTooltip} secondContent={upgradeTooltip} position="bottom">
-                    <button
-                      onClick={() => handleSwapConfirm(tile)}
-                      className="flex items-center gap-2 p-2 border border-stone-600 bg-stone-800/80 hover:border-amber-600 hover:bg-stone-700/80 text-left w-full"
-                    >
-                      <SpriteIcon frame={TILE_FRAMES[tile]} scale={1} />
-                      <span className="text-stone-200 text-sm">{def.label}</span>
-                      <span className="text-amber-400" style={{ fontSize: '10px' }}>Lv {level + 1}</span>
-                    </button>
-                  </Tooltip>
-                );
-              })}
+      {swapPending && (() => {
+        const newTileType = swapPending.id.replace('swap-', '') as TileType;
+        const newDef = TILE_DEFINITIONS[newTileType];
+        const newLevel = swapPending.tileLevel ?? 0;
+        return (
+          <div className="absolute inset-0 flex flex-col bg-black/80 z-10">
+            <div className="flex-1 flex flex-col items-center justify-center">
+              <h2 className="text-xl text-amber-400 mb-2 font-bold uppercase" style={{ WebkitTextStroke: '4px #000', paintOrder: 'stroke fill' }}>Choose Tile to Swap Out</h2>
+              <p className="text-stone-400 text-xs mb-4">Choose a tile to replace with the tile on the right.</p>
+
+              <div className="flex items-center gap-6">
+                {/* Current tiles grid */}
+                <div className="grid grid-cols-4 gap-2">
+                  {swappableTiles.map((tileType) => {
+                    const def = TILE_DEFINITIONS[tileType];
+                    const level = run?.tileUpgrades[tileType] ?? 0;
+                    const isSelected = swapSelectedTile === tileType;
+                    return (
+                      <button
+                        key={tileType}
+                        onClick={() => setSwapSelectedTile(tileType)}
+                        className="flex flex-col items-center w-28 transition-all"
+                        style={{
+                          border: `2px solid ${isSelected ? '#f59e0b' : '#44403c'}`,
+                          backgroundColor: isSelected ? 'rgba(120, 53, 15, 0.4)' : 'rgba(28, 25, 23, 0.8)',
+                          padding: '8px 6px',
+                          transform: isSelected ? 'translateY(-4px)' : 'none',
+                        }}
+                      >
+                        <SpriteIcon frame={TILE_FRAMES[tileType]} scale={2} className="mb-1.5" />
+                        <span className="text-amber-300 text-xs font-bold">{def.label}</span>
+                        <span className="text-yellow-400" style={{ fontSize: '8px' }}>Lv {level + 1}</span>
+                        <span className="text-stone-300 text-center mt-1 leading-tight" style={{ fontSize: '9px' }}>
+                          {buildTileDescription(tileType, level)}
+                        </span>
+                        {def.flavor && (
+                          <span className="text-stone-600 text-center mt-1 leading-tight italic" style={{ fontSize: '8px' }}>
+                            "{def.flavor}"
+                          </span>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {/* Arrow */}
+                <span className="text-amber-400 text-2xl font-bold">{'\u2190'}</span>
+
+                {/* New tile (non-interactable card, same size as left) */}
+                <div
+                  className="flex flex-col items-center w-28 border-2 border-amber-600 bg-amber-900/30 relative"
+                  style={{ padding: '8px 6px' }}
+                >
+                  <span className="absolute top-1 right-1.5 text-yellow-400 font-bold" style={{ fontSize: '10px' }}>
+                    {swapPending.price}g
+                  </span>
+                  <SpriteIcon frame={TILE_FRAMES[newTileType]} scale={2} className="mb-1.5" />
+                  <span className="text-amber-300 text-xs font-bold">{newDef.label}</span>
+                  {newLevel > 0 && <span className="text-yellow-400" style={{ fontSize: '8px' }}>Lv {newLevel + 1}</span>}
+                  <span className="text-stone-300 text-center mt-1 leading-tight" style={{ fontSize: '9px' }}>
+                    {buildTileDescription(newTileType, newLevel)}
+                  </span>
+                  {newDef.flavor && (
+                    <span className="text-stone-600 text-center mt-1 leading-tight italic" style={{ fontSize: '8px' }}>
+                      "{newDef.flavor}"
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              <div className="flex gap-3 mt-4">
+                <button
+                  onClick={() => setSwapPending(null)}
+                  className="px-4 py-2 bg-stone-700/80 text-stone-400 text-sm border border-stone-600 hover:bg-stone-600/50"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => { if (swapSelectedTile) handleSwapConfirm(swapSelectedTile); }}
+                  disabled={!swapSelectedTile}
+                  className={`px-6 py-2 text-sm border ${
+                    swapSelectedTile
+                      ? 'bg-amber-900/60 text-amber-300 border-amber-700 hover:bg-amber-800/60'
+                      : 'bg-stone-700/80 text-stone-500 border-stone-600 cursor-not-allowed'
+                  }`}
+                >
+                  Confirm
+                </button>
+              </div>
             </div>
-            <button
-              onClick={() => setSwapPending(null)}
-              className="w-full px-4 py-1.5 bg-stone-700/80 text-stone-400 text-xs border border-stone-600 hover:bg-stone-600/50"
-            >
-              Cancel
-            </button>
           </div>
-        </div>
-      )}
+        );
+      })()}
 
       {/* Upgrade: tile selection (same layout as campfire) */}
       {upgradePhase === 'selecting' && (
-        <div className="absolute inset-0 flex flex-col bg-[#1a1a2e]/95 z-10">
+        <div className="absolute inset-0 flex flex-col bg-black/80 z-10">
           <div className="flex-1 flex flex-col items-center justify-center">
             <h2 className="text-xl text-amber-400 mb-2 font-bold uppercase" style={{ WebkitTextStroke: '4px #000', paintOrder: 'stroke fill' }}>Upgrade a Tile</h2>
             <p className="text-stone-400 text-xs mb-4">Permanent +1 tier for the rest of the run</p>
@@ -368,10 +463,8 @@ export const MerchantScreen = memo(function MerchantScreen() {
                       {buildUpgradePreview(tileType, currentLevel)}
                     </div>
                   );
-                  const hasKeywords = getReferencedKeywords(def.description).length > 0;
-                  const keywordTooltip = hasKeywords ? <KeywordSubTooltips text={def.description} /> : undefined;
                   return (
-                    <Tooltip key={tileType} content={previewTooltip} secondContent={keywordTooltip} position="bottom">
+                    <Tooltip key={tileType} content={previewTooltip} position="bottom" gap={30}>
                       <button
                         onClick={() => setUpgradeSelectedTile(tileType)}
                         className={`flex flex-col items-center p-3 w-28 border-2 transition-colors ${
@@ -382,7 +475,7 @@ export const MerchantScreen = memo(function MerchantScreen() {
                       >
                         <SpriteIcon frame={TILE_FRAMES[tileType]} scale={2} className="mb-1" />
                         <span className="text-amber-300 text-xs font-bold">{def.label}</span>
-                        <span className="text-stone-400" style={{ fontSize: '10px' }}>
+                        <span className="text-yellow-400" style={{ fontSize: '8px' }}>
                           Lv {currentLevel + 1} {'\u2192'} {currentLevel + 2}
                         </span>
                         <span className="text-stone-500 text-center" style={{ fontSize: '9px' }}>
@@ -421,7 +514,7 @@ export const MerchantScreen = memo(function MerchantScreen() {
       {upgradePhase === 'upgraded' && (() => {
         const tileDef = upgradeSelectedTile ? TILE_DEFINITIONS[upgradeSelectedTile] : null;
         return (
-          <div className="absolute inset-0 flex flex-col bg-[#1a1a2e]/95 z-10">
+          <div className="absolute inset-0 flex flex-col bg-black/80 z-10">
             <div className="flex-1 flex flex-col items-center justify-center">
               <div className="mb-4"><SpriteIcon frame={UI_FRAMES.upgrade} scale={3} /></div>
               <h2 className="text-xl text-amber-400 mb-2 font-bold uppercase" style={{ WebkitTextStroke: '4px #000', paintOrder: 'stroke fill' }}>Upgraded</h2>
@@ -454,7 +547,9 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 function MerchantCard({
   icon,
   name,
+  nameClass,
   subtitle,
+  subtitleColor,
   description,
   price,
   sold,
@@ -463,7 +558,9 @@ function MerchantCard({
 }: {
   icon: React.ReactNode;
   name: string;
+  nameClass?: string;
   subtitle?: string;
+  subtitleColor?: string;
   description: React.ReactNode;
   price: number;
   sold: boolean;
@@ -486,9 +583,9 @@ function MerchantCard({
         {sold ? 'SOLD' : `${price}g`}
       </span>
       <div className="mb-1.5">{icon}</div>
-      <span className="text-amber-300 text-xs font-bold">{name}</span>
+      <span className={nameClass ?? 'text-amber-300 text-xs font-bold'}>{name}</span>
       {subtitle && (
-        <span className="text-amber-400" style={{ fontSize: '10px' }}>{subtitle}</span>
+        <span style={{ fontSize: '7px', color: subtitleColor ?? '#d4a030' }}>{subtitle}</span>
       )}
       <span className="text-stone-400 text-center mt-1 leading-tight" style={{ fontSize: '9px' }}>
         {description}

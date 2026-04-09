@@ -15,7 +15,7 @@ const NODE_LABELS: Record<MapNodeType, string> = {
   merchant: 'Merchant',
   campfire: 'Campfire',
   event: 'Event',
-  treasure: 'Treasure',
+  artifact: 'Artifact',
   boss: 'Boss',
 };
 
@@ -58,6 +58,7 @@ export const MapScreen = memo(function MapScreen({ readonly }: { readonly?: bool
 
   const mapState = run?.mapState;
   const nodes = mapState?.nodes ?? [];
+  const slideRef = useRef<HTMLDivElement>(null);
   const reachable = mapState ? getReachableNodes(mapState) : [];
 
   // 15 floors horizontal, 7 paths vertical
@@ -223,6 +224,36 @@ export const MapScreen = memo(function MapScreen({ readonly }: { readonly?: bool
     }
   }, [mapState?.currentNodeId, nodes]);
 
+  // Slide-in animation when map first loads for a new act (no nodes visited yet)
+  useEffect(() => {
+    if (!slideRef.current || readonly) return;
+    const isNewAct = nodes.length > 0 && !nodes.some((n) => n.visited);
+    if (!isNewAct) return;
+
+    const el = slideRef.current;
+    const start = performance.now();
+    const duration = 1000;
+    const startX = 960;
+
+    // Ease-out with overshoot: slides in, overshoots left, then settles
+    function easeOutBack(t: number): number {
+      const c1 = 0.8;
+      const c3 = c1 + 1;
+      return 1 + c3 * Math.pow(t - 1, 3) + c1 * Math.pow(t - 1, 2);
+    }
+
+    function animate(now: number) {
+      const t = Math.min((now - start) / duration, 1);
+      const ease = easeOutBack(t);
+      el.style.transform = `translateX(${startX * (1 - ease)}px)`;
+      if (t < 1) requestAnimationFrame(animate);
+      else el.style.transform = '';
+    }
+
+    el.style.transform = `translateX(${startX}px)`;
+    requestAnimationFrame(animate);
+  }, [nodes, readonly]);
+
   const handleCanvasHover = useCallback(
     (e: React.MouseEvent<HTMLCanvasElement>) => {
       const canvas = canvasRef.current;
@@ -305,19 +336,28 @@ export const MapScreen = memo(function MapScreen({ readonly }: { readonly?: bool
   }
 
   return (
-    <div className="relative flex flex-col h-full bg-[#1a1a2e]/95">
-      {/* Map area -- horizontal scroll, centered */}
-      <div ref={containerRef} className="flex-1 overflow-x-auto overflow-y-hidden flex items-center justify-center">
-        <canvas
-          ref={canvasRef}
-          width={canvasWidth}
-          height={canvasHeight}
-          onClick={readonly ? undefined : handleCanvasClick}
-          onMouseMove={handleCanvasHover}
-          onMouseLeave={() => setTooltip(null)}
-          className={readonly ? 'shrink-0' : 'cursor-pointer shrink-0'}
-          style={{ imageRendering: 'auto' }}
+    <div className="relative flex flex-col h-full" style={{ overflow: 'hidden', backgroundImage: `url(${import.meta.env.BASE_URL}assets/crate_bg.png)`, backgroundSize: 'cover', backgroundPosition: 'center' }}>
+      <div ref={slideRef} className="flex flex-col flex-1">
+      {/* Map area -- parchment bg + horizontal scroll canvas */}
+      <div className="relative flex-1 flex items-center justify-center">
+        <img
+          src={`${import.meta.env.BASE_URL}assets/map_bg.png`}
+          alt=""
+          className="absolute"
+          style={{ imageRendering: 'pixelated', pointerEvents: 'none', width: canvasWidth + 80, height: canvasHeight + 20 }}
         />
+        <div ref={containerRef} className="relative overflow-x-auto overflow-y-hidden flex items-center justify-center" style={{ paddingLeft: 20 }}>
+          <canvas
+            ref={canvasRef}
+            width={canvasWidth}
+            height={canvasHeight}
+            onClick={readonly ? undefined : handleCanvasClick}
+            onMouseMove={handleCanvasHover}
+            onMouseLeave={() => setTooltip(null)}
+            className={readonly ? 'shrink-0' : 'cursor-pointer shrink-0'}
+            style={{ imageRendering: 'auto' }}
+          />
+        </div>
       </div>
 
       {/* Tooltip - positioned using canvas-internal coords (virtual pixels) */}
@@ -330,6 +370,7 @@ export const MapScreen = memo(function MapScreen({ readonly }: { readonly?: bool
         </div>
       )}
 
+      </div>
     </div>
   );
 });
@@ -341,7 +382,7 @@ function navigateToNode(node: MapNode) {
     merchant: 'merchant',
     campfire: 'campfire',
     event: 'event',
-    treasure: 'treasure',
+    artifact: 'artifact',
     boss: 'combat',
   };
 

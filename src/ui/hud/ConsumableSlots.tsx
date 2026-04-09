@@ -20,7 +20,7 @@ export const ConsumableSlots = memo(function ConsumableSlots() {
   const removeConsumable = useRunStore((s) => s.removeConsumable);
   const phase = useCombatStore((s) => s.phase);
 
-  const maxSlots = hasSaddlebag ? 4 : 3;
+  const maxSlots = hasSaddlebag ? 5 : 3;
   const canUse = phase === 'consumable-window' || phase === 'swap-phase';
 
   return (

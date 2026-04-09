@@ -27,13 +27,20 @@ export const PlayerPanel = memo(function PlayerPanel() {
 
   return (
     <div className="flex flex-col items-center">
-      {/* Character sprite */}
-      <img
-        src={`${import.meta.env.BASE_URL}assets/sprites/${spriteFile}`}
-        alt="Player"
-        className="mb-1"
-        style={{ width: 96, height: 96, imageRendering: 'pixelated', objectFit: 'cover' }}
-      />
+      {/* Character sprite with shadow */}
+      <div className="relative mb-1" style={{ width: 96, height: 96 }}>
+        <img
+          src={`${import.meta.env.BASE_URL}assets/sprites/shadow.png`}
+          alt=""
+          className="absolute bottom-0 left-1/2 -translate-x-1/2"
+          style={{ width: 80, imageRendering: 'pixelated', opacity: 0.5 }}
+        />
+        <img
+          src={`${import.meta.env.BASE_URL}assets/sprites/${spriteFile}`}
+          alt="Player"
+          style={{ width: 96, height: 96, imageRendering: 'pixelated', objectFit: 'cover' }}
+        />
+      </div>
 
       {/* HP bar centered, block badge overlaid to the left */}
       <div className="relative">

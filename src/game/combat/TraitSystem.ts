@@ -3,7 +3,6 @@ import type { MatchResult } from '../../types/combat';
 import type { ResourceOutput } from './ResourceResolver';
 import type { Player } from './Player';
 import type { Enemy } from './Enemy';
-import { TILE_DEFINITIONS } from '../../data/tiles';
 
 /**
  * TraitSystem: evaluates active trait breakpoints from artifact tag counts
@@ -21,9 +20,13 @@ export class TraitSystem {
   /** Tracks swaps used this turn. */
   private swapsUsedThisTurn = 0;
   /** Sheriff(2): whether the first block gain this turn has been doubled. */
-  private sheriffBlockUsedThisTurn = false;
-  /** Dead Man Walking(7): once/fight lethal protection. */
+  private sheriffBlockUsedThisFight = false;
+  /** Dead Man Walking(7): once/combat lethal protection. */
   deadManWalkingAvailable = false;
+  /** Preacher(2): whether the player dealt damage this turn. */
+  private damageDealtThisTurn = false;
+  /** Reference to the player, needed for Undertaker(6) Ready grant. */
+  private player: Player | null = null;
 
   constructor(traitCounts: Partial<Record<TraitId, number>>) {
     this.counts = { ...traitCounts };
@@ -35,10 +38,17 @@ export class TraitSystem {
   }
 
   /** Restore internal state from a mid-combat snapshot. */
-  restoreState(matchCount: number, swapsUsed: number, sheriffBlockUsed = false): void {
+  restoreState(
+    matchCount: number,
+    swapsUsed: number,
+    sheriffBlockUsed = false,
+    damageDealtThisTurn = false,
+    _undertakerBonusDamageReady = false,
+  ): void {
     this.matchCountThisFight = matchCount;
     this.swapsUsedThisTurn = swapsUsed;
-    this.sheriffBlockUsedThisTurn = sheriffBlockUsed;
+    this.sheriffBlockUsedThisFight = sheriffBlockUsed;
+    this.damageDealtThisTurn = damageDealtThisTurn;
   }
 
   /** Check if a trait has reached a given breakpoint threshold. */
@@ -57,10 +67,11 @@ export class TraitSystem {
   /** Apply fight-start effects. Called once when combat begins. */
   onFightStart(player: Player, isBoss: boolean, enemies: Enemy[]): void {
     this.matchCountThisFight = 0;
-
-    // Sheriff(4): gain 5 Sturdy at fight start
+    this.sheriffBlockUsedThisFight = false;
+    this.player = player;
+    // Sheriff(4): gain 4 Sturdy at fight start
     if (this.isActive('sheriff', 4)) {
-      player.sturdyStacks += 5;
+      player.sturdyStacks += 4;
     }
 
     // Outlaw(5): at start of Boss encounters, gain 3 Rageful + 2 Vulnerable to all enemies
@@ -75,6 +86,11 @@ export class TraitSystem {
     if (this.isActive('dead_man_walking', 7)) {
       this.deadManWalkingAvailable = true;
     }
+
+    // Preacher(6): gain 1 Grace at start of combat
+    if (this.isActive('preacher', 6)) {
+      player.graceStacks += 1;
+    }
   }
 
   // ---------------------------------------------------------------------------
@@ -84,7 +100,7 @@ export class TraitSystem {
   /** Apply turn-start effects. */
   onTurnStart(_player: Player): void {
     this.swapsUsedThisTurn = 0;
-    this.sheriffBlockUsedThisTurn = false;
+    this.damageDealtThisTurn = false;
   }
 
   /** Get extra swaps per turn from traits. */
@@ -93,9 +109,9 @@ export class TraitSystem {
     return this.isActive('mustang', 4) ? 1 : 0;
   }
 
-  /** Whether a non-adjacent swap is allowed this turn. */
-  allowsNonAdjacentSwap(): boolean {
-    return this.isActive('mustang', 4);
+  /** Desperado(5): grant Ace stacks at turn start. */
+  getDesperadoAceGrant(): number {
+    return this.isActive('desperado', 5) ? 4 : 0;
   }
 
   // ---------------------------------------------------------------------------
@@ -111,20 +127,27 @@ export class TraitSystem {
   }
 
   // ---------------------------------------------------------------------------
+  // Damage tracking (Preacher)
+  // ---------------------------------------------------------------------------
+
+  /** Called when the player deals damage to an enemy. */
+  onDamageDealt(): void {
+    this.damageDealtThisTurn = true;
+  }
+
+  // ---------------------------------------------------------------------------
   // Match Modification
   // ---------------------------------------------------------------------------
 
   /**
    * Modify resource output based on trait effects.
    * Called after ResourceResolver computes the base output.
-   * @param isLassoSwap Whether the originating swap was non-adjacent (lasso).
    */
   modifyMatchOutput(
     match: MatchResult,
     output: ResourceOutput,
     player: Player,
     _targetEnemy: Enemy | null,
-    isLassoSwap = false,
   ): ResourceOutput {
     const modified = { ...output };
 
@@ -133,37 +156,23 @@ export class TraitSystem {
     // --- Sheriff ---
 
     // Sheriff(2): first block gain each turn is doubled
-    if (modified.block > 0 && !this.sheriffBlockUsedThisTurn && this.isActive('sheriff', 2)) {
+    if (modified.block > 0 && !this.sheriffBlockUsedThisFight && this.isActive('sheriff', 2)) {
       modified.block *= 2;
-      this.sheriffBlockUsedThisTurn = true;
+      this.sheriffBlockUsedThisFight = true;
     }
 
     // --- Prospector ---
 
-    // Prospector(2): any match: 20% chance to generate 1 gold
+    // Prospector(2): any match: 25% chance to generate 5 gold
     if (this.isActive('prospector', 2)) {
-      if (Math.random() < 0.2) {
-        modified.gold += 1;
+      if (Math.random() < 0.25) {
+        modified.gold += 5;
       }
     }
 
     // Prospector(6): deal 10% of current gold as extra damage
     if (this.isActive('prospector', 6) && player.gold > 0) {
       modified.damage += Math.floor(player.gold * 0.1);
-    }
-
-    // --- Rattlesnake ---
-    // Rattlesnake(1): Immune to poison tile damage/debuffs -- handled in hazard system
-    // Rattlesnake(3): Matching poison tiles deals damage + venom -- handled in hazard system
-
-    // --- Sapper ---
-    // Sapper effects are board-hazard related -- handled in hazard system
-
-    // --- Mustang ---
-
-    // Mustang(4): 5+ tile lasso (non-adjacent) matches: +50% damage
-    if (isLassoSwap && match.length >= 5 && this.isActive('mustang', 4)) {
-      modified.damage = Math.round(modified.damage * 1.5);
     }
 
     // --- Gunslinger ---
@@ -182,19 +191,45 @@ export class TraitSystem {
 
     // --- Sniper ---
 
-    // Sniper(4): on 5-match, gain 1 swap for that turn
-    if (match.length >= 5 && this.isActive('sniper', 4)) {
+    // Sniper(3): on 5-match, gain 1 swap for that turn
+    if (match.length >= 5 && this.isActive('sniper', 3)) {
       modified.bonusSwaps += 1;
     }
 
     // --- Dead Man Walking ---
 
-    // Dead Man Walking(5): below 20% HP, all damage is doubled
-    if (this.isActive('dead_man_walking', 5) && player.health < player.maxHealth * 0.2) {
+    // Dead Man Walking(5): at or below 20% HP, all damage is doubled
+    if (this.isActive('dead_man_walking', 5) && player.health <= player.maxHealth * 0.2) {
       modified.damage *= 2;
     }
 
     return modified;
+  }
+
+  // ---------------------------------------------------------------------------
+  // Undertaker
+  // ---------------------------------------------------------------------------
+
+  /** Undertaker(3): +50% damage to summoned enemies. Returns multiplier bonus (0.5 or 0). */
+  getUndertakerBonusDamage(targetIsSummoned: boolean): number {
+    if (this.isActive('undertaker', 3) && targetIsSummoned) return 0.5;
+    return 0;
+  }
+
+  /** Undertaker(6): on enemy kill, grant 1 Ready to player. */
+  onEnemyKilledUndertaker(): void {
+    if (this.isActive('undertaker', 6) && this.player) {
+      this.player.addReady(1);
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // Sniper(5): Execute
+  // ---------------------------------------------------------------------------
+
+  /** Sniper(5): 6+ match kills non-boss targeted enemy. */
+  shouldSniperExecute(matchLength: number): boolean {
+    return this.isActive('sniper', 5) && matchLength >= 6;
   }
 
   // ---------------------------------------------------------------------------
@@ -228,21 +263,21 @@ export class TraitSystem {
     return this.isActive('dead_man_walking', 3) ? 1 : 0;
   }
 
-  // ---------------------------------------------------------------------------
-  // Crit Modification
-  // ---------------------------------------------------------------------------
-
-  /**
-   * Get crit parameters based on trait breakpoints.
-   * Returns the crit multiplier and whether crit chance halves or resets.
-   */
-  getCritConfig(): { multiplier: number; bonusFlatDamage: number; halveOnTrigger: boolean } {
-    return { multiplier: 1.5, bonusFlatDamage: 0, halveOnTrigger: false };
+  /** Preacher(4): 20% damage reduction from enemies with lower HP than player. */
+  getPreacherDamageReduction(enemyHp: number, playerHp: number): number {
+    if (this.isActive('preacher', 4) && enemyHp < playerHp) return 0.20;
+    return 0;
   }
 
   // ---------------------------------------------------------------------------
   // Turn End
   // ---------------------------------------------------------------------------
+
+  /** Preacher(2): heal 5 if no damage dealt this turn. */
+  getPreacherHealing(): number {
+    if (this.isActive('preacher', 2) && !this.damageDealtThisTurn) return 5;
+    return 0;
+  }
 
   /**
    * Apply turn-end effects.
@@ -262,6 +297,43 @@ export class TraitSystem {
   }
 
   // ---------------------------------------------------------------------------
+  // Tracker
+  // ---------------------------------------------------------------------------
+
+  /** Tracker(1): reveal all buried tiles at end of turn. */
+  shouldRevealBuried(): boolean {
+    return this.isActive('tracker', 1);
+  }
+
+  /** Tracker(3): gain 1 Rageful when buried tile is revealed. */
+  buriedRevealGrantsRageful(): boolean {
+    return this.isActive('tracker', 3);
+  }
+
+  // ---------------------------------------------------------------------------
+  // Antivenom
+  // ---------------------------------------------------------------------------
+
+  /** Antivenom(3): matching adjacent to poison clears it. */
+  clearsAdjacentPoison(): boolean {
+    return this.isActive('antivenom', 3);
+  }
+
+  // ---------------------------------------------------------------------------
+  // Rattlesnake
+  // ---------------------------------------------------------------------------
+
+  /** Rattlesnake(2): clearing/matching poison applies venom to target. */
+  poisonHazardAppliesPoison(): boolean {
+    return this.isActive('rattlesnake', 2);
+  }
+
+  /** Rattlesnake(4): venom applies to ALL enemies instead of just the target. */
+  poisonAppliesToAll(): boolean {
+    return this.isActive('rattlesnake', 4);
+  }
+
+  // ---------------------------------------------------------------------------
   // Sapper helpers
   // ---------------------------------------------------------------------------
 
@@ -269,37 +341,30 @@ export class TraitSystem {
     return this.matchCountThisFight;
   }
 
-  /** Sapper(1): Enemy bomb timers +2 turns. */
+  getDamageDealtThisTurn(): boolean {
+    return this.damageDealtThisTurn;
+  }
+
+  /** @deprecated Undertaker(6) now grants Ready stacks; kept for snapshot compat. */
+  getUndertakerBonusDamageReady(): boolean {
+    return false;
+  }
+
+  /** Sapper(2): Enemy bomb timers +2 turns. */
   getBombCountdownBonus(): number {
-    return this.isActive('sapper', 1) ? 2 : 0;
+    return this.isActive('sapper', 2) ? 2 : 0;
   }
 
-  /** Sapper(5): Explosive tile radius increased by 1. */
+  /** Sapper(4): Explosive tile radius increased by 1. */
   hasExpandedExplosiveRadius(): boolean {
-    return this.isActive('sapper', 5);
+    return this.isActive('sapper', 4);
   }
 
   // ---------------------------------------------------------------------------
-  // Rattlesnake helpers
+  // Crit
   // ---------------------------------------------------------------------------
 
-  /** Rattlesnake(1): Immune to poison tile damage/debuffs. */
-  isPoisonImmune(): boolean {
-    return this.isActive('rattlesnake', 1);
-  }
-
-  /**
-   * Rattlesnake(3): Matching poison tiles deals damage + venom.
-   * Returns { damage, venomStacks } to apply per poison tile matched.
-   */
-  getPoisonMatchBonus(player: Player): { damage: number; venomStacks: number } | null {
-    if (!this.isActive('rattlesnake', 3)) return null;
-    const bulletDef = TILE_DEFINITIONS['bullet'];
-    const bulletUpgrade = player.getUpgradeLevel('bullet');
-    const bulletPerTile = bulletDef.baseValue + bulletUpgrade * bulletDef.upgradeValue;
-    return {
-      damage: Math.round(bulletPerTile * 2),
-      venomStacks: 1,
-    };
+  getCritConfig(): { multiplier: number; bonusFlatDamage: number; halveOnTrigger: boolean } {
+    return { multiplier: 1.5, bonusFlatDamage: 0, halveOnTrigger: false };
   }
 }

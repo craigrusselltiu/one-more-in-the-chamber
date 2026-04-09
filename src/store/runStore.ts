@@ -44,7 +44,9 @@ interface RunStore {
   resetNodeVisited: (nodeId: string) => void;
   markNodeCompleted: (nodeId: string) => void;
   addMerchantPurchase: (nodeId: string, itemId: string) => void;
+  setMerchantSnapshot: (nodeId: string, snapshot: { ownedArtifactIds: string[]; activeTileTypes: TileType[] }) => void;
   markBossRewardTaken: () => void;
+  markEliteRewardTaken: () => void;
   advanceAct: () => void;
   setMapState: (map: MapState) => void;
   endRun: (completed: boolean) => void;
@@ -54,7 +56,18 @@ export const useRunStore = create<RunStore>((set, get) => ({
   run: null,
   pendingNewGame: null,
 
-  restoreRun: (run) => set({ run }),
+  restoreRun: (run) => {
+    // Migration: rename legacy 'venom' tile type to 'waste'
+    const migrated = { ...run };
+    migrated.activeTileTypes = run.activeTileTypes.map(t => t === 'venom' as string ? 'waste' : t) as typeof run.activeTileTypes;
+    if (run.tileUpgrades && ('venom' as string) in run.tileUpgrades) {
+      const upgrades = { ...run.tileUpgrades };
+      (upgrades as Record<string, number>)['waste'] = (upgrades as Record<string, number>)['venom'];
+      delete (upgrades as Record<string, number>)['venom'];
+      migrated.tileUpgrades = upgrades;
+    }
+    set({ run: migrated });
+  },
 
   clearRun: async () => {
     const run = get().run;
@@ -85,7 +98,8 @@ export const useRunStore = create<RunStore>((set, get) => ({
       consumables.push({ id: 'stick_of_tnt' }, { id: 'stick_of_tnt' });
     }
     if (loadouts.includes('lucky_start')) {
-      const def = ARTIFACTS.find((a) => a.id === 'horseshoe_charm');
+      // Lucky Start loadout: grant a Lucky Bullet at run start
+      const def = ARTIFACTS.find((a) => a.id === 'lucky_bullet');
       if (def) {
         artifacts.push({ id: def.id, tags: def.tags });
         for (const tag of def.tags) traitCounts[tag] = (traitCounts[tag] ?? 0) + 1;
@@ -175,13 +189,16 @@ export const useRunStore = create<RunStore>((set, get) => ({
       for (const tag of artifact.tags) {
         traitCounts[tag] = (traitCounts[tag] ?? 0) + 1;
       }
-      return { run: { ...state.run, artifacts, traitCounts } };
+      // Gold Tooth: upon pickup, gain 333 gold
+      let gold = state.run.gold;
+      if (artifact.id === 'gold_tooth') gold += 333;
+      return { run: { ...state.run, artifacts, traitCounts, gold } };
     }),
 
   addConsumable: (consumable) =>
     set((state) => {
       if (!state.run) return state;
-      const maxSlots = state.run.artifacts.some((a) => a.id === 'saddlebag') ? 4 : 3;
+      const maxSlots = state.run.artifacts.some((a) => a.id === 'saddlebag') ? 5 : 3;
       if (state.run.consumables.length >= maxSlots) return state;
       return { run: { ...state.run, consumables: [...state.run.consumables, consumable] } };
     }),
@@ -292,6 +309,7 @@ export const useRunStore = create<RunStore>((set, get) => ({
         run: {
           ...state.run,
           currentNodeId: nodeId,
+          eliteRewardTaken: false,
           mapState: { ...state.run.mapState, nodes, currentNodeId: nodeId },
         },
       };
@@ -340,10 +358,29 @@ export const useRunStore = create<RunStore>((set, get) => ({
       };
     }),
 
+  setMerchantSnapshot: (nodeId, snapshot) =>
+    set((state) => {
+      if (!state.run) return state;
+      const prev = state.run.merchantSnapshots ?? {};
+      if (prev[nodeId]) return state; // don't overwrite
+      return {
+        run: {
+          ...state.run,
+          merchantSnapshots: { ...prev, [nodeId]: snapshot },
+        },
+      };
+    }),
+
   markBossRewardTaken: () =>
     set((state) => {
       if (!state.run) return state;
       return { run: { ...state.run, bossRewardTaken: true } };
+    }),
+
+  markEliteRewardTaken: () =>
+    set((state) => {
+      if (!state.run) return state;
+      return { run: { ...state.run, eliteRewardTaken: true } };
     }),
 
   advanceAct: () =>

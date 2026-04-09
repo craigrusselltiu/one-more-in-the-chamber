@@ -48,13 +48,13 @@ function assignNodeTypes(
   totalRows: number,
   rng: () => number,
 ): void {
-  const treasureRow = 6; // 7th node (0-indexed)
-  const fixedRows = new Set([0, treasureRow, totalRows - 2, totalRows - 1]);
+  const artifactRow = 6; // 7th node (0-indexed)
+  const fixedRows = new Set([0, artifactRow, totalRows - 2, totalRows - 1]);
 
   // 1. Set fixed rows
   for (const node of nodes) {
     if (node.row === 0) node.type = 'combat';
-    else if (node.row === treasureRow) node.type = 'treasure';
+    else if (node.row === artifactRow) node.type = 'artifact';
     else if (node.row === totalRows - 2) node.type = 'campfire';
     else if (node.row === totalRows - 1) node.type = 'boss';
     else node.type = 'combat'; // default, will be overwritten

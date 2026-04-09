@@ -111,7 +111,6 @@ export const CampfireScreen = memo(function CampfireScreen() {
             );
             const hasKeywords = getReferencedKeywords(def.description).length > 0;
             const keywordTooltip = hasKeywords ? <KeywordSubTooltips text={def.description} /> : undefined;
-
             return (
               <Tooltip key={tileType} content={previewTooltip} secondContent={keywordTooltip} position="bottom">
                 <button
@@ -124,7 +123,7 @@ export const CampfireScreen = memo(function CampfireScreen() {
                 >
                   <SpriteIcon frame={TILE_FRAMES[tileType]} scale={2} className="mb-1" />
                   <span className="text-amber-300 text-xs font-bold">{def.label}</span>
-                  <span className="text-stone-400" style={{ fontSize: '10px' }}>
+                  <span className="text-yellow-400" style={{ fontSize: '8px' }}>
                     Lv {currentLevel + 1} {'\u2192'} {currentLevel + 2}
                   </span>
                   <span className="text-stone-500 text-center" style={{ fontSize: '9px' }}>

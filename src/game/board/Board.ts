@@ -31,6 +31,8 @@ export class Board {
   private matchDetector: MatchDetector;
   private cascadeResolver: CascadeResolver;
   private activeTileTypes: TileType[] = ['bullet', 'iron', 'gold'];
+  /** Explosive tile radius (1 = 3x3, 2 = 5x5). Set by Sapper trait. */
+  private _explosiveRadius = 1;
   /** Bag-based tile generation: one of each active type, shuffled. Refilled when empty. */
   private tileTypeBag: TileType[] = [];
   /** If mirage is active, the type it transformed into for this combat. */
@@ -98,7 +100,7 @@ export class Board {
       for (let col = 0; col < BOARD_SIZE; col++) {
         const tile = this.grid[row][col];
         if (!tile) continue;
-        const isLocked = tile.hazard?.type === 'lock' || tile.hazard?.type === 'hardened_lock';
+        const isLocked = tile.hazard?.type === 'lock';
         if (!isLocked) unlocked.push({ row, col });
       }
     }
@@ -111,7 +113,7 @@ export class Board {
         for (let col = 0; col < BOARD_SIZE; col++) {
           const tile = this.grid[row][col];
           if (!tile) continue;
-          const isLocked = tile.hazard?.type === 'lock' || tile.hazard?.type === 'hardened_lock';
+          const isLocked = tile.hazard?.type === 'lock';
           if (isLocked) continue;
 
           let formsMatch = false;
@@ -139,9 +141,10 @@ export class Board {
               const tmpType = tile.type;
               const tmpExplosive = tile.isExplosive;
               const tmpShowdown = tile.isShowdown;
+              const tmpShadow = tile.isShadow;
               const tmpHazard = tile.hazard;
-              tile.setType(other.type); tile.isExplosive = other.isExplosive; tile.isShowdown = other.isShowdown; tile.hazard = other.hazard;
-              other.setType(tmpType); other.isExplosive = tmpExplosive; other.isShowdown = tmpShowdown; other.hazard = tmpHazard;
+              tile.setType(other.type); tile.isExplosive = other.isExplosive; tile.isShowdown = other.isShowdown; tile.isShadow = other.isShadow; tile.hazard = other.hazard;
+              other.setType(tmpType); other.isExplosive = tmpExplosive; other.isShowdown = tmpShowdown; other.isShadow = tmpShadow; other.hazard = tmpHazard;
               hasMatches = true;
             }
           }
@@ -195,7 +198,7 @@ export class Board {
   private static readonly HINT_BREATHE_DURATION = 1500; // how long the hint breathes
   /** Whether shuffle hold mode is active (clicks toggle hold). */
   private shuffleHoldMode = false;
-  /** Set of held position keys ("row,col") during Shuffle the Deck. */
+  /** Set of held position keys ("row,col") during False Shuffle. */
   private shuffleHeldKeys = new Set<string>();
 
   setDeadeyeMode(active: boolean): void {
@@ -217,7 +220,7 @@ export class Board {
     if (active) this.clearSelection();
   }
 
-  /** Toggle hold on a tile during Shuffle the Deck. Returns new held count. */
+  /** Toggle hold on a tile during False Shuffle. Returns new held count. */
   toggleShuffleHold(row: number, col: number): number {
     const key = `${row},${col}`;
     const tile = this.grid[row]?.[col];
@@ -363,7 +366,7 @@ export class Board {
     if (!tile) return;
 
     // Don't allow selecting locked tiles (regular or hardened)
-    if (tile.hazard?.type === 'lock' || tile.hazard?.type === 'hardened_lock') return;
+    if (tile.hazard?.type === 'lock') return;
 
     this.selectedTile = pos;
     tile.setSelected(true);
@@ -397,7 +400,7 @@ export class Board {
   async trySwap(
     from: GridPosition,
     to: GridPosition,
-    onCascadeStep?: (matches: MatchResult[]) => void,
+    onCascadeStep?: (matches: MatchResult[]) => void | Promise<void>,
   ): Promise<SwapResult> {
     if (this.isResolving) return { valid: false, matches: [] };
     this.resetHintTimer();
@@ -407,8 +410,8 @@ export class Board {
     if (!tileA || !tileB) return { valid: false, matches: [] };
 
     // Don't allow swapping locked tiles (no animation either)
-    const aLock = tileA.hazard?.type === 'lock' || tileA.hazard?.type === 'hardened_lock';
-    const bLock = tileB.hazard?.type === 'lock' || tileB.hazard?.type === 'hardened_lock';
+    const aLock = tileA.hazard?.type === 'lock';
+    const bLock = tileB.hazard?.type === 'lock';
     if (aLock || bLock) {
       return { valid: false, matches: [] };
     }
@@ -502,7 +505,7 @@ export class Board {
   private async resolveShowdownSwap(
     from: GridPosition,
     to: GridPosition,
-    onCascadeStep?: (matches: MatchResult[]) => void,
+    onCascadeStep?: (matches: MatchResult[]) => void | Promise<void>,
   ): Promise<SwapResult> {
     const tileA = this.grid[from.row][from.col]!;
     const tileB = this.grid[to.row][to.col]!;
@@ -553,15 +556,17 @@ export class Board {
         length: count,
         isExplosive: false,
         isShowdown: tType === targetType,
+        isShadow: false,
         isCross: false,
         crossIntersections: [],
         matchBonus: 1.0,
+        isChainDestruction: true,
       });
     }
 
     // Apply showdown effects immediately so the player sees them right away
     if (onCascadeStep) {
-      onCascadeStep(matchResults);
+      await onCascadeStep(matchResults);
     }
 
     // Apply gravity with animation, then fill
@@ -589,7 +594,7 @@ export class Board {
   private async resolveDoubleShowdownSwap(
     from: GridPosition,
     to: GridPosition,
-    onCascadeStep?: (matches: MatchResult[]) => void,
+    onCascadeStep?: (matches: MatchResult[]) => void | Promise<void>,
   ): Promise<SwapResult> {
     this.isResolving = true;
 
@@ -622,13 +627,15 @@ export class Board {
         length: count,
         isExplosive: false,
         isShowdown: true,
+        isShadow: false,
         isCross: false,
         crossIntersections: [],
         matchBonus: 1.0,
+        isChainDestruction: true,
       });
     }
 
-    if (onCascadeStep) onCascadeStep(matchResults);
+    if (onCascadeStep) await onCascadeStep(matchResults);
 
     // Gravity + fill + cascade
     const gravMoves = this.cascadeResolver.applyGravityTracked(this);
@@ -647,18 +654,19 @@ export class Board {
   private async resolveDoubleExplosiveSwap(
     from: GridPosition,
     to: GridPosition,
-    onCascadeStep?: (matches: MatchResult[]) => void,
+    onCascadeStep?: (matches: MatchResult[]) => void | Promise<void>,
   ): Promise<SwapResult> {
     this.isResolving = true;
 
     EventBus.emit(GameEvent.SCREEN_SHAKE, 'heavy');
 
-    // Collect all positions in 5x5 radius around both centers (deduped)
+    // Collect all positions in (5+bonus)x(5+bonus) radius around both centers (deduped)
+    const doubleRadius = 2 + (this._explosiveRadius - 1);
     const posSet = new Set<string>();
     const positions: GridPosition[] = [];
     for (const center of [from, to]) {
-      for (let dr = -2; dr <= 2; dr++) {
-        for (let dc = -2; dc <= 2; dc++) {
+      for (let dr = -doubleRadius; dr <= doubleRadius; dr++) {
+        for (let dc = -doubleRadius; dc <= doubleRadius; dc++) {
           const r = center.row + dr;
           const c = center.col + dc;
           if (r < 0 || r >= BOARD_SIZE || c < 0 || c >= BOARD_SIZE) continue;
@@ -684,13 +692,15 @@ export class Board {
         length: count,
         isExplosive: false,
         isShowdown: false,
+        isShadow: false,
         isCross: false,
         crossIntersections: [],
+        isChainDestruction: true,
         matchBonus: 1.0,
       });
     }
 
-    if (onCascadeStep) onCascadeStep(matchResults);
+    if (onCascadeStep) await onCascadeStep(matchResults);
 
     const gravMoves = this.cascadeResolver.applyGravityTracked(this);
     await this.animateGravityDrop(gravMoves);
@@ -709,7 +719,7 @@ export class Board {
   private async resolveShowdownExplosiveSwap(
     from: GridPosition,
     to: GridPosition,
-    onCascadeStep?: (matches: MatchResult[]) => void,
+    onCascadeStep?: (matches: MatchResult[]) => void | Promise<void>,
   ): Promise<SwapResult> {
     const tileA = this.grid[from.row][from.col]!;
     const tileB = this.grid[to.row][to.col]!;
@@ -766,13 +776,15 @@ export class Board {
         length: count,
         isExplosive: false,
         isShowdown: true,
+        isShadow: false,
         isCross: false,
         crossIntersections: [],
         matchBonus: 1.0,
+        isChainDestruction: true,
       });
     }
 
-    if (onCascadeStep) onCascadeStep(matchResults);
+    if (onCascadeStep) await onCascadeStep(matchResults);
 
     const gravMoves = this.cascadeResolver.applyGravityTracked(this);
     await this.animateGravityDrop(gravMoves);
@@ -793,11 +805,12 @@ export class Board {
    */
   async destroyTilesWithEffects(
     positions: GridPosition[],
-    opts?: { staggerMs?: number; detonated?: Set<string> },
+    opts?: { staggerMs?: number; detonated?: Set<string>; explosiveRadius?: number },
   ): Promise<DestroyedTileInfo[]> {
     const results: DestroyedTileInfo[] = [];
     const detonated = opts?.detonated ?? new Set<string>();
     const staggerMs = opts?.staggerMs ?? 0;
+    const explosiveRadius = opts?.explosiveRadius ?? this._explosiveRadius;
     const posKey = (r: number, c: number) => `${r},${c}`;
 
     let explosiveQueue: GridPosition[] = [];
@@ -843,8 +856,8 @@ export class Board {
       const waveTiles: Tile[] = [];
 
       for (const pos of currentWave) {
-        for (let dr = -1; dr <= 1; dr++) {
-          for (let dc = -1; dc <= 1; dc++) {
+        for (let dr = -explosiveRadius; dr <= explosiveRadius; dr++) {
+          for (let dc = -explosiveRadius; dc <= explosiveRadius; dc++) {
             const r = pos.row + dr;
             const c = pos.col + dc;
             if (r < 0 || r >= BOARD_SIZE || c < 0 || c >= BOARD_SIZE) continue;
@@ -912,7 +925,7 @@ export class Board {
     row: number,
     col: number,
     type: TileType,
-    kind: 'explosive' | 'showdown' | 'none',
+    kind: 'explosive' | 'showdown' | 'shadow' | 'none',
   ): void {
     // Destroy existing tile if present
     const existing = this.grid[row][col];
@@ -924,9 +937,30 @@ export class Board {
       tile.setExplosive(true);
     } else if (kind === 'showdown') {
       tile.setShowdown(true);
+    } else if (kind === 'shadow') {
+      tile.setShadow(true);
     }
 
     this.grid[row][col] = tile;
+  }
+
+  /** Apply Shadow augment to N random non-hazarded, non-special tiles. */
+  applyShadowToRandomTiles(count: number): void {
+    const candidates: { row: number; col: number }[] = [];
+    for (let row = 0; row < BOARD_SIZE; row++) {
+      for (let col = 0; col < BOARD_SIZE; col++) {
+        const tile = this.grid[row][col];
+        if (tile && !tile.hazard && !tile.isExplosive && !tile.isShowdown && !tile.isShadow) {
+          candidates.push({ row, col });
+        }
+      }
+    }
+    for (let i = 0; i < count && candidates.length > 0; i++) {
+      const idx = Math.floor(Math.random() * candidates.length);
+      const pos = candidates.splice(idx, 1)[0];
+      const tile = this.grid[pos.row][pos.col];
+      if (tile) tile.setShadow(true);
+    }
   }
 
   // -- Fill empty cells --
@@ -1128,13 +1162,13 @@ export class Board {
         const tileA = this.grid[row][col];
         if (!tileA) continue;
         // Locked tiles can't be swapped
-        const aLocked = tileA.hazard?.type === 'lock' || tileA.hazard?.type === 'hardened_lock';
+        const aLocked = tileA.hazard?.type === 'lock';
         if (aLocked) continue;
 
         // Check right neighbor
         if (col < BOARD_SIZE - 1) {
           const tileB = this.grid[row][col + 1];
-          const bLocked = tileB?.hazard?.type === 'lock' || tileB?.hazard?.type === 'hardened_lock';
+          const bLocked = tileB?.hazard?.type === 'lock';
           if (!bLocked) {
             const a: GridPosition = { row, col };
             const b: GridPosition = { row, col: col + 1 };
@@ -1147,7 +1181,7 @@ export class Board {
         // Check bottom neighbor
         if (row < BOARD_SIZE - 1) {
           const tileB = this.grid[row + 1][col];
-          const bLocked = tileB?.hazard?.type === 'lock' || tileB?.hazard?.type === 'hardened_lock';
+          const bLocked = tileB?.hazard?.type === 'lock';
           if (!bLocked) {
             const a: GridPosition = { row, col };
             const b: GridPosition = { row: row + 1, col };
@@ -1169,22 +1203,23 @@ export class Board {
   /** Collect full state (type + effects) from unlocked tiles and shuffle. */
   private collectAndShuffleUnlocked(): {
     unlocked: GridPosition[];
-    states: Array<{ type: TileType; isExplosive: boolean; isShowdown: boolean; hazard: TileHazardState | null }>;
+    states: Array<{ type: TileType; isExplosive: boolean; isShowdown: boolean; isShadow: boolean; hazard: TileHazardState | null }>;
   } | null {
     const unlocked: GridPosition[] = [];
-    const states: Array<{ type: TileType; isExplosive: boolean; isShowdown: boolean; hazard: TileHazardState | null }> = [];
+    const states: Array<{ type: TileType; isExplosive: boolean; isShowdown: boolean; isShadow: boolean; hazard: TileHazardState | null }> = [];
 
     for (let row = 0; row < BOARD_SIZE; row++) {
       for (let col = 0; col < BOARD_SIZE; col++) {
         const tile = this.grid[row][col];
         if (!tile) continue;
-        const isLocked = tile.hazard?.type === 'lock' || tile.hazard?.type === 'hardened_lock';
+        const isLocked = tile.hazard?.type === 'lock';
         if (!isLocked) {
           unlocked.push({ row, col });
           states.push({
             type: tile.type,
             isExplosive: tile.isExplosive,
             isShowdown: tile.isShowdown,
+            isShadow: tile.isShadow,
             hazard: tile.hazard,
           });
         }
@@ -1205,7 +1240,7 @@ export class Board {
   /** Apply shuffled state to unlocked tile positions. */
   private applyShuffledState(
     unlocked: GridPosition[],
-    states: Array<{ type: TileType; isExplosive: boolean; isShowdown: boolean; hazard: TileHazardState | null }>,
+    states: Array<{ type: TileType; isExplosive: boolean; isShowdown: boolean; isShadow: boolean; hazard: TileHazardState | null }>,
   ): void {
     for (let i = 0; i < unlocked.length; i++) {
       const tile = this.grid[unlocked[i].row]?.[unlocked[i].col];
@@ -1214,6 +1249,7 @@ export class Board {
       tile.setType(s.type);
       tile.isExplosive = s.isExplosive;
       tile.isShowdown = s.isShowdown;
+      tile.isShadow = s.isShadow;
       tile.hazard = s.hazard;
     }
   }
@@ -1352,6 +1388,58 @@ export class Board {
     this.tileTypeBag = [];
   }
 
+  setExplosiveRadius(radius: number): void {
+    this._explosiveRadius = radius;
+  }
+
+  setThreeMatchExplosive(value: boolean): void {
+    this.cascadeResolver.threeMatchSpawnsExplosive = value;
+  }
+
+  /** Animated shuffle of tiles within specific rows (for Dust Devil Boots). */
+  async shuffleRowsAnimated(rows: number[]): Promise<void> {
+    const positions: { row: number; col: number }[] = [];
+    const states: { type: TileType; isExplosive: boolean; isShowdown: boolean; isShadow: boolean }[] = [];
+    for (const row of rows) {
+      for (let col = 0; col < BOARD_SIZE; col++) {
+        const tile = this.grid[row]?.[col];
+        if (tile && tile.hazard?.type !== 'lock') {
+          positions.push({ row, col });
+          states.push({ type: tile.type, isExplosive: tile.isExplosive, isShowdown: tile.isShowdown, isShadow: tile.isShadow });
+        }
+      }
+    }
+    if (positions.length <= 1) return;
+
+    // Collect tile objects for animation
+    const tiles = positions
+      .map(pos => this.grid[pos.row]?.[pos.col])
+      .filter((t): t is Tile => t != null);
+
+    // Scale down
+    await Promise.all(tiles.map(t => t.tweenScale(0, 150)));
+
+    // Fisher-Yates shuffle
+    for (let i = states.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [states[i], states[j]] = [states[j], states[i]];
+    }
+
+    // Apply shuffled state
+    for (let i = 0; i < positions.length; i++) {
+      const tile = this.grid[positions[i].row]?.[positions[i].col];
+      if (tile && i < states.length) {
+        tile.setType(states[i].type);
+        tile.isExplosive = states[i].isExplosive;
+        tile.isShowdown = states[i].isShowdown;
+        tile.isShadow = states[i].isShadow;
+      }
+    }
+
+    // Scale up
+    await Promise.all(tiles.map(t => t.tweenScale(1, 150)));
+  }
+
   getTileAt(pos: GridPosition): Tile | null {
     return this.grid[pos.row]?.[pos.col] ?? null;
   }
@@ -1401,7 +1489,7 @@ export class Board {
    * Pick a random tile from the board, remove it, and return its type + position.
    * Returns null if the board has no tiles. Used by the Ricochet mechanic.
    */
-  pickAndRemoveRandomTile(): { type: TileType; position: GridPosition } | null {
+  async pickAndRemoveRandomTile(): Promise<{ type: TileType; position: GridPosition; destroyed: DestroyedTileInfo[] } | null> {
     const candidates: GridPosition[] = [];
     for (let row = 0; row < BOARD_SIZE; row++) {
       for (let col = 0; col < BOARD_SIZE; col++) {
@@ -1415,9 +1503,8 @@ export class Board {
     const pick = candidates[Math.floor(Math.random() * candidates.length)];
     const tile = this.grid[pick.row][pick.col]!;
     const type = tile.type;
-    tile.destroy();
-    this.grid[pick.row][pick.col] = null;
-    return { type, position: pick };
+    const destroyed = await this.destroyTilesWithEffects([pick]);
+    return { type, position: pick, destroyed };
   }
 
   /**
@@ -1577,7 +1664,7 @@ export class Board {
    * Clear all hazards of a given type from the board.
    * Used by consumables (Skeleton Key, Bandage, Signal Flare).
    */
-  clearHazardsByType(hazardType: 'lock' | 'hardened_lock' | 'poison' | 'bomb' | 'sand'): void {
+  clearHazardsByType(hazardType: 'lock' | 'poison' | 'bomb' | 'sand'): void {
     for (let row = 0; row < BOARD_SIZE; row++) {
       for (let col = 0; col < BOARD_SIZE; col++) {
         const tile = this.grid[row][col];
@@ -1607,6 +1694,7 @@ export class Board {
             col: tile.col,
             isExplosive: tile.isExplosive,
             isShowdown: tile.isShowdown,
+            isShadow: tile.isShadow,
             hazard: tile.hazard ? { ...tile.hazard } : null,
           };
         } else {
@@ -1641,6 +1729,7 @@ export class Board {
           const tile = this.createTile(this.tileX(col), this.tileY(row), data.type, row, col);
           if (data.isExplosive) tile.setExplosive(true);
           if (data.isShowdown) tile.setShowdown(true);
+          if (data.isShadow) tile.setShadow(true);
           if (data.hazard) tile.hazard = { ...data.hazard };
           this.grid[row][col] = tile;
         } else {
@@ -1673,12 +1762,12 @@ export class Board {
       for (let col = 0; col < BOARD_SIZE; col++) {
         const tileA = this.grid[row][col];
         if (!tileA) continue;
-        const aLocked = tileA.hazard?.type === 'lock' || tileA.hazard?.type === 'hardened_lock';
+        const aLocked = tileA.hazard?.type === 'lock';
         if (aLocked) continue;
 
         if (col < BOARD_SIZE - 1) {
           const tileB = this.grid[row][col + 1];
-          const bLocked = tileB?.hazard?.type === 'lock' || tileB?.hazard?.type === 'hardened_lock';
+          const bLocked = tileB?.hazard?.type === 'lock';
           if (!bLocked) {
             const a: GridPosition = { row, col };
             const b: GridPosition = { row, col: col + 1 };
@@ -1690,7 +1779,7 @@ export class Board {
         }
         if (row < BOARD_SIZE - 1) {
           const tileB = this.grid[row + 1][col];
-          const bLocked = tileB?.hazard?.type === 'lock' || tileB?.hazard?.type === 'hardened_lock';
+          const bLocked = tileB?.hazard?.type === 'lock';
           if (!bLocked) {
             const a: GridPosition = { row, col };
             const b: GridPosition = { row: row + 1, col };

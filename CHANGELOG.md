@@ -4,6 +4,54 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## v0.5.0
+
+### Added
+- Rattlesnake trait with breakpoints at 2 and 4
+- Shadow tile augment with dark purple VFX overlay and idle particles
+- Chain player buff: stacks per Chain match, adds bonus damage per Chain tile
+- Ready player buff: next non-cascade attack deals 50% more damage
+- Terrified enemy debuff: deal 50% less damage, stacks decrease at end of turn
+- Poison keyword consolidating old Venom/Venomous into a single mechanic
+- 45 artifacts with full runtime implementations
+- Keyword tooltips on individual keywords (hover to see description) across all screens
+- Artifact rarity system with colored names and animated gradient text effect
+- Artifact trait tooltips on hover in artifact and merchant screens
+- Sprite shadows behind player and enemy characters
+- Elite reward resume: quitting after elite victory correctly returns to artifact screen
+- Merchant stock persistence: quitting mid-shop preserves purchased items
+- Character select screen overhaul with dynamic backgrounds and tab-style character buttons
+- Tile selection background, Act 3 combat background, boss-specific backgrounds
+- Map parchment background, crate background, board background
+- Map slide-in animation with bounce when entering a new act
+
+### Changed
+- Renamed Treasure screen to Artifact screen; map node label now shows "Artifact"
+- Renamed Venom tile to Waste; consolidated Venom/Venomous keywords into Poison
+- Renamed Reno's ability from "Shuffle the Deck" to "False Shuffle"
+- Unified Lock and Hardened Lock into a single Lock system with hit counts
+- Chain tile reworked: removed scaling, now grants Chain buff stacks
+- Sheriff breakpoint 2 now triggers once per combat (was per turn); breakpoint 4 grants 4 Sturdy (was 5)
+- Dead Man Walking breakpoint 5 triggers at or below 20% HP; breakpoint 7 heals 20% max HP
+- Undertaker breakpoint 6 grants 1 Ready on enemy kill
+- Antivenom breakpoint changed from 1 to 3; old breakpoint 4 moved to Rattlesnake
+- Complete artifact overhaul: removed ~50 legacy artifacts, updated all effects and tags
+- All enemy base HP increased by 20%; boss HP increased by 44%
+- Merchant prices increased by 10%; tile upgrade cost raised to 300g
+- Tile swap screen overhauled with side-by-side layout
+- Floating status text now shows full names (RAGEFUL, POISON, etc.) at smaller size
+- Ricochet shots now fire simultaneously instead of sequentially
+- Enemy HP bars update immediately after each attack and poison tick
+- Bomb explosions play block/hit sounds appropriately
+- Tile selection cards widened with more padding
+
+### Fixed
+- Ricochet tiles destroyed by explosions/showdowns no longer trigger their destroy behavior
+- Ricochet properly triggers explosive and showdown tiles
+- Merchant stock no longer re-rolls when buying artifacts or swapping tiles
+- Legacy saves with 'venom' tile type automatically migrate to 'waste'
+- Tooltip z-index fixed to render above card stacking contexts via portal
+
 ## v0.4.17
 
 ### Added

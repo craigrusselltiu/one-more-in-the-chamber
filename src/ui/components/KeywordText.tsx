@@ -1,6 +1,7 @@
 import { memo, type ReactNode } from 'react';
 import { KEYWORDS } from '../../data/keywords';
 import { TILE_DEFINITIONS } from '../../data/tiles';
+import { Tooltip } from './Tooltip';
 import type { TileType } from '../../types/game';
 
 const KEYWORD_NAMES = Object.keys(KEYWORDS);
@@ -23,9 +24,13 @@ export function colorizeKeywords(text: string): ReactNode[] {
     const keyword = match[1];
     const kw = KEYWORDS[keyword];
     parts.push(
-      <span key={match.index} style={{ color: kw.color, fontWeight: 'bold' }}>
-        {keyword}
-      </span>,
+      <Tooltip key={match.index} content={
+        <KeywordLine name={keyword} color={kw.color} description={kw.description} />
+      } position="top">
+        <span style={{ color: kw.color, fontWeight: 'bold' }}>
+          {keyword}
+        </span>
+      </Tooltip>,
     );
     lastIndex = regex.lastIndex;
   }
@@ -221,7 +226,7 @@ export function buildTileDescription(type: TileType, upgradeLevel: number): Reac
       return [
         ...seg('Deal 2 damage per tile', false),
         ...flatBonus(upgradeLevel, uv),
-        ...seg(' and apply 1 Venom', false),
+        ...seg(' and apply 1 Poison', false),
         ...flatBonus(upgradeLevel, uv),
         ...seg('. Pierces block.', false),
       ];
@@ -247,10 +252,10 @@ export function buildTileDescription(type: TileType, upgradeLevel: number): Reac
       const bv = 1 + upgradeLevel * uv;
       return [...seg('Gain ', false), ...seg(`${bv}`, upgraded), ...seg(' ability charge per 3-match, plus 1 per extra tile.', false)];
     }
-    case 'venom':
-      return [...seg('Apply 1 Venom per tile', false), ...flatBonus(upgradeLevel, uv), ...seg('.', false)];
+    case 'waste':
+      return [...seg('Apply 1 Poison per tile', false), ...flatBonus(upgradeLevel, uv), ...seg('.', false)];
     case 'prairie_fire':
-      return [...seg('Deal 2 damage per tile', false), ...flatBonus(upgradeLevel, uv), ...seg('. Each tile has a 50% chance to convert 1 adjacent tile to Ember.', false)];
+      return [...seg('Deal 2 damage per tile', false), ...flatBonus(upgradeLevel, uv), ...seg('. Each tile has a 10% chance to spread to 1 adjacent tile.', false)];
     case 'chain':
       return [...seg('Deal 1 damage per tile', false), ...flatBonus(upgradeLevel, uv), ...seg('. Each Chain match adds +1 damage to ALL Chain tiles for this combat.', false)];
     case 'whiskey': {
@@ -322,7 +327,7 @@ export function buildUpgradePreview(type: TileType, currentLevel: number): React
       return [
         ...seg('Deal 2 damage per tile', false),
         ...flatBonusPreview(currentLevel, uv),
-        ...seg(' and apply 1 Venom', false),
+        ...seg(' and apply 1 Poison', false),
         ...flatBonusPreview(currentLevel, uv),
         ...seg('. Pierces block.', false),
       ];
@@ -346,10 +351,10 @@ export function buildUpgradePreview(type: TileType, currentLevel: number): React
       const newBv = 1 + (currentLevel + 1) * uv;
       return [...seg('Gain ', false), ...arrowUpgrade(oldBv, newBv), ...seg(' ability charge per 3-match, plus 1 per extra tile.', false)];
     }
-    case 'venom':
-      return [...seg('Apply 1 Venom per tile', false), ...flatBonusPreview(currentLevel, uv), ...seg('.', false)];
+    case 'waste':
+      return [...seg('Apply 1 Poison per tile', false), ...flatBonusPreview(currentLevel, uv), ...seg('.', false)];
     case 'prairie_fire':
-      return [...seg('Deal 2 damage per tile', false), ...flatBonusPreview(currentLevel, uv), ...seg('. Each tile has a 50% chance to convert 1 adjacent tile to Ember.', false)];
+      return [...seg('Deal 2 damage per tile', false), ...flatBonusPreview(currentLevel, uv), ...seg('. Each tile has a 10% chance to spread to 1 adjacent tile.', false)];
     case 'chain':
       return [...seg('Deal 1 damage per tile', false), ...flatBonusPreview(currentLevel, uv), ...seg('. Each Chain match adds +1 damage to ALL Chain tiles for this combat.', false)];
     case 'whiskey': {

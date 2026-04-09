@@ -18,6 +18,8 @@ export type GravityDirection = 'down' | 'left' | 'up' | 'right';
  */
 export class CascadeResolver {
   private gravityDirection: GravityDirection = 'down';
+  /** Tinker's Wrench: 3-matches also spawn explosive tiles. */
+  threeMatchSpawnsExplosive = false;
 
   setGravityDirection(direction: GravityDirection): void {
     this.gravityDirection = direction;
@@ -34,7 +36,7 @@ export class CascadeResolver {
    */
   async resolve(
     board: Board,
-    onStep?: (matches: MatchResult[]) => void,
+    onStep?: (matches: MatchResult[]) => void | Promise<void>,
     swapTarget?: GridPosition,
   ): Promise<MatchResult[]> {
     const allMatches: MatchResult[] = [];
@@ -66,23 +68,27 @@ export class CascadeResolver {
           length: tiles.length,
           isExplosive: false,
           isShowdown: false,
+          isShadow: false,
           isCross: false,
           crossIntersections: [],
           matchBonus: 1.0,
+          isChainDestruction: true,
         });
       }
 
       // Apply match metadata (fool's gold, poison counts) from prepareClear
-      for (const { matchIndex, foolsGoldCount, poisonCount } of matchMetadata) {
+      for (const { matchIndex, foolsGoldCount, poisonCount, shadowCount, bombCount } of matchMetadata) {
         if (foolsGoldCount > 0) matches[matchIndex].foolsGoldCount = foolsGoldCount;
         if (poisonCount > 0) matches[matchIndex].poisonCount = poisonCount;
+        if (shadowCount > 0) matches[matchIndex].shadowCount = shadowCount;
+        if (bombCount > 0) matches[matchIndex].bombCount = bombCount;
       }
 
       // Apply this step's effects immediately (damage, block, gold, etc.)
       const stepMatches = [...matches, ...extraResults];
       allMatches.push(...stepMatches);
       if (onStep) {
-        onStep(stepMatches);
+        await onStep(stepMatches);
         // Brief pause so the player can see the effect applied
         await new Promise(r => setTimeout(r, Math.round(250 / getSpeedMultiplier())));
       }
@@ -123,7 +129,7 @@ export class CascadeResolver {
   ): {
     allPositions: GridPosition[];
     firePositions: GridPosition[];
-    matchMetadata: Array<{ matchIndex: number; foolsGoldCount: number; poisonCount: number }>;
+    matchMetadata: Array<{ matchIndex: number; foolsGoldCount: number; poisonCount: number; shadowCount: number; bombCount: number }>;
   } {
     const grid = board.getGrid();
     const size = board.getBoardSize();
@@ -133,7 +139,7 @@ export class CascadeResolver {
     const collected = new Set<string>();
     const allPositions: GridPosition[] = [];
     const firePositions: GridPosition[] = [];
-    const matchMetadata: Array<{ matchIndex: number; foolsGoldCount: number; poisonCount: number }> = [];
+    const matchMetadata: Array<{ matchIndex: number; foolsGoldCount: number; poisonCount: number; shadowCount: number; bombCount: number }> = [];
 
     const addPos = (r: number, c: number) => {
       const key = posKey(r, c);
@@ -150,16 +156,20 @@ export class CascadeResolver {
       const match = matches[i];
       let fgCount = 0;
       let poisonCount = 0;
+      let shadowCount = 0;
+      let bombCount = 0;
       for (const pos of match.tiles) {
         addPos(pos.row, pos.col);
         const tile = grid[pos.row]?.[pos.col];
         if (tile) {
           if (tile.hazard?.type === 'fools_gold') fgCount++;
           if (tile.hazard?.type === 'poison') poisonCount++;
+          if (tile.hazard?.type === 'bomb') bombCount++;
+          if (tile.isShadow) shadowCount++;
         }
       }
-      if (fgCount > 0 || poisonCount > 0) {
-        matchMetadata.push({ matchIndex: i, foolsGoldCount: fgCount, poisonCount });
+      if (fgCount > 0 || poisonCount > 0 || shadowCount > 0 || bombCount > 0) {
+        matchMetadata.push({ matchIndex: i, foolsGoldCount: fgCount, poisonCount, shadowCount, bombCount });
       }
     }
 
@@ -217,13 +227,17 @@ export class CascadeResolver {
       } else if (match.isExplosive && match.tiles.length > 0) {
         const pos = this.pickSpawnPosition(match.tiles, swapTarget);
         board.spawnSpecialTile(pos.row, pos.col, match.tileType, 'explosive');
+      } else if (this.threeMatchSpawnsExplosive && match.length === 3 && match.tiles.length > 0) {
+        // Tinker's Wrench: 3-matches also spawn explosive tiles
+        const pos = this.pickSpawnPosition(match.tiles, swapTarget);
+        board.spawnSpecialTile(pos.row, pos.col, match.tileType, 'explosive');
       }
     }
   }
 
   /**
-   * Prairie Fire spread: after cascade resolution, each cleared ember tile has a
-   * 25% chance to convert 1 random adjacent non-prairie_fire tile into an ember tile.
+   * Prairie Fire spread: after cascade resolution, each cleared prairie_fire tile has a
+   * 10% chance to convert 1 random adjacent tile into a prairie_fire tile.
    */
   private applyFireSpread(board: Board, firePositions: GridPosition[]): void {
     const grid = board.getGrid();
@@ -253,7 +267,7 @@ export class CascadeResolver {
 
       if (candidates.length === 0) continue;
 
-      // Pick one random adjacent tile and convert it to ember
+      // Pick one random adjacent tile and convert it to prairie_fire
       const target = candidates[Math.floor(Math.random() * candidates.length)];
       const tile = grid[target.row][target.col];
       if (tile) {

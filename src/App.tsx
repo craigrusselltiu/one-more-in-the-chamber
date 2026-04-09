@@ -9,7 +9,7 @@ import { MerchantScreen } from './ui/screens/MerchantScreen';
 import { CampfireScreen } from './ui/screens/CampfireScreen';
 import { EventScreen } from './ui/screens/EventScreen';
 import { ScoreScreen } from './ui/screens/ScoreScreen';
-import { TreasureScreen } from './ui/screens/TreasureScreen';
+import { ArtifactScreen } from './ui/screens/ArtifactScreen';
 import { ReputationShopScreen } from './ui/screens/ReputationShopScreen';
 import { LeaderboardScreen } from './ui/screens/LeaderboardScreen';
 import { SettingsScreen } from './ui/screens/SettingsScreen';
@@ -54,7 +54,7 @@ export type Screen =
   | 'campfire'
   | 'event'
   | 'score'
-  | 'treasure'
+  | 'artifact'
   | 'reputation-shop'
   | 'leaderboard'
   | 'settings';
@@ -159,7 +159,7 @@ export default function App() {
     // Wait for BootScene to finish loading all assets
     EventBus.on(GameEvent.BOOT_COMPLETE, () => setBootComplete(true));
 
-    const NON_COMBAT_NODE_SCREENS: Set<Screen> = new Set(['merchant', 'campfire', 'event', 'treasure']);
+    const NON_COMBAT_NODE_SCREENS: Set<Screen> = new Set(['merchant', 'campfire', 'event', 'artifact']);
 
     /** Tracks the last screen applied by the wipe system (updated synchronously). */
     let lastAppliedScreen: Screen = 'main-menu';
@@ -186,7 +186,7 @@ export default function App() {
           (n) => n.id === store.run?.currentNodeId,
         );
         if (currentNode && currentNode.visited && !currentNode.completed) {
-          const NON_COMBAT_TYPES = new Set(['merchant', 'campfire', 'event', 'treasure']);
+          const NON_COMBAT_TYPES = new Set(['merchant', 'campfire', 'event', 'artifact']);
           if (NON_COMBAT_TYPES.has(currentNode.type)) {
             store.markNodeCompleted(currentNode.id);
           }
@@ -211,8 +211,8 @@ export default function App() {
 
         if (run && run.currentAct === 1) {
           // Dust storm rolls in after the treasure node (row 6) is completed
-          const treasureCompleted = run.mapState?.nodes.some((n) => n.type === 'treasure' && n.completed) ?? false;
-          if (treasureCompleted && !run.activeTileTypes.includes('tumbleweed')) {
+          const artifactNodeCompleted = run.mapState?.nodes.some((n) => n.type === 'artifact' && n.completed) ?? false;
+          if (artifactNodeCompleted && !run.activeTileTypes.includes('tumbleweed')) {
             store.addTileType('tumbleweed');
             setTimeout(() => {
               EventBus.emit('game:notification', { text: 'A dust storm rolls in...' });
@@ -381,11 +381,11 @@ export default function App() {
             store.endRun(true);
           } else {
             // Non-final boss: artifact reward first, then tile-select
-            EventBus.emit(GameEvent.SCREEN_CHANGE, 'treasure');
+            EventBus.emit(GameEvent.SCREEN_CHANGE, 'artifact');
           }
         } else if (currentNode && currentNode.type === 'elite') {
           // Elite victory: artifact reward before returning to map
-          EventBus.emit(GameEvent.SCREEN_CHANGE, 'treasure');
+          EventBus.emit(GameEvent.SCREEN_CHANGE, 'artifact');
         } else {
           EventBus.emit(GameEvent.SCREEN_CHANGE, 'map');
         }
@@ -477,7 +477,7 @@ export default function App() {
 
   // Screens that show the unified TopBar + ArtifactBar (all in-run screens)
   const IN_RUN_SCREENS: Set<Screen> = new Set([
-    'combat', 'map', 'merchant', 'campfire', 'event', 'treasure', 'tile-select',
+    'combat', 'map', 'merchant', 'campfire', 'event', 'artifact', 'tile-select',
   ]);
   const showTopBar = IN_RUN_SCREENS.has(screen);
 
@@ -502,9 +502,9 @@ export default function App() {
         <GameNotification />
 
         {/* Full-area screens rendered behind TopBar */}
-        {screen === 'treasure' && (
+        {screen === 'artifact' && (
           <div className="absolute inset-0">
-            <TreasureScreen />
+            <ArtifactScreen />
           </div>
         )}
         {screen === 'tile-select' && (
@@ -528,7 +528,7 @@ export default function App() {
         {screen === 'combat' && <CombatHUD />}
 
         {/* Non-combat screen content fills remaining space below TopBar */}
-        {screen !== 'combat' && screen !== 'treasure' && screen !== 'tile-select' && (
+        {screen !== 'combat' && screen !== 'artifact' && screen !== 'tile-select' && (
           <div className={showTopBar ? 'flex-1 overflow-hidden' : 'h-full'}>
             {screen === 'main-menu' && <MainMenu />}
             {screen === 'character-select' && <CharacterSelectScreen />}
@@ -552,7 +552,7 @@ export default function App() {
             className={`absolute inset-0 bg-black z-[200] flex items-end justify-end p-4 ${bootComplete ? 'screen-wipe-out' : ''}`}
             onAnimationEnd={() => setLoadingDismissed(true)}
           >
-            {!bootComplete && <span className="text-stone-500 text-xs tracking-widest font-bold animate-welcome-breathe">LOADING</span>}
+            {!bootComplete && <span className="text-xl text-white tracking-widest font-bold animate-loading-breathe mr-4">LOADING</span>}
           </div>
         )}
 
@@ -569,7 +569,7 @@ export default function App() {
           className="absolute right-2 bottom-1 pointer-events-none z-[60]"
           style={{ fontSize: '9px', color: 'rgba(255,255,255,0.3)' }}
         >
-          Pre-alpha v0.4.17
+          Pre-alpha v0.5.0
         </span>
       </div>
     </div>

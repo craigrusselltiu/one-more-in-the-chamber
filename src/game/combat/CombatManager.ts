@@ -23,6 +23,7 @@ import type { EliteModifierId, EliteModifier } from './EliteModifiers';
 import { playSwapFail, playMatch, playDeadeyeShot, playHit, playBlock, playAbilityReady } from '../../services/sfx';
 import { useRunStore } from '../../store/runStore';
 import { CONSUMABLES } from '../../data/consumables';
+import { getSpeedMultiplier } from '../../store/settingsStore';
 
 export interface CombatConfig {
   character: CharacterId;
@@ -108,6 +109,8 @@ export class CombatManager {
   private swapsUsedThisTurn = 0;
   /** Whether the current swap being resolved was non-adjacent (lasso). */
   private currentSwapIsLasso = false;
+  /** Lasso consumable: next swap can be non-adjacent. */
+  private lassoNextSwap = false;
   /** Whether a ricochet triggered a random tile removal that needs gravity+cascade resolution. */
   private ricochetTriggeredThisResolution = false;
   /** Total damage dealt to enemies this fight (for scoring). */
@@ -135,7 +138,7 @@ export class CombatManager {
 
     // Base swaps + trait bonus
     const baseSwaps = config.swapsPerTurn ?? 3;
-    this.swapsPerTurn = baseSwaps + this.traits.getExtraSwapsPerTurn();
+    this.swapsPerTurn = baseSwaps + this.traits.getExtraSwapsPerTurn() + this.artifacts.getExtraSwapsPerTurn();
 
     // Deadeye shots: 3 base, 6 with Fully Loaded, or explicit override
     this.deadeyeMaxShots = config.deadeyeShots ?? this.artifacts.getDeadeyeShots();
@@ -181,12 +184,47 @@ export class CombatManager {
       this.hazardManager.placeRandomBombs(1);
     }
 
-    // Set board tile types
+    // Set board tile types and Sapper explosive radius
     this.board.setActiveTileTypes(config.activeTileTypes);
+    if (this.traits.hasExpandedExplosiveRadius()) {
+      this.board.setExplosiveRadius(2);
+    }
+    // Tinker's Wrench: 3-matches also spawn explosive tiles
+    if (this.artifacts.shouldThreeMatchSpawnExplosive()) {
+      this.board.setThreeMatchExplosive(true);
+    }
+    // Fool's Magnifying Glass: immune to fool's gold
+    if (this.artifacts.isImmuneToFoolsGold()) {
+      this.hazardManager.foolsGoldImmune = true;
+    }
+    // Snakeskin Boots: first poison per turn is auto-cleansed
+    if (this.artifacts.has('snakeskin_boots')) {
+      this.hazardManager.snakeskinActive = true;
+    }
 
     // Apply fight-start effects
     this.traits.onFightStart(this.player, this.isBoss, this.enemies);
-    this.artifacts.onFightStart(this.player);
+    this.artifacts.onFightStart(this.player, this.enemies);
+
+    // Black Powder Cache: make 3 tiles explosive at combat start
+    if (this.artifacts.has('black_powder_cache')) {
+      const grid = this.board.getGrid();
+      const candidates: { row: number; col: number }[] = [];
+      for (let r = 0; r < this.board.getBoardSize(); r++) {
+        for (let c = 0; c < this.board.getBoardSize(); c++) {
+          const tile = grid[r]?.[c];
+          if (tile && !tile.hazard && !tile.isExplosive && !tile.isShowdown && !tile.isShadow) {
+            candidates.push({ row: r, col: c });
+          }
+        }
+      }
+      for (let i = 0; i < 3 && candidates.length > 0; i++) {
+        const idx = Math.floor(Math.random() * candidates.length);
+        const pos = candidates.splice(idx, 1)[0];
+        const tile = grid[pos.row]?.[pos.col];
+        if (tile) tile.setExplosive(true);
+      }
+    }
 
     // Set trait-driven player flags
     this.player.damageReduction = this.traits.getDamageReduction();
@@ -360,7 +398,10 @@ export class CombatManager {
         barricadeStacks: this.player.barricadeStacks,
         ragefulStacks: this.player.ragefulStacks,
         sturdyStacks: this.player.sturdyStacks,
-        venomousStacks: this.player.venomousStacks,
+        graceStacks: this.player.graceStacks,
+        poisonedStacks: this.player.poisonedStacks,
+        readyStacks: this.player.readyStacks,
+        chainStacks: this.player.chainStacks,
         critChance: 0, // deprecated, kept for snapshot compat
         thorns: this.player.thorns,
         shedSkinAvailable: this.player.shedSkinAvailable,
@@ -379,8 +420,10 @@ export class CombatManager {
       longestCascadeThisFight: this.longestCascadeThisFight,
       playerTookDamageThisFight: this.playerTookDamageThisFight,
       matchCountThisFight: this.traits.getMatchCountThisFight(),
-      firstMatchThisFight: this.artifacts.isFirstMatchAvailable(),
-      lassoUsedThisFight: this.artifacts.isLassoUsedThisFight(),
+      damageDealtThisTurn: this.traits.getDamageDealtThisTurn(),
+      undertakerDoubleDamageReady: this.traits.getUndertakerBonusDamageReady(),
+      firstMatchThisFight: false,
+      lassoUsedThisFight: false,
       artifacts: this.artifacts.getArtifacts(),
       traitCounts: this.traits.getCounts(),
     };
@@ -414,7 +457,10 @@ export class CombatManager {
     this.player.barricadeStacks = sp.barricadeStacks ?? 0;
     this.player.ragefulStacks = sp.ragefulStacks ?? 0;
     this.player.sturdyStacks = sp.sturdyStacks ?? 0;
-    this.player.venomousStacks = sp.venomousStacks ?? 0;
+    this.player.graceStacks = sp.graceStacks ?? 0;
+    this.player.poisonedStacks = sp.poisonedStacks ?? 0;
+    this.player.readyStacks = sp.readyStacks ?? 0;
+    this.player.chainStacks = sp.chainStacks ?? 0;
     // critChance deprecated — Lucky stacks are the crit chance now
     this.player.thorns = sp.thorns;
     this.player.shedSkinAvailable = sp.shedSkinAvailable ?? false;
@@ -468,11 +514,11 @@ export class CombatManager {
     this.traits.restoreState(
       snapshot.matchCountThisFight ?? 0,
       snapshot.swapsUsedThisTurn,
+      false,
+      snapshot.damageDealtThisTurn ?? false,
+      snapshot.undertakerDoubleDamageReady ?? false,
     );
-    this.artifacts.restoreState(
-      snapshot.firstMatchThisFight ?? false,
-      snapshot.lassoUsedThisFight ?? false,
-    );
+    this.artifacts.restoreState(false, snapshot.turnNumber ?? 0);
 
     // Cancel deadeye on restore -- cursor/board state won't carry over
     if (this.isDeadeyeActive) {
@@ -521,13 +567,16 @@ export class CombatManager {
 
     // Tick suppress (warrant) durations -- expires at start of player turn
     this.hazardManager.tickSuppressions();
+    this.hazardManager.resetTurnArtifactState();
 
     // Venomous tick: player takes damage equal to stacks, stacks decrease by 1
-    if (this.player.venomousStacks > 0) {
-      const venomDmg = this.player.venomousStacks;
-      this.player.health = Math.max(0, this.player.health - venomDmg);
-      this.player.venomousStacks--;
-      this.floatOnPlayer(`-${venomDmg}`, '#40ff40');
+    // Bone Charm: venom damage halved
+    if (this.player.poisonedStacks > 0) {
+      const rawDmg = this.player.poisonedStacks;
+      const poisonDmg = Math.max(1, Math.round(rawDmg * this.artifacts.getPoisonDamageMultiplier()));
+      this.player.health = Math.max(0, this.player.health - poisonDmg);
+      this.player.poisonedStacks--;
+      this.floatOnPlayer(`-${poisonDmg}`, '#40ff40');
       EventBus.emit(GameEvent.PLAYER_HP_CHANGE, this.player.health, this.player.maxHealth);
       if (this.player.health <= 0) this.playerTookDamageThisFight = true;
     }
@@ -540,6 +589,13 @@ export class CombatManager {
 
     // Trait turn-start effects (Sheriff block, etc.)
     this.traits.onTurnStart(this.player);
+
+    // Desperado(5): gain 4 Ace at start of every turn
+    const desperadoAce = this.traits.getDesperadoAceGrant();
+    if (desperadoAce > 0) {
+      this.player.aceStacks += desperadoAce;
+      this.floatOnPlayer(`+${desperadoAce} ACE`, '#E0C880', 9);
+    }
 
     // Artifact turn-start effects (Stolen Badge block, etc.)
     this.artifacts.onTurnStart(this.player);
@@ -606,8 +662,22 @@ export class CombatManager {
     const from = { row: fromRow, col: fromCol };
     const to = { row: toRow, col: toCol };
 
-    // Track whether this swap is non-adjacent (lasso) for Mustang(4) bonus
+    // Track whether this swap is non-adjacent (lasso)
     this.currentSwapIsLasso = !this.board.isAdjacent(from, to);
+
+    // Non-adjacent swaps require lasso consumable
+    if (this.currentSwapIsLasso && !this.lassoNextSwap) {
+      // Refund the swap -- not allowed without lasso
+      this.swapsRemaining++;
+      this.swapsUsedThisTurn--;
+      this.setPhase('swap-phase');
+      EventBus.emit(GameEvent.SWAPS_CHANGE, this.swapsRemaining, this.swapsPerTurn);
+      playSwapFail();
+      return;
+    }
+    if (this.currentSwapIsLasso) {
+      this.lassoNextSwap = false;
+    }
 
     // Track trait/artifact swap hooks
     this.traits.onSwapPerformed();
@@ -642,7 +712,7 @@ export class CombatManager {
       this.board.applyGravityAndFill();
       const ricochetCascades = await this.board.resolveMatches();
       if (ricochetCascades.length > 0) {
-        this.processMatches(ricochetCascades);
+        await this.processMatches(ricochetCascades);
       }
     }
 
@@ -659,6 +729,7 @@ export class CombatManager {
       if (bombResult.totalDamage > 0) {
         const bombDmg = this.player.takeDamage(bombResult.totalDamage);
         if (bombDmg.hpLost > 0) { playHit(); this.playerTookDamageThisFight = true; }
+        if (bombDmg.blocked > 0) { playBlock(); }
         EventBus.emit(GameEvent.PLAYER_HP_CHANGE, this.player.health, this.player.maxHealth);
         EventBus.emit(GameEvent.SCREEN_SHAKE, bombResult.detonations.length > 1 ? 'heavy' : 'medium');
       }
@@ -679,6 +750,10 @@ export class CombatManager {
     }
 
     if (this.swapsRemaining <= 0) {
+      // Dust Devil Boots: after using all swaps, shuffle bottom 2 rows (animated)
+      if (this.artifacts.has('dust_devil_boots')) {
+        await this.board.shuffleRowsAnimated([6, 7]);
+      }
       this.endTurn();
     } else {
       this.setPhase('swap-phase');
@@ -872,11 +947,11 @@ export class CombatManager {
   }
 
   // ---------------------------------------------------------------------------
-  // Shuffle the Deck Ability (Reno)
+  // False Shuffle Ability (Reno)
   // ---------------------------------------------------------------------------
 
   /**
-   * Activate Shuffle the Deck: immediately reshuffle all unlocked tiles.
+   * Activate False Shuffle: immediately reshuffle all unlocked tiles.
    */
   private async activateShuffle(): Promise<void> {
     if (this.phase !== 'swap-phase' && this.phase !== 'consumable-window') return;
@@ -924,64 +999,88 @@ export class CombatManager {
   async useConsumable(consumableId: string): Promise<boolean> {
     if (this.phase !== 'consumable-window' && this.phase !== 'swap-phase') return false;
 
-    switch (consumableId) {
-      case 'tonic':
-        this.player.heal(20);
-        break;
-      case 'bandage':
-        this.player.heal(10);
-        this.hazardManager.clearAllOfType('poison');
-        break;
-      case 'strong_coffee':
-        this.nextMatchMultiplier = 1.5;
-        break;
-      case 'pocket_watch':
-        this.swapsRemaining++;
-        EventBus.emit(GameEvent.SWAPS_CHANGE, this.swapsRemaining, this.swapsPerTurn);
-        break;
-      case 'wanted_flyer': {
-        const target = this.getTargetedAliveEnemy();
-        if (target) target.addVulnerable(2);
-        break;
-      }
-      case 'skeleton_key':
-        this.hazardManager.clearAllOfType('lock');
-        this.hazardManager.clearAllOfType('hardened_lock');
-        break;
-      case 'tumbleweed': {
-        this.board.setIsResolving(true);
-        await this.board.reshuffleAnimatedWithCascades();
-        this.ricochetTriggeredThisResolution = false;
-        let cascadeSteps = 0;
-        const onCascadeStep = this.makeCascadeStepHandler(() => ++cascadeSteps);
-        await this.board.resolveMatchesFull(onCascadeStep);
-        while (this.ricochetTriggeredThisResolution) {
-          this.ricochetTriggeredThisResolution = false;
-          await this.board.applyGravityAnimated();
-          await this.board.fillEmptyTilesAnimated();
-          await this.board.resolveMatchesFull(onCascadeStep);
-        }
-        this.board.setIsResolving(false);
-        EventBus.emit(GameEvent.COMBO_UPDATE, 0);
-        break;
-      }
-      case 'signal_flare':
-        this.hazardManager.clearAllOfType('sand');
-        break;
-      case 'stick_of_tnt':
-        await this.resolveStickOfTNT();
-        break;
-      case 'snake_oil':
-        this.resolveSnakeOil();
-        break;
-      default:
-        return false;
-    }
+    // Last Call Bell: consumables trigger twice
+    const triggerCount = this.artifacts.has('last_call_bell') ? 2 : 1;
 
-    // Saloon Keeper(2): consumables heal 5 HP on use
-    if (this.traits.isActive('saloon_keeper', 2)) {
-      this.player.heal(5);
-      this.floatOnPlayer('+5', '#40D840');
+    for (let trigger = 0; trigger < triggerCount; trigger++) {
+      switch (consumableId) {
+        case 'tonic':
+          this.player.heal(20);
+          break;
+        case 'bandage':
+          this.player.heal(10);
+          this.hazardManager.clearAllOfType('poison');
+          break;
+        case 'strong_coffee':
+          this.nextMatchMultiplier = 1.5;
+          break;
+        case 'pocket_watch':
+          this.swapsRemaining++;
+          EventBus.emit(GameEvent.SWAPS_CHANGE, this.swapsRemaining, this.swapsPerTurn);
+          break;
+        case 'wanted_flyer': {
+          const target = this.getTargetedAliveEnemy();
+          if (target) target.addVulnerable(2);
+          break;
+        }
+        case 'skeleton_key':
+          this.hazardManager.clearAllOfType('lock');
+          break;
+        case 'tumbleweed': {
+          this.board.setIsResolving(true);
+          await this.board.reshuffleAnimatedWithCascades();
+          this.ricochetTriggeredThisResolution = false;
+          let cascadeSteps = 0;
+          const onCascadeStep = this.makeCascadeStepHandler(() => ++cascadeSteps);
+          await this.board.resolveMatchesFull(onCascadeStep);
+          while (this.ricochetTriggeredThisResolution) {
+            this.ricochetTriggeredThisResolution = false;
+            await this.board.applyGravityAnimated();
+            await this.board.fillEmptyTilesAnimated();
+            await this.board.resolveMatchesFull(onCascadeStep);
+          }
+          this.board.setIsResolving(false);
+          EventBus.emit(GameEvent.COMBO_UPDATE, 0);
+          break;
+        }
+        case 'signal_flare':
+          this.hazardManager.clearAllOfType('sand');
+          break;
+        case 'stick_of_tnt':
+          await this.resolveStickOfTNT();
+          break;
+        case 'snake_oil':
+          this.resolveSnakeOil();
+          break;
+        case 'lasso':
+          this.lassoNextSwap = true;
+          break;
+        default:
+          return false;
+      }
+
+      // Saloon Keeper(2): consumables heal 5 HP on use
+      if (this.traits.isActive('saloon_keeper', 2)) {
+        this.player.heal(5);
+        this.floatOnPlayer('+5', '#40D840');
+      }
+
+      // Artifact consumable hooks (Barkeep's Shotgun, Top-Shelf Reserve)
+      const consumableArt = this.artifacts.onConsumableUsed();
+      if (consumableArt.bonusDamage > 0) {
+        const alive = this.aliveEnemies();
+        if (alive.length > 0) {
+          const target = alive[Math.floor(Math.random() * alive.length)];
+          const { hpLost } = target.takeDamage(consumableArt.bonusDamage);
+          this.damageDealtThisFight += hpLost;
+          this.floatOnEnemy(target, `-${hpLost}`, '#D04040');
+          EventBus.emit(GameEvent.ENEMY_HP_CHANGE, { ...target.state });
+        }
+      }
+      if (consumableArt.bonusBlock > 0) {
+        this.player.addBlock(consumableArt.bonusBlock);
+        this.floatOnPlayer(`+${consumableArt.bonusBlock}`, '#6888A0');
+      }
     }
 
     EventBus.emit(GameEvent.CONSUMABLE_USED, consumableId);
@@ -1040,7 +1139,7 @@ export class CombatManager {
     await this.board.fillEmptyTilesAnimated();
     const cascadeMatches = await this.board.resolveMatches();
     if (cascadeMatches.length > 0) {
-      this.processMatches(cascadeMatches);
+      await this.processMatches(cascadeMatches);
     }
 
     this.emitFullState();
@@ -1053,7 +1152,7 @@ export class CombatManager {
   // Match Processing & Resource Application
   // ---------------------------------------------------------------------------
 
-  private processMatches(matches: MatchResult[], comboMultiplier = 1.0): void {
+  private async processMatches(matches: MatchResult[], comboMultiplier = 1.0): Promise<void> {
     // Sort by resolveOrder so interactions are consistent (e.g. block before boulder).
     const sorted = matches.length > 1
       ? [...matches].sort((a, b) => {
@@ -1072,13 +1171,40 @@ export class CombatManager {
         continue;
       }
 
-      const upgradeLevel = this.player.getUpgradeLevel(match.tileType);
+      let upgradeLevel = this.player.getUpgradeLevel(match.tileType);
+      // Loaded Dice: cascade matches trigger 1 level higher
+      if (comboMultiplier > 1.0) upgradeLevel += this.artifacts.getCascadeUpgradeBonus();
       let output = this.resolver.resolve(match, upgradeLevel);
 
-      // Poison tiles: apply venomous stacks to player (Rattlesnake(1) grants immunity)
-      if (match.poisonCount && match.poisonCount > 0 && !this.traits.isPoisonImmune()) {
-        this.player.venomousStacks += match.poisonCount;
-        this.floatOnPlayer(`+${match.poisonCount} VNM`, '#40ff40');
+      // Chain buff: add chainStacks bonus damage per Chain tile
+      if (match.tileType === 'chain' && this.player.chainStacks > 0) {
+        output.damage += this.player.chainStacks * match.length;
+      }
+
+      // Poison tiles: apply venomous stacks to player
+      if (match.poisonCount && match.poisonCount > 0) {
+        this.player.poisonedStacks += match.poisonCount;
+        this.floatOnPlayer(`+${match.poisonCount} POISON`, '#40ff40', 9);
+      }
+
+      // Shadow tiles: each fires a shadow bolt dealing 4 damage to a random enemy
+      if (match.shadowCount && match.shadowCount > 0) {
+        for (let s = 0; s < match.shadowCount; s++) {
+          const alive = this.aliveEnemies();
+          if (alive.length === 0) break;
+          const target = alive[Math.floor(Math.random() * alive.length)];
+          const { hpLost } = target.takeDamage(4);
+          this.damageDealtThisFight += hpLost;
+          this.floatOnEnemy(target, `-${hpLost}`, '#6b2fa0');
+          EventBus.emit(GameEvent.ENEMY_HP_CHANGE, { ...target.state });
+        }
+      }
+
+      // Blasting Pan: defusing bombs grants 8 gold each
+      if (match.bombCount && match.bombCount > 0) {
+        for (let b = 0; b < match.bombCount; b++) {
+          this.artifacts.onBombDefused(this.player);
+        }
       }
 
       // Fool's gold: reduce gold proportionally to how many tiles were fake
@@ -1092,7 +1218,7 @@ export class CombatManager {
       const targetEnemy = this.getTargetedAliveEnemy();
 
       // Trait modifications (Outlaw bonus damage, Sheriff iron block, Prospector gold, etc.)
-      output = this.traits.modifyMatchOutput(match, output, this.player, targetEnemy, this.currentSwapIsLasso);
+      output = this.traits.modifyMatchOutput(match, output, this.player, targetEnemy);
 
       // Artifact modifications (Gold Tooth, Bandit's Bandana, Rusty Deputy Badge, etc.)
       output = this.artifacts.modifyMatchOutput(
@@ -1118,9 +1244,14 @@ export class CombatManager {
         this.artifacts.onCritTriggered(this.player, targetEnemy);
       }
 
-      // Ace stacks: consumed on next non-Ace match
-      if (match.tileType !== 'ace' && this.player.aceStacks > 0) {
+      // Ace stacks: consumed on next non-Ace non-cascade match
+      if (match.tileType !== 'ace' && comboMultiplier === 1.0 && this.player.aceStacks > 0) {
         multiplier *= this.player.consumeAce();
+      }
+
+      // Ready: next non-cascade attack deals 50% more damage
+      if (comboMultiplier === 1.0 && output.damage > 0 && this.player.readyStacks > 0) {
+        multiplier *= this.player.consumeReady();
       }
 
       // Consumable match multiplier (Moonshine/Coffee) -- applies to first match only
@@ -1151,9 +1282,6 @@ export class CombatManager {
 
       this.applyResourceOutput(scaled, isCrit);
 
-      // Motherlode Map: 4+ gold match converts adjacent tiles to gold
-      this.artifacts.tryMotherlodeConvert(match, this.board);
-
       // Screen shake on crit for extra punch
       if (isCrit && scaled.damage > 0) {
         EventBus.emit(GameEvent.SCREEN_SHAKE, 'medium');
@@ -1168,14 +1296,27 @@ export class CombatManager {
         EventBus.emit(GameEvent.FLASH_LINE_TO_ENEMY, mid, match.tileType, fullIdx, this.enemies.length);
       }
 
+      // Sniper(5): 6+ match kills non-boss targeted enemy
+      if (this.traits.shouldSniperExecute(match.length)) {
+        const target = this.getTargetedAliveEnemy();
+        if (target && !this.isBossEnemy(target)) {
+          target.state.health = 0;
+          target.state.isDead = true;
+          this.floatOnEnemy(target, 'EXECUTED', '#ff4444');
+          EventBus.emit(GameEvent.SCREEN_SHAKE, 'heavy');
+          this.emitEnemyHpChanges();
+        }
+      }
+
       // Ricochet: destroy 1 per 3-match + 1 per extra tile, upgrade adds flat bonus
-      if (match.tileType === 'ricochet') {
+      // Only triggers from direct matches, not from chain destruction (explosive/showdown)
+      if (match.tileType === 'ricochet' && !match.isChainDestruction) {
         const ricoLevel = this.player.getUpgradeLevel('ricochet');
         const baseDestroy = 1 + Math.max(0, match.tiles.length - 3);
         const destroyCount = baseDestroy + ricoLevel;
-        for (let i = 0; i < destroyCount; i++) {
-          this.triggerRandomTileForRicochet(match);
-        }
+        await Promise.all(
+          Array.from({ length: destroyCount }, () => this.triggerRandomTileForRicochet(match)),
+        );
       }
 
       // Saloon: generate resources of adjacent tiles on the board
@@ -1183,7 +1324,7 @@ export class CombatManager {
         this.resolveSaloonAdjacent(match);
       }
 
-      // Check if an enemy died from this match + Outlaw(2) rageful on kill
+      // Check if an enemy died from this match + trait kill hooks
       for (const enemy of this.enemies) {
         if (enemy.state.isDead && !enemy.state._deathProcessed) {
           this.enemyDiedThisSwap = true;
@@ -1191,7 +1332,30 @@ export class CombatManager {
           const ragefulGain = this.traits.onEnemyKilled();
           if (ragefulGain > 0) {
             this.player.ragefulStacks += ragefulGain;
-            this.floatOnPlayer(`+${ragefulGain} RGF`, '#D04040');
+            this.floatOnPlayer(`+${ragefulGain} RAGEFUL`, '#D04040', 9);
+          }
+          // Undertaker(6): on enemy death, gain 1 Ready
+          this.traits.onEnemyKilledUndertaker();
+          // Reaper's Scythe: apply Shadow to 5 tiles
+          if (this.artifacts.has('reapers_scythe')) {
+            this.board.applyShadowToRandomTiles(5);
+          }
+          // Corpse Explosion: summoned enemy dies -> deal maxHP to ALL enemies
+          if (this.artifacts.hasCorpseExplosion() && enemy.summoned) {
+            const explosionDmg = enemy.getDefinition().health;
+            for (const alive of this.aliveEnemies()) {
+              const { hpLost } = alive.takeDamage(explosionDmg);
+              this.damageDealtThisFight += hpLost;
+              this.floatOnEnemy(alive, `-${hpLost}`, '#D06060');
+            }
+            this.emitEnemyHpChanges();
+            EventBus.emit(GameEvent.SCREEN_SHAKE, 'medium');
+          }
+          // Kill Confirmed: kill with .50 Cal or 5+ match -> gain 1 swap
+          const killArt = this.artifacts.onEnemyKilled(match);
+          if (killArt.killGrantsSwap) {
+            this.swapsRemaining++;
+            EventBus.emit(GameEvent.SWAPS_CHANGE, this.swapsRemaining, this.swapsPerTurn);
           }
         }
       }
@@ -1205,19 +1369,22 @@ export class CombatManager {
    * Marks ricochetTriggeredThisResolution so the caller can apply
    * gravity + fill + cascade resolution after processMatches completes.
    */
-  private triggerRandomTileForRicochet(sourceMatch: MatchResult): void {
-    const result = this.board.pickAndRemoveRandomTile();
+  private async triggerRandomTileForRicochet(sourceMatch: MatchResult): Promise<void> {
+    const result = await this.board.pickAndRemoveRandomTile();
     if (result === null) return;
 
-    const upgradeLevel = this.player.getUpgradeLevel(result.type);
-    const isSuppressed = this.hazardManager.isSuppressed(result.type);
-    const output = isSuppressed
-      ? this.resolver.emptyOutput()
-      : this.resolver.resolveSingle(result.type, upgradeLevel);
-    this.applyResourceOutput(output);
+    // Apply resource output for each destroyed tile (includes explosive/showdown chain)
+    for (const info of result.destroyed) {
+      const upgradeLevel = this.player.getUpgradeLevel(info.type);
+      const isSuppressed = this.hazardManager.isSuppressed(info.type);
+      const output = isSuppressed
+        ? this.resolver.emptyOutput()
+        : this.resolver.resolveSingle(info.type, upgradeLevel);
+      this.applyResourceOutput(output);
+    }
     this.ricochetTriggeredThisResolution = true;
 
-    // Flash a line from source match center to the destroyed tile
+    // Flash a line from source match center to the picked tile
     const mid = sourceMatch.tiles[Math.floor(sourceMatch.tiles.length / 2)];
     EventBus.emit(GameEvent.FLASH_LINE, mid, result.position, sourceMatch.tileType);
   }
@@ -1256,9 +1423,15 @@ export class CombatManager {
     EventBus.emit(GameEvent.FLOATING_NUMBER, 'enemy', this.enemies.indexOf(enemy), text, color, fontSize);
   }
 
+  /** Apply venom to an enemy, adding Rattlesnake Fang Necklace bonus. */
+  private applyPoison(enemy: Enemy, stacks: number): void {
+    const total = stacks + this.artifacts.getExtraPoisonStacks();
+    enemy.addPoison(total);
+  }
+
   /** Emit a floating number on the player. */
-  private floatOnPlayer(text: string, color: string): void {
-    EventBus.emit(GameEvent.FLOATING_NUMBER, 'player', 0, text, color);
+  private floatOnPlayer(text: string, color: string, fontSize?: number): void {
+    EventBus.emit(GameEvent.FLOATING_NUMBER, 'player', 0, text, color, fontSize);
   }
 
   /** Get the highest-HP alive enemy. */
@@ -1270,6 +1443,12 @@ export class CombatManager {
 
   /** Deal damage to an enemy, handling pierce, and show floating number. */
   private dealDamageToEnemy(enemy: Enemy, damage: number, pierce: boolean, isCrit = false): void {
+    // Undertaker(3): +50% damage to summoned enemies
+    const undertakerBonus = this.traits.getUndertakerBonusDamage(enemy.summoned);
+    if (undertakerBonus > 0) {
+      damage = Math.round(damage * (1 + undertakerBonus));
+    }
+
     const critSize = isCrit ? 18 : undefined;
     if (pierce) {
       const hpBefore = enemy.state.health;
@@ -1342,6 +1521,7 @@ export class CombatManager {
         if (target) this.dealDamageToEnemy(target, damage, false, isCrit);
       }
       this.emitEnemyHpChanges();
+      this.traits.onDamageDealt();
     }
 
     // Block
@@ -1375,9 +1555,11 @@ export class CombatManager {
 
     // Healing
     if (output.healing > 0) {
-      this.player.heal(output.healing);
-      this.floatOnPlayer(`+${output.healing}`, '#40D840');
+      const healed = this.player.heal(output.healing);
+      this.floatOnPlayer(`+${healed}`, '#40D840');
       EventBus.emit(GameEvent.PLAYER_HP_CHANGE, this.player.health, this.player.maxHealth);
+      // Offering Plate: healing grants gold equal to HP healed
+      this.artifacts.onPlayerHealed(healed, this.player);
     }
 
     // Ability charges (capped at threshold)
@@ -1392,13 +1574,21 @@ export class CombatManager {
     }
 
     // Venom
-    if (output.venomStacks > 0) {
-      const target = output.targetsHighestHp
-        ? this.getHighestHpEnemy()
-        : this.getTargetedAliveEnemy();
-      if (target) {
-        target.addVenom(output.venomStacks);
-        this.floatOnEnemy(target, `+${output.venomStacks} VNM`, '#60A040');
+    if (output.poisonStacks > 0) {
+      // Rattlesnake(4): venom applies to ALL enemies
+      if (this.traits.poisonAppliesToAll()) {
+        for (const enemy of this.aliveEnemies()) {
+          this.applyPoison(enemy, output.poisonStacks);
+          this.floatOnEnemy(enemy, `+${output.poisonStacks} POISON`, '#40ff40', 9);
+        }
+      } else {
+        const target = output.targetsHighestHp
+          ? this.getHighestHpEnemy()
+          : this.getTargetedAliveEnemy();
+        if (target) {
+          this.applyPoison(target, output.poisonStacks);
+          this.floatOnEnemy(target, `+${output.poisonStacks} POISON`, '#40ff40', 9);
+        }
       }
     }
 
@@ -1409,7 +1599,7 @@ export class CombatManager {
         : this.getTargetedAliveEnemy();
       if (target) {
         target.addVulnerable(output.vulnerableStacks);
-        this.floatOnEnemy(target, `+${output.vulnerableStacks} VUL`, '#C070D0');
+        this.floatOnEnemy(target, `+${output.vulnerableStacks} VULNERABLE`, '#C070D0', 9);
       }
     }
 
@@ -1418,7 +1608,7 @@ export class CombatManager {
       const target = this.getTargetedAliveEnemy();
       if (target) {
         target.addBounty(output.bountyStacks);
-        this.floatOnEnemy(target, `+${output.bountyStacks} BTY`, '#C04040');
+        this.floatOnEnemy(target, `+${output.bountyStacks} BOUNTY`, '#C04040', 9);
         if (this.handleBountyKill(target)) {
           this.emitEnemyHpChanges();
         }
@@ -1428,31 +1618,37 @@ export class CombatManager {
     // Ace stacks
     if (output.aceStacks > 0) {
       this.player.addAceStacks(output.aceStacks);
-      this.floatOnPlayer(`+${output.aceStacks} ACE`, '#E0C880');
+      this.floatOnPlayer(`+${output.aceStacks} ACE`, '#E0C880', 9);
     }
 
     // Lucky stacks (crit chance)
     if (output.luckyStacks > 0) {
       this.player.addLuckyStacks(output.luckyStacks);
-      this.floatOnPlayer(`+${output.luckyStacks} LCK`, '#C8A040');
+      this.floatOnPlayer(`+${output.luckyStacks} LUCKY`, '#C8A040', 9);
     }
 
     // Rageful stacks
     if (output.ragefulStacks > 0) {
       this.player.ragefulStacks += output.ragefulStacks;
-      this.floatOnPlayer(`+${output.ragefulStacks} RGF`, '#D04040');
+      this.floatOnPlayer(`+${output.ragefulStacks} RAGEFUL`, '#D04040', 9);
     }
 
     // Sturdy stacks
     if (output.sturdyStacks > 0) {
       this.player.sturdyStacks += output.sturdyStacks;
-      this.floatOnPlayer(`+${output.sturdyStacks} STD`, '#6888A0');
+      this.floatOnPlayer(`+${output.sturdyStacks} STURDY`, '#6888A0', 9);
+    }
+
+    // Chain stacks
+    if (output.chainStacks > 0) {
+      this.player.chainStacks += output.chainStacks;
+      this.floatOnPlayer(`+${output.chainStacks} CHAIN`, '#A08040', 9);
     }
 
     // Bonus swaps (Cavalry 4+)
     if (output.bonusSwaps > 0) {
       this.swapsRemaining += output.bonusSwaps;
-      this.floatOnPlayer(`+${output.bonusSwaps} SWAP`, '#70B0D0');
+      this.floatOnPlayer(`+${output.bonusSwaps} SWAP`, '#70B0D0', 9);
       EventBus.emit(GameEvent.SWAPS_CHANGE, this.swapsRemaining, this.swapsPerTurn);
     }
 
@@ -1504,10 +1700,47 @@ export class CombatManager {
   // Turn End & Enemy Turn
   // ---------------------------------------------------------------------------
 
-  private endTurn(): void {
+  private async endTurn(): Promise<void> {
     // Tick cracked ground stacks
     for (const enemy of this.aliveEnemies()) {
       if (enemy.state.crackedGround > 0) enemy.state.crackedGround--;
+    }
+
+    // Tracker(1): reveal all buried tiles at end of turn
+    if (this.traits.shouldRevealBuried()) {
+      const cleared = this.hazardManager.clearAllOfType('sand');
+      if (cleared.length > 0) {
+        // Tracker(3): gain 1 Rageful per revealed buried tile
+        if (this.traits.buriedRevealGrantsRageful()) {
+          this.player.ragefulStacks += cleared.length;
+          this.floatOnPlayer(`+${cleared.length} RAGEFUL`, '#D04040', 9);
+        }
+        // Artifact buried-reveal hooks (Trapper's Snare, Gravedigger's Shovel)
+        const buriedArt = this.artifacts.onBuriedRevealed();
+        for (let i = 0; i < cleared.length; i++) {
+          const alive = this.aliveEnemies();
+          if (alive.length === 0) break;
+          const rndEnemy = alive[Math.floor(Math.random() * alive.length)];
+          if (buriedArt.vulnerableCount > 0) {
+            rndEnemy.addVulnerable(buriedArt.vulnerableCount);
+            this.floatOnEnemy(rndEnemy, `+${buriedArt.vulnerableCount} VULNERABLE`, '#C070D0', 9);
+          }
+          if (buriedArt.damagePerReveal > 0) {
+            const { hpLost } = rndEnemy.takeDamage(buriedArt.damagePerReveal);
+            this.damageDealtThisFight += hpLost;
+            this.floatOnEnemy(rndEnemy, `-${hpLost}`, '#808080');
+          }
+        }
+        this.emitEnemyHpChanges();
+      }
+    }
+
+    // Preacher(2): heal 5 if no damage dealt this turn
+    const preacherHealing = this.traits.getPreacherHealing();
+    if (preacherHealing > 0) {
+      this.player.heal(preacherHealing);
+      this.floatOnPlayer(`+${preacherHealing}`, '#40D840');
+      EventBus.emit(GameEvent.PLAYER_HP_CHANGE, this.player.health, this.player.maxHealth);
     }
 
     // Trait turn-end effects (Prospector gold damage)
@@ -1521,8 +1754,20 @@ export class CombatManager {
       EventBus.emit(GameEvent.GOLD_CHANGE, this.player.gold);
     }
 
-    // Artifact turn-end effects (Sharpshooter's Eye reset, Patrol Route block)
+    // Artifact turn-end effects (Iron Will, Sheriff's Domino)
     this.artifacts.onTurnEnd(this.swapsRemaining, this.player);
+
+    // Trailblazer's Compass: unused swaps deal 3 damage each to targeted enemy
+    if (this.artifacts.has('trailblazers_compass') && this.swapsRemaining > 0) {
+      const compassTarget = this.getTargetedAliveEnemy();
+      if (compassTarget) {
+        const totalDmg = this.swapsRemaining * 3;
+        const { hpLost } = compassTarget.takeDamage(totalDmg);
+        this.damageDealtThisFight += hpLost;
+        this.floatOnEnemy(compassTarget, `-${hpLost}`, '#70B0D0');
+        EventBus.emit(GameEvent.ENEMY_HP_CHANGE, { ...compassTarget.state });
+      }
+    }
 
     if (this.isCombatOver()) {
       this.endCombat();
@@ -1532,7 +1777,13 @@ export class CombatManager {
     this.setPhase('enemy-turn');
     EventBus.emit(GameEvent.TURN_END, this.buildState());
 
-    this.executeEnemyTurn();
+    const speed = getSpeedMultiplier();
+    EventBus.emit(GameEvent.TURN_BANNER, 'ENEMY TURN');
+    await new Promise(r => setTimeout(r, Math.round(1000 / speed)));
+
+    await this.executeEnemyTurn();
+
+    await new Promise(r => setTimeout(r, Math.round(1000 / speed)));
 
     // Player block expires after the enemy turn so it absorbs incoming attacks
     this.player.resetTurnEffects();
@@ -1543,18 +1794,21 @@ export class CombatManager {
       return;
     }
 
+    EventBus.emit(GameEvent.TURN_BANNER, 'YOUR TURN');
+    await new Promise(r => setTimeout(r, Math.round(1000 / speed)));
+
     // Start next player turn
     this.startTurn();
   }
 
-  private executeEnemyTurn(): void {
+  private async executeEnemyTurn(): Promise<void> {
     // 1. Venom ticks on all enemies (upgrade adds +1 bonus damage per tick per level)
-    const venomUpgrade = this.player.getUpgradeLevel('venom');
+    const wasteUpgrade = this.player.getUpgradeLevel('waste');
     for (const enemy of this.aliveEnemies()) {
-      const venomDamage = enemy.tickVenom(venomUpgrade);
-      if (venomDamage > 0) {
-        this.damageDealtThisFight += venomDamage;
-        this.floatOnEnemy(enemy, `-${venomDamage}`, '#60A040');
+      const poisonDamage = enemy.tickPoison(wasteUpgrade);
+      if (poisonDamage > 0) {
+        this.damageDealtThisFight += poisonDamage;
+        this.floatOnEnemy(enemy, `-${poisonDamage}`, '#40ff40');
         EventBus.emit(GameEvent.ENEMY_HP_CHANGE, { ...enemy.state });
         this.handleBountyKill(enemy);
       }
@@ -1562,7 +1816,14 @@ export class CombatManager {
       if (enemy.state.vulnerable > 0) {
         enemy.state.vulnerable--;
       }
+      // Terrified decreases by 1 at end of turn
+      if (enemy.state.terrifiedStacks > 0) {
+        enemy.state.terrifiedStacks--;
+      }
     }
+
+    // Sync HUD after venom ticks so enemy HP bars update immediately
+    this.emitFullState();
 
     // Check for deaths from venom
     if (this.isCombatOver()) return;
@@ -1586,21 +1847,53 @@ export class CombatManager {
       }
     }
 
-    // 4. Each alive enemy acts (left to right)
-    for (const enemy of this.aliveEnemies()) {
+    // 4. Each alive enemy acts one by one (top to bottom visual order)
+    // Visual slots: slot 0 (top) = enemy[1], slot 1 (center) = enemy[0], slot 2 (bottom) = enemy[2]
+    const visualOrder = [1, 0, 2];
+    const alive = this.aliveEnemies();
+    const sorted = visualOrder
+      .map(i => this.enemies[i])
+      .filter((e): e is Enemy => e != null && !e.state.isDead);
+    // Include any enemies beyond index 2 that aren't in the visual order
+    for (const e of alive) {
+      if (!sorted.includes(e)) sorted.push(e);
+    }
+    for (const enemy of sorted) {
       // Re-check: enemy may have died from venom, thorns, or mid-turn effects
       if (enemy.state.isDead) continue;
       // Timed enemies (Mine Cart) don't attack -- damage only on time expiry
       if (this.isTimedEnemy(enemy)) continue;
+
+      await new Promise(r => setTimeout(r, Math.round(600 / getSpeedMultiplier())));
+      EventBus.emit(GameEvent.ENEMY_ACTION, enemy.state.id);
       const action = enemy.executeIntent();
 
       switch (action.type) {
         case 'attack': {
           if (action.value > 0) {
-            const { hpLost, blocked, thornsDamage } = this.player.takeDamage(action.value);
+            // Terrified: deal 50% less damage
+            let adjustedDamage = enemy.state.terrifiedStacks > 0
+              ? Math.round(action.value * 0.5)
+              : action.value;
+            // Preacher's Bible: take 1 less damage from enemy attacks
+            if (this.artifacts.has('preachers_bible')) {
+              adjustedDamage = Math.max(0, adjustedDamage - 1);
+            }
+            // Preacher(4): 20% less damage from enemies with lower HP than player
+            const preacherReduction = this.traits.getPreacherDamageReduction(enemy.state.health, this.player.health);
+            if (preacherReduction > 0) adjustedDamage = Math.round(adjustedDamage * (1 - preacherReduction));
+            const { hpLost, blocked, thornsDamage } = this.player.takeDamage(adjustedDamage);
             if (hpLost > 0) { playHit(); this.playerTookDamageThisFight = true; }
             if (blocked > 0) { playBlock(); this.floatOnPlayer(`-${blocked}`, '#6888A0'); }
             if (hpLost > 0) this.floatOnPlayer(`-${hpLost}`, '#ff4444');
+
+            // Artifact damage-taken hooks (Cactus Spine Vest, Death's Pocket Watch, Sheriff's Domino)
+            const artDmg = this.artifacts.onPlayerDamaged(hpLost, this.player);
+            if (artDmg.poisonToAttacker > 0) {
+              this.applyPoison(enemy, artDmg.poisonToAttacker);
+              this.floatOnEnemy(enemy, `+${artDmg.poisonToAttacker} POISON`, '#40ff40', 9);
+              EventBus.emit(GameEvent.ENEMY_HP_CHANGE, { ...enemy.state });
+            }
             EventBus.emit(
               GameEvent.PLAYER_HP_CHANGE,
               this.player.health,
@@ -1629,6 +1922,10 @@ export class CombatManager {
         }
         case 'block':
           // Block was already applied in executeIntent
+          // Silver Bullet: boss gains block -> gain 1 Ready
+          if (this.isBossEnemy(enemy)) {
+            this.artifacts.onBossGainedBlock(this.player);
+          }
           break;
         case 'summon':
           this.trySummonEnemy(enemy);
@@ -1644,12 +1941,15 @@ export class CombatManager {
             if (suppressed.length > 0) {
             }
           } else {
-            executeBoardManipulation(enemy, enemy.state.intent, this.hazardManager);
+            executeBoardManipulation(enemy, enemy.state.intent, this.hazardManager, this.traits.getBombCountdownBonus());
           }
           break;
         case 'ability':
           break;
       }
+
+      // Sync full state after each enemy action so HUD reflects block/status changes
+      this.emitFullState();
 
       if (this.player.isDead()) return;
     }
@@ -1711,7 +2011,7 @@ export class CombatManager {
 
     // Coyote Pelt: summoned enemies take 5 damage immediately
     const hpBeforeSummon = minion.state.health;
-    this.artifacts.onEnemySummoned(minion);
+    this.artifacts.onEnemySummoned(minion, this.player);
     this.damageDealtThisFight += Math.max(0, hpBeforeSummon - minion.state.health);
 
     this.addEnemyToSlot(minion);
@@ -1798,15 +2098,53 @@ export class CombatManager {
    * Create the standard onCascadeStep callback used by both swap and deadeye.
    * Handles SFX, combo multiplier, hazard resolution, resource processing, and HUD sync.
    */
-  private makeCascadeStepHandler(getStep: () => number): (stepMatches: MatchResult[]) => void {
-    return (stepMatches: MatchResult[]) => {
+  private makeCascadeStepHandler(getStep: () => number): (stepMatches: MatchResult[]) => Promise<void> {
+    return async (stepMatches: MatchResult[]) => {
       const step = getStep();
       playMatch(step);
+      const clearPoison = this.traits.clearsAdjacentPoison();
+      let poisonCleared = 0;
+      let locksFreed = 0;
       for (const match of stepMatches) {
-        this.hazardManager.resolveAdjacentHazards(match.tiles);
+        const locksBefore = this.hazardManager.countHazards('lock');
+        const freed = this.hazardManager.resolveAdjacentHazards(match.tiles, clearPoison);
+        locksFreed += locksBefore - this.hazardManager.countHazards('lock');
+        if (clearPoison) {
+          poisonCleared += freed.filter(p => {
+            // Count tiles that were poison (now cleared)
+            const tile = this.board.getGrid()[p.row]?.[p.col];
+            return tile && !tile.hazard; // was just freed
+          }).length;
+        }
+      }
+      // Rattlesnake(2): cleared poison applies venom to target
+      if (poisonCleared > 0 && this.traits.poisonHazardAppliesPoison()) {
+        // Rattlesnake(4): venom applies to ALL enemies
+        if (this.traits.poisonAppliesToAll()) {
+          for (const enemy of this.aliveEnemies()) {
+            this.applyPoison(enemy, poisonCleared);
+            this.floatOnEnemy(enemy, `+${poisonCleared} POISON`, '#40ff40', 9);
+            EventBus.emit(GameEvent.ENEMY_HP_CHANGE, { ...enemy.state });
+          }
+        } else {
+          const target = this.getTargetedAliveEnemy();
+          if (target) {
+            this.applyPoison(target, poisonCleared);
+            this.floatOnEnemy(target, `+${poisonCleared} POISON`, '#40ff40', 9);
+            EventBus.emit(GameEvent.ENEMY_HP_CHANGE, { ...target.state });
+          }
+        }
+      }
+      // Jail Cell Keys: gain 4 block per lock freed
+      if (locksFreed > 0) {
+        const lockBlock = this.artifacts.onLockFreed() * locksFreed;
+        if (lockBlock > 0) {
+          this.player.addBlock(lockBlock);
+          this.floatOnPlayer(`+${lockBlock}`, '#6888A0');
+        }
       }
       const comboMultiplier = step > 1 ? Math.min(3.0, 1 + (step - 1) * 0.1) : 1.0;
-      this.processMatches(stepMatches, comboMultiplier);
+      await this.processMatches(stepMatches, comboMultiplier);
       this.emitFullState();
       this.emitEnemyHpChanges();
       EventBus.emit(GameEvent.PLAYER_HP_CHANGE, this.player.health, this.player.maxHealth);
@@ -1879,7 +2217,10 @@ export class CombatManager {
       barricadeStacks: this.player.barricadeStacks,
       ragefulStacks: this.player.ragefulStacks,
       sturdyStacks: this.player.sturdyStacks,
-      venomousStacks: this.player.venomousStacks,
+      graceStacks: this.player.graceStacks,
+      poisonedStacks: this.player.poisonedStacks,
+      readyStacks: this.player.readyStacks,
+      chainStacks: this.player.chainStacks,
       thorns: this.player.thorns,
       enemies: this.enemies.map((e) => ({ ...e.state })),
       targetedEnemyIndex: (() => {

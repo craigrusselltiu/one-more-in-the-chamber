@@ -6,7 +6,7 @@ import { EventBus, GameEvent } from '../EventBus';
 import { useSettingsStore, getSpeedMultiplier } from '../../store/settingsStore';
 
 /** Grid spacing. Larger than sprite (32px) to leave room for VFX outlines. */
-export const TILE_SIZE = 38;
+export const TILE_SIZE = 36;
 const STATUS_OFFSET = 12;
 
 /**
@@ -25,6 +25,7 @@ export class Tile {
   col: number;
   isExplosive = false;
   isShowdown = false;
+  isShadow = false;
   /** Timestamp when the hint effect expires. 0 = no hint. */
   hintUntil = 0;
   private hintStart = 0;
@@ -50,6 +51,8 @@ export class Tile {
   private _mask: Phaser.Display.Masks.GeometryMask | null = null;
   /** Breathing "?" label for buried (sand) tiles. */
   private sandLabel: Phaser.GameObjects.Text | null = null;
+  /** Next time to emit shadow idle particles. */
+  private nextShadowParticle = 0;
 
   get hazard(): TileHazardState | null {
     return this._hazard;
@@ -140,6 +143,11 @@ export class Tile {
     this.updateOverlay();
   }
 
+  setShadow(value: boolean): void {
+    this.isShadow = value;
+    this.updateOverlay();
+  }
+
   refreshStatusIndicator(): void {
     if (!this.destroyed) {
       this.updateOverlay();
@@ -175,6 +183,15 @@ export class Tile {
       tint = color.color;
       overlayAlpha = 0.2 + breath * 0.25;
       outlineAlpha = 0.6 + breath * 0.4;
+    } else if (this.isShadow) {
+      // Dark purple-to-black gradient: cycle between deep purple and near-black
+      const shadowPhase = 0.5 + 0.5 * Math.sin(time / 600);
+      const r = Math.floor(0x30 + shadowPhase * 0x30); // 0x30..0x60
+      const g = Math.floor(0x00 + shadowPhase * 0x10); // 0x00..0x10
+      const b = Math.floor(0x40 + shadowPhase * 0x40); // 0x40..0x80
+      tint = (r << 16) | (g << 8) | b;
+      overlayAlpha = 0.25 + breath * 0.2;
+      outlineAlpha = 0.6 + breath * 0.3;
     } else if (this.isExplosive) {
       tint = 0xff8800;
       overlayAlpha = 0.15 + breath * 0.2;
@@ -201,9 +218,15 @@ export class Tile {
       outlineAlpha = 0.7 * triangle;
     }
 
+    // Shadow idle particles: emit dark purple wisps periodically
+    if (this.isShadow && time > this.nextShadowParticle) {
+      this.nextShadowParticle = time + 800 + Math.random() * 400;
+      EventBus.emit(GameEvent.TILE_PARTICLES, this.sprite.x, this.sprite.y, '#6b2fa0');
+    }
+
     if (this.hintUntil > 0 && time >= this.hintUntil) {
       this.hintUntil = 0;
-      if (!this.isShowdown && !this.isExplosive && this._hazard?.type !== 'bomb' && this._hazard?.type !== 'poison') {
+      if (!this.isShowdown && !this.isExplosive && !this.isShadow && this._hazard?.type !== 'bomb' && this._hazard?.type !== 'poison') {
         this.destroyOverlay();
         this.destroyOutline();
       }
@@ -236,7 +259,7 @@ export class Tile {
   }
 
   private updateOverlay(): void {
-    const needsOverlay = this.isShowdown || this.isExplosive || this._hazard?.type === 'bomb' || this._hazard?.type === 'poison' || this.hintUntil > 0;
+    const needsOverlay = this.isShowdown || this.isExplosive || this.isShadow || this._hazard?.type === 'bomb' || this._hazard?.type === 'poison' || this.hintUntil > 0;
     const cx = this.sprite.x;
     const cy = this.sprite.y;
     const frame = TILE_FRAMES[this.type];
@@ -342,8 +365,8 @@ export class Tile {
       return;
     }
 
-    // Lock / Hardened Lock: grey out sprite + lock icon centered on tile
-    if (this._hazard.type === 'lock' || this._hazard.type === 'hardened_lock') {
+    // Lock: grey out sprite + lock icon centered on tile
+    if (this._hazard.type === 'lock') {
       this.destroyStatusIndicator();
       this.destroyPoisonIcon();
       this.sprite.setTint(0x666666);
@@ -383,8 +406,8 @@ export class Tile {
         }
       }
 
-      // For hardened lock, show hit count below the icon
-      if (this._hazard.type === 'hardened_lock') {
+      // Show hit count below the icon when hits > 1
+      if (this._hazard.hits > 1) {
         const text = String(this._hazard.hits);
         if (!this.statusLabel) {
           this.statusLabel = this.scene.add

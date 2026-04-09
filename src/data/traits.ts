@@ -16,17 +16,17 @@ export const TRAITS: TraitDefinition[] = [
   {
     id: 'sheriff',
     name: 'Sheriff',
-    description: 'The block trait.',
+    description: 'The law is heavier than it looks.',
     breakpoints: [
-      { threshold: 2, description: 'Double the first time you gain block each turn.' },
-      { threshold: 4, description: 'At the start of combat, gain 5 Sturdy.' },
+      { threshold: 2, description: 'Double the first time you gain block each combat.' },
+      { threshold: 4, description: 'At the start of combat, gain 4 Sturdy.' },
       { threshold: 6, description: 'Block reflects 100% of absorbed damage back to attacker.' },
     ],
   },
   {
     id: 'outlaw',
     name: 'Outlaw',
-    description: 'The kill trait.',
+    description: 'Wanted: Alive. Preferably not.',
     breakpoints: [
       { threshold: 2, description: 'Killing an enemy grants 1 Rageful.' },
       { threshold: 5, description: 'At the start of Boss encounters, gain 3 Rageful and apply 2 Vulnerable to all enemies.' },
@@ -35,9 +35,9 @@ export const TRAITS: TraitDefinition[] = [
   {
     id: 'prospector',
     name: 'Prospector',
-    description: 'The gold trait.',
+    description: "There's gold in them hills. And in that match.",
     breakpoints: [
-      { threshold: 2, description: 'On any match, 20% chance to generate 1 gold.' },
+      { threshold: 2, description: 'On any match, 25% chance to generate 5 gold.' },
       { threshold: 4, description: 'Whenever you gain gold during combat, deal 1 damage to a random enemy.' },
       { threshold: 6, description: 'Deal 10% of your current gold as extra damage.' },
     ],
@@ -45,10 +45,10 @@ export const TRAITS: TraitDefinition[] = [
   {
     id: 'gunslinger',
     name: 'Gunslinger',
-    description: 'The gun tile trait.',
+    description: 'Fastest hand in the west. And the luckiest.',
     breakpoints: [
-      { threshold: 2, description: 'Bullet, .50 Cal, Buckshot, and Ricochet tiles deal 1 extra damage per tile.' },
-      { threshold: 4, description: 'Gain 1 Lucky stack for every Bullet, .50 Cal, Buckshot, or Ricochet matched.' },
+      { threshold: 2, description: 'Bullet-type tiles deal 1 extra damage per tile.' },
+      { threshold: 4, description: 'Gain 1 Lucky for every bullet-type tile matched.' },
     ],
   },
   {
@@ -56,64 +56,98 @@ export const TRAITS: TraitDefinition[] = [
     name: 'Saloon Keeper',
     description: 'On the house.',
     breakpoints: [
-      { threshold: 2, description: 'Consumables heal 5 HP on use.' },
+      { threshold: 2, description: 'Consumables heal 5 HP on use (any consumable).' },
       { threshold: 5, description: 'At the start of combat, gain a random consumable.' },
     ],
   },
   {
     id: 'sapper',
     name: 'Sapper',
-    description: 'The bomb tile trait.',
+    description: 'Fire in the hole.',
     breakpoints: [
-      { threshold: 1, description: 'Enemy bomb timers are increased by 2.' },
-      { threshold: 5, description: 'Explosive tile radius is increased by 1.' },
+      { threshold: 2, description: 'Enemy bomb timers are increased by 2.' },
+      { threshold: 4, description: 'Increase the radius of explosive tiles by 1.' },
     ],
   },
   {
     id: 'sniper',
     name: 'Sniper',
-    description: 'The 5-match trait.',
+    description: "Sniper? I barely know her!",
     breakpoints: [
-      { threshold: 4, description: 'On 5-match, gain 1 swap for that turn.' },
+      { threshold: 3, description: 'On 5-match, gain 1 swap for that turn.' },
+      { threshold: 5, description: 'On 6+ match, if the targeted enemy is not a boss, kill it.' },
     ],
   },
   {
     id: 'dead_man_walking',
     name: 'Dead Man Walking',
-    description: 'The low HP trait.',
+    description: "I didn't hear no bell.",
     breakpoints: [
       { threshold: 3, description: 'Whenever you would take damage, take 1 less damage.' },
-      { threshold: 5, description: 'If HP is below 20%, all damage is doubled.' },
-      { threshold: 7, description: 'Once per fight, taking lethal damage instead sets HP to 10 and grants 20 block.' },
-    ],
-  },
-  {
-    id: 'rattlesnake',
-    name: 'Rattlesnake',
-    description: 'The poison tile trait.',
-    breakpoints: [
-      { threshold: 1, description: 'Immune to poison tile damage/debuffs.' },
-      { threshold: 3, description: 'Matching poison tiles deals 2x Bullet damage + applies venom stacks.' },
+      { threshold: 5, description: 'When at or below 20% HP, all damage is doubled.' },
+      { threshold: 7, description: 'Once per combat when taking lethal damage, prevent it and heal 20% HP.' },
     ],
   },
   {
     id: 'mustang',
     name: 'Mustang',
-    description: 'The extra swap trait.',
+    description: "Can't fence what won't be fenced.",
     breakpoints: [
-      { threshold: 4, description: '+1 swap/turn. One non-adjacent swap per turn. 5+ lasso matches +50% damage.' },
+      { threshold: 4, description: '+1 swap per turn.' },
+    ],
+  },
+  {
+    id: 'tracker',
+    name: 'Tracker',
+    description: "Read the tracks. See what's hidden.",
+    breakpoints: [
+      { threshold: 1, description: 'Buried tiles get revealed at the end of your turn automatically.' },
+      { threshold: 3, description: 'Gain 1 Rageful whenever a Buried tile gets revealed.' },
+    ],
+  },
+  {
+    id: 'preacher',
+    name: 'Preacher',
+    description: "The sermon ain't over yet.",
+    breakpoints: [
+      { threshold: 2, description: "Whenever you don't deal damage in a turn, heal 5." },
+      { threshold: 4, description: 'Take 20% less damage from enemies with lower HP than you.' },
+      { threshold: 6, description: 'At the start of combat, gain 1 Grace.' },
+    ],
+  },
+  {
+    id: 'antivenom',
+    name: 'Antivenom',
+    description: "Don't step on anything that hisses.",
+    breakpoints: [
+      { threshold: 3, description: 'Matching next to a Poison tile clears it.' },
+    ],
+  },
+  {
+    id: 'undertaker',
+    name: 'Undertaker',
+    description: 'Business is booming.',
+    breakpoints: [
+      { threshold: 3, description: 'Deal 50% more damage to summoned enemies.' },
+      { threshold: 6, description: 'On enemy death, gain 1 Ready.' },
     ],
   },
   {
     id: 'desperado',
     name: 'Desperado',
-    description: 'The gamble trait.',
-    breakpoints: [],
+    description: 'Go big or go home.',
+    breakpoints: [
+      { threshold: 2, description: 'Desperado-tagged artifacts are more common.' },
+      { threshold: 5, description: 'At the start of every turn, gain 4 Ace.' },
+    ],
   },
   {
-    id: 'high_roller',
-    name: 'High Roller',
-    description: 'The high-stakes trait.',
-    breakpoints: [],
+    id: 'rattlesnake',
+    name: 'Rattlesnake',
+    description: "I'm a slithery snake.",
+    breakpoints: [
+      { threshold: 2, description: 'Clearing or matching Poison tiles applies Poison to target instead.' },
+      { threshold: 4, description: 'When you would apply Poison, apply it to ALL enemies.' },
+    ],
   },
 ];

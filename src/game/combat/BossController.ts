@@ -390,8 +390,8 @@ export class BossController {
         break;
       }
       case 2:
-        // Hardened locks (need 2 adjacent matches to free) instead of row locks
-        hazardManager.placeRandomHardenedLocks(2, 2);
+        // 2-hit locks (need 2 adjacent matches to free) instead of row locks
+        hazardManager.placeRandomLocks(2, 2);
         // Warrants -- suppress 2 tile types (refreshes each turn to keep 2 suppressed)
         if (activeTileTypes) {
           hazardManager.suppressRandomTypes(2, activeTileTypes, 2);

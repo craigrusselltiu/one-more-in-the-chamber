@@ -4,11 +4,12 @@ import { useRunStore } from '../../store/runStore';
 import { EVENTS, type EventDefinition, type EventChoice } from '../../data/events';
 import { ARTIFACTS, type ArtifactDefinition } from '../../data/artifacts';
 import { createSeededRandom } from '../../utils/seededRandom';
+import { weightedArtifactPick } from '../../utils/weightedSelection';
 import type { TraitId } from '../../types/game';
 import type { Screen } from '../../App';
 
 /** Pick a random unowned artifact, optionally filtered by tag. */
-function pickArtifact(ownedIds: Set<string>, character: string, tag?: TraitId): ArtifactDefinition {
+function pickArtifact(ownedIds: Set<string>, character: string, desperadoActive: boolean, tag?: TraitId): ArtifactDefinition {
   let pool = ARTIFACTS.filter((a) => !ownedIds.has(a.id) && (!a.exclusive || a.exclusive === character));
   if (tag) {
     const tagged = pool.filter((a) => a.tags.includes(tag));
@@ -16,7 +17,7 @@ function pickArtifact(ownedIds: Set<string>, character: string, tag?: TraitId): 
   }
   if (pool.length === 0) pool = tag ? ARTIFACTS.filter((a) => a.tags.includes(tag) && (!a.exclusive || a.exclusive === character)) : ARTIFACTS.filter((a) => !a.exclusive || a.exclusive === character);
   if (pool.length === 0) pool = ARTIFACTS;
-  return pool[Math.floor(Math.random() * pool.length)];
+  return weightedArtifactPick(pool, Math.random, desperadoActive);
 }
 
 /**
@@ -48,6 +49,7 @@ export const EventScreen = memo(function EventScreen() {
     setChoiceMade(true);
 
     let artifact: ArtifactDefinition | null = null;
+    const desperadoActive = (run.traitCounts?.desperado ?? 0) >= 2;
 
     switch (choice.effect) {
       case 'gold_5':
@@ -71,24 +73,24 @@ export const EventScreen = memo(function EventScreen() {
         break;
       case 'lose_hp_gain_artifact':
         updateHealth(-10);
-        artifact = pickArtifact(ownedIds, run!.character, 'rattlesnake');
+        artifact = pickArtifact(ownedIds, run!.character, desperadoActive, 'antivenom');
         setDisplayText('The bite burns, but something powerful courses through you.');
         break;
       case 'lose_hp_gain_gunslinger_artifact':
         updateHealth(-15);
-        artifact = pickArtifact(ownedIds, run!.character, 'gunslinger');
+        artifact = pickArtifact(ownedIds, run!.character, desperadoActive, 'gunslinger');
         setDisplayText('You drew and fired. The preacher nods, impressed. He leaves you a gift.');
         break;
       case 'lose_hp_gain_artifact_consumable':
         updateHealth(-20);
-        artifact = pickArtifact(ownedIds, run!.character);
+        artifact = pickArtifact(ownedIds, run!.character, desperadoActive);
         addConsumable({ id: 'tonic' });
         setDisplayText('You reached in and pulled out something valuable, along with a tonic.');
         break;
       case 'search_saloon': {
         const roll = Math.random();
         if (roll < 0.5) {
-          artifact = pickArtifact(ownedIds, run!.character);
+          artifact = pickArtifact(ownedIds, run!.character, desperadoActive);
           setDisplayText('You found something hidden behind the bar.');
         } else {
           updateHealth(-15);
@@ -98,11 +100,11 @@ export const EventScreen = memo(function EventScreen() {
       }
       case 'search_engine_artifact':
         updateHealth(-10);
-        artifact = pickArtifact(ownedIds, run!.character);
+        artifact = pickArtifact(ownedIds, run!.character, desperadoActive);
         setDisplayText('You dug through the wreckage and found something worth keeping.');
         break;
       case 'gain_artifact_buff_elite':
-        artifact = pickArtifact(ownedIds, run!.character);
+        artifact = pickArtifact(ownedIds, run!.character, desperadoActive);
         setDisplayText('You took the dead hunter\'s gear. Something about it feels... watched.');
         break;
       case 'lose_artifact_full_heal': {

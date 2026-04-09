@@ -13,23 +13,26 @@ const OUTLINE_STYLE: React.CSSProperties = {
 const TRAIT_LABELS: Record<TraitId, string> = {
   outlaw: 'Outlaw',
   sheriff: 'Sheriff',
-  rattlesnake: 'Rattlesnake',
   prospector: 'Prospector',
   sapper: 'Sapper',
   mustang: 'Mustang',
   gunslinger: 'Gunslinger',
   saloon_keeper: 'Saloon Keeper',
   desperado: 'Desperado',
-  high_roller: 'High Roller',
   sniper: 'Sniper',
   dead_man_walking: 'Dead Man Walking',
+  tracker: 'Tracker',
+  preacher: 'Preacher',
+  antivenom: 'Antivenom',
+  undertaker: 'Undertaker',
+  rattlesnake: 'Rattlesnake',
 };
 
 /** Descriptions for each trait at each breakpoint threshold. */
 const TRAIT_DESCRIPTIONS: Record<string, Record<number, string>> = {
   sheriff: {
-    2: 'Double the first time you gain block each turn.',
-    4: 'At the start of combat, gain 5 Sturdy.',
+    2: 'Double the first time you gain block each combat.',
+    4: 'At the start of combat, gain 4 Sturdy.',
     6: 'Block reflects 100% of absorbed damage back to attacker.',
   },
   outlaw: {
@@ -37,36 +40,57 @@ const TRAIT_DESCRIPTIONS: Record<string, Record<number, string>> = {
     5: 'At the start of Boss encounters, gain 3 Rageful and apply 2 Vulnerable to all enemies.',
   },
   prospector: {
-    2: 'On any match, 20% chance to generate 1 gold.',
+    2: 'On any match, 25% chance to generate 5 gold.',
     4: 'Whenever you gain gold during combat, deal 1 damage to a random enemy.',
     6: 'Deal 10% of your current gold as extra damage.',
   },
   gunslinger: {
-    2: 'Bullet, .50 Cal, Buckshot, and Ricochet tiles deal 1 extra damage per tile.',
-    4: 'Gain 1 Lucky for every Bullet, .50 Cal, Buckshot, or Ricochet matched.',
+    2: 'Bullet-type tiles deal 1 extra damage per tile.',
+    4: 'Gain 1 Lucky for every bullet-type tile matched.',
   },
   saloon_keeper: {
-    2: 'Consumables heal 5 HP on use.',
+    2: 'Consumables heal 5 HP on use (any consumable).',
     5: 'At the start of combat, gain a random consumable.',
   },
   sapper: {
-    1: 'Enemy bomb timers are increased by 2.',
-    5: 'Explosive tile radius is increased by 1.',
+    2: 'Enemy bomb timers are increased by 2.',
+    4: 'Increase the radius of explosive tiles by 1.',
   },
   sniper: {
-    4: 'On 5-match, gain 1 swap for that turn.',
+    3: 'On 5-match, gain 1 swap for that turn.',
+    5: 'On 6+ match, if the targeted enemy is not a boss, kill it.',
   },
   dead_man_walking: {
     3: 'Whenever you would take damage, take 1 less damage.',
-    5: 'If HP is below 20%, all damage is doubled.',
-    7: 'Once per fight, taking lethal damage instead sets HP to 10 and grants 20 block.',
-  },
-  rattlesnake: {
-    1: 'Immune to poison tile damage and debuffs.',
-    3: 'Matching poison tiles deals damage + applies venom.',
+    5: 'When at or below 20% HP, all damage is doubled.',
+    7: 'Once per combat when taking lethal damage, prevent it and heal 20% HP.',
   },
   mustang: {
-    4: '+1 swap per turn. Non-adjacent swaps allowed. 5+ lasso matches: +50% damage.',
+    4: '+1 swap per turn.',
+  },
+  tracker: {
+    1: 'Buried tiles get revealed at the end of your turn automatically.',
+    3: 'Gain 1 Rageful whenever a Buried tile gets revealed.',
+  },
+  preacher: {
+    2: "Whenever you don't deal damage in a turn, heal 5.",
+    4: 'Take 20% less damage from enemies with lower HP than you.',
+    6: 'At the start of combat, gain 1 Grace.',
+  },
+  antivenom: {
+    3: 'Matching next to a Poison tile clears it.',
+  },
+  undertaker: {
+    3: 'Deal 50% more damage to summoned enemies.',
+    6: 'On enemy death, gain 1 Ready.',
+  },
+  desperado: {
+    2: 'Desperado-tagged artifacts are more common.',
+    5: 'At the start of every turn, gain 4 Ace.',
+  },
+  rattlesnake: {
+    2: 'Clearing or matching Poison tiles applies Poison to target instead.',
+    4: 'When you would apply Poison, apply it to ALL enemies.',
   },
 };
 

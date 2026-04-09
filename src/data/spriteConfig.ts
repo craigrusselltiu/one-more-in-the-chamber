@@ -17,7 +17,7 @@ export const TILE_FRAMES: Record<TileType, number> = {
   stampede: 268,
   buckshot: 908,
   battery: 945,
-  venom: 762,
+  waste: 762,
   prairie_fire: 719,
   chain: 730,
   whiskey: 666,
@@ -40,10 +40,67 @@ export const TILE_FRAMES: Record<TileType, number> = {
 
 /** Artifact sprite frames (by artifact ID). */
 export const ARTIFACT_FRAMES: Record<string, number> = {
+  // Exclusive
   bamboo_canteen: 1001,
-  rusts_cylinder: 916,
-  renos_coin: 1157,
+  rusts_cylinder: 764,
   rigged_deck: 793,
+  renos_coin: 1157,
+  // Outlaw
+  outlaws_spurs: 293,
+  twin_revolvers: 1244,
+  stolen_badge: 165,
+  // Sheriff
+  rusty_deputy_badge: 166,
+  bounty_board: 1245,
+  jail_cell_keys: 741,
+  reinforced_duster: 231,
+  iron_will: 296,
+  // Antivenom
+  snakeskin_boots: 287,
+  bone_charm: 1200,
+  shed_skin: 1209,
+  // Rattlesnake
+  sidewinder_belt: 289,
+  envenomed_ammo: 1247,
+  cactus_spine_vest: 229,
+  rattlesnake_fang_necklace: 830,
+  // Prospector
+  fools_magnifying_glass: 656,
+  gold_tooth: 1185,
+  // Sapper
+  blasting_pan: 1248,
+  black_powder_cache: 724,
+  tinkers_wrench: 928,
+  // Mustang
+  saddlebag: 681,
+  trailblazers_compass: 765,
+  dust_devil_boots: 277,
+  dans_feather: 1175,
+  // Gunslinger
+  lucky_bullet: 906,
+  dead_mans_hand: 1226,
+  silver_bullet: 1249,
+  // Saloon Keeper
+  barkeeps_shotgun: 909,
+  top_shelf_reserve: 498,
+  last_call_bell: 856,
+  // Sniper
+  gillie_suit: 1251,
+  kill_confirmed: 169,
+  // Dead Man Walking
+  deaths_pocket_watch: 1250,
+  // Preacher
+  preachers_bible: 624,
+  offering_plate: 803,
+  // Tracker
+  trappers_snare: 768,
+  // Undertaker
+  gravediggers_shovel: 78,
+  corpse_explosion: 1213,
+  reapers_scythe: 107,
+  // Desperado
+  sheriffs_domino: 791,
+  loaded_dice: 790,
 };
 
 /** Consumable sprite frames (by consumable ID). */
@@ -58,6 +115,7 @@ export const CONSUMABLE_FRAMES: Record<string, number> = {
   tumbleweed: 1098,
   signal_flare: 719,
   snake_oil: 900,
+  lasso: 685,
 };
 
 /** Status effect / buff / debuff sprite frames. */
@@ -68,13 +126,17 @@ export const STATUS_FRAMES: Record<string, number> = {
   barricade: 198,
   crit: 1080,
   thorns: 1006,
-  venom: 828,
+  poison: 828,
   vulnerable: 1178,
   cracked_ground: 770,
   rageful: 814,
   sturdy: 223,
-  venomous: 828,
+  grace: 827,
+  poisoned: 828,
   bounty: 1245,
+  terrified: 1104,
+  ready: 3,
+  chain: 730,
   summoned: 704,
 };
 
@@ -85,7 +147,7 @@ export const NODE_FRAMES: Record<string, number> = {
   merchant: 1159,
   campfire: 720,
   event: 629,
-  treasure: 691,
+  artifact: 691,
   boss: 873,
 };
 
@@ -93,32 +155,38 @@ export const NODE_FRAMES: Record<string, number> = {
 export const TRAIT_FRAMES: Record<string, number> = {
   outlaw: 303,
   sheriff: 168,
-  rattlesnake: 1241,
   prospector: 656,
   sapper: 938,
   mustang: 266,
   gunslinger: 1244,
   saloon_keeper: 499,
   desperado: 1080,
-  high_roller: 1162,
   sniper: 906,
   dead_man_walking: 824,
+  tracker: 1211,
+  preacher: 827,
+  antivenom: 914,
+  undertaker: 825,
+  rattlesnake: 1241,
 };
 
 /** Trait breakpoint thresholds (in order). */
 export const TRAIT_BREAKPOINTS: Record<string, number[]> = {
   outlaw: [2, 5],
   sheriff: [2, 4, 6],
-  rattlesnake: [1, 3],
   prospector: [2, 4, 6],
-  sapper: [1, 5],
+  sapper: [2, 4],
   mustang: [4],
   gunslinger: [2, 4],
   saloon_keeper: [2, 5],
-  desperado: [],
-  high_roller: [],
-  sniper: [4],
+  desperado: [2, 5],
+  sniper: [3, 5],
   dead_man_walking: [3, 5, 7],
+  tracker: [1, 3],
+  preacher: [2, 4, 6],
+  antivenom: [3],
+  undertaker: [3, 6],
+  rattlesnake: [2, 4],
 };
 
 /** Tile hazard overlay icons. */

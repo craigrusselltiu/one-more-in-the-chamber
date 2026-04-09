@@ -7,7 +7,7 @@ import { Tooltip } from '../components/Tooltip';
  * AbilityMeter: charge bar spanning the full board width.
  *
  * Rust (Deadeye): 10-segment bar, shots remaining as gold dots when active.
- * Reno (Shuffle the Deck): 7-segment bar, instant reshuffle when activated.
+ * Reno (False Shuffle): 7-segment bar, instant reshuffle when activated.
  */
 export const AbilityMeter = memo(function AbilityMeter() {
   const character = useCombatStore((s) => s.character);
@@ -33,7 +33,7 @@ export const AbilityMeter = memo(function AbilityMeter() {
   }, []);
 
   const isReno = character === 'reno';
-  const abilityName = isReno ? 'Shuffle the Deck' : 'Deadeye';
+  const abilityName = isReno ? 'False Shuffle' : 'Deadeye';
 
   // During Deadeye, show shots remaining as gold dots + cancel button
   if (isDeadeyeActive) {

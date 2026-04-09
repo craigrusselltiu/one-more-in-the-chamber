@@ -15,7 +15,7 @@ export const TILE_COLORS: Record<TileType, string> = {
   stampede: '#8B6030',
   buckshot: '#C05030',
   battery: '#70B0D0',
-  venom: '#60A040',
+  waste: '#40ff40',
   prairie_fire: '#E07020',
   chain: '#A08040',
   whiskey: '#70A060',
@@ -155,15 +155,15 @@ export const TILE_DEFINITIONS: Record<TileType, TileDefinition> = {
     upgradeText: '+1 charge to match total per level',
     resolveOrder: 5,
   },
-  venom: {
-    type: 'venom',
-    label: 'Venom',
-    abbreviation: 'Ve',
-    color: TILE_COLORS.venom,
+  waste: {
+    type: 'waste',
+    label: 'Waste',
+    abbreviation: 'Ws',
+    color: TILE_COLORS.waste,
     baseValue: 1,
     upgradeValue: 1,
     pool: 'starter',
-    description: 'Apply 1 Venom per tile.',
+    description: 'Apply 1 Poison per tile.',
     flavor: "Slow poison. The patient killer's weapon.",
     upgradeText: '+1 stack to match total per level',
     resolveOrder: 0,
@@ -176,7 +176,7 @@ export const TILE_DEFINITIONS: Record<TileType, TileDefinition> = {
     baseValue: 2,
     upgradeValue: 2,
     pool: 'starter',
-    description: 'Deal 2 damage per tile. Each tile has a 50% chance to convert 1 adjacent tile to Ember.',
+    description: 'Deal 2 damage per tile. Each tile has a 10% chance to spread to 1 adjacent tile.',
     flavor: 'Sparks fly. Some of them catch.',
     upgradeText: '+2 damage to match total per level',
   },
@@ -190,9 +190,8 @@ export const TILE_DEFINITIONS: Record<TileType, TileDefinition> = {
     baseValue: 1,
     upgradeValue: 1,
     pool: 'additional',
-    description: 'Deal 1 damage per tile. Each Chain match adds +1 damage to ALL Chain tiles for this combat.',
+    description: 'Deal 1 damage per tile. Each match grants 1 Chain.',
     flavor: 'Links in the chain. More you match, harder they hit.',
-    upgradeText: '+1 damage to match total per level',
   },
   whiskey: {
     type: 'whiskey',
@@ -292,9 +291,9 @@ export const TILE_DEFINITIONS: Record<TileType, TileDefinition> = {
     baseValue: 2,
     upgradeValue: 1,
     pool: 'additional',
-    description: 'Deal 2 damage per tile and apply 1 Venom. Pierces block.',
+    description: 'Deal 2 damage per tile and apply 1 Poison. Pierces block.',
     flavor: 'Fangs out. Bite first, ask questions never.',
-    upgradeText: '+1 damage and venom stack to match total per level',
+    upgradeText: '+1 damage and poison stack to match total per level',
   },
   barricade: {
     type: 'barricade',
@@ -405,7 +404,7 @@ export const CHARACTER_TILES: Record<import('../types/game').CharacterId, TileTy
 
 export const STARTER_POOL: TileType[] = [
   'bullet', 'iron', 'gold',
-  'ricochet', 'stampede', 'buckshot', 'battery', 'venom', 'prairie_fire',
+  'ricochet', 'stampede', 'buckshot', 'battery', 'waste', 'prairie_fire',
   'ace', 'shank',
 ];
 

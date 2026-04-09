@@ -8,7 +8,7 @@ export const ACT1_ENEMIES: Record<string, EnemyDefinition> = {
   coyote: {
     type: 'coyote',
     name: 'Coyote',
-    health: 20,
+    health: 24,
     minDamage: 5,
     maxDamage: 10,
     abilities: ['howl'],
@@ -16,7 +16,7 @@ export const ACT1_ENEMIES: Record<string, EnemyDefinition> = {
   rattlesnake: {
     type: 'rattlesnake',
     name: 'Rattlesnake',
-    health: 40,
+    health: 48,
     minDamage: 8,
     maxDamage: 15,
     abilities: ['poison', 'block'],
@@ -24,7 +24,7 @@ export const ACT1_ENEMIES: Record<string, EnemyDefinition> = {
   bandit: {
     type: 'bandit',
     name: 'Bandit',
-    health: 45,
+    health: 54,
     minDamage: 8,
     maxDamage: 15,
     abilities: ['lock', 'block'],
@@ -32,7 +32,7 @@ export const ACT1_ENEMIES: Record<string, EnemyDefinition> = {
   vulture: {
     type: 'vulture',
     name: 'Vulture',
-    health: 25,
+    health: 30,
     minDamage: 5,
     maxDamage: 8,
     abilities: ['bury'],
@@ -40,7 +40,7 @@ export const ACT1_ENEMIES: Record<string, EnemyDefinition> = {
   tumbleweed_golem: {
     type: 'tumbleweed_golem',
     name: 'Tumbleweed Golem',
-    health: 30,
+    health: 36,
     minDamage: 6,
     maxDamage: 12,
     abilities: ['bury', 'summon'],
@@ -48,7 +48,7 @@ export const ACT1_ENEMIES: Record<string, EnemyDefinition> = {
   card_shark: {
     type: 'card_shark',
     name: 'Card Shark',
-    health: 35,
+    health: 42,
     minDamage: 7,
     maxDamage: 12,
     abilities: ['lock', 'suppress'],
@@ -58,7 +58,7 @@ export const ACT1_ENEMIES: Record<string, EnemyDefinition> = {
 export const DUSTY_DAN: EnemyDefinition = {
   type: 'dusty_dan',
   name: '"Dusty" Dan McGraw',
-  health: 150,
+  health: 216,
   minDamage: 10,
   maxDamage: 20,
   abilities: ['lock', 'summon', 'bomb', 'gravity_shift'],
@@ -72,7 +72,7 @@ export const ACT2_ENEMIES: Record<string, EnemyDefinition> = {
   prospector_gone_mad: {
     type: 'prospector_gone_mad',
     name: 'Prospector Gone Mad',
-    health: 55,
+    health: 66,
     minDamage: 12,
     maxDamage: 18,
     abilities: ['bomb'],
@@ -80,7 +80,7 @@ export const ACT2_ENEMIES: Record<string, EnemyDefinition> = {
   dynamite_outlaw: {
     type: 'dynamite_outlaw',
     name: 'Dynamite Outlaw',
-    health: 80,
+    health: 96,
     minDamage: 15,
     maxDamage: 22,
     abilities: ['lock', 'block'],
@@ -88,7 +88,7 @@ export const ACT2_ENEMIES: Record<string, EnemyDefinition> = {
   cave_bat: {
     type: 'cave_bat',
     name: 'Cave Bat',
-    health: 15,
+    health: 18,
     minDamage: 5,
     maxDamage: 8,
     abilities: ['bury'],
@@ -96,7 +96,7 @@ export const ACT2_ENEMIES: Record<string, EnemyDefinition> = {
   mine_cart: {
     type: 'mine_cart',
     name: 'Mine Cart',
-    health: 100,
+    health: 120,
     minDamage: 0,
     maxDamage: 0,
     abilities: ['hazard'],
@@ -104,7 +104,7 @@ export const ACT2_ENEMIES: Record<string, EnemyDefinition> = {
   powder_monkey: {
     type: 'powder_monkey',
     name: 'Powder Monkey',
-    health: 25,
+    health: 30,
     minDamage: 8,
     maxDamage: 14,
     abilities: ['bomb'],
@@ -112,7 +112,7 @@ export const ACT2_ENEMIES: Record<string, EnemyDefinition> = {
   mine_foreman: {
     type: 'mine_foreman',
     name: 'Mine Foreman',
-    health: 70,
+    health: 84,
     minDamage: 12,
     maxDamage: 20,
     abilities: ['lock', 'block', 'suppress'],
@@ -120,7 +120,7 @@ export const ACT2_ENEMIES: Record<string, EnemyDefinition> = {
   canary_swarm: {
     type: 'canary_swarm',
     name: 'Canary Swarm',
-    health: 10,
+    health: 12,
     minDamage: 3,
     maxDamage: 5,
     abilities: ['bury'],
@@ -130,7 +130,7 @@ export const ACT2_ENEMIES: Record<string, EnemyDefinition> = {
 export const COPPERHEAD_CASSIDY: EnemyDefinition = {
   type: 'copperhead_cassidy',
   name: '"Copperhead" Cassidy',
-  health: 200,
+  health: 288,
   minDamage: 15,
   maxDamage: 25,
   abilities: ['poison', 'block', 'fools_gold'],
@@ -144,7 +144,7 @@ export const ACT3_ENEMIES: Record<string, EnemyDefinition> = {
   corrupt_deputy: {
     type: 'corrupt_deputy',
     name: 'Corrupt Deputy',
-    health: 65,
+    health: 78,
     minDamage: 18,
     maxDamage: 25,
     abilities: ['lock', 'suppress', 'block'],
@@ -152,7 +152,7 @@ export const ACT3_ENEMIES: Record<string, EnemyDefinition> = {
   saloon_brawler: {
     type: 'saloon_brawler',
     name: 'Saloon Brawler',
-    health: 100,
+    health: 120,
     minDamage: 22,
     maxDamage: 30,
     abilities: [],
@@ -160,7 +160,7 @@ export const ACT3_ENEMIES: Record<string, EnemyDefinition> = {
   train_guard: {
     type: 'train_guard',
     name: 'Train Guard',
-    health: 75,
+    health: 90,
     minDamage: 15,
     maxDamage: 20,
     abilities: ['lock', 'bomb'],
@@ -168,7 +168,7 @@ export const ACT3_ENEMIES: Record<string, EnemyDefinition> = {
   hangman: {
     type: 'hangman',
     name: 'Hangman',
-    health: 90,
+    health: 108,
     minDamage: 20,
     maxDamage: 28,
     abilities: ['lock', 'poison'],
@@ -176,7 +176,7 @@ export const ACT3_ENEMIES: Record<string, EnemyDefinition> = {
   phantom_rider: {
     type: 'phantom_rider',
     name: 'Phantom Rider',
-    health: 60,
+    health: 72,
     minDamage: 15,
     maxDamage: 22,
     abilities: ['suppress', 'bury'],
@@ -184,7 +184,7 @@ export const ACT3_ENEMIES: Record<string, EnemyDefinition> = {
   dynamite_duchess: {
     type: 'dynamite_duchess',
     name: 'Dynamite Duchess',
-    health: 80,
+    health: 96,
     minDamage: 18,
     maxDamage: 25,
     abilities: ['bomb', 'lock'],
@@ -192,7 +192,7 @@ export const ACT3_ENEMIES: Record<string, EnemyDefinition> = {
   sheriffs_shadow: {
     type: 'sheriffs_shadow',
     name: "Sheriff's Shadow",
-    health: 100,
+    health: 120,
     minDamage: 20,
     maxDamage: 30,
     abilities: ['block', 'lock', 'suppress'],
@@ -200,7 +200,7 @@ export const ACT3_ENEMIES: Record<string, EnemyDefinition> = {
   outlaw_king: {
     type: 'outlaw_king',
     name: 'Outlaw King',
-    health: 90,
+    health: 108,
     minDamage: 20,
     maxDamage: 28,
     abilities: ['block', 'summon'],
@@ -210,7 +210,7 @@ export const ACT3_ENEMIES: Record<string, EnemyDefinition> = {
 export const IRON_EYE_ISABELLA: EnemyDefinition = {
   type: 'iron_eye_isabella',
   name: '"Iron Eye" Isabella',
-  health: 250,
+  health: 360,
   minDamage: 20,
   maxDamage: 35,
   abilities: ['lock', 'suppress', 'poison'],

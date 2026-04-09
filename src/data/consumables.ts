@@ -49,7 +49,7 @@ export const CONSUMABLES: ConsumableDefinition[] = [
     id: 'bandage',
     name: 'Bandage',
     category: 'defensive',
-    description: 'Patch wounds, suck out venom.',
+    description: 'Patch wounds, suck out poison.',
     effect: 'Heal 10 HP, cleanse all poison tiles on board.',
   },
   // Utility
@@ -80,5 +80,12 @@ export const CONSUMABLES: ConsumableDefinition[] = [
     category: 'utility',
     description: 'Who knows what\'s in the bottle.',
     effect: 'Random effect (heal/damage/poison/gold).',
+  },
+  {
+    id: 'lasso',
+    name: 'Lasso',
+    category: 'utility',
+    description: 'Reach across the board.',
+    effect: 'Your next swap can target non-adjacent tiles.',
   },
 ];

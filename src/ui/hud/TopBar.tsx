@@ -21,7 +21,7 @@ const NODE_TYPE_COLORS: Record<MapNodeType, string> = {
   merchant: 'text-blue-400',
   campfire: 'text-green-400',
   event: 'text-purple-400',
-  treasure: 'text-yellow-400',
+  artifact: 'text-yellow-400',
   boss: 'text-red-500',
 };
 
@@ -31,7 +31,7 @@ const NODE_TYPE_LABELS: Record<MapNodeType, string> = {
   merchant: 'Merchant',
   campfire: 'Campfire',
   event: 'Event',
-  treasure: 'Treasure',
+  artifact: 'Artifact',
   boss: 'Boss',
 };
 
@@ -221,11 +221,11 @@ function TilesPopup({
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
       <div className="bg-stone-900 border border-stone-600 p-3" style={{ minWidth: 140 }} onClick={(e) => e.stopPropagation()}>
-        <div className="flex items-center justify-between mb-3">
-          <span className="text-amber-400 text-sm font-bold">Tiles</span>
+        <div className="relative flex items-center justify-center mb-3">
+          <span className="text-white text-sm font-bold">Tiles</span>
           <button
             onClick={onClose}
-            className="w-4 h-4 flex items-center justify-center bg-stone-800/80 text-red-400 font-bold border border-red-900/50 hover:bg-red-900/40"
+            className="absolute right-0 w-4 h-4 flex items-center justify-center bg-stone-800/80 text-red-400 font-bold border border-red-900/50 hover:bg-red-900/40"
             style={{ fontSize: '8px' }}
           >
             X
@@ -248,11 +248,11 @@ function TilesPopup({
             const hasKeywords = getReferencedKeywords(def.description).length > 0;
             const keywordTooltip = hasKeywords ? <KeywordSubTooltips text={def.description} /> : undefined;
             const items = [
-              <Tooltip key={tileType} content={tooltipContent} secondContent={keywordTooltip} position="bottom">
+              <Tooltip key={tileType} content={tooltipContent} secondContent={keywordTooltip} position="bottom" align="left">
                 <div className="flex items-center gap-2">
                   <SpriteIcon frame={TILE_FRAMES[tileType]} scale={1} />
-                  <span className="text-stone-200 text-xs font-bold">{def.label}</span>
-                  <span className="text-amber-400" style={{ fontSize: '10px' }}>
+                  <span className="text-amber-300 text-xs font-bold">{def.label}</span>
+                  <span className="text-yellow-400" style={{ fontSize: '8px' }}>
                     Lv {level + 1}
                   </span>
                 </div>
@@ -275,7 +275,7 @@ function TilesPopup({
                 const mHasKeywords = getReferencedKeywords(mDef.description).length > 0;
                 const mKeywordTooltip = mHasKeywords ? <KeywordSubTooltips text={mDef.description} /> : undefined;
                 items.push(
-                  <Tooltip key="mirage-transformed" content={mTooltip} secondContent={mKeywordTooltip} position="bottom">
+                  <Tooltip key="mirage-transformed" content={mTooltip} secondContent={mKeywordTooltip} position="bottom" align="left">
                     <div className="flex items-center gap-2 opacity-50">
                       <SpriteIcon frame={TILE_FRAMES[mirageType]} scale={1} />
                       <span className="text-stone-400 text-xs">{mDef.label} <span className="text-stone-500">(Mirage)</span></span>
