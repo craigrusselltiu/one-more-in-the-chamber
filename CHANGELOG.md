@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## v0.5.2
+
+### Fixed
+- Legacy saves with 'treasure' map node type now migrate to 'artifact' on load
+
 ## v0.5.1
 
 ### Fixed
