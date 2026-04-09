@@ -8,7 +8,7 @@ export const ACT1_ENEMIES: Record<string, EnemyDefinition> = {
   coyote: {
     type: 'coyote',
     name: 'Coyote',
-    health: 19,
+    health: 15,
     minDamage: 5,
     maxDamage: 10,
     abilities: ['howl'],
@@ -16,7 +16,7 @@ export const ACT1_ENEMIES: Record<string, EnemyDefinition> = {
   rattlesnake: {
     type: 'rattlesnake',
     name: 'Rattlesnake',
-    health: 30,
+    health: 24,
     minDamage: 8,
     maxDamage: 15,
     abilities: ['poison', 'block'],
@@ -24,7 +24,7 @@ export const ACT1_ENEMIES: Record<string, EnemyDefinition> = {
   bandit: {
     type: 'bandit',
     name: 'Bandit',
-    health: 34,
+    health: 27,
     minDamage: 8,
     maxDamage: 15,
     abilities: ['lock', 'block'],
@@ -32,7 +32,7 @@ export const ACT1_ENEMIES: Record<string, EnemyDefinition> = {
   vulture: {
     type: 'vulture',
     name: 'Vulture',
-    health: 24,
+    health: 19,
     minDamage: 5,
     maxDamage: 8,
     abilities: ['bury'],
@@ -40,7 +40,7 @@ export const ACT1_ENEMIES: Record<string, EnemyDefinition> = {
   tumbleweed_golem: {
     type: 'tumbleweed_golem',
     name: 'Tumbleweed Golem',
-    health: 58,
+    health: 46,
     minDamage: 6,
     maxDamage: 12,
     abilities: ['bury', 'summon'],
@@ -48,7 +48,7 @@ export const ACT1_ENEMIES: Record<string, EnemyDefinition> = {
   card_shark: {
     type: 'card_shark',
     name: 'Card Shark',
-    health: 34,
+    health: 27,
     minDamage: 7,
     maxDamage: 12,
     abilities: ['lock', 'suppress'],
