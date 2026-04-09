@@ -1372,6 +1372,7 @@ export class CombatManager {
   private async triggerRandomTileForRicochet(sourceMatch: MatchResult): Promise<void> {
     const result = await this.board.pickAndRemoveRandomTile(50);
     if (result === null) return;
+    playMatch(1);
 
     // Apply resource output for each destroyed tile (includes explosive/showdown chain)
     for (const info of result.destroyed) {

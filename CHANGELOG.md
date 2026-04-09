@@ -8,6 +8,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
 ### Fixed
 - Ricochet bonus tile destruction animation reduced from 150ms to 50ms for snappier shots
+- Ricochet tile destruction now plays match destruction sound
 
 ## v0.5.0
 
