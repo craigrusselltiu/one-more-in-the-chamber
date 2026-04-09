@@ -10,7 +10,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 - Suppress (warrant) reworked from board-level tile type suppression to per-tile hazard with gray VFX overlay
 - Suppressed tiles are now cleared by matching adjacent tiles (like locks)
 - Enemy suppress intents now place 3 suppress hazards on random tiles
-- Rattlesnake base HP reduced to 38 (was 48), Bandit base HP reduced to 43 (was 54)
+- All Act 1 enemy HP reduced by 20%: Coyote 19, Rattlesnake 30, Bandit 34, Vulture 24, Tumbleweed Golem 58, Card Shark 34
+- Event artifact buttons reordered (Skip left, Take right)
 
 ## v0.5.2
 

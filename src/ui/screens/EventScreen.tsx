@@ -350,16 +350,16 @@ export const EventScreen = memo(function EventScreen() {
             </div>
             <div className="flex gap-3">
               <button
-                onClick={handleTakeArtifact}
-                className="px-6 py-1.5 text-xs bg-amber-900/60 text-amber-300 border border-amber-700 hover:bg-amber-800/60"
-              >
-                Take It
-              </button>
-              <button
                 onClick={handleSkipArtifact}
                 className="px-6 py-1.5 text-xs bg-stone-800/50 text-stone-400 border border-stone-700 hover:bg-stone-700/50"
               >
                 Skip
+              </button>
+              <button
+                onClick={handleTakeArtifact}
+                className="px-6 py-1.5 text-xs bg-amber-900/60 text-amber-300 border border-amber-700 hover:bg-amber-800/60"
+              >
+                Take It
               </button>
             </div>
           </div>

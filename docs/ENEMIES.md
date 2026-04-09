@@ -95,108 +95,165 @@
 
 ## Act 2 -- The Canyon
 
-### Prospector Gone Mad
-- HP: 55
-- Damage: 12-18
-- Moves: ATK, BOMB
-- Flavor: "Found something in the mine. Lost his mind finding it."
+## Normal Enemies
 
-### Dynamite Outlaw
-- HP: 80
-- Damage: 15-22
-- Moves: ATK, LOCK, DEF
-- Flavor: "Tanky. Barricades up, then swings."
+### Prospector Gone Mad
+- Base HP: 66
+- Moves:
+    - Attack 15, Bomb 1
+    - Multi-attack 6x3
+    - Attack 12, Bomb 2
+    - Bomb 3, Block 8
+- NOTE: Places more bombs when below 40% HP.
 
 ### Cave Bat
-- HP: 15
-- Damage: 5-8
-- Moves: ATK, BURY
-- Flavor: "Swarm unit. Three at a time, burying everything."
-
-### Mine Cart
-- HP: 100
-- Damage: 0 (50 on crash)
-- Moves: ATK (timed countdown)
-- Flavor: "Kill it before it reaches the end of the track."
+- Base HP: 18
+- Moves:
+    - Attack 6
+    - Attack 4, Bury 2
+    - Bury 3
+- NOTE: Swarm unit. Usually appears in groups of 3. Buries more when in larger groups.
 
 ### Powder Monkey
-- HP: 25
-- Damage: 8-14
-- Moves: ATK, BOMB
-- Flavor: "Tiny, fast, and loves explosions."
-
-### Mine Foreman
-- HP: 70
-- Damage: 12-20
-- Moves: ATK, LOCK, DEF, SUPPRESS
-- Flavor: "The boss underground."
+- Base HP: 30
+- Moves:
+    - Attack 11, Bomb 1
+    - Multi-attack 4x3
+    - Attack 8, Bomb 2
+    - Bomb 2, Bury 2
+- NOTE: Small and fast. Loves explosions.
 
 ### Canary Swarm
-- HP: 10
-- Damage: 3-5
-- Moves: ATK, BURY
-- Flavor: "3 spawn together. Annoying as a cloud of feathers."
+- Base HP: 12
+- Moves:
+    - Attack 4
+    - Attack 3, Bury 2
+    - Bury 3
+- NOTE: Appears in groups of 3. Annoying as a cloud of feathers.
 
-**Boss: "Copperhead" Cassidy** -- 200 HP, 15-25 damage.
-- Moves: ATK, POISON, DEF, Fool's Gold
-- Flavor: "Brews poison. Strikes when the board is toxic."
+### Mine Cart
+- Base HP: 120
+- Timed encounter: 6 turns to destroy. Deals 50 damage on failure.
+- NOTE: Does not attack. Board starts with 3 sand + 1 bomb.
 
-## Act 3 -- The Town
+## Elite Enemies
+
+### Dynamite Outlaw
+- Base HP: 96
+- Moves:
+    - Attack 18, Lock 2
+    - Multi-attack 7x3, Lock 1
+    - Block 16, Lock 3
+    - Attack 15, Block 8
+- NOTE: Tanky. Blocks more when above 50% HP.
+
+### Mine Foreman
+- Base HP: 84
+- Moves:
+    - Attack 16, Lock 2
+    - Attack 12, Suppress 3, Block 6
+    - Multi-attack 6x3, Suppress 3
+    - Block 14, Lock 1 row
+- NOTE: The boss underground. Locks, suppresses, then punishes.
+
+## Bosses
+
+### "Copperhead" Cassidy
+- Base HP: 288
+- Start of fight: Poison 4 tiles
+- Moves:
+    - Apply Poison 3, Block 8
+    - Attack 20 + (2 x poison tiles on board)
+    - Attack 18, Poison 2 tiles, Fool's Gold 2
+    - Block 12, Poison 4 tiles
+- NOTE: Phase 1 (100-50%): alternates brew/strike turns. Phase 2 (50-0%): more aggressive, poisons + fool's gold every turn.
+
+# Act 3 -- The Town
+
+## Normal Enemies
 
 ### Corrupt Deputy
-- HP: 65
-- Damage: 18-25
-- Moves: ATK, LOCK, SUPPRESS, DEF
-- Flavor: "Methodical. Locks, suppresses, then strikes."
-
-### Saloon Brawler
-- HP: 100
-- Damage: 22-30
-- Moves: ATK (heavy)
-- Flavor: "Pure damage. No tricks. Just fists."
+- Base HP: 78
+- Moves:
+    - Attack 21, Lock 2
+    - Attack 18, Suppress 3
+    - Multi-attack 9x3, Lock 1
+    - Block 14, Lock 3
+- NOTE: Methodical. Locks, suppresses, then strikes. Blocks heavily when below 40% HP.
 
 ### Train Guard
-- HP: 75
-- Damage: 15-20
-- Moves: ATK, LOCK, BOMB
-- Flavor: "Board control. Locks and bombs."
+- Base HP: 90
+- Moves:
+    - Attack 17, Lock 2
+    - Attack 15, Bomb 1
+    - Multi-attack 5x4, Lock 1
+    - Bomb 2, Lock 3
+- NOTE: Board control. More bombs when below 50% HP.
 
 ### Hangman
-- HP: 90
-- Damage: 20-28
-- Moves: ATK, LOCK, POISON
-- Flavor: "Locks your tiles like a noose. Poisons what he can't lock."
-
-### Outlaw King
-- HP: 120
-- Damage: 25-35
-- Moves: ATK, DEF, SUMMON
-- Flavor: "The biggest bounty in the west."
+- Base HP: 108
+- Moves:
+    - Attack 24, Lock 2
+    - Attack 20, Apply Poison 2
+    - Multi-attack 7x4, Poison 3 tiles
+    - Lock 3, Poison 4 tiles
+- NOTE: Locks tiles like a noose. Poisons what he can't lock.
 
 ### Phantom Rider
-- HP: 60
-- Damage: 15-22
-- Moves: ATK, SUPPRESS, BURY
-- Flavor: "You hear hooves but see nothing."
+- Base HP: 72
+- Moves:
+    - Attack 18, Suppress 3
+    - Attack 15, Bury 3
+    - Multi-attack 5x4, Bury 2
+    - Suppress 3, Bury 3
+- NOTE: You hear hooves but see nothing. Heavy board disruption.
 
 ### Dynamite Duchess
-- HP: 80
-- Damage: 18-25
-- Moves: ATK, BOMB, LOCK
-- Flavor: "Royalty in the demolition business."
+- Base HP: 96
+- Moves:
+    - Attack 21, Bomb 1
+    - Attack 18, Lock 2, Bomb 1
+    - Multi-attack 6x4, Bomb 1
+    - Bomb 3, Lock 2
+- NOTE: Royalty in the demolition business.
+
+## Elite Enemies
+
+### Saloon Brawler
+- Base HP: 120
+- Moves:
+    - Attack 26
+    - Multi-attack 11x3
+    - Attack 22, Gain 2 Rageful
+    - Attack 30
+- NOTE: Pure damage. No tricks. Just fists. Occasional heavy swing.
 
 ### Sheriff's Shadow
-- HP: 100
-- Damage: 20-30
-- Moves: ATK, DEF, LOCK, SUPPRESS
-- Flavor: "Everything the Sheriff is, but darker."
+- Base HP: 120
+- Moves:
+    - Attack 25, Lock 2
+    - Attack 20, Suppress 3, Block 8
+    - Multi-attack 10x3, Lock 1
+    - Block 20, Lock 3, Suppress 3
+- NOTE: Everything the Sheriff is, but darker. Heavy block + board control.
 
-**Boss: "Iron Eye" Isabella** -- 250 HP, 20-35 damage.
-- Moves: ATK, LOCK, SUPPRESS, POISON
-- Flavor: "She sees everything. And she never blinks."
+### Outlaw King
+- Base HP: 108
+- Moves:
+    - Attack 25, Block 8
+    - Multi-attack 9x3, Gain 2 Rageful
+    - Block 16, Summon 1 Bandit
+    - Attack 22, Summon 1 Coyote
+- NOTE: The biggest bounty in the west. Summons reinforcements.
 
-## Elite Encounters
+## Bosses
 
-Elites are single enemies drawn from the act's regular pool with buffed stats: 1.5x HP, +2 min damage, +3 max damage.
-
-Excluded from elite pool: Vulture (Act 1), Cave Bat and Mine Cart (Act 2).
+### "Iron Eye" Isabella
+- Base HP: 360
+- Start of fight: Lock 1 row
+- Moves:
+    - Attack 27, Lock 1 row
+    - Attack 25, Suppress 3
+    - Attack 32
+    - Lock 2 (2-hit), Suppress 3, Block 10
+- NOTE: Phase 1 (100-65%): row locks + passive 10 block/turn. Phase 2 (65-30%): 2-hit locks + suppress + passive block. Phase 3 (30-0%): locks + poison, no passive block, max aggression.
