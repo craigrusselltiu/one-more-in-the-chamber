@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## v0.5.1
+
+### Fixed
+- Ricochet bonus tile destruction animation reduced from 150ms to 50ms for snappier shots
+
 ## v0.5.0
 
 ### Added

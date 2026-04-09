@@ -805,12 +805,13 @@ export class Board {
    */
   async destroyTilesWithEffects(
     positions: GridPosition[],
-    opts?: { staggerMs?: number; detonated?: Set<string>; explosiveRadius?: number },
+    opts?: { staggerMs?: number; detonated?: Set<string>; explosiveRadius?: number; animDuration?: number },
   ): Promise<DestroyedTileInfo[]> {
     const results: DestroyedTileInfo[] = [];
     const detonated = opts?.detonated ?? new Set<string>();
     const staggerMs = opts?.staggerMs ?? 0;
     const explosiveRadius = opts?.explosiveRadius ?? this._explosiveRadius;
+    const animDuration = opts?.animDuration ?? 150;
     const posKey = (r: number, c: number) => `${r},${c}`;
 
     let explosiveQueue: GridPosition[] = [];
@@ -846,7 +847,7 @@ export class Board {
         await new Promise(r => setTimeout(r, staggerMs));
       }
     } else {
-      await this.animateTileClear(tilesToAnimate);
+      await this.animateTileClear(tilesToAnimate, animDuration);
     }
 
     // Step 3: BFS explosive chain detonation (wave by wave)
@@ -1081,7 +1082,7 @@ export class Board {
    * Also emits particle burst events at each cleared tile's position.
    * Grid cells should already be nulled before calling this.
    */
-  async animateTileClear(tiles: Tile[]): Promise<void> {
+  async animateTileClear(tiles: Tile[], duration = 150): Promise<void> {
     if (tiles.length === 0) return;
 
     // Emit particle bursts at each tile's world position
@@ -1098,7 +1099,7 @@ export class Board {
       EventBus.emit(GameEvent.SCREEN_SHAKE, 'medium');
     }
 
-    await Promise.all(tiles.map(t => t.animateClear(150)));
+    await Promise.all(tiles.map(t => t.animateClear(duration)));
   }
 
   /**
@@ -1489,7 +1490,7 @@ export class Board {
    * Pick a random tile from the board, remove it, and return its type + position.
    * Returns null if the board has no tiles. Used by the Ricochet mechanic.
    */
-  async pickAndRemoveRandomTile(): Promise<{ type: TileType; position: GridPosition; destroyed: DestroyedTileInfo[] } | null> {
+  async pickAndRemoveRandomTile(animDuration = 150): Promise<{ type: TileType; position: GridPosition; destroyed: DestroyedTileInfo[] } | null> {
     const candidates: GridPosition[] = [];
     for (let row = 0; row < BOARD_SIZE; row++) {
       for (let col = 0; col < BOARD_SIZE; col++) {
@@ -1503,7 +1504,7 @@ export class Board {
     const pick = candidates[Math.floor(Math.random() * candidates.length)];
     const tile = this.grid[pick.row][pick.col]!;
     const type = tile.type;
-    const destroyed = await this.destroyTilesWithEffects([pick]);
+    const destroyed = await this.destroyTilesWithEffects([pick], { animDuration });
     return { type, position: pick, destroyed };
   }
 
