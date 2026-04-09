@@ -6,6 +6,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
 ## v0.5.2
 
+### Changed
+- Tumbleweed Golem base HP doubled (36 -> 72)
+
 ### Fixed
 - Legacy saves with 'treasure' map node type now migrate to 'artifact' on load
 

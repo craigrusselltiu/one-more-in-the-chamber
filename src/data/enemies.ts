@@ -40,7 +40,7 @@ export const ACT1_ENEMIES: Record<string, EnemyDefinition> = {
   tumbleweed_golem: {
     type: 'tumbleweed_golem',
     name: 'Tumbleweed Golem',
-    health: 36,
+    health: 72,
     minDamage: 6,
     maxDamage: 12,
     abilities: ['bury', 'summon'],
