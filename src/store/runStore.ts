@@ -57,8 +57,10 @@ export const useRunStore = create<RunStore>((set, get) => ({
   pendingNewGame: null,
 
   restoreRun: (run) => {
-    // Migration: rename legacy 'venom' tile type to 'waste'
+    // Migrations for legacy saves
     const migrated = { ...run };
+
+    // Rename 'venom' tile type to 'waste'
     migrated.activeTileTypes = run.activeTileTypes.map(t => t === 'venom' as string ? 'waste' : t) as typeof run.activeTileTypes;
     if (run.tileUpgrades && ('venom' as string) in run.tileUpgrades) {
       const upgrades = { ...run.tileUpgrades };
@@ -66,6 +68,17 @@ export const useRunStore = create<RunStore>((set, get) => ({
       delete (upgrades as Record<string, number>)['venom'];
       migrated.tileUpgrades = upgrades;
     }
+
+    // Rename 'treasure' map node type to 'artifact'
+    if (migrated.mapState) {
+      migrated.mapState = {
+        ...migrated.mapState,
+        nodes: migrated.mapState.nodes.map(n =>
+          (n.type as string) === 'treasure' ? { ...n, type: 'artifact' as typeof n.type } : n,
+        ),
+      };
+    }
+
     set({ run: migrated });
   },
 
