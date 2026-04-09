@@ -30,6 +30,12 @@ interface IntentOption {
 
 export function chooseEnemyIntent(enemy: Enemy, aliveCount: number): EnemyIntent {
   const def = enemy.getDefinition();
+
+  // If the enemy has an explicit moveset, use it directly (no type-specific AI override)
+  if (def.moves && def.moves.length > 0) {
+    return enemy.chooseIntent();
+  }
+
   const hpRatio = enemy.state.health / enemy.state.maxHealth;
 
   switch (def.type) {
