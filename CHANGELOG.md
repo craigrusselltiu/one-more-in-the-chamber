@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## v0.5.4
+
+### Fixed
+- Dust Devil Boots now resolves matches and cascades after shuffling bottom rows
+- Chain tile upgrade text restored (was missing from upgrade screen)
+
 ## v0.5.3
 
 ### Changed

@@ -748,9 +748,23 @@ export class CombatManager {
     }
 
     if (this.swapsRemaining <= 0) {
-      // Dust Devil Boots: after using all swaps, shuffle bottom 2 rows (animated)
+      // Dust Devil Boots: after using all swaps, shuffle bottom 2 rows + resolve cascades
       if (this.artifacts.has('dust_devil_boots')) {
+        this.board.setIsResolving(true);
         await this.board.shuffleRowsAnimated([6, 7]);
+        this.ricochetTriggeredThisResolution = false;
+        let cascadeSteps = 0;
+        const onCascadeStep = this.makeCascadeStepHandler(() => ++cascadeSteps);
+        await this.board.resolveMatchesFull(onCascadeStep);
+        while (this.ricochetTriggeredThisResolution) {
+          this.ricochetTriggeredThisResolution = false;
+          await this.board.applyGravityAnimated();
+          await this.board.fillEmptyTilesAnimated();
+          await this.board.resolveMatchesFull(onCascadeStep);
+        }
+        this.board.setIsResolving(false);
+        EventBus.emit(GameEvent.COMBO_UPDATE, 0);
+        if (this.isCombatOver()) { this.endCombat(); return; }
       }
       this.endTurn();
     } else {

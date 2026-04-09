@@ -192,6 +192,7 @@ export const TILE_DEFINITIONS: Record<TileType, TileDefinition> = {
     pool: 'additional',
     description: 'Deal 1 damage per tile. Each match grants 1 Chain.',
     flavor: 'Links in the chain. More you match, harder they hit.',
+    upgradeText: '+1 damage to match total per level',
   },
   whiskey: {
     type: 'whiskey',
