@@ -10,7 +10,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 - Suppress (warrant) reworked from board-level tile type suppression to per-tile hazard with gray VFX overlay
 - Suppressed tiles are now cleared by matching adjacent tiles (like locks)
 - Enemy suppress intents now place 3 suppress hazards on random tiles
-- All Act 1 enemy HP reduced by 20%: Coyote 19, Rattlesnake 30, Bandit 34, Vulture 24, Tumbleweed Golem 58, Card Shark 34
+- All Act 1 enemy HP reduced by ~36%: Coyote 15, Rattlesnake 24, Bandit 27, Vulture 19, Tumbleweed Golem 46, Card Shark 27
+- Dusty Dan boss HP reduced to 173 (was 216)
+- Ascension level remembered between runs
 - Event artifact buttons reordered (Skip left, Take right)
 
 ## v0.5.2

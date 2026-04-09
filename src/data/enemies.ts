@@ -58,7 +58,7 @@ export const ACT1_ENEMIES: Record<string, EnemyDefinition> = {
 export const DUSTY_DAN: EnemyDefinition = {
   type: 'dusty_dan',
   name: '"Dusty" Dan McGraw',
-  health: 216,
+  health: 173,
   minDamage: 10,
   maxDamage: 20,
   abilities: ['lock', 'summon', 'bomb', 'gravity_shift'],
