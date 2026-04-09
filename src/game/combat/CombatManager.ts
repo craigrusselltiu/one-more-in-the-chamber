@@ -549,7 +549,7 @@ export class CombatManager {
   /**
    * Start a new player turn. Called at combat start and after each enemy turn.
    */
-  startTurn(): void {
+  async startTurn(): Promise<void> {
     if (this.isCombatOver()) return;
 
     this.turnNumber++;
@@ -613,6 +613,11 @@ export class CombatManager {
       } else {
         enemy.state.intent = chooseEnemyIntent(enemy, this.aliveEnemies().length);
       }
+    }
+
+    // Ensure the board has valid moves; reshuffle if not
+    if (!this.board.hasValidMoves()) {
+      await this.board.reshuffleAnimated();
     }
 
     this.setPhase('consumable-window');
@@ -1325,6 +1330,7 @@ export class CombatManager {
         const ricoLevel = this.player.getUpgradeLevel('ricochet');
         const baseDestroy = 1 + Math.max(0, match.tiles.length - 3);
         const destroyCount = baseDestroy + ricoLevel;
+        playMatch(1);
         await Promise.all(
           Array.from({ length: destroyCount }, () => this.triggerRandomTileForRicochet(match)),
         );
@@ -1383,7 +1389,6 @@ export class CombatManager {
   private async triggerRandomTileForRicochet(sourceMatch: MatchResult): Promise<void> {
     const result = await this.board.pickAndRemoveRandomTile(50);
     if (result === null) return;
-    playMatch(1);
 
     // Apply resource output for each destroyed tile (includes explosive/showdown chain)
     for (const info of result.destroyed) {
@@ -1810,7 +1815,7 @@ export class CombatManager {
     await new Promise(r => setTimeout(r, Math.round(1000 / speed)));
 
     // Start next player turn
-    this.startTurn();
+    await this.startTurn();
   }
 
   private async executeEnemyTurn(): Promise<void> {

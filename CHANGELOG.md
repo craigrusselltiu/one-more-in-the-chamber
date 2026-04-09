@@ -6,6 +6,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
 ## v0.5.4
 
+### Changed
+- Suppress hazard now shows as desaturated (gray tint) tile instead of overlay VFX
+- Reputation Shop re-enabled with "Coming soon" placeholder
+- Board reshuffles at turn start if no valid moves available
+
 ### Fixed
 - Dust Devil Boots now resolves matches and cascades after shuffling bottom rows
 - Chain tile upgrade text restored (was missing from upgrade screen)

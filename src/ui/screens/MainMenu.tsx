@@ -163,8 +163,11 @@ export const MainMenu = memo(function MainMenu() {
     EventBus.emit(GameEvent.SCREEN_CHANGE, 'map');
   };
 
-  const handleLeaderboard = () => {
+  const handleReputationShop = () => {
+    EventBus.emit(GameEvent.SCREEN_CHANGE, 'reputation-shop' satisfies Screen);
+  };
 
+  const handleLeaderboard = () => {
     EventBus.emit(GameEvent.SCREEN_CHANGE, 'leaderboard' satisfies Screen);
   };
 
@@ -215,7 +218,7 @@ export const MainMenu = memo(function MainMenu() {
           <MenuButton label="Continue" onClick={handleContinue} />
         )}
         <MenuButton label="New Game" onClick={handleNewGame} />
-        <MenuButton label="Reputation Shop" disabled />
+        <MenuButton label="Reputation Shop" onClick={handleReputationShop} />
         <MenuButton label="Leaderboard" onClick={handleLeaderboard} />
         <MenuButton label="Changelog" onClick={() => setShowChangelog(true)} />
         <MenuButton label="Settings" onClick={handleSettings} />

@@ -1,112 +1,28 @@
-import { memo, useState } from 'react';
+import { memo } from 'react';
 import { EventBus, GameEvent } from '../../game/EventBus';
 import { useMetaStore } from '../../store/metaStore';
-import { SHOP_ITEMS, type ShopCategory } from '../../data/shopItems';
 import type { Screen } from '../../App';
-
-const CATEGORIES: { key: ShopCategory | 'all'; label: string }[] = [
-  { key: 'all', label: 'All' },
-  { key: 'artifact', label: 'Artifacts' },
-  { key: 'event', label: 'Events' },
-  { key: 'loadout', label: 'Loadouts' },
-  { key: 'cosmetic', label: 'Cosmetics' },
-  { key: 'character', label: 'Characters' },
-];
-
-const CATEGORY_BADGE: Record<ShopCategory, { label: string; bg: string; color: string }> = {
-  artifact: { label: 'A', bg: 'rgba(168,85,247,0.3)', color: '#c084fc' },
-  event: { label: 'E', bg: 'rgba(34,211,238,0.3)', color: '#67e8f9' },
-  loadout: { label: 'L', bg: 'rgba(74,222,128,0.3)', color: '#86efac' },
-  cosmetic: { label: 'C', bg: 'rgba(244,114,182,0.3)', color: '#f9a8d4' },
-  character: { label: 'Ch', bg: 'rgba(251,191,36,0.3)', color: '#fcd34d' },
-};
 
 export const ReputationShopScreen = memo(function ReputationShopScreen() {
   const reputation = useMetaStore((s) => s.meta.reputation);
-  const purchaseShopItem = useMetaStore((s) => s.purchaseShopItem);
-  const isUnlocked = useMetaStore((s) => s.isUnlocked);
-  const [filter, setFilter] = useState<ShopCategory | 'all'>('all');
-
-  const items = filter === 'all'
-    ? SHOP_ITEMS
-    : SHOP_ITEMS.filter((item) => item.category === filter);
 
   const handleBack = () => {
     EventBus.emit(GameEvent.SCREEN_CHANGE, 'main-menu' satisfies Screen);
   };
 
-  const handlePurchase = (unlockId: string, cost: number, category: ShopCategory) => {
-    purchaseShopItem(unlockId, cost, category);
-  };
-
   return (
-    <div className="flex flex-col items-center h-full bg-[#1a1a2e]/95">
+    <div className="flex flex-col items-center h-full bg-[#1a1a2e]/95" style={{ width: 960, height: 540 }}>
       {/* Header */}
       <div className="mt-6 mb-2 text-center">
-        <h2 className="text-xl text-amber-400">Reputation Shop</h2>
+        <h2 className="text-xl text-amber-400 font-bold uppercase" style={{ WebkitTextStroke: '4px #000', paintOrder: 'stroke fill' }}>Reputation Shop</h2>
         <p className="text-xs text-stone-400 mt-1">
           Reputation: <span className="text-amber-300 font-bold">{reputation}</span>
         </p>
       </div>
 
-      {/* Category tabs */}
-      <div className="flex gap-1 mb-3 px-4">
-        {CATEGORIES.map((cat) => (
-          <button
-            key={cat.key}
-            onClick={() => setFilter(cat.key)}
-            className={`px-2 py-1 text-xs border transition-colors ${
-              filter === cat.key
-                ? 'border-amber-600 bg-amber-900/40 text-amber-300'
-                : 'border-stone-700 bg-stone-800/30 text-stone-400 hover:border-stone-500'
-            }`}
-          >
-            {cat.label}
-          </button>
-        ))}
-      </div>
-
-      {/* Item grid */}
-      <div className="flex-1 overflow-y-auto w-full max-w-[640px] px-4">
-        <div className="flex flex-col gap-1.5 pb-4">
-          {items.map((item) => {
-            const unlocked = isUnlocked(item.unlockId, item.category);
-            const canAfford = reputation >= item.cost;
-
-            return (
-              <button
-                key={item.id}
-                onClick={() => !unlocked && canAfford && handlePurchase(item.unlockId, item.cost, item.category)}
-                disabled={unlocked || !canAfford}
-                className={`flex items-center justify-between p-3 border text-left transition-colors ${
-                  unlocked
-                    ? 'border-stone-700 bg-stone-800/20 opacity-50'
-                    : canAfford
-                      ? 'border-stone-600 bg-stone-800/50 hover:border-amber-600 hover:bg-stone-700/50 cursor-pointer'
-                      : 'border-stone-700 bg-stone-800/30 opacity-60 cursor-not-allowed'
-                }`}
-              >
-                <div className="flex-1 mr-3">
-                  <div className="flex items-center gap-2">
-                    <span className="w-4 h-4 flex items-center justify-center rounded text-[8px] font-bold" style={{
-                      backgroundColor: CATEGORY_BADGE[item.category].bg,
-                      color: CATEGORY_BADGE[item.category].color,
-                    }}>
-                      {CATEGORY_BADGE[item.category].label}
-                    </span>
-                    <span className="text-stone-200 text-sm">{item.name}</span>
-                  </div>
-                  <p className="text-stone-400 text-xs mt-0.5">{item.description}</p>
-                </div>
-                <span className={`font-mono text-sm font-bold whitespace-nowrap ${
-                  unlocked ? 'text-stone-500' : 'text-amber-400'
-                }`}>
-                  {unlocked ? 'OWNED' : `${item.cost}`}
-                </span>
-              </button>
-            );
-          })}
-        </div>
+      {/* Empty content area */}
+      <div className="flex-1 flex items-center justify-center">
+        <span className="text-stone-500 text-sm">Coming soon</span>
       </div>
 
       {/* Back button */}
