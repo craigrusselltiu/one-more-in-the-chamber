@@ -142,7 +142,7 @@ const EnemySlot = memo(function EnemySlot({
       <EnemyIntent intent={enemy.intent} />
 
       {/* Enemy sprite with shadow + name tooltip */}
-      <Tooltip text={ALL_ENEMIES[enemy.enemyType]?.name ?? enemy.enemyType} position="top">
+      <Tooltip text={ALL_ENEMIES[enemy.enemyType]?.name ?? enemy.enemyType} position="bottom">
         {ENEMY_SPRITES[enemy.enemyType] ? (
           <div className={`relative mb-0.5 shrink-0${isTargeted ? ' enemy-targeted' : ''}${shaking ? ' enemy-shake' : ''}`} style={{ width: 96, height: 96 }}>
             <img
