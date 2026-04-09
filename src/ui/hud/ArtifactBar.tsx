@@ -57,7 +57,7 @@ export const ArtifactBar = memo(function ArtifactBar() {
   if (artifacts.length === 0) return null;
 
   return (
-    <div className="absolute z-10 left-0 flex gap-1 px-2 py-px pointer-events-auto" style={{ top: 30 }}>
+    <div className="absolute z-10 left-0 flex flex-wrap gap-1 px-2 py-px pointer-events-auto" style={{ top: 30, maxWidth: '48%' }}>
       {artifacts.map((inst, i) => {
         const def = ARTIFACTS.find((a) => a.id === inst.id);
         const color =

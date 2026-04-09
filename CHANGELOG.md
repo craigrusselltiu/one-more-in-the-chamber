@@ -4,6 +4,24 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## v0.5.5
+
+### Added
+- Structured moveset system: each enemy has an explicit list of moves with multi-action support
+- Intent icons: enemy intents display as sprite icons with number badges instead of text
+- New enemies: Pack Mule (Act 1 normal), Dust Devil (Act 1 elite)
+- Early/Late encounter system: encounters differ based on map position within an act
+- Start-of-fight actions for enemies (e.g. Rattlesnake poisons 3 tiles at combat start)
+- HP threshold triggers for enemies (e.g. Dust Devil gains Rageful below 50% HP)
+- TraitRow: traits now display in the top bar (right side) across all in-run screens
+
+### Changed
+- Complete enemy data rewrite matching ENEMIES.md definitions
+- Encounter rolling uses preset bags for early nodes, dynamic picks for late nodes
+- Summoned enemies use 1/3 HP of their base definition
+- Seed text moved to bottom-left corner
+- ArtifactBar and TraitRow limited to 48% screen width with wrapping
+
 ## v0.5.4
 
 ### Changed

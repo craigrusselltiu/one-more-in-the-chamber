@@ -118,7 +118,7 @@ const ConsumableSlot = memo(function ConsumableSlot({
 
   return (
     <div className="relative">
-      <Tooltip text={!filled ? 'Empty slot' : undefined} content={tooltipContent} secondContent={keywordTooltip} position="bottom">
+      <Tooltip text={!filled && !showMenu ? 'Empty slot' : undefined} content={showMenu ? undefined : tooltipContent} secondContent={showMenu ? undefined : keywordTooltip} position="bottom">
         <button
           ref={buttonRef}
           onClick={handleClick}

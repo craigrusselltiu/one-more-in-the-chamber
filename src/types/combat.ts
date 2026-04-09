@@ -80,6 +80,8 @@ export interface EnemyIntent {
   type: EnemyIntentType;
   value?: number;
   description: string;
+  /** Structured move actions for icon-based intent display. */
+  actions?: MoveAction[];
 }
 
 export type PlayerStatusEffect =
@@ -147,12 +149,37 @@ export interface BoardHazard {
   countdown?: number;
 }
 
+/** A single action within an enemy move (e.g. "Attack 12" or "Lock 3"). */
+export interface MoveAction {
+  kind: 'attack' | 'multi_attack' | 'block' | 'lock' | 'lock_row' | 'lock_column'
+    | 'poison_tiles' | 'apply_poison' | 'bomb' | 'bury' | 'suppress' | 'fools_gold'
+    | 'summon' | 'heal' | 'gain_rageful' | 'gain_terrified' | 'shuffle_rows'
+    | 'gravity_shift' | 'transform_tumbleweed';
+  value: number;
+  /** For multi-attack: number of hits. For shuffle_rows: rows to shuffle (encoded). */
+  hits?: number;
+  /** For summon: the enemy type to summon. */
+  summonType?: string;
+}
+
+/** A complete move an enemy can perform (may contain multiple actions). */
+export interface EnemyMove {
+  actions: MoveAction[];
+}
+
 /** Static definition for an enemy type. */
 export interface EnemyDefinition {
   type: string;
   name: string;
   health: number;
+  /** Legacy damage fields used by bosses and fallback AI. */
   minDamage: number;
   maxDamage: number;
   abilities: string[];
+  /** Explicit moveset. If defined, AI picks from this list instead of weighted random. */
+  moves?: EnemyMove[];
+  /** Actions to execute at the start of combat (e.g. "Poison 3 Tiles"). */
+  startOfFight?: MoveAction[];
+  /** HP threshold triggers (e.g. "When HP drops below 50%, gain 4 Rageful"). */
+  hpTriggers?: Array<{ threshold: number; actions: MoveAction[]; once?: boolean }>;
 }

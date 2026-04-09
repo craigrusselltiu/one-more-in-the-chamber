@@ -39,7 +39,7 @@
 - Flavor: "Kick the door in. Ask questions later."
 
 ### Twin Revolvers
-- Tags: Outlaw
+- Tags: Outlaw, Gunslinger
 - Rarity: Uncommon
 - Effect: Bullets deal 50% more damage, but has a 10% chance to miss.
 - Flavor: "Two guns. Twice the fun."
@@ -304,7 +304,7 @@
 ### Reaper's Scythe
 - Tags: Undertaker, Outlaw
 - Rarity: Legendary
-- Effect: Killing an enemy restores applies Shadow to 5 tiles on your board.
+- Effect: Killing an enemy applies Shadow to 5 tiles on your board.
 - Flavor: "Death reclaims what's owed."
 - NOTE: New artifact
 

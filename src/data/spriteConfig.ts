@@ -196,6 +196,52 @@ export const HAZARD_FRAMES: Record<string, number> = {
   sand: 1120,
 };
 
+/** Intent action icons for enemy moves. */
+export const INTENT_FRAMES: Record<string, number> = {
+  attack: 1166,
+  multi_attack: 1166,
+  block: 196,
+  lock: 738,
+  lock_row: 738,
+  lock_column: 738,
+  poison_tiles: 828,
+  apply_poison: 828,
+  bomb: 722,
+  bury: 1120,
+  suppress: 1206,
+  fools_gold: 1155,
+  summon: 704,
+  heal: 687,
+  gain_rageful: 814,
+  gain_terrified: 1206,
+  shuffle_rows: 266,
+  gravity_shift: 765,
+  transform_tumbleweed: 1098,
+};
+
+/** Intent action colors for number badges. */
+export const INTENT_COLORS: Record<string, string> = {
+  attack: '#D04040',
+  multi_attack: '#D04040',
+  block: '#6888A0',
+  lock: '#D4A030',
+  lock_row: '#D4A030',
+  lock_column: '#D4A030',
+  poison_tiles: '#40ff40',
+  apply_poison: '#40ff40',
+  bomb: '#D04040',
+  bury: '#C8A040',
+  suppress: '#808080',
+  fools_gold: '#E0C880',
+  summon: '#E0C880',
+  heal: '#40D840',
+  gain_rageful: '#D04040',
+  gain_terrified: '#8B4789',
+  shuffle_rows: '#70B0D0',
+  gravity_shift: '#70B0D0',
+  transform_tumbleweed: '#C8A040',
+};
+
 /** UI button icons for the top bar. */
 export const UI_FRAMES: Record<string, number> = {
   tiles: 625,

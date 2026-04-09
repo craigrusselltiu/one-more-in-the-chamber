@@ -1,6 +1,48 @@
-import type { EnemyState, EnemyIntent, EnemyDefinition } from '../../types/combat';
+import type { EnemyState, EnemyIntent, EnemyDefinition, MoveAction, EnemyMove } from '../../types/combat';
 
 export type { EnemyDefinition };
+
+/** Build a human-readable description from structured actions. */
+function buildDescription(actions: MoveAction[]): string {
+  return actions.map((a) => {
+    switch (a.kind) {
+      case 'attack': return `ATK ${a.value}`;
+      case 'multi_attack': return `${a.value}x${a.hits ?? 2}`;
+      case 'block': return `DEF ${a.value}`;
+      case 'lock': return `LOCK ${a.value}`;
+      case 'lock_row': return 'LOCK ROW';
+      case 'lock_column': return 'LOCK COL';
+      case 'poison_tiles': return `POISON ${a.value}`;
+      case 'apply_poison': return `APPLY ${a.value} PSN`;
+      case 'bomb': return `BOMB ${a.value}`;
+      case 'bury': return `BURY ${a.value}`;
+      case 'suppress': return `SUPPRESS ${a.value}`;
+      case 'fools_gold': return `FG ${a.value}`;
+      case 'summon': return `SUMMON ${a.summonType ?? '?'}`;
+      case 'heal': return `HEAL ${a.value}`;
+      case 'gain_rageful': return `+${a.value} RGF`;
+      case 'gain_terrified': return `TERRIFY ${a.value}`;
+      case 'shuffle_rows': return 'SHUFFLE';
+      case 'gravity_shift': return 'GRAV';
+      case 'transform_tumbleweed': return `TWEED ${a.value}`;
+      default: return String(a.kind);
+    }
+  }).join(', ');
+}
+
+/** Convert an EnemyMove into an EnemyIntent. */
+function moveToIntent(move: EnemyMove): EnemyIntent {
+  const desc = buildDescription(move.actions);
+  // Determine primary type from first action
+  const first = move.actions[0];
+  let type: EnemyIntent['type'] = 'ability';
+  if (first?.kind === 'attack' || first?.kind === 'multi_attack') type = 'attack';
+  else if (first?.kind === 'block') type = 'block';
+  else if (first?.kind === 'summon') type = 'summon';
+  else type = 'board-manipulation';
+  const value = first?.value ?? 0;
+  return { type, value, description: desc, actions: move.actions };
+}
 
 /**
  * Enemy: runtime state + AI intent selection based on abilities.
@@ -44,60 +86,72 @@ export class Enemy {
    * Choose next intent based on enemy abilities and current state.
    * Weighted random selection from available actions.
    */
-  chooseIntent(): EnemyIntent {
-    const abilities = this.definition.abilities;
-    const actions: { intent: EnemyIntent; weight: number }[] = [];
+  /** Index of the last move used (for no-repeat rule). */
+  private lastMoveIndex = -1;
 
-    // Every enemy can attack
+  chooseIntent(): EnemyIntent {
+    const moves = this.definition.moves;
+
+    // If the enemy has an explicit moveset, pick randomly (no repeat)
+    if (moves && moves.length > 0) {
+      const candidates = moves
+        .map((mv, i) => ({ mv, i }))
+        .filter(({ i }) => moves.length <= 1 || i !== this.lastMoveIndex);
+      const pick = candidates[Math.floor(Math.random() * candidates.length)];
+      this.lastMoveIndex = pick.i;
+      return moveToIntent(pick.mv);
+    }
+
+    // Fallback: legacy weighted random for enemies without movesets
+    const abilities = this.definition.abilities;
+    const options: { intent: EnemyIntent; weight: number }[] = [];
+
     const damage = this.rollDamage();
-    actions.push({
+    options.push({
       intent: { type: 'attack', value: damage, description: `ATK ${damage}` },
       weight: 3,
     });
 
-    // Block if the enemy has the ability
     if (abilities.includes('block')) {
-      actions.push({
+      options.push({
         intent: { type: 'block', value: 5, description: 'BLOCK +5' },
         weight: 1,
       });
     }
 
-    // Summon (e.g. coyote howl)
     if (abilities.includes('howl') || abilities.includes('summon')) {
-      actions.push({
+      options.push({
         intent: { type: 'summon', value: 1, description: 'HOWL' },
         weight: 1,
       });
     }
 
-    // Board manipulation abilities
     if (abilities.includes('poison')) {
-      actions.push({
+      options.push({
         intent: { type: 'board-manipulation', value: 2, description: 'POISON 2' },
         weight: 1,
       });
     }
     if (abilities.includes('lock')) {
-      actions.push({
+      options.push({
         intent: { type: 'board-manipulation', value: 1, description: 'LOCK 1' },
         weight: 1,
       });
     }
     if (abilities.includes('bury')) {
-      actions.push({
+      options.push({
         intent: { type: 'board-manipulation', value: 3, description: 'BURY 3' },
         weight: 1,
       });
     }
     if (abilities.includes('bomb')) {
-      actions.push({
+      options.push({
         intent: { type: 'board-manipulation', value: 1, description: 'BOMB' },
         weight: 1,
       });
     }
 
-    return this.weightedRandom(actions);
+    return this.weightedRandom(options);
   }
 
   private weightedRandom(actions: { intent: EnemyIntent; weight: number }[]): EnemyIntent {

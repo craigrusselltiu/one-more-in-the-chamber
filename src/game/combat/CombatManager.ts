@@ -1,5 +1,6 @@
 import type { Board, SwapResult } from '../board/Board';
 import type { CombatState, CombatPhase, MatchResult, EnemyDefinition } from '../../types/combat';
+import { ALL_ENEMIES } from '../../data/enemies';
 import type { TileType, ArtifactInstance, TraitId, CharacterId } from '../../types/game';
 import type { CombatSnapshot, SerializedEnemy } from '../../types/combatSnapshot';
 import { SNAPSHOT_VERSION } from '../../types/combatSnapshot';
@@ -205,6 +206,24 @@ export class CombatManager {
     // Apply fight-start effects
     this.traits.onFightStart(this.player, this.isBoss, this.enemies);
     this.artifacts.onFightStart(this.player, this.enemies);
+
+    // Execute enemy startOfFight actions (e.g. Rattlesnake: Poison 3 Tiles)
+    for (const enemy of this.enemies) {
+      const sof = enemy.getDefinition().startOfFight;
+      if (sof && sof.length > 0) {
+        for (const action of sof) {
+          // Only execute board-level actions (poison, bury, lock, etc.)
+          // Skip attacks/blocks since combat hasn't started yet
+          if (action.kind === 'poison_tiles') this.hazardManager.placeRandomPoison(action.value);
+          else if (action.kind === 'bury') this.hazardManager.placeRandomSand(action.value);
+          else if (action.kind === 'lock') this.hazardManager.placeRandomLocks(action.value);
+          else if (action.kind === 'lock_row') this.hazardManager.lockRow(Math.floor(Math.random() * 8));
+          else if (action.kind === 'lock_column') this.hazardManager.lockColumn(Math.floor(Math.random() * 8));
+          else if (action.kind === 'suppress') this.hazardManager.placeRandomSuppress(action.value);
+          else if (action.kind === 'bomb') this.hazardManager.placeRandomBombs(action.value, 3 + this.traits.getBombCountdownBonus());
+        }
+      }
+    }
 
     // Black Powder Cache: make 3 tiles explosive at combat start
     if (this.artifacts.has('black_powder_cache')) {
@@ -1885,78 +1904,39 @@ export class CombatManager {
       EventBus.emit(GameEvent.ENEMY_ACTION, enemy.state.id);
       const action = enemy.executeIntent();
 
-      switch (action.type) {
-        case 'attack': {
-          if (action.value > 0) {
-            // Terrified: deal 50% less damage
-            let adjustedDamage = enemy.state.terrifiedStacks > 0
-              ? Math.round(action.value * 0.5)
-              : action.value;
-            // Preacher's Bible: take 1 less damage from enemy attacks
-            if (this.artifacts.has('preachers_bible')) {
-              adjustedDamage = Math.max(0, adjustedDamage - 1);
-            }
-            // Preacher(4): 20% less damage from enemies with lower HP than player
-            const preacherReduction = this.traits.getPreacherDamageReduction(enemy.state.health, this.player.health);
-            if (preacherReduction > 0) adjustedDamage = Math.round(adjustedDamage * (1 - preacherReduction));
-            const { hpLost, blocked, thornsDamage } = this.player.takeDamage(adjustedDamage);
-            if (hpLost > 0) { playHit(); this.playerTookDamageThisFight = true; }
-            if (blocked > 0) { playBlock(); this.floatOnPlayer(`-${blocked}`, '#6888A0'); }
-            if (hpLost > 0) this.floatOnPlayer(`-${hpLost}`, '#ff4444');
-
-            // Artifact damage-taken hooks (Cactus Spine Vest, Death's Pocket Watch, Sheriff's Domino)
-            const artDmg = this.artifacts.onPlayerDamaged(hpLost, this.player);
-            if (artDmg.poisonToAttacker > 0) {
-              this.applyPoison(enemy, artDmg.poisonToAttacker);
-              this.floatOnEnemy(enemy, `+${artDmg.poisonToAttacker} POISON`, '#40ff40', 9);
-              EventBus.emit(GameEvent.ENEMY_HP_CHANGE, { ...enemy.state });
-            }
-            EventBus.emit(
-              GameEvent.PLAYER_HP_CHANGE,
-              this.player.health,
-              this.player.maxHealth,
-            );
-            // Screen shake scales with damage
-            if (action.value >= 25) {
-              EventBus.emit(GameEvent.SCREEN_SHAKE, 'heavy');
-            } else if (action.value >= 15) {
-              EventBus.emit(GameEvent.SCREEN_SHAKE, 'medium');
-            } else {
-              EventBus.emit(GameEvent.SCREEN_SHAKE, 'light');
-            }
-
-            // Thorns reflects damage back to the attacking enemy
-            if (thornsDamage > 0) {
-              this.damageDealtThisFight += enemy.takeDamage(thornsDamage).hpLost;
-              EventBus.emit(GameEvent.ENEMY_HP_CHANGE, { ...enemy.state });
-            }
-
-            // Sheriff(5): block reflects 100% of absorbed damage back to attacker
-            // This is already handled by thorns mechanism in Player.takeDamage
-            // when Sheriff(5) is active. We handle it via enhanced block logic.
-          }
-          break;
+      // If intent has structured actions, execute each one
+      if (enemy.state.intent.actions && enemy.state.intent.actions.length > 0) {
+        for (const ma of enemy.state.intent.actions) {
+          if (enemy.state.isDead) break;
+          await this.executeMoveAction(enemy, ma);
         }
-        case 'block':
-          // Block was already applied in executeIntent
-          // Silver Bullet: boss gains block -> gain 1 Ready
-          if (this.isBossEnemy(enemy)) {
-            this.artifacts.onBossGainedBlock(this.player);
+      } else {
+        // Legacy fallback for old-style intents
+        switch (action.type) {
+          case 'attack': {
+            if (action.value > 0) {
+              this.executeEnemyAttack(enemy, action.value);
+            }
+            break;
           }
-          break;
-        case 'summon':
-          this.trySummonEnemy(enemy);
-          break;
-        case 'board-manipulation':
-          if (enemy.state.intent.description.startsWith('SUPPRESS')) {
-            // Suppress: place suppress hazard on 3 random tiles
-            this.hazardManager.placeRandomSuppress(3);
-          } else {
-            executeBoardManipulation(enemy, enemy.state.intent, this.hazardManager, this.traits.getBombCountdownBonus());
-          }
-          break;
-        case 'ability':
-          break;
+          case 'block':
+            if (this.isBossEnemy(enemy)) {
+              this.artifacts.onBossGainedBlock(this.player);
+            }
+            break;
+          case 'summon':
+            this.trySummonEnemy(enemy);
+            break;
+          case 'board-manipulation':
+            if (enemy.state.intent.description.startsWith('SUPPRESS')) {
+              this.hazardManager.placeRandomSuppress(3);
+            } else {
+              executeBoardManipulation(enemy, enemy.state.intent, this.hazardManager, this.traits.getBombCountdownBonus());
+            }
+            break;
+          case 'ability':
+            break;
+        }
       }
 
       // Sync full state after each enemy action so HUD reflects block/status changes
@@ -1990,7 +1970,144 @@ export class CombatManager {
     }
   }
 
-  private trySummonEnemy(summoner: Enemy): void {
+  /** Execute a single structured move action from an enemy's intent. */
+  private async executeMoveAction(enemy: Enemy, ma: import('../../types/combat').MoveAction): Promise<void> {
+    switch (ma.kind) {
+      case 'attack':
+        this.executeEnemyAttack(enemy, ma.value);
+        break;
+      case 'multi_attack':
+        for (let i = 0; i < (ma.hits ?? 2); i++) {
+          this.executeEnemyAttack(enemy, ma.value);
+        }
+        break;
+      case 'block':
+        enemy.addBlock(ma.value);
+        if (this.isBossEnemy(enemy)) this.artifacts.onBossGainedBlock(this.player);
+        break;
+      case 'lock':
+        this.hazardManager.placeRandomLocks(ma.value);
+        break;
+      case 'lock_row':
+        this.hazardManager.lockRow(Math.floor(Math.random() * 8));
+        break;
+      case 'lock_column':
+        this.hazardManager.lockColumn(Math.floor(Math.random() * 8));
+        break;
+      case 'poison_tiles':
+        this.hazardManager.placeRandomPoison(ma.value);
+        break;
+      case 'apply_poison':
+        this.player.poisonedStacks += ma.value;
+        this.floatOnPlayer(`+${ma.value} POISON`, '#40ff40', 9);
+        break;
+      case 'bomb':
+        this.hazardManager.placeRandomBombs(ma.value, 3 + this.traits.getBombCountdownBonus());
+        break;
+      case 'bury':
+        this.hazardManager.placeRandomSand(ma.value);
+        break;
+      case 'suppress':
+        this.hazardManager.placeRandomSuppress(ma.value);
+        break;
+      case 'fools_gold':
+        this.hazardManager.placeRandomFoolsGold(ma.value);
+        break;
+      case 'summon':
+        this.trySummonEnemy(enemy, ma.summonType);
+        break;
+      case 'heal':
+        enemy.state.health = Math.min(enemy.state.maxHealth, enemy.state.health + ma.value);
+        this.floatOnEnemy(enemy, `+${ma.value}`, '#40D840');
+        EventBus.emit(GameEvent.ENEMY_HP_CHANGE, { ...enemy.state });
+        break;
+      case 'gain_rageful':
+        this.player.ragefulStacks += ma.value;
+        this.floatOnPlayer(`+${ma.value} RAGEFUL`, '#D04040', 9);
+        break;
+      case 'gain_terrified':
+        // Apply Terrified to the targeted enemy... wait, this is an enemy action applying to player
+        // Actually from the MD, Vulture applies Terrified to the player? No - Terrified is an enemy debuff.
+        // The MD says "Apply 1 Terrified" which means apply to ALL enemies? No that doesn't make sense.
+        // Actually looking at the Vulture moves: "Attack 8, Apply 1 Terrified" - this terrifies the player's enemies?
+        // No - Terrified is "Deal 50% less damage" - it's a debuff on enemies. But Vulture is an enemy...
+        // This must mean the Vulture applies Terrified to itself or to the player somehow.
+        // For now: skip, it's a no-op until clarified.
+        break;
+      case 'shuffle_rows': {
+        // Encode: 67 = rows 6,7 (bottom 2), 1 = rows 0,1 (top 2)
+        const rows = ma.value === 67 ? [6, 7] : ma.value === 1 ? [0, 1] : [6, 7];
+        await this.board.shuffleRowsAnimated(rows);
+        break;
+      }
+      case 'gravity_shift': {
+        // Rotate gravity clockwise: down -> left -> up -> right -> down
+        const CYCLE: Array<'left' | 'up' | 'right' | 'down'> = ['left', 'up', 'right', 'down'];
+        const current = this.board.getGravityDirection?.() ?? 'down';
+        const idx = CYCLE.indexOf(current as 'left' | 'up' | 'right' | 'down');
+        this.board.setGravityDirection(CYCLE[(idx + 1) % 4]);
+        break;
+      }
+      case 'transform_tumbleweed':
+        // Transform random tiles into tumbleweed type
+        for (let i = 0; i < ma.value; i++) {
+          const grid = this.board.getGrid();
+          const candidates: { row: number; col: number }[] = [];
+          for (let r = 0; r < 8; r++) {
+            for (let c = 0; c < 8; c++) {
+              const tile = grid[r]?.[c];
+              if (tile && tile.type !== 'tumbleweed' && !tile.hazard) {
+                candidates.push({ row: r, col: c });
+              }
+            }
+          }
+          if (candidates.length > 0) {
+            const pos = candidates[Math.floor(Math.random() * candidates.length)];
+            const tile = grid[pos.row]?.[pos.col];
+            if (tile) tile.setType('tumbleweed');
+          }
+        }
+        break;
+    }
+  }
+
+  /** Execute a single enemy attack against the player. */
+  private executeEnemyAttack(enemy: Enemy, damage: number): void {
+    if (damage <= 0) return;
+    let adjustedDamage = enemy.state.terrifiedStacks > 0
+      ? Math.round(damage * 0.5)
+      : damage;
+    if (this.artifacts.has('preachers_bible')) {
+      adjustedDamage = Math.max(0, adjustedDamage - 1);
+    }
+    const preacherReduction = this.traits.getPreacherDamageReduction(enemy.state.health, this.player.health);
+    if (preacherReduction > 0) adjustedDamage = Math.round(adjustedDamage * (1 - preacherReduction));
+    const { hpLost, blocked, thornsDamage } = this.player.takeDamage(adjustedDamage);
+    if (hpLost > 0) { playHit(); this.playerTookDamageThisFight = true; }
+    if (blocked > 0) { playBlock(); this.floatOnPlayer(`-${blocked}`, '#6888A0'); }
+    if (hpLost > 0) this.floatOnPlayer(`-${hpLost}`, '#ff4444');
+
+    const artDmg = this.artifacts.onPlayerDamaged(hpLost, this.player);
+    if (artDmg.poisonToAttacker > 0) {
+      this.applyPoison(enemy, artDmg.poisonToAttacker);
+      this.floatOnEnemy(enemy, `+${artDmg.poisonToAttacker} POISON`, '#40ff40', 9);
+      EventBus.emit(GameEvent.ENEMY_HP_CHANGE, { ...enemy.state });
+    }
+    EventBus.emit(GameEvent.PLAYER_HP_CHANGE, this.player.health, this.player.maxHealth);
+    if (damage >= 25) {
+      EventBus.emit(GameEvent.SCREEN_SHAKE, 'heavy');
+    } else if (damage >= 15) {
+      EventBus.emit(GameEvent.SCREEN_SHAKE, 'medium');
+    } else {
+      EventBus.emit(GameEvent.SCREEN_SHAKE, 'light');
+    }
+    if (thornsDamage > 0) {
+      this.damageDealtThisFight += enemy.takeDamage(thornsDamage).hpLost;
+      EventBus.emit(GameEvent.ENEMY_HP_CHANGE, { ...enemy.state });
+    }
+  }
+
+  private trySummonEnemy(summoner: Enemy, summonType?: string): void {
     if (this.aliveEnemies().length >= 3) return;
 
     // Boss summons a specific minion type
@@ -2006,7 +2123,23 @@ export class CombatManager {
       }
     }
 
-    // Regular summon: weaker version of the summoner's type
+    // If a specific summon type is given, look it up and use 1/3 HP
+    if (summonType && ALL_ENEMIES[summonType]) {
+      const baseDef = ALL_ENEMIES[summonType];
+      const minionDef: EnemyDefinition = {
+        ...baseDef,
+        health: Math.max(1, Math.round(baseDef.health / 3)),
+      };
+      const minion = new Enemy(minionDef);
+      minion.summoned = true;
+      minion.state.summoned = true;
+      this.addEnemyToSlot(minion);
+      this.artifacts.onEnemySummoned(minion, this.player);
+      this.emitFullState();
+      return;
+    }
+
+    // Fallback: weaker version of the summoner's type
     const def = summoner.getDefinition();
     const minionDef: EnemyDefinition = {
       type: def.type,

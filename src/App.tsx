@@ -17,6 +17,7 @@ import { CombatHUD } from './ui/hud/CombatHUD';
 import { FloatingNumbers } from './ui/hud/FloatingNumbers';
 import { TopBar } from './ui/hud/TopBar';
 import { ArtifactBar } from './ui/hud/ArtifactBar';
+import { TraitRow } from './ui/hud/TraitRow';
 import { OfflineIndicator } from './ui/components/OfflineIndicator';
 import { GameNotification } from './ui/components/GameNotification';
 import { EventBus, GameEvent } from './game/EventBus';
@@ -59,7 +60,7 @@ export type Screen =
   | 'leaderboard'
   | 'settings';
 
-const ENCOUNTER_ROLLERS: Record<Act, { regular: (r?: () => number) => EnemyDefinition[]; elite: (r?: () => number) => EnemyDefinition[] }> = {
+const ENCOUNTER_ROLLERS: Record<Act, { regular: (r: () => number, nodeIndex?: number) => EnemyDefinition[]; elite: (r?: () => number) => EnemyDefinition[] }> = {
   1: { regular: rollAct1Encounter, elite: rollAct1EliteEncounter },
   2: { regular: rollAct2Encounter, elite: rollAct2EliteEncounter },
   3: { regular: rollAct3Encounter, elite: rollAct3EliteEncounter },
@@ -78,7 +79,7 @@ interface EncounterInfo {
 }
 
 /** Roll enemies for a given act and node type. */
-function rollEncounter(act: Act, nodeType: MapNodeType, seed?: string, nodeId?: string): EncounterInfo {
+function rollEncounter(act: Act, nodeType: MapNodeType, seed?: string, nodeId?: string, nodeIndex = 99): EncounterInfo {
   const rand = seed && nodeId ? createSeededRandom(`${seed}-encounter-${nodeId}`) : undefined;
   if (nodeType === 'boss') {
     return { enemies: [{ ...BOSSES[act] }], isElite: false, isBoss: true };
@@ -87,7 +88,7 @@ function rollEncounter(act: Act, nodeType: MapNodeType, seed?: string, nodeId?: 
   if (nodeType === 'elite') {
     return { enemies: rollers.elite(rand), isElite: true, isBoss: false };
   }
-  const enemies = rollers.regular(rand);
+  const enemies = rollers.regular(rand ?? Math.random, nodeIndex);
   const isMineCart = enemies.some((e) => e.type === 'mine_cart');
   return {
     enemies,
@@ -271,7 +272,8 @@ export default function App() {
         if (run) {
           const currentNode = run.mapState?.nodes.find((n) => n.id === run.currentNodeId);
           const nodeType = currentNode?.type ?? 'combat';
-          const encounter = rollEncounter(run.currentAct, nodeType, run.seed, run.currentNodeId ?? undefined);
+          const nodeRow = currentNode?.row ?? 99;
+          const encounter = rollEncounter(run.currentAct, nodeType, run.seed, run.currentNodeId ?? undefined, nodeRow);
           applyAscensionToEnemies(encounter.enemies, run.ascensionLevel);
           const ascMods = getAscensionModifiers(run.ascensionLevel);
 
@@ -521,6 +523,7 @@ export default function App() {
               showConsumables={screen === 'combat'}
             />
             <ArtifactBar />
+            <TraitRow />
           </>
         )}
 
@@ -569,7 +572,7 @@ export default function App() {
           className="absolute right-2 bottom-1 pointer-events-none z-[60]"
           style={{ fontSize: '9px', color: 'rgba(255,255,255,0.3)' }}
         >
-          Pre-alpha v0.5.4
+          Pre-alpha v0.5.5
         </span>
       </div>
     </div>

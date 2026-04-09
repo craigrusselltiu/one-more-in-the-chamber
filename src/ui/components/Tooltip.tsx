@@ -32,11 +32,10 @@ export const Tooltip = memo(function Tooltip({ text, content, secondContent, chi
 
   const tooltipBody = content ?? text;
 
-  // Position the portal tooltip relative to the trigger element
+  // Position the portal tooltip and clamp to viewport bounds
   useEffect(() => {
     if (!visible || !wrapperRef.current) return;
     const rect = wrapperRef.current.getBoundingClientRect();
-    // Find the scaled viewport container to compute offset
     const viewport = wrapperRef.current.closest('.overflow-hidden') as HTMLElement | null;
     const vRect = viewport?.getBoundingClientRect();
     const scale = vRect ? vRect.width / 960 : 1;
@@ -44,34 +43,32 @@ export const Tooltip = memo(function Tooltip({ text, content, secondContent, chi
     const x = align === 'left'
       ? (rect.left - (vRect?.left ?? 0)) / scale
       : (rect.left + rect.width / 2 - (vRect?.left ?? 0)) / scale;
-    if (position === 'top') {
-      const y = (rect.top - (vRect?.top ?? 0)) / scale;
-      setPos({ left: x, top: y });
-    } else {
-      const y = (rect.bottom - (vRect?.top ?? 0)) / scale;
-      setPos({ left: x, top: y });
-    }
-  }, [visible, position]);
+    const y = position === 'top'
+      ? (rect.top - (vRect?.top ?? 0)) / scale
+      : (rect.bottom - (vRect?.top ?? 0)) / scale;
+    setPos({ left: x, top: y });
 
-  // Clamp tooltip to viewport bounds
-  useEffect(() => {
-    if (!visible || !tooltipRef.current || !wrapperRef.current) return;
-    const tip = tooltipRef.current;
-    const viewport = wrapperRef.current.closest('.overflow-hidden') as HTMLElement | null;
-    if (!viewport) return;
+    // Defer clamp to next frame so the tooltip has rendered at the new position
+    requestAnimationFrame(() => {
+      if (!tooltipRef.current || !viewport) return;
+      const tip = tooltipRef.current;
+      // Reset any previous clamp overrides
+      tip.style.right = '';
 
-    const vRect = viewport.getBoundingClientRect();
-    const tRect = tip.getBoundingClientRect();
-    const scale = vRect.width / 960;
+      const vr = viewport.getBoundingClientRect();
+      const tr = tip.getBoundingClientRect();
+      const margin = 6;
 
-    if (tRect.left < vRect.left) {
-      const offset = (vRect.left - tRect.left) / scale;
-      tip.style.transform = `translateX(calc(-50% + ${offset}px))`;
-    } else if (tRect.right > vRect.right) {
-      const offset = (tRect.right - vRect.right) / scale;
-      tip.style.transform = `translateX(calc(-50% - ${offset}px))`;
-    }
-  }, [visible, pos]);
+      if (tr.left < vr.left) {
+        tip.style.left = `${margin}px`;
+        tip.style.transform = position === 'top' ? 'translateY(-100%)' : 'none';
+      } else if (tr.right > vr.right) {
+        tip.style.left = 'auto';
+        tip.style.right = `${margin}px`;
+        tip.style.transform = position === 'top' ? 'translateY(-100%)' : 'none';
+      }
+    });
+  }, [visible, position, align]);
 
   // Find the portal target (the scaled viewport container)
   const getPortalTarget = (): HTMLElement | null => {

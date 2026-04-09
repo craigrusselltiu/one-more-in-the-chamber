@@ -6,9 +6,7 @@ import { ComboDisplay } from './ComboDisplay';
 import { AbilityMeter } from './AbilityMeter';
 import { EndTurnButton } from './EndTurnButton';
 
-import { TraitDisplay } from './TraitDisplay';
 import { useCombatStore } from '../../store/combatStore';
-import { useRunStore } from '../../store/runStore';
 import { EventBus, GameEvent } from '../../game/EventBus';
 
 /**
@@ -29,7 +27,6 @@ import { EventBus, GameEvent } from '../../game/EventBus';
 export const CombatHUD = memo(function CombatHUD() {
   const swapsRemaining = useCombatStore((s) => s.swapsRemaining);
   const swapsPerTurn = useCombatStore((s) => s.swapsPerTurn);
-  const hasArtifacts = useRunStore((s) => (s.run?.artifacts.length ?? 0) > 0);
 
   return (
     <div className="pointer-events-none text-xs select-none" style={{ width: 960, height: 540, position: 'relative' }}>
@@ -64,21 +61,6 @@ export const CombatHUD = memo(function CombatHUD() {
           <div className="absolute bottom-28 left-1/2 -translate-x-1/2 flex flex-col items-center">
             <AbilityMeter />
           </div>
-          {/* Traits - fixed position at bottom, hidden when no artifacts */}
-          {hasArtifacts && (
-            <div className="absolute bottom-12 left-1/2 -translate-x-1/2 flex flex-col items-center">
-              <span
-                className="text-[8px] text-stone-200 font-bold block text-center mb-0.5"
-                style={{
-                  WebkitTextStroke: '2px #000',
-                  paintOrder: 'stroke fill',
-                }}
-              >
-                TRAITS
-              </span>
-              <TraitDisplay />
-            </div>
-          )}
         </div>
 
         {/* Board area (center, Phaser renders the board here) */}
