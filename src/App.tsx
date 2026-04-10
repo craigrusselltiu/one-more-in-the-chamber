@@ -303,6 +303,7 @@ export default function App() {
           useCombatStore.getState().setPlayerHealth(run.health, run.maxHealth);
           useCombatStore.getState().setGold(run.gold);
           useCombatStore.getState().setAct(run.currentAct);
+          useCombatStore.getState().setIsBoss(encounter.isBoss);
 
           setCombatSceneData({ config: combatConfig });
           game.scene.start('CombatScene', { config: combatConfig });
@@ -483,8 +484,32 @@ export default function App() {
   ]);
   const showTopBar = IN_RUN_SCREENS.has(screen);
 
+  // Combat full-viewport background: extends the combat bg to fill letterbox areas on mobile
+  const combatAct = useCombatStore((s) => s.currentAct);
+  const combatIsBoss = useCombatStore((s) => s.isBoss);
+  const combatBgUrl = (() => {
+    if (screen !== 'combat') return null;
+    const base = import.meta.env.BASE_URL;
+    const bossBgMap: Record<number, string> = { 1: 'dusty_bg', 2: 'copperhead_bg', 3: 'ironeye_bg' };
+    const key = combatIsBoss ? (bossBgMap[combatAct] ?? `act${combatAct}_bg`) : `act${combatAct}_bg`;
+    return `${base}assets/${key}.png`;
+  })();
+
   return (
     <div className="relative w-full h-full" onContextMenu={(e) => e.preventDefault()}>
+      {/* Full-viewport combat background — fills letterbox bars on mobile */}
+      {combatBgUrl && (
+        <div
+          className="absolute inset-0"
+          style={{
+            backgroundImage: `url(${combatBgUrl})`,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+            opacity: 0.4,
+            backgroundColor: '#2a1a0e',
+          }}
+        />
+      )}
       <div ref={gameContainerRef} className="absolute inset-0" />
       <OfflineIndicator />
 
