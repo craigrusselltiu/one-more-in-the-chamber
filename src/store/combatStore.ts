@@ -51,6 +51,7 @@ interface CombatStore {
   turnLimit: number;
   comboCount: number;
   currentAct: number;
+  isBoss: boolean;
   mirageType: import('../types/game').TileType | null;
 
   // Actions
@@ -62,6 +63,7 @@ interface CombatStore {
   setTargetedEnemy: (index: number) => void;
   setCombo: (combo: number) => void;
   setAct: (act: number) => void;
+  setIsBoss: (isBoss: boolean) => void;
   reset: () => void;
 }
 
@@ -100,6 +102,7 @@ const initialState = {
   turnLimit: 0,
   comboCount: 0,
   currentAct: 1,
+  isBoss: false,
   mirageType: null,
 };
 
@@ -156,6 +159,8 @@ export const useCombatStore = create<CombatStore>((set) => ({
   setCombo: (combo) => set({ comboCount: combo }),
 
   setAct: (act) => set({ currentAct: act }),
+
+  setIsBoss: (isBoss) => set({ isBoss }),
 
   reset: () => set(initialState),
 }));
