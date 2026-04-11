@@ -18,7 +18,7 @@ Bullet tiles - Bullet, .50 Cal, Buckshot, and Ricochet
 - Protected - Immune to tile hazards. Decrease stacks by 1 at the end of the turn.
 
 # Debuffs
-- Vulnerable - Take 50% extra damage from attacks. Decrease stacks by 1 at the end of the turn.
+- Vulnerable - Take 20% extra damage from attacks. Decrease stacks by 1 at the end of the turn.
 - Poison - At the start of the turn, take damage equal to the number of stacks and decrease stacks by 1.
 - Bounty - When applying this or taking damage, if HP is lower than Bounty stacks, die.
 - Summoned - Dies when all non-summoned enemies have died.

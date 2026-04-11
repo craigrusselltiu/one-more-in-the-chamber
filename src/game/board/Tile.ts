@@ -269,7 +269,8 @@ export class Tile {
     const needsOverlay = this.isShowdown || this.isExplosive || this.isShadow || this._hazard?.type === 'bomb' || this._hazard?.type === 'poison' || this._hazard?.type === 'suppress' || this.hintUntil > 0;
     const cx = this.sprite.x;
     const cy = this.sprite.y;
-    const frame = TILE_FRAMES[this.type];
+    // Buried (sand) tiles: outline/overlay uses the sand sprite so hints don't spoil the hidden icon.
+    const frame = this._hazard?.type === 'sand' ? HAZARD_FRAMES.sand : TILE_FRAMES[this.type];
 
     if (needsOverlay) {
       if (!this.overlay) {

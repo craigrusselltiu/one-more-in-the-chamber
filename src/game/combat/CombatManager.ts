@@ -798,19 +798,6 @@ export class CombatManager {
       }
     }
 
-    // Prairie Fire spread: after each swap, each prairie_fire tile has 50% chance to convert 1 adjacent tile
-    if (this.board.spreadPrairieFire()) {
-      this.ricochetTriggeredThisResolution = false;
-      const onFireStep = this.makeCascadeStepHandler(nextStep);
-      await this.board.resolveMatchesFull(onFireStep);
-      while (this.ricochetTriggeredThisResolution) {
-        this.ricochetTriggeredThisResolution = false;
-        await this.board.applyGravityAnimated();
-        await this.board.fillEmptyTilesAnimated();
-        await this.board.resolveMatchesFull(onFireStep);
-      }
-    }
-
     // Artifact swap hook (check for Quickdraw kill refund)
     const swapResult = this.artifacts.onSwapPerformed(this.enemyDiedThisSwap);
     if (swapResult.refundSwaps) {
@@ -1613,23 +1600,13 @@ export class CombatManager {
     }
 
     const critSize = isCrit ? 18 : undefined;
-    if (pierce) {
-      const hpBefore = enemy.state.health;
-      enemy.state.health = Math.max(0, enemy.state.health - damage);
-      if (enemy.state.health <= 0) enemy.state.isDead = true;
-      const actual = hpBefore - enemy.state.health;
-      this.damageDealtThisFight += actual;
-      if (actual > 0) playHit();
-      this.floatOnEnemy(enemy, isCrit ? `-${actual}!` : `-${actual}`, '#ff4444', critSize);
-    } else {
-      const { hpLost, blocked } = enemy.takeDamage(damage);
-      this.damageDealtThisFight += hpLost;
-      if (blocked > 0) { playBlock(); this.floatOnEnemy(enemy, `-${blocked}`, '#6888A0'); }
-      if (hpLost > 0) {
-        playHit();
-        const label = isCrit ? `-${damage}!` : `-${hpLost}`;
-        this.floatOnEnemy(enemy, label, '#ff4444', critSize);
-      }
+    const { hpLost, blocked } = enemy.takeDamage(damage, pierce);
+    this.damageDealtThisFight += hpLost;
+    if (blocked > 0) { playBlock(); this.floatOnEnemy(enemy, `-${blocked}`, '#6888A0'); }
+    if (hpLost > 0) {
+      playHit();
+      const label = isCrit ? `-${hpLost}!` : `-${hpLost}`;
+      this.floatOnEnemy(enemy, label, '#ff4444', critSize);
     }
     // Enemy thorns: reflect damage back to player
     if (enemy.state.thorns > 0 && damage > 0) {
@@ -1887,6 +1864,24 @@ export class CombatManager {
   // ---------------------------------------------------------------------------
 
   private async endTurn(): Promise<void> {
+    // Prairie Fire spread: once per turn, each prairie_fire tile has 1-in-4 chance to convert 1 adjacent tile
+    if (this.board.spreadPrairieFire()) {
+      this.ricochetTriggeredThisResolution = false;
+      let fireSteps = 0;
+      const onFireStep = this.makeCascadeStepHandler(() => ++fireSteps);
+      await this.board.resolveMatchesFull(onFireStep);
+      while (this.ricochetTriggeredThisResolution) {
+        this.ricochetTriggeredThisResolution = false;
+        await this.board.applyGravityAnimated();
+        await this.board.fillEmptyTilesAnimated();
+        await this.board.resolveMatchesFull(onFireStep);
+      }
+      if (this.isCombatOver()) {
+        this.endCombat();
+        return;
+      }
+    }
+
     // Player Terrified: decrement at end of player's turn
     if (this.player.terrifiedStacks > 0) this.player.terrifiedStacks--;
 

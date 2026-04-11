@@ -189,10 +189,11 @@ export class Enemy {
 
 
   /**
-   * Apply damage to this enemy. Accounts for Vulnerable and Block.
+   * Apply damage to this enemy. Accounts for Grace, Vulnerable, Hardened, and Block.
+   * @param pierceBlock if true, damage bypasses block absorption (but still respects Grace/Vulnerable/Hardened).
    * Returns { hpLost, blocked } for floating number display.
    */
-  takeDamage(amount: number): { hpLost: number; blocked: number } {
+  takeDamage(amount: number, pierceBlock = false): { hpLost: number; blocked: number } {
     let remaining = amount;
 
     // Grace: negate entire damage instance
@@ -201,19 +202,19 @@ export class Enemy {
       return { hpLost: 0, blocked: 0 };
     }
 
-    // Hardened: cap damage to hardened stacks
+    // Vulnerable: +20% damage (stacks decrease at end of turn, not on hit)
+    if (this.state.vulnerable > 0) {
+      remaining = Math.round(remaining * 1.2);
+    }
+
+    // Hardened: cap damage to hardened stacks (post-Vulnerable, pre-Block)
     if (this.state.hardened > 0 && remaining > this.state.hardened) {
       remaining = this.state.hardened;
     }
 
-    // Vulnerable: +50% damage (stacks decrease at end of turn, not on hit)
-    if (this.state.vulnerable > 0) {
-      remaining = Math.round(remaining * 1.5);
-    }
-
-    // Block absorption
+    // Block absorption (skipped if pierceBlock)
     let blocked = 0;
-    if (this.state.block > 0) {
+    if (!pierceBlock && this.state.block > 0) {
       blocked = Math.min(this.state.block, remaining);
       this.state.block -= blocked;
       remaining -= blocked;

@@ -8,30 +8,50 @@ const RARITY_WEIGHTS: Record<ArtifactRarity, number> = {
   legendary: 3,
 };
 
+/** Boss reward weights -- bosses only drop Rare or Legendary. */
+const BOSS_RARITY_WEIGHTS: Record<ArtifactRarity, number> = {
+  common: 0,
+  uncommon: 0,
+  rare: 25,
+  legendary: 75,
+};
+
 /**
  * Pick one artifact from a pool using weighted rarity selection.
  * Desperado(2) doubles the weight of desperado-tagged artifacts.
+ * `bossReward = true` restricts the pool to Rare/Legendary with 25/75 weights.
  */
 export function weightedArtifactPick<T extends { rarity?: ArtifactRarity; tags: string[] }>(
   pool: T[],
   rand: () => number,
   desperadoActive = false,
+  bossReward = false,
 ): T {
   if (pool.length <= 1) return pool[0];
 
-  const weights = pool.map((a) => {
-    let w = RARITY_WEIGHTS[a.rarity ?? 'common'];
+  // Boss rewards: restrict to Rare/Legendary if any are available, otherwise
+  // fall back to the full pool so the player still gets something.
+  let effectivePool = pool;
+  if (bossReward) {
+    const rareOrLegendary = pool.filter((a) => a.rarity === 'rare' || a.rarity === 'legendary');
+    if (rareOrLegendary.length > 0) effectivePool = rareOrLegendary;
+  }
+  if (effectivePool.length === 1) return effectivePool[0];
+
+  const weightTable = bossReward ? BOSS_RARITY_WEIGHTS : RARITY_WEIGHTS;
+  const weights = effectivePool.map((a) => {
+    let w = weightTable[a.rarity ?? 'common'];
     if (desperadoActive && a.tags.includes('desperado')) w *= 2;
     return w;
   });
 
   const total = weights.reduce((sum, w) => sum + w, 0);
   let roll = rand() * total;
-  for (let i = 0; i < pool.length; i++) {
+  for (let i = 0; i < effectivePool.length; i++) {
     roll -= weights[i];
-    if (roll <= 0) return pool[i];
+    if (roll <= 0) return effectivePool[i];
   }
-  return pool[pool.length - 1];
+  return effectivePool[effectivePool.length - 1];
 }
 
 /**

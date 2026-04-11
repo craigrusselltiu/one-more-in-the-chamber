@@ -32,6 +32,10 @@ export const ArtifactScreen = memo(function ArtifactScreen() {
 
   useEffect(() => { playTreasure(); }, []);
 
+  // Determine where to go after treasure based on current node
+  const currentNode = run?.mapState?.nodes.find((n) => n.id === run?.currentNodeId);
+  const isBossReward = currentNode?.type === 'boss';
+
   const artifact = useMemo(() => {
     const rand = createSeededRandom(`${run?.seed ?? ''}-treasure-${run?.currentNodeId ?? ''}`);
     const ownedIds = new Set((run?.artifacts ?? []).map((a) => a.id));
@@ -39,14 +43,10 @@ export const ArtifactScreen = memo(function ArtifactScreen() {
     const available = ARTIFACTS.filter((a) => !ownedIds.has(a.id) && (!a.exclusive || a.exclusive === character));
     const pool = available.length > 0 ? available : ARTIFACTS;
     const desperadoActive = (run?.traitCounts?.desperado ?? 0) >= 2;
-    return weightedArtifactPick(pool, rand, desperadoActive);
-  }, []);
+    return weightedArtifactPick(pool, rand, desperadoActive, isBossReward);
+  }, [isBossReward]);
 
   const [taken, setTaken] = useState(false);
-
-  // Determine where to go after treasure based on current node
-  const currentNode = run?.mapState?.nodes.find((n) => n.id === run?.currentNodeId);
-  const isBossReward = currentNode?.type === 'boss';
   const isEliteReward = currentNode?.type === 'elite';
   const act = run?.currentAct ?? 1;
 

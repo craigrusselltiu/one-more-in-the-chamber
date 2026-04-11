@@ -176,7 +176,7 @@ export const TILE_DEFINITIONS: Record<TileType, TileDefinition> = {
     baseValue: 2,
     upgradeValue: 2,
     pool: 'starter',
-    description: 'Deal 2 damage per tile. After each swap, each tile has a 1 in 3 chance to convert 1 adjacent or diagonal tile to Prairie Fire.',
+    description: 'Deal 2 damage per tile. After each turn, each tile has a 1 in 4 chance to convert 1 adjacent or diagonal tile to Prairie Fire.',
     flavor: 'Sparks fly. Some of them catch.',
     upgradeText: '+2 damage to match total per level',
   },

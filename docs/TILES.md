@@ -58,7 +58,7 @@ NOTE: Observe the difference between +1 to match total and +1 per tile. The tile
 - Flavor: "Slow poison. The patient killer's weapon."
 
 ### Prairie Fire
-- Behaviour: Deal 2 damage per tile. After each swap, each tile has a 1 in 3 chance to convert 1 adjacent or diagonal tile to Prairie Fire.
+- Behaviour: Deal 2 damage per tile. After each turn, each tile has a 1 in 4 chance to convert 1 adjacent or diagonal tile to Prairie Fire.
 - Upgrade: +2 damage to match total per level
 - Flavor: "Sparks fly. Some of them catch."
 

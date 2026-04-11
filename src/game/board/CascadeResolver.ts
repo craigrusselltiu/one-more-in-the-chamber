@@ -209,9 +209,20 @@ export class CascadeResolver {
                 i => i.row === swapTarget.row && i.col === swapTarget.col,
               ) ?? match.crossIntersections[0])
             : match.crossIntersections[0];
-          // 5+ in the cross group -> showdown tile; otherwise -> explosive
           if (match.isShowdown) {
+            // 5+ line AND a cross/L/T shape -> spawn BOTH a showdown (at the
+            // intersection) and an explosive (at a non-intersection tile).
             board.spawnSpecialTile(inter.row, inter.col, 'showdown', 'showdown');
+            const intersectionKeys = new Set(
+              match.crossIntersections.map(i => `${i.row},${i.col}`),
+            );
+            const nonIntersection = match.tiles.filter(
+              t => !intersectionKeys.has(`${t.row},${t.col}`),
+            );
+            if (nonIntersection.length > 0) {
+              const exPos = this.pickSpawnPosition(nonIntersection, swapTarget);
+              board.spawnSpecialTile(exPos.row, exPos.col, match.tileType, 'explosive');
+            }
           } else {
             board.spawnSpecialTile(inter.row, inter.col, match.tileType, 'explosive');
           }
@@ -234,14 +245,14 @@ export class CascadeResolver {
   }
 
   /**
-   * Prairie Fire spread: after each swap, each prairie_fire tile on the board
-   * has a 1-in-3 chance to convert 1 random adjacent tile into prairie_fire.
+   * Prairie Fire spread: once per turn at end of player turn, each prairie_fire tile
+   * on the board has a 1-in-4 chance to convert 1 random adjacent tile into prairie_fire.
    * Adjacency includes diagonals (8-way).
    */
   applyFireSpread(board: Board): boolean {
     const grid = board.getGrid();
     const size = board.getBoardSize();
-    const SPREAD_CHANCE = 1 / 3;
+    const SPREAD_CHANCE = 1 / 4;
     let spread = false;
     const directions = [
       { dr: -1, dc: -1 }, { dr: -1, dc: 0 }, { dr: -1, dc: 1 },

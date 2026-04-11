@@ -998,7 +998,7 @@ export class Board {
     }
   }
 
-  /** Prairie Fire spread: each prairie_fire tile has a 1-in-3 chance to convert 1 adjacent tile. Returns true if any spread. */
+  /** Prairie Fire spread: each prairie_fire tile has a 1-in-4 chance to convert 1 adjacent tile. Returns true if any spread. */
   spreadPrairieFire(): boolean {
     return this.cascadeResolver.applyFireSpread(this);
   }

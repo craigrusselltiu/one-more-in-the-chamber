@@ -23,7 +23,7 @@ export const KEYWORDS: Record<string, KeywordDefinition> = {
   },
   Vulnerable: {
     color: '#C070D0',
-    description: 'Take 50% extra damage from attacks. Decrease stacks by 1 at the end of the turn.',
+    description: 'Take 20% extra damage from attacks. Decrease stacks by 1 at the end of the turn.',
   },
   Rageful: {
     color: '#D04040',

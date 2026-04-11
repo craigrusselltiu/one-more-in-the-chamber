@@ -4,6 +4,24 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## v0.6.1
+
+### Added
+- Cross/L/T match that also contains a 5-in-a-line run now spawns BOTH a Showdown tile (at the intersection) and an Explosive tile (on the line)
+
+### Changed
+- Boss reward artifacts are now restricted to Rare (25%) or Legendary (75%); commons and uncommons no longer appear after a boss fight
+- Prairie Fire: spread now triggers once per turn (was: after each swap), 1-in-4 chance (was: 1-in-3)
+- Vulnerable: now grants +20% damage taken (was: +50%)
+- Ability meter positioned slightly lower during combat
+- Corrupt Deputy now uses its own sprite instead of reusing the bandit sprite
+
+### Fixed
+- Hardened damage cap now correctly applies after Vulnerable (was: before, letting Vulnerable push damage above the cap)
+- Crit floating numbers on enemies now show actual HP lost instead of pre-cap damage
+- Pierce (Rattler, Rust's Cylinder finisher) now only bypasses block — still respects Vulnerable, Hardened, and Grace (was: ignored all defensive layers)
+- Hint effect on buried tiles no longer reveals the hidden tile sprite — shows the sand outline instead
+
 ## v0.6.0
 
 ### Added
