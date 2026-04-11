@@ -58,6 +58,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 - Tumbleweed Golem's tile transform now resolves any matches it creates (with full cascade chains)
 - Gillie Suit only triggers on a 5+ in-a-line match — crosses/L/T shapes with 5+ total tiles no longer count
 - Mine Cart: fuse now explodes immediately when it hits 0 (was delayed by one turn). Fuse also ticks at end of player turn instead of start, so the countdown display correctly shows 5 on turn 1.
+- Mine Cart: intent countdown now reads from the mine cart's fuse value directly and always shows "IN N" down to 1 (was off-by-one from the Fuse icon and disappeared entirely on the final turn, making it look like the countdown had stopped)
 - Copperhead Cassidy: heal move now self-applies 2 Vulnerable if there are no poison tiles on the board to clear (previously wasted the move)
 - Charcoal tile is now correctly filtered out of the merchant's "swap a tile" offer; it's no longer offered as a swap target or a swap source
 - Chain status tooltip wording updated to "Your Chain tiles gain 1 extra damage per stack."

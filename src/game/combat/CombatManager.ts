@@ -671,9 +671,9 @@ export class CombatManager {
     // Announce enemy intents for this turn
     for (const enemy of this.aliveEnemies()) {
       if (this.isTimedEnemy(enemy)) {
-        // Timed enemies show countdown instead of a real attack intent
-        const turnsLeft = this.turnLimit - this.turnNumber;
-        enemy.state.intent = chooseMineCartTimedIntent(turnsLeft, this.timedFailureDamage);
+        // Timed enemies show countdown based on the mine cart's current fuse
+        // (kept in sync with the Fuse status icon). Both tick at end of turn.
+        enemy.state.intent = chooseMineCartTimedIntent(enemy.state.fuse, this.timedFailureDamage);
       } else {
         const allies = this.aliveEnemies().filter(e => e !== enemy);
         const allyInjured = allies.some(e => e.state.health < e.state.maxHealth);
@@ -2018,7 +2018,7 @@ export class CombatManager {
           }
         }
       }
-      if (fuseTicked) this.emitEnemyHpChanges();
+      if (fuseTicked) this.emitFullState();
     }
 
     if (this.isCombatOver()) {
