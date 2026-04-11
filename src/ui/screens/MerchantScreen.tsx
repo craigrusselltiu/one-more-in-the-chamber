@@ -116,7 +116,7 @@ export const MerchantScreen = memo(function MerchantScreen() {
     const tiles: MerchantItem[] = [];
     const snapTileTypes = snapshot.activeTileTypes;
     const swappableTiles = snapTileTypes.filter(
-      (t) => t !== 'tumbleweed' && t !== 'showdown' && t !== 'fools_gold',
+      (t) => t !== 'tumbleweed' && t !== 'showdown' && t !== 'fools_gold' && t !== 'charcoal',
     );
     if (swappableTiles.length > 0) {
       const available = [...STARTER_POOL, ...ADDITIONAL_POOL].filter((t) => !snapTileTypes.includes(t));
@@ -155,7 +155,7 @@ export const MerchantScreen = memo(function MerchantScreen() {
   const swappableTiles = useMemo(() => {
     if (!run) return [];
     return run.activeTileTypes.filter(
-      (t) => t !== 'tumbleweed' && t !== 'showdown' && t !== 'fools_gold',
+      (t) => t !== 'tumbleweed' && t !== 'showdown' && t !== 'fools_gold' && t !== 'charcoal',
     );
   }, [run]);
 

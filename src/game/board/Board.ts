@@ -423,11 +423,6 @@ export class Board {
       return { valid: false, matches: [] };
     }
 
-    // Charcoal tiles are immovable — can't be swapped out for another tile
-    if (tileA.type === 'charcoal' || tileB.type === 'charcoal') {
-      return { valid: false, matches: [] };
-    }
-
     // Special combo swaps between showdown and/or explosive tiles
     const aShowdown = tileA.isShowdown || tileA.type === 'showdown';
     const bShowdown = tileB.isShowdown || tileB.type === 'showdown';

@@ -51,7 +51,7 @@ export const KEYWORDS: Record<string, KeywordDefinition> = {
   },
   Chain: {
     color: '#A08040',
-    description: 'Gain 1 extra damage per Chain tile per stack.',
+    description: 'Your Chain tiles gain 1 extra damage per stack.',
   },
   Ready: {
     color: '#D4A030',

@@ -10,7 +10,7 @@ Bullet tiles - Bullet, .50 Cal, Buckshot, and Ricochet
 - Grace - Negate the next instance of damage taken.
 - Resourceful - Double all non-damage resources this turn. Decrease stacks by 1 at the end of the turn.
 - Ready - Your next non-cascade attack deals 50% more damage. (max 1)
-- Chain - Gain 1 extra damage per Chain tile per stack.
+- Chain - Your Chain tiles gain 1 extra damage per stack.
 - Thorns - When attacked, deal damage back equal to the number of stacks. Clear at the end of the turn.
 - Cloak - Cascade damage is nullified. Decrease stacks by 1 at the end of the turn.
 - Hardened - All damage taken is reduced to the number of Hardened stacks.

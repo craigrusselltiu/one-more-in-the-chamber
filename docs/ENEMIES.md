@@ -233,7 +233,7 @@
     - Attack 16, Block 16, Apply 3 Poison
     - Multi-attack 4x<number-of-poison-tiles-on-board>
     - Attack 12, Poison 2 Tiles, Fool's Gold 8
-    - Clear all poison tiles on the board and heal 2% HP for each
+    - Clear all poison tiles on the board and heal 2% max HP for each. If none, gain 2 Vulnerable
 
 # Act 3 -- The Town
 

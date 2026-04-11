@@ -7,7 +7,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 ## v0.6.2
 
 ### Added
-- Charcoal tile: new Special-pool tile. On match deals 1 damage + gains 1 block (flat per match). Cannot be swapped out, cannot be upgraded. Flavor: "A piece of charcoal. Somehow makes Fire-type moves more— wrong game."
+- Charcoal tile: new Special-pool tile. On match deals 1 damage + gains 1 block (flat per match). Cannot be swapped out at the merchant, cannot be upgraded. Flavor: "A piece of charcoal. Somehow makes Fire-type moves more— wrong game."
 - Ascension system reworked into discrete per-level mutations (L1–L20, cumulative). Old global HP/damage/gold/price multipliers are gone. Active levels: L1 (+2 elites per act), L2/3/4 (+10% damage to normals/elites/bosses), L5 (80% inter-act heal), L6 (start at 90% HP), L7/8/9 (+10% HP to normals/elites/bosses), L10 (extra Charcoal in deck), L11 (−1 consumable slot), L12 (upgraded reward tiles appear less often), L13 (10% less gold), L14 (5% less max HP), L15 (legendary weight 3→1), L16 (10% shop markup), L20 (Act 3 final boss spawns with a random Act 3 elite companion). L17/18/19 are no-ops pending new enemy abilities.
 - Outlaw King now guarantees a Legendary artifact drop on defeat (routed through ArtifactScreen even from a normal combat node)
 - Character Select screen redesign:
@@ -55,6 +55,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 - Deadeye: after the post-shot cascade settles, the board is now reshuffled if no valid swaps remain (cross/L/T explosions could previously leave the board un-swappable)
 - Tumbleweed Golem's tile transform now resolves any matches it creates (with full cascade chains)
 - Gillie Suit only triggers on a 5+ in-a-line match — crosses/L/T shapes with 5+ total tiles no longer count
+- Mine Cart: fuse now explodes immediately when it hits 0 (was delayed by one turn). Fuse also ticks at end of player turn instead of start, so the countdown display correctly shows 5 on turn 1.
+- Copperhead Cassidy: heal move now self-applies 2 Vulnerable if there are no poison tiles on the board to clear (previously wasted the move)
+- Charcoal tile is now correctly filtered out of the merchant's "swap a tile" offer; it's no longer offered as a swap target or a swap source
+- Chain status tooltip wording updated to "Your Chain tiles gain 1 extra damage per stack."
 
 ## v0.6.1
 

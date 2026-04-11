@@ -597,12 +597,9 @@ export class CombatManager {
 
     this.turnNumber++;
 
-    // Tick fuse on timed enemies
-    for (const enemy of this.aliveEnemies()) {
-      if (enemy.state.fuse > 0) enemy.state.fuse--;
-    }
-
-    // Timed encounter: if turn limit exceeded, apply failure damage and end
+    // Safety net: if the turn limit has been exceeded and the timed enemy
+    // somehow survived the end-of-turn fuse check (e.g. snapshot restore
+    // edge case), resolve the failure here.
     if (this.turnLimit > 0 && this.turnNumber > this.turnLimit) {
       this.resolveTimedEncounterFailure();
       return;
@@ -2007,6 +2004,23 @@ export class CombatManager {
       }
     }
 
+    // Tick fuse on timed enemies (Mine Cart). If any fuse hits 0 after the
+    // player's turn, explode immediately — don't wait for the next turn start.
+    if (!this.isCombatOver()) {
+      let fuseTicked = false;
+      for (const enemy of this.aliveEnemies()) {
+        if (this.isTimedEnemy(enemy) && enemy.state.fuse > 0) {
+          enemy.state.fuse--;
+          fuseTicked = true;
+          if (enemy.state.fuse === 0) {
+            this.resolveTimedEncounterFailure();
+            return;
+          }
+        }
+      }
+      if (fuseTicked) this.emitEnemyHpChanges();
+    }
+
     if (this.isCombatOver()) {
       this.endCombat();
       return;
@@ -2227,9 +2241,16 @@ export class CombatManager {
         break;
       case 'heal': {
         let healAmount = ma.value;
-        // Copperhead: clear all poison tiles and heal 2% HP per tile cleared
+        // Copperhead: clear all poison tiles and heal 2% max HP per tile cleared.
+        // If there are no poison tiles on the board, she gains 2 Vulnerable on herself instead.
         if (enemy.getDefinition().type === 'copperhead_cassidy' && ma.value === 0) {
           const poisonCleared = this.hazardManager.clearAllOfType('poison');
+          if (poisonCleared.length === 0) {
+            enemy.addVulnerable(2);
+            this.floatOnEnemy(enemy, '+2 VULNERABLE', '#C070D0', 9);
+            EventBus.emit(GameEvent.ENEMY_HP_CHANGE, { ...enemy.state });
+            break;
+          }
           healAmount = Math.round(enemy.state.maxHealth * 0.02 * poisonCleared.length);
         }
         if (healAmount > 0) {
