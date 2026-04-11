@@ -196,7 +196,7 @@ export class Board {
   private hintTimer = 0;
   private hintTriggered = false;
   private hintCachedPos: GridPosition | null = null;
-  private static readonly HINT_INTERVAL = 15000; // 15 seconds
+  private static readonly HINT_INTERVAL = 10000; // 10 seconds
   private static readonly HINT_BREATHE_DURATION = 1500; // how long the hint breathes
   /** Whether shuffle hold mode is active (clicks toggle hold). */
   private shuffleHoldMode = false;
@@ -420,6 +420,11 @@ export class Board {
     const aLock = tileA.hazard?.type === 'lock';
     const bLock = tileB.hazard?.type === 'lock';
     if (aLock || bLock) {
+      return { valid: false, matches: [] };
+    }
+
+    // Charcoal tiles are immovable — can't be swapped out for another tile
+    if (tileA.type === 'charcoal' || tileB.type === 'charcoal') {
       return { valid: false, matches: [] };
     }
 

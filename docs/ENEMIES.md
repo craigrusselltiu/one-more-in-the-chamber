@@ -30,17 +30,16 @@
 ## Normal Enemies Pool
 
 ### Bandit
-- Base HP: 42
+- Base HP: 48
 - Moves:
     - Attack 12, Lock 3
     - Multi-attack 6x2
     - Attack 6, Block 12
     - Gain 2 Rageful
-    - Summon 1 Bandit
 - NOTE: If dropped below 50% HP, will try to block.
 
 ### Coyote
-- Base HP: 32
+- Base HP: 37
 - Moves:
     - Attack 7
     - Attack 5, Gain 2 Rageful
@@ -49,16 +48,16 @@
 - NOTE: If alone, always summons.
 
 ### Rattlesnake
-- Base HP: 37
+- Base HP: 43
 - Start of fight: Poison 3 Tiles
 - Moves:
     - Attack 11, Apply 2 Poison
-    - Attack 5, Poison 3 Tiles
-    - Block 8
-    - Poison 5 Tiles
+    - Attack 5, Poison 2 Tiles
+    - Attack 6, Block 8
+    - Poison 4 Tiles
 
 ### Vulture
-- Base HP: 28
+- Base HP: 32
 - Moves:
     - Attack 8, Apply 1 Terrified
     - Multi-attack 2x3, Bury 3
@@ -66,46 +65,46 @@
     - Heal 6
 
 ### Pack Mule
-- Base HP: 64
+- Base HP: 66
 - Moves:
     - Attack 12
-    - Attack 9, Block 8
-    - Bomb 1, Bury 3
-    - Heal 8
+    - Multi-attack 4x2, Block 8
+    - Attack 5, Bomb 1, Bury 3
+    - Heal 7
 
 ## Elite Enemies Pool
 
 ### Tumbleweed Golem
-- Base HP: 84
-- Start of fight: Lock 1 row and 1 column
+- Base HP: 109
+- Start of fight: Lock 1 row and 1 column, Gain 1 Cloak
 - Moves:
-    - Attack 14, Lock 1 row
-    - Multi-attack 4x3, Block 5, Lock 3
-    - Gain 2 Thorns, Transform 5 tiles into Tumbleweeds
-    - Summon 1 Coyote
+    - Attack 18, Lock 1 row
+    - Multi-attack 4x4, Lock 4
+    - Block 12, Gain 4 Thorns, Transform 5 tiles into Tumbleweeds
+    - Block 20, Summon 1 Coyote
 
 ### Dust Devil
-- Base HP: 72
-- When HP drops below 50%, gain 4 Rageful. its next move should be Multi-attack 2x4
-- Start of fight: Bury 8, Gain 1 Cloak
+- Base HP: 94
+- When HP drops below 50%, gain 2 Rageful. its next move should be Multi-attack 1x6
+- Start of fight: Bury 8
 - Moves:
-    - Attack 13, Bury 3
-    - Suppress 1, Bury 3
-    - Attack 10, Shuffle bottom 2 rows
-    - Multi-attack 3x3, Shuffle top 2 rows
+    - Attack 15, Bury 3
+    - Attack 7, Suppress 1, Bury 3
+    - Attack 11, Bury 5, Shuffle bottom 2 rows
+    - Multi-attack 4x3, Shuffle top 2 rows
 - NOTE: use same logic as dust devil boots for shuffling
 
 ## Outlaw King
 
 ### Outlaw King (Act 1)
-- Base HP: 126
-- Starts with 1 Coyote (summoned)
+- Base HP: 184
+- Starts with 2 Coyote (summoned)
 - Start of fight: Apply 2 Terrified, Gain 1 Cloak, Gain 1 Dead Man Walking
 - Moves:
-    - Attack 10, Block 8
+    - Attack 19, Block 12
     - Multi-attack 5x3, Gain 2 Rageful
-    - Block 12
-    - Attack 18
+    - Block 23, Gain 1 Cloak
+    - Attack 22
 
 ## Early Normal Encounters
 - 1 Coyote
@@ -113,7 +112,7 @@
 - 2 Vultures
 
 ## Late Normal Encounters
-- 1 Coyote, 2 Summoned Coyotes
+- 2 Coyote, 1 Summoned Coyotes
 - 3 Vultures
 - 1 Pack Mule
 - Any 2 Normal Enemy (except Pack Mule)
@@ -121,12 +120,12 @@
 ## Bosses
 
 ### "Dusty" Dan McGraw
-- Base HP: 188
+- Base HP: 244
 - Moves:
-    - Gravity Shift, Attack 14, Block 12
-    - Gravity Shift, Summon 1 Bandit
-    - Gravity Shift, Lock 1 row
-    - Gravity Shift, Lock 1 column
+    - Gravity Shift, Attack 12, Block 12
+    - Gravity Shift, Attack 9x2, Lock 1 row
+    - Gravity Shift, Attack 17, Lock 1 column
+    - Gravity Shift, Gain 18 block, Suppress 3
 - NOTE: The first move he does is always Summon 1 Bandit and Summon 1 Coyote
 
 # Act 2 -- The Canyon
@@ -134,80 +133,81 @@
 ## Normal Enemies Pool
 
 ### Powder Monkey
-- Base HP: 53
-- Start of fight: Bomb 1
+- Base HP: 67
+- Start of fight: Bomb 2
 - Moves:
-    - Attack 11, Bomb 1
-    - Multi-attack 3x3
-    - Bomb 2
-    - Bomb 1, Bury 3
+    - Attack 12, Bomb 2
+    - Multi-attack 3x5
+    - Bomb 5
+    - Attack 8, Bomb 2, Bury 3
 
 ### Mining Canary
-- Base HP: 37
+- Base HP: 49
 - Moves:
-    - Attack 7, Lock 2
-    - Attack 2x3, Bury 2
-    - Lock 3
+    - Attack 10, Lock 2
+    - Attack 4x3, Bury 4
+    - Attack 3, Lock 5
 
 ### Tunnel Rat
-- Base HP: 68
+- Base HP: 84
 - Start of fight: Bury 3
 - Moves:
-    - Attack 12, Bury 2
-    - Attack 8, Heal 6
-    - Block 8, Bury 3
+    - Attack 14, Bury 2
+    - Attack 12, Heal 7
+    - Block 14, Bury 5
     - Summon 1 Tunnel Rat
-- NOTE: The first move he does is always Block 8, Bury 3
+- NOTE: The first move he does is always Attack 14, Bury 2
 
 ### Prospector Gone Mad
-- Base HP: 73
+- Base HP: 104
+- Start of fight: Gain 5 Rageful
 - Moves:
-    - Attack 14, Bomb 1
-    - Gain 5 Rageful
-    - Attack 12, Bomb 2
-    - Bomb 3, Block 8
+    - Attack 16, Bomb 3
+    - Bomb 5, Gain 3 Rageful
+    - Attack 12, Block 10, Bomb 2
+    - Attack 23
 
 ## Elite Enemies Pool
 
 ### Mine Foreman
-- Base HP: 123
+- Base HP: 160
 - Moves:
-    - Attack 10, Lock 5, Bury 5
-    - Attack 12, Suppress 1, Block 6
-    - Multi-attack 3x3, Suppress 1
-    - Block 11, Lock 1 row
+    - Attack 20, Lock 5, Bury 5
+    - Attack 24, Suppress 1, Block 12
+    - Multi-attack 6x3, Suppress 1
+    - Block 22, Lock 1 row
 
 ### Ore Golem
-- Base HP: 145
+- Base HP: 189
 - Start of fight: Gain 15 Hardened
 - Moves:
-    - Attack 15
-    - Block 20
-    - Multi-attack 5x3
-    - Attack 5, Gain 3 Rageful
-    - Summon 1 Prospector Gone Mad
+    - Attack 28
+    - Block 30
+    - Multi-attack 8x3
+    - Attack 12, Gain 3 Rageful
+    - Attack 6, Block 14, Summon 1 Prospector Gone Mad
 - NOTE: The first move he does is always Summon 1 Prospector Gone Mad
 
 ### Mine Cart
-- Base HP: 194
+- Base HP: 252
 - Start of fight: Gain 5 Fuse. 5 turns to destroy. Deals 50 damage on failure.
 - Moves:
-    - Bomb 1, Lock 4
-    - Bomb 2, Lock 2
-    - Bomb 3
-    - Block 10, Bomb 1, Lock 2
+    - Bomb 5, Lock 4
+    - Bomb 7, Lock 2
+    - Bomb 9
+    - Block 20, Bomb 3, Lock 1 row
 
 ## Outlaw King
 
 ### Outlaw King (Act 2)
-- Base HP: 196
-- Starts with 2 Coyotes (summoned)
-- Start of fight: Apply 2 Terrified, Gain 1 Cloak, Gain 1 Dead Man Walking
+- Base HP: 255
+- Starts with 2 Coyotes (with full HP, not 1/3)
+- Start of fight: Apply 3 Terrified, Gain 1 Cloak, Gain 1 Dead Man Walking
 - Moves:
-    - Attack 12, Block 8
+    - Attack 24, Block 18
     - Multi-attack 6x3, Gain 2 Rageful
-    - Block 14
-    - Attack 20
+    - Block 34, Gain 1 Cloak
+    - Attack 31
 
 ## Early Normal Encounters
 - 1 Prospector Gone Mad
@@ -224,15 +224,15 @@
 ## Bosses
 
 ### "Copperhead" Cassidy
-- Base HP: 260
-- Starts with 1 Rattlesnake (with full HP, not 1/3)
-- Start of fight: Poison 4 Tiles, Starts with 1 Rattlesnake
+- Base HP: 338
+- Starts with 2 Rattlesnake (not summoned)
+- Start of fight: Poison 4 Tiles
 - When HP drops below 50%, clear ALL statuses, and should show a float text "SHED SKIN", then locks all tiles on the edge of the board.
 - Moves:
-    - Attack 17, Poison 4 Tiles
-    - Block 8, Apply 3 Poison
-    - Multi-attack 3x<number-of-poison-tiles-on-board>
-    - Attack 12, Poison 2 Tiles, Fool's Gold 5
+    - Attack 24, Poison 4 Tiles
+    - Attack 16, Block 16, Apply 3 Poison
+    - Multi-attack 4x<number-of-poison-tiles-on-board>
+    - Attack 12, Poison 2 Tiles, Fool's Gold 8
     - Clear all poison tiles on the board and heal 2% HP for each
 
 # Act 3 -- The Town
@@ -240,47 +240,47 @@
 ## Normal Enemies Pool
 
 ### Train Guard
-- Base HP: 88
+- Base HP: 111
 - Start of fight: Lock 1 column
 - Moves:
-    - Attack 16, Lock 2
-    - Multi-attack 4x4, Lock 4
-    - Attack 4, Block 6, Apply 2 Vulnerable
-    - Lock 1 row, Block 10
+    - Attack 18, Lock 1 row
+    - Multi-attack 5x4, Lock 4
+    - Attack 12, Block 14, Apply 2 Vulnerable
+    - Block 30, Gain 5 Thorns, Lock 1 row
+- NOTE: The first move he does is always Block 30, Lock 1 row
 
 ### Hellfire Preacher
-- Base HP: 76
-- Start of fight: Gain 3 Grace
+- Base HP: 97
+- Start of fight: Gain 5 Grace
 - Moves:
-    - Multi-attack 3x2, Block 6, Apply 1 Terrified
-    - Attack 16, Heal 6
-    - Heal 14, Bomb 2
-    - Bomb 6
-    - Heal 12 to another enemy (will do next when another enemy is not full health)
+    - Multi-attack 4x2, Block 16, Apply 1 Terrified
+    - Attack 16, Heal 18
+    - Attack 12, Bomb 8
+    - Block 26, Heal 24 to another enemy (will do next when another enemy is not full health)
 
 ### Hangman
-- Base HP: 138
-- Start of fight: Apply 1 Terrified
+- Base HP: 159
+- Start of fight: Apply 4 Terrified
 - Moves:
-    - Lock 2, Suppress 2
-    - Attack 8, Apply 3 Vulnerable
-    - Block 18, Gain 2 Rageful
-    - Attack 20, Gain 2 Vulnerable (the vulnerable is applied to Hangman here)
+    - Lock 7, Suppress 2
+    - Attack 18, Apply 3 Vulnerable
+    - Block 18, Gain 8 Rageful
+    - Attack 34, Gain 2 Vulnerable (the vulnerable is applied to Hangman here)
 - NOTE: This enemy always goes down the movelist in order exactly from the top, then repeats.
 
 ### Corrupt Deputy
-- Base HP: 120
+- Base HP: 138
 - Moves:
     - Attack 13, Lock 5
     - Attack 11, Suppress 1
     - Multi-attack 6x3, Lock 1
     - Block 14, Lock 5
-    - Summon 2 Bandits (from act 1)
+    - Summon 2 Bandits (with full HP, not 1/3)
 
 ## Elite Enemies Pool
 
 ### Saloon Brawler
-- Base HP: 220
+- Base HP: 286
 - Moves:
     - Multi-attack 2x6
     - Multi-attack 4x2, Gain 2 Rageful
@@ -288,7 +288,7 @@
     - Attack 5x3
 
 ### Sheriff's Shadow
-- Base HP: 213
+- Base HP: 277
 - Start of fight: Gain 30 block
 - Moves:
     - Attack 12, Block 12, Suppress 1
@@ -299,29 +299,28 @@
 ## Outlaw King
 
 ### Outlaw King  (Act 3)
-- Base HP: 288
-- Starts with 2 Coyotes (with full HP, not 1/3)
-- Start of fight: Apply 2 Terrified, Gain 1 Cloak, Gain 1 Dead Man Walking
+- Base HP: 374
+- Starts with 2 Bandits (with full HP, not 1/3)
+- Start of fight: Apply 4 Terrified, Gain 2 Cloak, Gain 1 Dead Man Walking
 - Moves:
-    - Attack 15, Block 8
-    - Multi-attack 7x3, Gain 2 Rageful
-    - Block 16
-    - Attack 24
+    - Attack 30, Block 24
+    - Multi-attack 9x3, Gain 5 Rageful
+    - Block 42, Gain 1 Cloak
+    - Attack 37
 
 ## Early Normal Encounters
 - 1 Train Guard
 - 1 Hellfire Preacher
 - 1 Corrupt Deputy
+- 1 Hangman
 
 ## Late Normal Encounters
-- 1 Hangman
-- 1 Corrupt Deputy, 1 Coyote
-- Any 2 Normal Enemy (except Hangman and Corrupt Deputy)
+- Any 2 Normal Enemy (Can't both be Hangman or Corrupt Deputy)
 
 ## Bosses
 
 ### "Iron Eye" Isabella
-- Base HP: 320
+- Base HP: 416
 - Start of fight: Lock 2 rows
 - When HP drops below 50%, Gain 5 Rageful, 30 Block, 1 Barricade, 1 Cloak, 1 Grace, Apply 3 Terrified. sprite changes to ironeye_alt
 - Moves:

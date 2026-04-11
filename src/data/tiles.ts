@@ -34,6 +34,7 @@ export const TILE_COLORS: Record<TileType, string> = {
   showdown: '#FF00FF',
   tumbleweed: '#8B7355',
   fools_gold: '#FFD700',
+  charcoal: '#2F2F2F',
 };
 
 /** Tile definitions with base values. */
@@ -135,10 +136,10 @@ export const TILE_DEFINITIONS: Record<TileType, TileDefinition> = {
     label: 'Buckshot',
     abbreviation: 'Bk',
     color: TILE_COLORS.buckshot,
-    baseValue: 1,
+    baseValue: 2,
     upgradeValue: 1,
     pool: 'starter',
-    description: 'Each tile deals 1 damage to a random enemy.',
+    description: 'Each tile deals 2 damage to a random enemy.',
     flavor: 'Spread shot. Hits harder, less precise.',
     upgradeText: '+1 damage per tile per level',
   },
@@ -394,6 +395,17 @@ export const TILE_DEFINITIONS: Record<TileType, TileDefinition> = {
     pool: 'special',
     description: "Looks like Gold but generates nothing. Can match with regular Gold tiles. Reveals when matched.",
     flavor: 'All that glitters.',
+  },
+  charcoal: {
+    type: 'charcoal',
+    label: 'Charcoal',
+    abbreviation: 'Ch',
+    color: TILE_COLORS.charcoal,
+    baseValue: 1,
+    upgradeValue: 0,
+    pool: 'special',
+    description: 'On match, deal 1 damage and gain 1 block. Cannot be upgraded or swapped out for another tile.',
+    flavor: 'A piece of charcoal. Somehow makes Fire-type moves more— wrong game.',
   },
 };
 

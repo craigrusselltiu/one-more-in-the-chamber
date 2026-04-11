@@ -7,9 +7,15 @@ import { TILE_FRAMES } from '../../data/spriteConfig';
 import { SpriteIcon } from '../components/SpriteIcon';
 import { Tooltip } from '../components/Tooltip';
 import { createSeededRandom, seededShuffle } from '../../utils/seededRandom';
+import { rollTileRewardLevel } from '../../utils/tileRewardLevel';
 
 import type { TileType } from '../../types/game';
 import type { Screen } from '../../App';
+
+interface OfferedTile {
+  type: TileType;
+  level: number;
+}
 
 /**
  * TileSelectScreen: Choose a tile at run start (1 of 3 from starter pool)
@@ -26,10 +32,15 @@ export const TileSelectScreen = memo(function TileSelectScreen() {
   const isBossReward = !isStarterSelection;
   const pool = isStarterSelection ? STARTER_POOL : ADDITIONAL_POOL;
 
-  // Pick 3 random tiles from pool (excluding already-owned).
+  // Between-act selections roll levels for the next act's distribution.
+  // Starter selection is always level 0.
+  const targetAct = isBossReward ? (run?.currentAct ?? 1) + 1 : 1;
+  const ascLevel = run?.ascensionLevel ?? 0;
+
+  // Pick 3 random tiles from pool (excluding already-owned) with rolled levels.
   // Lock the offered tiles once generated so they don't re-roll when run state changes.
-  const lockedRef = useRef<TileType[] | null>(null);
-  const offered = useMemo(() => {
+  const lockedRef = useRef<OfferedTile[] | null>(null);
+  const offered: OfferedTile[] = useMemo(() => {
     if (lockedRef.current) return lockedRef.current;
     const owned = run?.activeTileTypes ?? [];
     let available = pool.filter((t) => !owned.includes(t));
@@ -40,7 +51,10 @@ export const TileSelectScreen = memo(function TileSelectScreen() {
     }
     const rand = createSeededRandom(`${run?.seed ?? ''}-tileselect-${run?.currentAct ?? 1}-${owned.length}`);
     const shuffled = seededShuffle(available, rand);
-    const result = shuffled.slice(0, 3);
+    const result: OfferedTile[] = shuffled.slice(0, 3).map((type) => ({
+      type,
+      level: rollTileRewardLevel(targetAct, ascLevel, rand),
+    }));
     lockedRef.current = result;
     return result;
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -52,8 +66,9 @@ export const TileSelectScreen = memo(function TileSelectScreen() {
     if (!selected) return;
 
     addTileType(selected);
-    // Tiles chosen in Act 3 start at Lv 2
-    if (run?.currentAct === 3) setTileUpgrade(selected, 1);
+    // Persist the rolled level if the offered card had one.
+    const picked = offered.find((t) => t.type === selected);
+    if (picked && picked.level > 0) setTileUpgrade(selected, picked.level);
     if (isBossReward) advanceAct();
     EventBus.emit(GameEvent.SCREEN_CHANGE, 'map' satisfies Screen);
   };
@@ -67,7 +82,7 @@ export const TileSelectScreen = memo(function TileSelectScreen() {
 
       {/* Tile cards */}
       <div className="flex gap-3">
-        {offered.map((tileType) => {
+        {offered.map(({ type: tileType, level }) => {
           const def = TILE_DEFINITIONS[tileType];
           const isSelected = selected === tileType;
           const upgradeTooltip = def.upgradeText ? (
@@ -94,11 +109,16 @@ export const TileSelectScreen = memo(function TileSelectScreen() {
                 }}
               >
                 <SpriteIcon frame={TILE_FRAMES[tileType]} scale={2} className="mb-1.5" />
-                <span className="text-amber-300 text-xs font-bold">
-                  {def.label}
-                </span>
+                <div className="flex items-center gap-1.5">
+                  <span className="text-amber-300 text-xs font-bold">
+                    {def.label}
+                  </span>
+                  <span className="text-yellow-400 font-bold" style={{ fontSize: '8px' }}>
+                    Lv {level + 1}
+                  </span>
+                </div>
                 <span className="text-stone-300 text-center mt-1 leading-tight" style={{ fontSize: '9px' }}>
-                  {buildTileDescription(tileType, 0)}
+                  {buildTileDescription(tileType, level)}
                 </span>
                 {def.flavor && (
                   <span className={`${isSelected ? 'text-stone-500' : 'text-stone-600'} text-center mt-1 leading-tight italic`} style={{ fontSize: '8px' }}>

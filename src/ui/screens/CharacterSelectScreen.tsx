@@ -2,11 +2,15 @@ import { memo, useState } from 'react';
 import { EventBus, GameEvent } from '../../game/EventBus';
 import { useRunStore } from '../../store/runStore';
 import { useMetaStore } from '../../store/metaStore';
-import { getAscensionModifiers } from '../../data/ascension';
 import { SpriteIcon } from '../components/SpriteIcon';
-import { UI_FRAMES } from '../../data/spriteConfig';
+import { Tooltip } from '../components/Tooltip';
+import { UI_FRAMES, ARTIFACT_FRAMES, TILE_FRAMES } from '../../data/spriteConfig';
+import { ARTIFACTS, RARITY_BREATHE_CLASS } from '../../data/artifacts';
+import { TILE_DEFINITIONS } from '../../data/tiles';
+import { KEYWORDS } from '../../data/keywords';
+import { colorizeKeywords, KeywordSubTooltips, getReferencedKeywords, buildTileDescription } from '../components/KeywordText';
 
-import type { CharacterId } from '../../types/game';
+import type { CharacterId, TileType } from '../../types/game';
 import type { Screen } from '../../App';
 
 const MAX_ASCENSION = 20;
@@ -20,6 +24,8 @@ interface CharacterInfo {
   abilityDescription: string;
   sprite: string;
   bg: string;
+  exclusiveArtifactId: string;
+  exclusiveTileType: TileType;
 }
 
 const CHARACTERS: CharacterInfo[] = [
@@ -33,6 +39,8 @@ const CHARACTERS: CharacterInfo[] = [
       'Shoot any 3 tiles on the board. Each tile destroyed generates its resources.',
     sprite: 'rust.png',
     bg: 'backgrounds/rust_bg.png',
+    exclusiveArtifactId: 'bamboo_canteen',
+    exclusiveTileType: 'bounty',
   },
   {
     id: 'reno',
@@ -44,6 +52,8 @@ const CHARACTERS: CharacterInfo[] = [
       'Shuffle the board.',
     sprite: 'reno.png',
     bg: 'backgrounds/reno_bg.png',
+    exclusiveArtifactId: 'rigged_deck',
+    exclusiveTileType: 'chip',
   },
 ];
 
@@ -170,19 +180,29 @@ export const CharacterSelectScreen = memo(function CharacterSelectScreen() {
         >
           {char.abilityDescription}
         </span>
+        <ExclusiveRow artifactId={char.exclusiveArtifactId} tileType={char.exclusiveTileType} />
       </div>
 
-      {/* Settings panel - bottom left */}
-      <div
-        className="absolute bottom-4 left-4 flex flex-col gap-3"
-        style={{
-          backgroundColor: 'rgba(20, 16, 12, 0.75)',
-          border: '1px solid #44403c',
-          borderRadius: 4,
-          padding: '10px 14px',
-          minWidth: 240,
-        }}
-      >
+      {/* Seed input - bottom left (no background panel) */}
+      <div className="absolute bottom-6 left-4 flex items-center gap-2">
+        <span
+          className="text-stone-500 font-bold uppercase"
+          style={{ fontSize: '9px', WebkitTextStroke: '1px #000', paintOrder: 'stroke fill' }}
+        >
+          Seed
+        </span>
+        <input
+          type="text"
+          value={customSeed}
+          onChange={(e) => setCustomSeed(e.target.value)}
+          placeholder="random"
+          className="bg-stone-900/80 border border-stone-600 text-stone-300 text-xs px-2 py-1 w-32 outline-none focus:border-amber-600"
+          style={{ borderRadius: 2 }}
+        />
+      </div>
+
+      {/* Ascension + Back / Confirm - bottom right (ascension centered above buttons) */}
+      <div className="absolute bottom-6 right-4 flex flex-col items-center gap-3">
         {maxSelectable > 0 && (
           <AscensionSelector
             level={ascensionLevel}
@@ -190,37 +210,137 @@ export const CharacterSelectScreen = memo(function CharacterSelectScreen() {
             onChange={setAscensionLevel}
           />
         )}
-        <div className="flex items-center gap-2">
-          <span className="text-stone-500 text-xs font-bold uppercase" style={{ fontSize: '9px' }}>Seed</span>
-          <input
-            type="text"
-            value={customSeed}
-            onChange={(e) => setCustomSeed(e.target.value)}
-            placeholder="random"
-            className="bg-stone-900/80 border border-stone-600 text-stone-300 text-xs px-2 py-1 w-32 outline-none focus:border-amber-600"
-            style={{ borderRadius: 2 }}
-          />
+        <div className="flex gap-3">
+          <button
+            onClick={handleBack}
+            className="px-4 py-1.5 text-xs bg-stone-800/80 text-stone-400 border border-stone-700 hover:bg-stone-700/80"
+          >
+            Back
+          </button>
+          <button
+            onClick={handleConfirm}
+            className="px-5 py-1.5 text-xs bg-amber-900/60 text-amber-300 border border-amber-700 hover:bg-amber-800/60"
+          >
+            Confirm
+          </button>
         </div>
-      </div>
-
-      {/* Back / Confirm - bottom right */}
-      <div className="absolute bottom-6 right-4 flex gap-3">
-        <button
-          onClick={handleBack}
-          className="px-4 py-1.5 text-xs bg-stone-800/80 text-stone-400 border border-stone-700 hover:bg-stone-700/80"
-        >
-          Back
-        </button>
-        <button
-          onClick={handleConfirm}
-          className="px-5 py-1.5 text-xs bg-amber-900/60 text-amber-300 border border-amber-700 hover:bg-amber-800/60"
-        >
-          Confirm
-        </button>
       </div>
     </div>
   );
 });
+
+const KEYWORD_NAMES = Object.keys(KEYWORDS);
+const KEYWORD_REGEX = new RegExp(`\\b(${KEYWORD_NAMES.join('|')})\\b`, 'g');
+
+function extractArtifactKeywords(text: string): string[] {
+  const found = new Set<string>();
+  let m: RegExpExecArray | null;
+  const regex = new RegExp(KEYWORD_REGEX.source, 'g');
+  while ((m = regex.exec(text)) !== null) found.add(m[1]);
+  return [...found];
+}
+
+/** Starting artifact + exclusive tile icons with full tooltips matching the in-combat UIs. */
+function ExclusiveRow({ artifactId, tileType }: { artifactId: string; tileType: TileType }) {
+  const artDef = ARTIFACTS.find((a) => a.id === artifactId);
+  const tileDef = TILE_DEFINITIONS[tileType];
+
+  const artifactTooltip = artDef ? (
+    <div className="flex flex-col gap-0.5">
+      <div className="whitespace-nowrap" style={{ fontSize: '10px' }}>
+        <span className={RARITY_BREATHE_CLASS[artDef.rarity ?? 'common']}>{artDef.name}</span>
+      </div>
+      <div className="text-stone-200 whitespace-nowrap" style={{ fontSize: '9px' }}>{colorizeKeywords(artDef.effect)}</div>
+      {artDef.description && (
+        <div className="text-stone-500 italic whitespace-nowrap" style={{ fontSize: '8px' }}>"{artDef.description}"</div>
+      )}
+      {(() => {
+        const kws = extractArtifactKeywords(artDef.effect);
+        if (kws.length === 0) return null;
+        return (
+          <div className="flex flex-col gap-px mt-0.5 pt-0.5" style={{ borderTop: '1px solid #44403c' }}>
+            {kws.map((kw) => (
+              <div key={kw} className="whitespace-nowrap" style={{ fontSize: '8px' }}>
+                <span style={{ color: KEYWORDS[kw].color, fontWeight: 'bold' }}>{kw}</span>
+                <span className="text-stone-400"> - {KEYWORDS[kw].description}</span>
+              </div>
+            ))}
+          </div>
+        );
+      })()}
+    </div>
+  ) : undefined;
+
+  const tileTooltip = tileDef ? (
+    <div className="flex flex-col gap-0.5">
+      <div className="font-bold text-amber-400" style={{ fontSize: '10px' }}>{tileDef.label}</div>
+      <div className="text-stone-200 whitespace-nowrap" style={{ fontSize: '9px' }}>{buildTileDescription(tileType, 0)}</div>
+      {tileDef.flavor && (
+        <div className="text-stone-500 italic whitespace-nowrap" style={{ fontSize: '8px' }}>"{tileDef.flavor}"</div>
+      )}
+    </div>
+  ) : undefined;
+  const tileKeywordTooltip =
+    tileDef && getReferencedKeywords(tileDef.description).length > 0
+      ? <KeywordSubTooltips text={tileDef.description} />
+      : undefined;
+
+  return (
+    <div className="flex items-center gap-3 mt-2">
+      <div className="flex items-center gap-1">
+        <span
+          className="text-stone-400 font-bold uppercase"
+          style={{ fontSize: '8px', WebkitTextStroke: '1px #000', paintOrder: 'stroke fill' }}
+        >
+          Starting Artifact
+        </span>
+        <Tooltip content={artifactTooltip} position="top">
+          {ARTIFACT_FRAMES[artifactId] != null ? (
+            <SpriteIcon frame={ARTIFACT_FRAMES[artifactId]} scale={1} />
+          ) : (
+            <div style={{ width: 18, height: 18, backgroundColor: '#808080' }} />
+          )}
+        </Tooltip>
+      </div>
+      <div className="flex items-center gap-1">
+        <span
+          className="text-stone-400 font-bold uppercase"
+          style={{ fontSize: '8px', WebkitTextStroke: '1px #000', paintOrder: 'stroke fill' }}
+        >
+          Unique Tile
+        </span>
+        <Tooltip content={tileTooltip} secondContent={tileKeywordTooltip} position="top">
+          <SpriteIcon frame={TILE_FRAMES[tileType]} scale={1} />
+        </Tooltip>
+      </div>
+    </div>
+  );
+}
+
+/** Per-level ascension mutation descriptions (index = level, 0 = none). */
+const ASCENSION_EFFECTS: string[] = [
+  '',
+  'Elites spawn more often.',
+  'Normal enemies are deadlier.',
+  'Elites are deadlier.',
+  'Bosses are deadlier.',
+  'Heal less between acts.',
+  'Start each run with less health.',
+  'Normal enemies are tougher.',
+  'Elites are tougher.',
+  'Bosses are tougher.',
+  'Start each run with an extra Charcoal tile.',
+  'Start each run with 1 less consumable slot.',
+  'Upgraded tiles appear less often.',
+  'All enemies drop less gold.',
+  'Start with less max HP.',
+  'Legendary artifacts are less common.',
+  'Shops cost more.',
+  'Normal enemies have new abilities.',
+  'Elites have new abilities.',
+  'Bosses have new abilities.',
+  'At the end of Act 3, the final boss spawns with a random Act 3 elite.',
+];
 
 function AscensionSelector({
   level,
@@ -231,51 +351,56 @@ function AscensionSelector({
   maxLevel: number;
   onChange: (level: number) => void;
 }) {
-  const scoreMultiplier = (1.0 + 0.2 * level).toFixed(1);
-  const mods = getAscensionModifiers(level);
+  const effect = ASCENSION_EFFECTS[level] ?? '';
 
   return (
-    <div className="flex flex-col gap-1">
-      <div className="flex items-center gap-2">
-        <span className="text-stone-500 text-xs font-bold uppercase" style={{ fontSize: '9px' }}>Ascension</span>
+    <div className="flex flex-col items-center gap-1" style={{ width: 160 }}>
+      <span
+        className="text-yellow-400 text-xs font-bold uppercase tracking-wider"
+        style={{ WebkitTextStroke: '2px #000', paintOrder: 'stroke fill' }}
+      >
+        Ascension
+      </span>
+      <div className="flex items-center gap-3">
         <button
           onClick={() => onChange(Math.max(0, level - 1))}
           disabled={level <= 0}
-          className={`w-5 h-5 flex items-center justify-center text-xs border ${
-            level > 0
-              ? 'text-amber-300 border-amber-700 bg-amber-900/40 hover:bg-amber-800/50'
-              : 'text-stone-600 border-stone-700 bg-stone-800/30 cursor-not-allowed'
+          className={`text-lg font-bold leading-none ${
+            level > 0 ? 'text-amber-300 hover:text-amber-200' : 'text-stone-700 cursor-not-allowed'
           }`}
-          style={{ borderRadius: 2 }}
+          style={{ WebkitTextStroke: '2px #000', paintOrder: 'stroke fill' }}
         >
-          -
+          ←
         </button>
-        <span className="text-amber-300 text-sm w-5 text-center font-bold">
+        <span
+          className="text-amber-300 text-lg font-bold w-6 text-center"
+          style={{ WebkitTextStroke: '2px #000', paintOrder: 'stroke fill' }}
+        >
           {level}
         </span>
         <button
           onClick={() => onChange(Math.min(maxLevel, level + 1))}
           disabled={level >= maxLevel}
-          className={`w-5 h-5 flex items-center justify-center text-xs border ${
-            level < maxLevel
-              ? 'text-amber-300 border-amber-700 bg-amber-900/40 hover:bg-amber-800/50'
-              : 'text-stone-600 border-stone-700 bg-stone-800/30 cursor-not-allowed'
+          className={`text-lg font-bold leading-none ${
+            level < maxLevel ? 'text-amber-300 hover:text-amber-200' : 'text-stone-700 cursor-not-allowed'
           }`}
-          style={{ borderRadius: 2 }}
+          style={{ WebkitTextStroke: '2px #000', paintOrder: 'stroke fill' }}
         >
-          +
+          →
         </button>
-        {level > 0 && (
-          <span className="text-amber-400/70" style={{ fontSize: '9px' }}>
-            x{scoreMultiplier}
-          </span>
-        )}
       </div>
-      <div className="flex gap-2 text-stone-500" style={{ fontSize: '8px', minHeight: 12, visibility: level > 0 ? 'visible' : 'hidden' }}>
-        <span>HP +{Math.round((mods.enemyHpMultiplier - 1) * 100)}%</span>
-        <span>DMG +{Math.round((mods.enemyDamageMultiplier - 1) * 100)}%</span>
-        <span>Gold -{Math.round((1 - mods.goldMultiplier) * 100)}%</span>
-        <span>Price +{Math.round((mods.merchantPriceMultiplier - 1) * 100)}%</span>
+      {/* Fixed-size slot for the effect text: 2 lines reserved so layout never shifts */}
+      <div
+        className="w-full text-stone-400 text-center leading-tight"
+        style={{
+          fontSize: '9px',
+          height: 24,
+          visibility: level > 0 ? 'visible' : 'hidden',
+          WebkitTextStroke: '1px #000',
+          paintOrder: 'stroke fill',
+        }}
+      >
+        {effect}
       </div>
     </div>
   );

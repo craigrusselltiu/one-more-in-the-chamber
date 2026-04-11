@@ -41,11 +41,12 @@ import {
   BOSSES,
   BOSS_COMPANIONS,
   ALL_ENEMIES,
+  ACT3_ELITE,
   encounterContainsOutlawKing,
 } from './data/enemies';
 import type { EnemyDefinition } from './types/combat';
 import type { MapNodeType, Act } from './types/game';
-import { applyAscensionToEnemies, getAscensionModifiers } from './data/ascension';
+import { applyAscensionToEnemies, getAscensionMutations } from './data/ascension';
 import { createSeededRandom } from './utils/seededRandom';
 
 export type Screen =
@@ -98,7 +99,9 @@ function rollEncounter(
     const enemies: EnemyDefinition[] = [{ ...BOSSES[act] }];
     for (const type of (BOSS_COMPANIONS[act] ?? [])) {
       const def = ALL_ENEMIES[type];
-      if (def) enemies.push({ ...def, _summoned: true } as EnemyDefinition);
+      // Boss companions spawn at full HP and are NOT tagged as summoned
+      // (Copperhead's rattlesnakes per ENEMIES.md)
+      if (def) enemies.push({ ...def });
     }
     return { enemies, isElite: false, isBoss: true };
   }
@@ -310,8 +313,34 @@ export default function App() {
           if (encounterContainsOutlawKing(encounter.enemies)) {
             useRunStore.getState().markOutlawKingEncountered();
           }
-          applyAscensionToEnemies(encounter.enemies, run.ascensionLevel);
-          const ascMods = getAscensionModifiers(run.ascensionLevel);
+          // Categorize the encounter for ascension scaling.
+          // Outlaw King in a "normal" combat node still counts as elite.
+          const hasOutlawKing = encounterContainsOutlawKing(encounter.enemies);
+          const category: 'normal' | 'elite' | 'boss' = encounter.isBoss
+            ? 'boss'
+            : encounter.isElite || hasOutlawKing
+            ? 'elite'
+            : 'normal';
+          const ascMods = getAscensionMutations(run.ascensionLevel);
+
+          // Scale the base encounter first.
+          applyAscensionToEnemies(encounter.enemies, run.ascensionLevel, category);
+
+          // L20: the Act 3 final boss spawns with a random Act 3 elite companion,
+          // scaled with elite-category modifiers (not boss).
+          if (
+            encounter.isBoss &&
+            run.currentAct === 3 &&
+            ascMods.finalBossExtraElite
+          ) {
+            const elitePool = Object.values(ACT3_ELITE);
+            if (elitePool.length > 0) {
+              const pick = elitePool[Math.floor(Math.random() * elitePool.length)];
+              const companion = { ...pick };
+              applyAscensionToEnemies([companion], run.ascensionLevel, 'elite');
+              encounter.enemies.push(companion);
+            }
+          }
 
           const combatConfig: CombatConfig = {
             character: run.character,
@@ -326,6 +355,7 @@ export default function App() {
             traitCounts: run.traitCounts,
             isElite: encounter.isElite,
             isBoss: encounter.isBoss,
+            isOutlawKing: hasOutlawKing,
             turnLimit: encounter.turnLimit,
             timedFailureDamage: encounter.timedFailureDamage,
             goldMultiplier: ascMods.goldMultiplier,
@@ -413,6 +443,12 @@ export default function App() {
         const currentRun = store.run;
         const currentNode = currentRun?.mapState?.nodes.find((n) => n.id === currentRun?.currentNodeId);
 
+        // Outlaw King defeat guarantees a legendary artifact reward.
+        // Flag the run so ArtifactScreen forces legendary on the next visit.
+        if (result.defeatedOutlawKing) {
+          store.setPendingLegendaryReward(true);
+        }
+
         if (currentNode && currentNode.type === 'boss') {
           store.addBossDefeated();
 
@@ -431,6 +467,10 @@ export default function App() {
           }
         } else if (currentNode && currentNode.type === 'elite') {
           // Elite victory: artifact reward before returning to map
+          EventBus.emit(GameEvent.SCREEN_CHANGE, 'artifact');
+        } else if (result.defeatedOutlawKing) {
+          // Outlaw King in a normal combat node still routes through the artifact
+          // screen so the legendary drop is delivered.
           EventBus.emit(GameEvent.SCREEN_CHANGE, 'artifact');
         } else {
           EventBus.emit(GameEvent.SCREEN_CHANGE, 'map');
@@ -616,7 +656,7 @@ export default function App() {
           className="absolute right-2 bottom-1 pointer-events-none z-[60]"
           style={{ fontSize: '9px', color: 'rgba(255,255,255,0.3)' }}
         >
-          Pre-alpha v0.6.1
+          Pre-alpha v0.6.2
         </span>
       </div>
     </div>

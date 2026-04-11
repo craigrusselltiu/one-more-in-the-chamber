@@ -4,6 +4,8 @@ import { generateMap } from '../game/map/MapGenerator';
 import { useMetaStore } from './metaStore';
 import { ARTIFACTS } from '../data/artifacts';
 import { CHARACTER_TILES } from '../data/tiles';
+import { getAscensionMutations } from '../data/ascension';
+import { getMaxConsumableSlots } from '../utils/consumableSlots';
 import { deleteRun as deleteRunFromDB, clearCombatSnapshot } from '../services/localSave';
 
 interface PendingNewGame {
@@ -48,6 +50,7 @@ interface RunStore {
   markBossRewardTaken: () => void;
   markEliteRewardTaken: () => void;
   markOutlawKingEncountered: () => void;
+  setPendingLegendaryReward: (value: boolean) => void;
   advanceAct: () => void;
   setMapState: (map: MapState) => void;
   endRun: (completed: boolean) => void;
@@ -97,7 +100,9 @@ export const useRunStore = create<RunStore>((set, get) => ({
   startRun: (seed, ascensionLevel = 0) => {
     const pending = get().pendingNewGame;
     const character = pending?.character ?? 'red_panda';
-    const mapState = generateMap(seed, 1);
+    // Ascension mutations applied at run start.
+    const ascMods = getAscensionMutations(ascensionLevel);
+    const mapState = generateMap(seed, 1, ascMods.eliteCountBonus);
     const loadouts = useMetaStore.getState().meta.unlockedLoadouts;
 
     // Apply loadout bonuses
@@ -134,6 +139,15 @@ export const useRunStore = create<RunStore>((set, get) => ({
     // Character-specific starting tiles (5th tile chosen after 3rd node)
     const coreTiles: TileType[] = [...CHARACTER_TILES[character]];
 
+    // L14: max HP ×0.95
+    const maxHealth = Math.round(100 * ascMods.maxHealthMultiplier);
+    // L6: start at 90% of max HP
+    const startingHealth = Math.max(1, Math.round(maxHealth * ascMods.startingHealthFraction));
+    // L10: inject an extra Charcoal tile into the active deck
+    if (ascMods.extraCharcoalTile && !coreTiles.includes('charcoal')) {
+      coreTiles.push('charcoal');
+    }
+
     set({
       pendingNewGame: null,
       run: {
@@ -143,8 +157,8 @@ export const useRunStore = create<RunStore>((set, get) => ({
         ascensionLevel,
         currentAct: 1,
         currentNodeId: null,
-        health: 100,
-        maxHealth: 100,
+        health: startingHealth,
+        maxHealth,
         gold,
         activeTileTypes: coreTiles,
         tileUpgrades: {},
@@ -212,7 +226,7 @@ export const useRunStore = create<RunStore>((set, get) => ({
   addConsumable: (consumable) =>
     set((state) => {
       if (!state.run) return state;
-      const maxSlots = state.run.artifacts.some((a) => a.id === 'saddlebag') ? 5 : 3;
+      const maxSlots = getMaxConsumableSlots(state.run);
       if (state.run.consumables.length >= maxSlots) return state;
       return { run: { ...state.run, consumables: [...state.run.consumables, consumable] } };
     }),
@@ -403,17 +417,28 @@ export const useRunStore = create<RunStore>((set, get) => ({
       return { run: { ...state.run, outlawKingEncountered: true } };
     }),
 
+  setPendingLegendaryReward: (value) =>
+    set((state) => {
+      if (!state.run) return state;
+      return { run: { ...state.run, pendingLegendaryReward: value } };
+    }),
+
   advanceAct: () =>
     set((state) => {
       if (!state.run || state.run.currentAct >= 3) return state;
       const nextAct = (state.run.currentAct + 1) as Act;
-      const mapState = generateMap(state.run.seed, nextAct);
+      // L5: heal a fraction of missing HP between acts (default 100%).
+      const mods = getAscensionMutations(state.run.ascensionLevel);
+      const mapState = generateMap(state.run.seed, nextAct, mods.eliteCountBonus);
+      const missing = state.run.maxHealth - state.run.health;
+      const healed = Math.round(missing * mods.interActHealFraction);
+      const newHealth = Math.min(state.run.maxHealth, state.run.health + healed);
       return {
         run: {
           ...state.run,
           currentAct: nextAct,
           currentNodeId: null,
-          health: state.run.maxHealth,
+          health: newHealth,
           bossRewardTaken: false,
           mapState,
         },

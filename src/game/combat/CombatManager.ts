@@ -37,6 +37,8 @@ export interface CombatConfig {
   isElite?: boolean;
   /** Set to true for boss encounters to activate phase-based AI. */
   isBoss?: boolean;
+  /** Set to true when this encounter contains the Outlaw King (guaranteed legendary drop on victory). */
+  isOutlawKing?: boolean;
   /** Turn limit for timed encounters (e.g. Mine Cart). 0 or undefined = no limit. */
   turnLimit?: number;
   /** Damage dealt to the player if a timed encounter expires. */
@@ -54,6 +56,8 @@ export interface CombatResult {
   damageDealt: number;
   longestCascade: number;
   playerDamageTaken: boolean;
+  /** True on victory if this fight was the Outlaw King encounter. */
+  defeatedOutlawKing: boolean;
 }
 
 /**
@@ -83,6 +87,7 @@ export class CombatManager {
   private hazardManager: BoardHazardManager;
   private bossController: BossController | null = null;
   private isElite = false;
+  private isOutlawKing = false;
   private phase: CombatPhase = 'turn-start';
   private turnNumber = 0;
   private swapsPerTurn: number;
@@ -179,6 +184,7 @@ export class CombatManager {
     }
 
     this.isElite = config.isElite ?? false;
+    this.isOutlawKing = config.isOutlawKing ?? false;
 
     // Timed encounter: pre-place hazard tiles and set fuse on mine cart
     if (this.turnLimit > 0) {
@@ -237,7 +243,7 @@ export class CombatManager {
           else if (action.kind === 'apply_terrified') this.player.terrifiedStacks += action.value;
           else if (action.kind === 'apply_vulnerable') this.player.vulnerableStacks += action.value;
           else if (action.kind === 'block') enemy.addBlock(action.value);
-          else if (action.kind === 'summon' && action.summonType) this.trySummonEnemy(enemy, action.summonType);
+          else if (action.kind === 'summon' && action.summonType) this.trySummonEnemy(enemy, action.summonType, action.summonFullHp);
         }
       }
     }
@@ -823,7 +829,7 @@ export class CombatManager {
         this.board.setIsResolving(true);
         await this.board.shuffleRowsAnimated([6, 7]);
         this.ricochetTriggeredThisResolution = false;
-        const onBootsStep = this.makeCascadeStepHandler(nextStep);
+        const onBootsStep = this.makeCascadeStepHandler(nextStep, true);
         await this.board.resolveMatchesFull(onBootsStep);
         while (this.ricochetTriggeredThisResolution) {
           this.ricochetTriggeredThisResolution = false;
@@ -933,9 +939,10 @@ export class CombatManager {
 
     // Use the same cascade resolution path as normal swaps so hazards,
     // ricochets, special tile triggers, and all other logic is consistent.
+    // Post-Deadeye matches are all cascades — force cloak suppression.
     this.ricochetTriggeredThisResolution = false;
     let cascadeSteps = 0;
-    const onCascadeStep = this.makeCascadeStepHandler(() => ++cascadeSteps);
+    const onCascadeStep = this.makeCascadeStepHandler(() => ++cascadeSteps, true);
 
     // Gravity + fill + full cascade resolution (matches, hazards, specials)
     await this.board.applyGravityAnimated();
@@ -948,6 +955,13 @@ export class CombatManager {
       await this.board.applyGravityAnimated();
       await this.board.fillEmptyTilesAnimated();
       await this.board.resolveMatchesFull(onCascadeStep);
+    }
+
+    // Cross/L/T explosions (and the Deadeye shot itself) can wipe enough of the
+    // board that the remaining tiles have zero legal swaps. Reshuffle before
+    // returning control to the player so they don't get stuck.
+    if (!this.isCombatOver() && !this.board.hasValidMoves()) {
+      await this.board.reshuffleAnimated();
     }
 
     this.board.setIsResolving(false);
@@ -1045,9 +1059,10 @@ export class CombatManager {
     this.board.setIsResolving(true);
     await this.board.reshuffleAnimatedWithCascades();
 
+    // Post-Shuffle matches are all cascades — force cloak suppression.
     this.ricochetTriggeredThisResolution = false;
     let cascadeSteps = 0;
-    const onCascadeStep = this.makeCascadeStepHandler(() => ++cascadeSteps);
+    const onCascadeStep = this.makeCascadeStepHandler(() => ++cascadeSteps, true);
 
     await this.board.resolveMatchesFull(onCascadeStep);
 
@@ -1112,7 +1127,8 @@ export class CombatManager {
           await this.board.reshuffleAnimatedWithCascades();
           this.ricochetTriggeredThisResolution = false;
           let cascadeSteps = 0;
-          const onCascadeStep = this.makeCascadeStepHandler(() => ++cascadeSteps);
+          // Tumbleweed consumable reshuffles — all resulting matches are cascades.
+          const onCascadeStep = this.makeCascadeStepHandler(() => ++cascadeSteps, true);
           await this.board.resolveMatchesFull(onCascadeStep);
           while (this.ricochetTriggeredThisResolution) {
             this.ricochetTriggeredThisResolution = false;
@@ -1234,7 +1250,11 @@ export class CombatManager {
   // Match Processing & Resource Application
   // ---------------------------------------------------------------------------
 
-  private async processMatches(matches: MatchResult[], comboMultiplier = 1.0): Promise<void> {
+  private async processMatches(
+    matches: MatchResult[],
+    comboMultiplier = 1.0,
+    forceCascadeForCloak = false,
+  ): Promise<void> {
     // Sort by resolveOrder so interactions are consistent (e.g. block before boulder).
     const sorted = matches.length > 1
       ? [...matches].sort((a, b) => {
@@ -1341,8 +1361,13 @@ export class CombatManager {
         this.nextMatchMultiplier = 1.0;
       }
 
-      // Cloak: suppress cascade damage while any enemy has the buff
-      const suppressDamage = comboMultiplier > 1.0
+      // Cloak: suppress cascade damage while any enemy has the buff.
+      // `forceCascadeForCloak` treats every step as a cascade — used by abilities
+      // (Deadeye, Shuffle, Dust Devil Boots, reshuffle) and board mutations
+      // (Prairie Fire spread, Tumbleweed Golem transform) where the follow-up
+      // matches are never direct player matches.
+      const isCascade = forceCascadeForCloak || comboMultiplier > 1.0;
+      const suppressDamage = isCascade
         && this.aliveEnemies().some(e => e.state.cloak > 0);
 
       // Player Terrified: deal 50% less damage
@@ -1868,7 +1893,8 @@ export class CombatManager {
     if (this.board.spreadPrairieFire()) {
       this.ricochetTriggeredThisResolution = false;
       let fireSteps = 0;
-      const onFireStep = this.makeCascadeStepHandler(() => ++fireSteps);
+      // Prairie Fire spread matches are never direct — always cascade.
+      const onFireStep = this.makeCascadeStepHandler(() => ++fireSteps, true);
       await this.board.resolveMatchesFull(onFireStep);
       while (this.ricochetTriggeredThisResolution) {
         this.ricochetTriggeredThisResolution = false;
@@ -2141,6 +2167,8 @@ export class CombatManager {
     switch (ma.kind) {
       case 'attack':
         this.executeEnemyAttack(enemy, ma.value);
+        // Rageful decrements once after the attack move (not per hit)
+        if (enemy.state.ragefulStacks > 0) enemy.state.ragefulStacks--;
         break;
       case 'multi_attack': {
         // Copperhead: hits = number of poison tiles on board
@@ -2156,6 +2184,8 @@ export class CombatManager {
             await new Promise(r => setTimeout(r, Math.round(200 / getSpeedMultiplier())));
           }
         }
+        // Rageful decrements once after the full multi-attack (not per hit)
+        if (enemy.state.ragefulStacks > 0) enemy.state.ragefulStacks--;
         break;
       }
       case 'block':
@@ -2193,7 +2223,7 @@ export class CombatManager {
         if (this.player.protectedStacks <= 0) this.hazardManager.placeRandomFoolsGold(ma.value);
         break;
       case 'summon':
-        this.trySummonEnemy(enemy, ma.summonType);
+        this.trySummonEnemy(enemy, ma.summonType, ma.summonFullHp);
         break;
       case 'heal': {
         let healAmount = ma.value;
@@ -2286,7 +2316,7 @@ export class CombatManager {
         this.board.setGravityDirection(CYCLE[(idx + 1) % 4]);
         break;
       }
-      case 'transform_tumbleweed':
+      case 'transform_tumbleweed': {
         // Transform random tiles into tumbleweed type
         for (let i = 0; i < ma.value; i++) {
           const grid = this.board.getGrid();
@@ -2305,7 +2335,20 @@ export class CombatManager {
             if (tile) tile.setType('tumbleweed');
           }
         }
+        // After all transformations, resolve any matches the new tumbleweeds formed
+        this.ricochetTriggeredThisResolution = false;
+        let tweedSteps = 0;
+        // Tumbleweed Golem transform — matches from the transformation are cascades.
+        const onTweedStep = this.makeCascadeStepHandler(() => ++tweedSteps, true);
+        await this.board.resolveMatchesFull(onTweedStep);
+        while (this.ricochetTriggeredThisResolution) {
+          this.ricochetTriggeredThisResolution = false;
+          await this.board.applyGravityAnimated();
+          await this.board.fillEmptyTilesAnimated();
+          await this.board.resolveMatchesFull(onTweedStep);
+        }
         break;
+      }
     }
   }
 
@@ -2314,9 +2357,8 @@ export class CombatManager {
     if (damage <= 0) return;
     // Blinded: attacks deal no damage
     if (enemy.state.blindedStacks > 0) return;
-    // Enemy Rageful: +1 damage per stack, then decrement
+    // Enemy Rageful: +1 damage per stack (decrement handled once per move in executeMoveAction)
     let adjustedDamage = damage + enemy.state.ragefulStacks;
-    if (enemy.state.ragefulStacks > 0) enemy.state.ragefulStacks--;
     // Enemy Terrified: deal 50% less damage
     if (enemy.state.terrifiedStacks > 0) {
       adjustedDamage = Math.round(adjustedDamage * 0.5);
@@ -2354,15 +2396,15 @@ export class CombatManager {
     }
   }
 
-  private trySummonEnemy(summoner: Enemy, summonType?: string): void {
+  private trySummonEnemy(summoner: Enemy, summonType?: string, fullHp?: boolean): void {
     if (this.aliveEnemies().length >= 3) return;
 
-    // If a specific summon type is given, look it up and use 1/3 HP
+    // If a specific summon type is given, look it up. Use 1/3 HP unless fullHp is set.
     if (summonType && ALL_ENEMIES[summonType]) {
       const baseDef = ALL_ENEMIES[summonType];
       const minionDef: EnemyDefinition = {
         ...baseDef,
-        health: Math.max(1, Math.round(baseDef.health / 3)),
+        health: fullHp ? baseDef.health : Math.max(1, Math.round(baseDef.health / 3)),
       };
       const minion = new Enemy(minionDef);
       minion.summoned = true;
@@ -2463,6 +2505,7 @@ export class CombatManager {
       damageDealt: this.damageDealtThisFight,
       longestCascade: this.longestCascadeThisFight,
       playerDamageTaken: this.playerTookDamageThisFight,
+      defeatedOutlawKing: victory && this.isOutlawKing,
     };
 
     EventBus.emit(GameEvent.COMBAT_END, result);
@@ -2476,7 +2519,10 @@ export class CombatManager {
    * Create the standard onCascadeStep callback used by both swap and deadeye.
    * Handles SFX, combo multiplier, hazard resolution, resource processing, and HUD sync.
    */
-  private makeCascadeStepHandler(getStep: () => number): (stepMatches: MatchResult[]) => Promise<void> {
+  private makeCascadeStepHandler(
+    getStep: () => number,
+    treatAsCascade = false,
+  ): (stepMatches: MatchResult[]) => Promise<void> {
     return async (stepMatches: MatchResult[]) => {
       const step = getStep();
       playMatch(step);
@@ -2549,7 +2595,7 @@ export class CombatManager {
         this.emitEnemyHpChanges();
       }
       const comboMultiplier = step > 1 ? Math.min(3.0, 1 + (step - 1) * 0.1) : 1.0;
-      await this.processMatches(stepMatches, comboMultiplier);
+      await this.processMatches(stepMatches, comboMultiplier, treatAsCascade);
       this.emitFullState();
       this.emitEnemyHpChanges();
       EventBus.emit(GameEvent.PLAYER_HP_CHANGE, this.player.health, this.player.maxHealth);

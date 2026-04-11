@@ -4,6 +4,58 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## v0.6.2
+
+### Added
+- Charcoal tile: new Special-pool tile. On match deals 1 damage + gains 1 block (flat per match). Cannot be swapped out, cannot be upgraded. Flavor: "A piece of charcoal. Somehow makes Fire-type moves more— wrong game."
+- Ascension system reworked into discrete per-level mutations (L1–L20, cumulative). Old global HP/damage/gold/price multipliers are gone. Active levels: L1 (+2 elites per act), L2/3/4 (+10% damage to normals/elites/bosses), L5 (80% inter-act heal), L6 (start at 90% HP), L7/8/9 (+10% HP to normals/elites/bosses), L10 (extra Charcoal in deck), L11 (−1 consumable slot), L12 (upgraded reward tiles appear less often), L13 (10% less gold), L14 (5% less max HP), L15 (legendary weight 3→1), L16 (10% shop markup), L20 (Act 3 final boss spawns with a random Act 3 elite companion). L17/18/19 are no-ops pending new enemy abilities.
+- Outlaw King now guarantees a Legendary artifact drop on defeat (routed through ArtifactScreen even from a normal combat node)
+- Character Select screen redesign:
+  - "Starting Artifact" and "Unique Tile" row under the ability description with in-combat-style tooltips
+  - "ASCENSION" selector relocated above Back/Confirm, centered, with yellow-outlined label, ← → arrows, and a fixed two-line slot for the per-level mutation description (so the control doesn't jitter as descriptions change length)
+  - Seed input de-boxed (bottom-left, bare label + field)
+- Cross/L/T match that also contains a 5-in-a-line run now spawns BOTH a Showdown tile (at the intersection) and an Explosive tile (on the line)
+- Summon action now supports a `summonFullHp` flag; summons no longer forced to 1/3 HP
+- Tumbleweed Golem, Prospector Gone Mad, Hellfire Preacher, Train Guard, and Outlaw King (all acts) gained new cloak/grace/thorns/rageful start-of-fight buffs and firstMove patterns
+- Train Guard: first move is always Block 30, Lock 1 row
+- Tunnel Rat: first move is always Attack 14, Bury 2
+- Final boss + random Act 3 elite companion (ascension L20)
+- Tile reward level rolls: between-acts tile select and merchant now roll upgrade levels per offered tile based on the target act (Act 2: 80% Lv 1 / 20% Lv 2; Act 3: 20% Lv 1 / 60% Lv 2 / 20% Lv 3). L12 ascension lowers these to Act 2 90/10 and Act 3 50/40/10.
+
+### Changed
+- Buckshot: base damage 1 → 2 per tile
+- Vulnerable: +25% damage taken (was +50%, briefly +20%)
+- Hint system: board idle-hint trigger delay 15s → 10s
+- Boss reward artifacts restricted to Rare (25%) / Legendary (75%); commons/uncommons no longer appear after a boss fight
+- Prairie Fire spread: triggers once per turn (was per swap), 1-in-4 chance
+- Normal enemy HP increased ~15%: Bandit 42→48, Coyote 32→37, Rattlesnake 37→43, Vulture 28→32, Pack Mule 64→66, Powder Monkey 53→67, Mining Canary 37→49, Tunnel Rat 68→84, Prospector Gone Mad 73→104, Train Guard 88→111, Hellfire Preacher 76→97, Hangman 138→159, Corrupt Deputy 120→138
+- Elite and boss HP increased ~30%: Tumbleweed Golem 84→109, Dust Devil 72→94, Dusty Dan 188→244, Mine Foreman 123→160, Ore Golem 145→189, Mine Cart 194→252, Copperhead Cassidy 260→338, Saloon Brawler 220→286, Sheriff's Shadow 213→277, Outlaw King (Act 1) 126→184, (Act 2) 196→255, (Act 3) 288→374, Iron Eye Isabella 320→416
+- Full enemy moveset rework across all acts — damage numbers, block values, and debuff stacks rebalanced throughout. See docs/ENEMIES.md for per-enemy details.
+- Bandit no longer summons other bandits
+- Rattlesnake: poison tile counts reduced (Move 2 poison 2, Move 4 poison 4)
+- Pack Mule: new moves (Attack 12 / Multi-attack 4x2 + Block 8 / Attack 5 + Bomb 1 + Bury 3 / Heal 7)
+- Dust Devil: HP-below-50% trigger is now Multi-attack 1x6 with +2 Rageful (was 2x6 with +4 Rageful)
+- Tumbleweed Golem: start of fight now includes Gain 1 Cloak
+- Prospector Gone Mad: now starts with 5 Rageful
+- Dusty Dan: full moveset pass — Attack 12/Block 12, Attack 9x2/Lock row, Attack 17/Lock column, Block 18/Suppress 3
+- Copperhead Cassidy: now starts with 2 Rattlesnakes (full HP, not summoned); multi-attack is now 4x (was 3x); Move 2 now Attack 16/Block 16/Apply 3 Poison; Fool's Gold count 5→8
+- Outlaw King (Act 1): 2 summoned Coyotes companion; Attack 19/Block 12; Block 23/Gain 1 Cloak; Attack 22
+- Outlaw King (Act 2): 2 full-HP Coyote companions; Attack 24/Block 18; Block 34/Gain 1 Cloak; Attack 31; applies 3 Terrified on start
+- Outlaw King (Act 3): 2 full-HP Bandit companions (was Coyotes); Attack 30/Block 24; Multi-attack 9x3/Gain 5 Rageful; Block 42/Gain 1 Cloak; Attack 37; applies 4 Terrified, Gain 2 Cloak on start
+- Corrupt Deputy summons 2 full-HP Bandits (was 1/3 HP summoned)
+- Act 1 late encounters: "1 Coyote + 2 Summoned Coyotes" is now "2 Coyote + 1 Summoned"
+- Act 3 early encounters: added Hangman as a solo early pick
+- Act 3 late encounters: now 100% dynamic with "can't both be Hangman or Corrupt Deputy" constraint
+- Merchant base tile upgrade distribution nerfed (Act 2: 80/20 Lv 1/Lv 2, Act 3: 20/60/20 Lv 1/Lv 2/Lv 3; was Lv 2/Lv 3 and Lv 3/Lv 4)
+
+### Fixed
+- Rageful: now decrements once per attack move, not once per hit. Multi-attacks no longer burn through stacks on hit 1.
+- Rageful bonus damage is now reflected in the enemy intent badge (e.g. "2x6" with +4 Rageful shows as "6x6" on the telegraph)
+- Cloak now suppresses cascade damage from Deadeye, False Shuffle (Reno), Dust Devil Boots, Prairie Fire spread, Tumbleweed Golem transform, and the dead-board reshuffle (previously only suppressed damage on swap-initiated cascades)
+- Deadeye: after the post-shot cascade settles, the board is now reshuffled if no valid swaps remain (cross/L/T explosions could previously leave the board un-swappable)
+- Tumbleweed Golem's tile transform now resolves any matches it creates (with full cascade chains)
+- Gillie Suit only triggers on a 5+ in-a-line match — crosses/L/T shapes with 5+ total tiles no longer count
+
 ## v0.6.1
 
 ### Added

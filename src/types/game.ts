@@ -34,6 +34,8 @@ export interface RunState {
   eliteRewardTaken?: boolean;
   /** True after the once-per-run Outlaw King encounter has been rolled. */
   outlawKingEncountered?: boolean;
+  /** Transient: if true, the next ArtifactScreen visit forces a legendary-rarity pick. */
+  pendingLegendaryReward?: boolean;
   status: 'active' | 'completed' | 'abandoned';
 }
 
@@ -73,7 +75,8 @@ export type TileType =
   // Special
   | 'showdown'
   | 'tumbleweed'
-  | 'fools_gold';
+  | 'fools_gold'
+  | 'charcoal';
 
 export type TraitId =
   | 'outlaw'

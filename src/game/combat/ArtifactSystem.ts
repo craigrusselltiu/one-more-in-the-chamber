@@ -227,8 +227,9 @@ export class ArtifactSystem {
       }
     }
 
-    // Gillie Suit: first 5+ match each combat grants 1 Grace
-    if (this.has('gillie_suit') && match.length >= 5 && !this.gillieSuitUsedThisFight) {
+    // Gillie Suit: first 5+ in-a-line match each combat grants 1 Grace
+    // (crosses/L/T shapes with 5+ total tiles don't count)
+    if (this.has('gillie_suit') && match.length >= 5 && !match.isCross && !this.gillieSuitUsedThisFight) {
       this.gillieSuitUsedThisFight = true;
       player.graceStacks += 1;
     }

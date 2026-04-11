@@ -189,6 +189,8 @@ export interface MoveAction {
   hits?: number;
   /** For summon: the enemy type to summon. */
   summonType?: string;
+  /** For summon: if true, summoned enemy starts at full HP instead of 1/3. */
+  summonFullHp?: boolean;
 }
 
 /** A complete move an enemy can perform (may contain multiple actions). */

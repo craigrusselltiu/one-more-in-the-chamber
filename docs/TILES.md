@@ -43,7 +43,7 @@ NOTE: Observe the difference between +1 to match total and +1 per tile. The tile
 - Flavor: "The ground shakes. Everything in the way gets flattened."
 
 ### Buckshot
-- Behaviour: Each tile deals 1 damage to a random enemy.
+- Behaviour: Each tile deals 2 damage to a random enemy.
 - Upgrade: +1 damage per tile per level
 - Flavor: "Spread shot. Hits harder, less precise."
 
@@ -58,7 +58,7 @@ NOTE: Observe the difference between +1 to match total and +1 per tile. The tile
 - Flavor: "Slow poison. The patient killer's weapon."
 
 ### Prairie Fire
-- Behaviour: Deal 2 damage per tile. After each turn, each tile has a 1 in 4 chance to convert 1 adjacent or diagonal tile to Prairie Fire.
+- Behaviour: Deal 1 damage per tile. After each turn, each tile has a 1 in 4 chance to convert 1 adjacent or diagonal tile to Prairie Fire.
 - Upgrade: +2 damage to match total per level
 - Flavor: "Sparks fly. Some of them catch."
 
@@ -265,6 +265,10 @@ NOTE: Observe the difference between +1 to match total and +1 per tile. The tile
 ### Tumbleweed
 - Behaviour: Does nothing.
 - Flavor: "Just passing through. Taking up space."
+
+### Charcoal
+- Behaviour: On match, deal 1 damage and gain 1 block. Cannot be upgraded or swapped out for another tile.
+- Flavor: "A piece of charcoal. Somehow makes Fire-type moves more— wrong game."
 
 ### Fool's Gold
 - Behaviour: Looks like Gold but generates nothing. Can match with regular Gold tiles. Reveals when matched.

@@ -66,9 +66,9 @@ export class Player {
   takeDamage(amount: number): { hpLost: number; blocked: number; thornsDamage: number } {
     let remaining = amount;
 
-    // Vulnerable: +20% damage taken
+    // Vulnerable: +25% damage taken
     if (this.vulnerableStacks > 0) {
-      remaining = Math.round(remaining * 1.2);
+      remaining = Math.round(remaining * 1.25);
     }
 
     // Grace: negate entire damage instance

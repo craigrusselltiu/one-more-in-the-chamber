@@ -1,7 +1,7 @@
 import type { ArtifactRarity } from '../data/artifacts';
 
 /** Default rarity weights. Higher weight = more likely to appear. */
-const RARITY_WEIGHTS: Record<ArtifactRarity, number> = {
+const BASE_RARITY_WEIGHTS: Record<ArtifactRarity, number> = {
   common: 60,
   uncommon: 25,
   rare: 12,
@@ -9,7 +9,7 @@ const RARITY_WEIGHTS: Record<ArtifactRarity, number> = {
 };
 
 /** Boss reward weights -- bosses only drop Rare or Legendary. */
-const BOSS_RARITY_WEIGHTS: Record<ArtifactRarity, number> = {
+const BASE_BOSS_RARITY_WEIGHTS: Record<ArtifactRarity, number> = {
   common: 0,
   uncommon: 0,
   rare: 25,
@@ -17,15 +17,28 @@ const BOSS_RARITY_WEIGHTS: Record<ArtifactRarity, number> = {
 };
 
 /**
+ * Build weight tables with overrides (e.g. for ascension L15 lowering legendary).
+ */
+function buildWeights(
+  base: Record<ArtifactRarity, number>,
+  legendaryWeightOverride?: number,
+): Record<ArtifactRarity, number> {
+  if (legendaryWeightOverride == null) return base;
+  return { ...base, legendary: legendaryWeightOverride };
+}
+
+/**
  * Pick one artifact from a pool using weighted rarity selection.
  * Desperado(2) doubles the weight of desperado-tagged artifacts.
  * `bossReward = true` restricts the pool to Rare/Legendary with 25/75 weights.
+ * `legendaryWeightOverride` lets ascension L15 lower the legendary weight.
  */
 export function weightedArtifactPick<T extends { rarity?: ArtifactRarity; tags: string[] }>(
   pool: T[],
   rand: () => number,
   desperadoActive = false,
   bossReward = false,
+  legendaryWeightOverride?: number,
 ): T {
   if (pool.length <= 1) return pool[0];
 
@@ -38,7 +51,10 @@ export function weightedArtifactPick<T extends { rarity?: ArtifactRarity; tags: 
   }
   if (effectivePool.length === 1) return effectivePool[0];
 
-  const weightTable = bossReward ? BOSS_RARITY_WEIGHTS : RARITY_WEIGHTS;
+  const weightTable = buildWeights(
+    bossReward ? BASE_BOSS_RARITY_WEIGHTS : BASE_RARITY_WEIGHTS,
+    legendaryWeightOverride,
+  );
   const weights = effectivePool.map((a) => {
     let w = weightTable[a.rarity ?? 'common'];
     if (desperadoActive && a.tags.includes('desperado')) w *= 2;
@@ -62,11 +78,12 @@ export function weightedArtifactPickN<T extends { rarity?: ArtifactRarity; tags:
   count: number,
   rand: () => number,
   desperadoActive = false,
+  legendaryWeightOverride?: number,
 ): T[] {
   const remaining = [...pool];
   const picks: T[] = [];
   for (let i = 0; i < count && remaining.length > 0; i++) {
-    const pick = weightedArtifactPick(remaining, rand, desperadoActive);
+    const pick = weightedArtifactPick(remaining, rand, desperadoActive, false, legendaryWeightOverride);
     picks.push(pick);
     remaining.splice(remaining.indexOf(pick), 1);
   }

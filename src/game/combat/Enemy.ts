@@ -202,9 +202,9 @@ export class Enemy {
       return { hpLost: 0, blocked: 0 };
     }
 
-    // Vulnerable: +20% damage (stacks decrease at end of turn, not on hit)
+    // Vulnerable: +25% damage (stacks decrease at end of turn, not on hit)
     if (this.state.vulnerable > 0) {
-      remaining = Math.round(remaining * 1.2);
+      remaining = Math.round(remaining * 1.25);
     }
 
     // Hardened: cap damage to hardened stacks (post-Vulnerable, pre-Block)

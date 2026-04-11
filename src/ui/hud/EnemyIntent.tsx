@@ -65,13 +65,15 @@ function hexToRgba(hex: string, alpha: number): string {
 
 interface EnemyIntentProps {
   intent: EnemyIntentType;
+  /** Enemy's current rageful stacks — boosts attack badges for display. */
+  rageful?: number;
 }
 
 /**
  * EnemyIntent: shows what the enemy will do next as icon badges.
  * Icons pop in with a scale animation when the intent changes.
  */
-export const EnemyIntent = memo(function EnemyIntent({ intent }: EnemyIntentProps) {
+export const EnemyIntent = memo(function EnemyIntent({ intent, rageful = 0 }: EnemyIntentProps) {
   const actions = intent.actions;
 
   if (!actions || actions.length === 0) {
@@ -87,8 +89,8 @@ export const EnemyIntent = memo(function EnemyIntent({ intent }: EnemyIntentProp
 
   return (
     <div
-      // Re-key on description change to trigger remount + animation
-      key={intent.description}
+      // Re-key on description + rageful change to trigger remount + animation
+      key={`${intent.description}-r${rageful}`}
       className="flex items-center justify-center gap-1 px-1 py-px"
     >
       {actions.map((action, i) => {
@@ -97,8 +99,10 @@ export const EnemyIntent = memo(function EnemyIntent({ intent }: EnemyIntentProp
 
         let badge = '';
         if (action.kind === 'multi_attack' && action.hits) {
-          badge = `${action.value}x${action.hits}`;
-        } else if (action.kind === 'attack' || action.kind === 'block' || action.kind === 'heal') {
+          badge = `${action.value + rageful}x${action.hits}`;
+        } else if (action.kind === 'attack') {
+          if (action.value > 0) badge = String(action.value + rageful);
+        } else if (action.kind === 'block' || action.kind === 'heal') {
           if (action.value > 0) badge = String(action.value);
         }
 

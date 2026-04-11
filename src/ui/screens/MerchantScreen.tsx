@@ -13,7 +13,9 @@ import { createSeededRandom, seededShuffle } from '../../utils/seededRandom';
 import { weightedArtifactPickN } from '../../utils/weightedSelection';
 import type { TileType, TraitId } from '../../types/game';
 import type { Screen } from '../../App';
-import { getAscensionModifiers } from '../../data/ascension';
+import { getAscensionMutations } from '../../data/ascension';
+import { getMaxConsumableSlots } from '../../utils/consumableSlots';
+import { rollTileRewardLevel } from '../../utils/tileRewardLevel';
 
 const TRAIT_COLORS: Record<TraitId, string> = {
   outlaw: '#D04040', sheriff: '#6888A0', prospector: '#E0C880', sapper: '#D4A030',
@@ -79,7 +81,7 @@ export const MerchantScreen = memo(function MerchantScreen() {
   const stock = useMemo(() => {
     if (!run || !snapshot) return { consumables: [] as MerchantItem[], artifacts: [] as MerchantItem[], tiles: [] as MerchantItem[] };
     const rand = createSeededRandom(`${run.seed}-merchant-${run.currentNodeId}`);
-    const priceMult = getAscensionModifiers(run.ascensionLevel).merchantPriceMultiplier;
+    const priceMult = getAscensionMutations(run.ascensionLevel).merchantPriceMultiplier;
 
     const consumables: MerchantItem[] = [];
     const shuffledConsumables = seededShuffle(CONSUMABLES, rand);
@@ -98,7 +100,8 @@ export const MerchantScreen = memo(function MerchantScreen() {
     const ownedIds = new Set(snapshot.ownedArtifactIds);
     const availableArtifacts = ARTIFACTS.filter((a) => !ownedIds.has(a.id) && (!a.exclusive || a.exclusive === run.character));
     const desperadoActive = (run.traitCounts?.desperado ?? 0) >= 2;
-    const pickedArtifacts = weightedArtifactPickN(availableArtifacts, 3, rand, desperadoActive);
+    const legendaryWeight = getAscensionMutations(run.ascensionLevel).legendaryWeight;
+    const pickedArtifacts = weightedArtifactPickN(availableArtifacts, 3, rand, desperadoActive, legendaryWeight);
     for (let i = 0; i < pickedArtifacts.length; i++) {
       const a = pickedArtifacts[i];
       artifacts.push({
@@ -120,9 +123,7 @@ export const MerchantScreen = memo(function MerchantScreen() {
       if (available.length > 0) {
         const swapTile = seededShuffle(available, rand)[0];
         const def = TILE_DEFINITIONS[swapTile];
-        let tileLevel = 0;
-        if (run.currentAct === 2) tileLevel = rand() < 0.8 ? 1 : 2;
-        else if (run.currentAct === 3) tileLevel = rand() < 0.8 ? 2 : 3;
+        const tileLevel = rollTileRewardLevel(run.currentAct, run.ascensionLevel, rand);
         tiles.push({
           type: 'tile_swap',
           id: `swap-${swapTile}`,
@@ -213,8 +214,7 @@ export const MerchantScreen = memo(function MerchantScreen() {
 
   if (!run) return null;
 
-  const hasSaddlebag = run.artifacts.some((a) => a.id === 'saddlebag');
-  const maxSlots = hasSaddlebag ? 5 : 3;
+  const maxSlots = getMaxConsumableSlots(run);
 
   return (
     <div className="flex flex-col items-center justify-center h-full" style={{ padding: '24px 0', backgroundImage: `linear-gradient(rgba(0,0,0,0.45), rgba(0,0,0,0.45)), url(${import.meta.env.BASE_URL}assets/backgrounds/merchant_bg.png)`, backgroundSize: 'cover', backgroundPosition: 'center' }}>

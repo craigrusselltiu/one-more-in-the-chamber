@@ -279,6 +279,12 @@ export class ResourceResolver {
       case 'fools_gold':
         // No resource generation
         break;
+
+      case 'charcoal':
+        // Flat 1 damage + 1 block per match regardless of tile count
+        output.damage = 1;
+        output.block = 1;
+        break;
     }
 
     return output;

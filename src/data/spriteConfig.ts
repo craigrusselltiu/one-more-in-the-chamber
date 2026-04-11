@@ -36,6 +36,7 @@ export const TILE_FRAMES: Record<TileType, number> = {
   showdown: 819,
   tumbleweed: 1098,
   fools_gold: 1155,
+  charcoal: 1135,
 };
 
 /** Artifact sprite frames (by artifact ID). */
@@ -186,7 +187,7 @@ export const TRAIT_FRAMES: Record<string, number> = {
   saloon_keeper: 499,
   desperado: 1080,
   sniper: 906,
-  dead_man_walking: 824,
+  dead_man_walking: 1259,
   tracker: 1211,
   preacher: 827,
   antivenom: 914,

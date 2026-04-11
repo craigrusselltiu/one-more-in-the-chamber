@@ -7,6 +7,7 @@ import { SpriteIcon } from '../components/SpriteIcon';
 import { Tooltip } from '../components/Tooltip';
 import { CONSUMABLE_FRAMES } from '../../data/spriteConfig';
 import { colorizeKeywords, getReferencedKeywords, KeywordSubTooltips } from '../components/KeywordText';
+import { getMaxConsumableSlots } from '../../utils/consumableSlots';
 
 /**
  * ConsumableSlots: 3 fixed square slots (4 with Saddlebag) near the player.
@@ -14,13 +15,11 @@ import { colorizeKeywords, getReferencedKeywords, KeywordSubTooltips } from '../
  */
 export const ConsumableSlots = memo(function ConsumableSlots() {
   const consumables = useRunStore((s) => s.run?.consumables ?? []);
-  const hasSaddlebag = useRunStore((s) =>
-    s.run?.artifacts.some((a) => a.id === 'saddlebag') ?? false,
-  );
+  const run = useRunStore((s) => s.run);
   const removeConsumable = useRunStore((s) => s.removeConsumable);
   const phase = useCombatStore((s) => s.phase);
 
-  const maxSlots = hasSaddlebag ? 5 : 3;
+  const maxSlots = run ? getMaxConsumableSlots(run) : 3;
   const canUse = phase === 'consumable-window' || phase === 'swap-phase';
 
   return (

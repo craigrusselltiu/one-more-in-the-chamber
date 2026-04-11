@@ -179,7 +179,7 @@ const EnemySlot = memo(function EnemySlot({
         className="absolute left-1/2 -translate-x-1/2"
         style={{ top: -16 - 96 * ((ENEMY_SPRITE_SCALE[enemy.enemyType] ?? 1) - 1) }}
       >
-        <EnemyIntent intent={enemy.intent} />
+        <EnemyIntent intent={enemy.intent} rageful={enemy.ragefulStacks} />
       </div>
 
       {/* Enemy sprite with shadow + name tooltip */}

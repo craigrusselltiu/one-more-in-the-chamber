@@ -24,6 +24,7 @@ const TRAIT_NAMES: Record<string, string> = {
 import { playTreasure } from '../../services/sfx';
 import { createSeededRandom } from '../../utils/seededRandom';
 import { weightedArtifactPick } from '../../utils/weightedSelection';
+import { getAscensionMutations } from '../../data/ascension';
 import type { Screen } from '../../App';
 
 export const ArtifactScreen = memo(function ArtifactScreen() {
@@ -35,16 +36,25 @@ export const ArtifactScreen = memo(function ArtifactScreen() {
   // Determine where to go after treasure based on current node
   const currentNode = run?.mapState?.nodes.find((n) => n.id === run?.currentNodeId);
   const isBossReward = currentNode?.type === 'boss';
+  // Outlaw King defeats flag a pending legendary reward, guaranteeing a legendary pick.
+  const isLegendaryReward = run?.pendingLegendaryReward === true;
 
   const artifact = useMemo(() => {
     const rand = createSeededRandom(`${run?.seed ?? ''}-treasure-${run?.currentNodeId ?? ''}`);
     const ownedIds = new Set((run?.artifacts ?? []).map((a) => a.id));
     const character = run?.character ?? 'red_panda';
     const available = ARTIFACTS.filter((a) => !ownedIds.has(a.id) && (!a.exclusive || a.exclusive === character));
-    const pool = available.length > 0 ? available : ARTIFACTS;
+    let pool = available.length > 0 ? available : ARTIFACTS;
+    // Legendary-only reward (Outlaw King drop): filter pool to legendaries.
+    // Falls back to the full pool if the player already owns every legendary.
+    if (isLegendaryReward) {
+      const legendaries = pool.filter((a) => a.rarity === 'legendary');
+      if (legendaries.length > 0) pool = legendaries;
+    }
     const desperadoActive = (run?.traitCounts?.desperado ?? 0) >= 2;
-    return weightedArtifactPick(pool, rand, desperadoActive, isBossReward);
-  }, [isBossReward]);
+    const legendaryWeight = getAscensionMutations(run?.ascensionLevel ?? 0).legendaryWeight;
+    return weightedArtifactPick(pool, rand, desperadoActive, isBossReward, legendaryWeight);
+  }, [isBossReward, isLegendaryReward]);
 
   const [taken, setTaken] = useState(false);
   const isEliteReward = currentNode?.type === 'elite';
@@ -68,6 +78,8 @@ export const ArtifactScreen = memo(function ArtifactScreen() {
   const markRewardTaken = () => {
     if (isBossReward) useRunStore.getState().markBossRewardTaken();
     if (isEliteReward) useRunStore.getState().markEliteRewardTaken();
+    // Clear the Outlaw King legendary flag once consumed.
+    if (isLegendaryReward) useRunStore.getState().setPendingLegendaryReward(false);
   };
 
   const handleTake = () => {
