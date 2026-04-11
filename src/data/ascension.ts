@@ -15,13 +15,13 @@ import type { EnemyDefinition, EnemyMove } from '../types/combat';
  *   L7  — Normal enemies +10% HP
  *   L8  — Elite enemies +10% HP
  *   L9  — Bosses +10% HP
- *   L10 — Merchant prices ×1.1
+ *   L10 — Start each run with an extra Charcoal tile in the deck
  *   L11 — Consumable slots −1
  *   L12 — Upgraded merchant tiles appear less often
  *   L13 — Gold earned ×0.9
  *   L14 — Max HP ×0.95
  *   L15 — Legendary artifact weight dropped from 3 to 1
- *   L16 — Start each run with an extra Charcoal tile in the deck
+ *   L16 — Merchant prices ×1.1
  *   L17 — Normal enemies gain an additional +10% HP and +10% damage (stacks with L2/L7)
  *   L18 — Elites gain an additional +10% HP and +10% damage (stacks with L3/L8)
  *   L19 — Bosses gain an additional +10% HP and +10% damage (stacks with L4/L9)
@@ -100,13 +100,13 @@ export function getAscensionMutations(level: number): AscensionMutations {
   if (l >= 7) m.normalHpMult = 1.1;
   if (l >= 8) m.eliteHpMult = 1.1;
   if (l >= 9) m.bossHpMult = 1.1;
-  if (l >= 10) m.merchantPriceMultiplier = 1.1;
+  if (l >= 10) m.extraCharcoalTile = true;
   if (l >= 11) m.consumableSlotPenalty = 1;
   if (l >= 12) m.reducedTileUpgradeFrequency = true;
   if (l >= 13) m.goldMultiplier = 0.9;
   if (l >= 14) m.maxHealthMultiplier = 0.95;
   if (l >= 15) m.legendaryWeight = 1;
-  if (l >= 16) m.extraCharcoalTile = true;
+  if (l >= 16) m.merchantPriceMultiplier = 1.1;
   // L17/18/19: additional +10% HP and damage per enemy category, stacking
   // additively with L2/L7 (normals), L3/L8 (elites), L4/L9 (bosses).
   if (l >= 17) { m.normalHpMult += 0.1; m.normalDamageMult += 0.1; }

@@ -146,13 +146,13 @@ Level 6 - Start each run with less health. (10% missing HP)
 Level 7 - Normal enemies are tougher.
 Level 8 - Elites are tougher.
 Level 9 - Bosses are tougher.
-Level 10 - Shops cost more. (10% more)
+Level 10 - Start each run with an extra Charcoal tile.
 Level 11 - Start each run with 1 less consumable slot.
 Level 12 - Upgraded tiles appear less often.
 Level 13 - All enemies drop less gold. (10% less)
 Level 14 - Start with less max HP. (5% less)
 Level 15 - Legendary artifacts are less common.
-Level 16 - Start each run with an extra Charcoal tile.
+Level 16 - Shops cost more. (10% more)
 Level 17 - Normal enemies gain an additional 10% HP and 10% damage.
 Level 18 - Elites gain an additional 10% HP and 10% damage.
 Level 19 - Bosses gain an additional 10% HP and 10% damage.
