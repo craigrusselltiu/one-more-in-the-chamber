@@ -29,14 +29,14 @@ export function playSwapFail(): void {
   play('sfx_swap', 0.4);
 }
 
-export function playMatch(comboStep: number): void {
+export function playMatch(comboStep: number, volumeScale = 1.0): void {
   // Play a random match SFX
   const idx = Math.floor(Math.random() * 3) + 1;
-  play(`sfx_match${idx}`, 0.4);
+  play(`sfx_match${idx}`, 0.4 * volumeScale);
 
   // Also play the pitch SFX with higher pitch for higher combos
   const pitchRate = 1.0 + (comboStep - 1) * 0.15; // goes up with combo
-  play('sfx_match_pitch', 0.3, Math.min(pitchRate, 2.5));
+  play('sfx_match_pitch', 0.3 * volumeScale, Math.min(pitchRate, 2.5));
 }
 
 let campfireSound: Phaser.Sound.BaseSound | null = null;

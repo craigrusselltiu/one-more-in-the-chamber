@@ -13,14 +13,8 @@ import { ArtifactSystem } from './ArtifactSystem';
 import type { ResourceOutput } from './ResourceResolver';
 import { BoardHazardManager } from '../board/BoardHazardManager';
 import { TILE_COLORS, TILE_DEFINITIONS } from '../../data/tiles';
-import { chooseEnemyIntent, chooseMineCartTimedIntent, executeBoardManipulation } from './EnemyAI';
+import { chooseEnemyIntent, chooseMineCartTimedIntent } from './EnemyAI';
 import { BossController } from './BossController';
-import {
-  rollEliteModifier,
-  applyEliteModifier,
-  ELITE_MODIFIERS,
-} from './EliteModifiers';
-import type { EliteModifierId, EliteModifier } from './EliteModifiers';
 import { playSwapFail, playMatch, playDeadeyeShot, playHit, playBlock, playAbilityReady } from '../../services/sfx';
 import { useRunStore } from '../../store/runStore';
 import { CONSUMABLES } from '../../data/consumables';
@@ -88,7 +82,7 @@ export class CombatManager {
   private artifacts: ArtifactSystem;
   private hazardManager: BoardHazardManager;
   private bossController: BossController | null = null;
-  private eliteModifier: EliteModifier | null = null;
+  private isElite = false;
   private phase: CombatPhase = 'turn-start';
   private turnNumber = 0;
   private swapsPerTurn: number;
@@ -110,8 +104,8 @@ export class CombatManager {
   private swapsUsedThisTurn = 0;
   /** Whether the current swap being resolved was non-adjacent (lasso). */
   private currentSwapIsLasso = false;
-  /** Lasso consumable: next swap can be non-adjacent. */
-  private lassoNextSwap = false;
+  /** Lasso consumable: number of remaining non-adjacent swaps allowed. */
+  private lassoSwapsRemaining = 0;
   /** Whether a ricochet triggered a random tile removal that needs gravity+cascade resolution. */
   private ricochetTriggeredThisResolution = false;
   /** Total damage dealt to enemies this fight (for scoring). */
@@ -131,11 +125,19 @@ export class CombatManager {
     this.isBoss = config.isBoss ?? false;
     this.turnLimit = config.turnLimit ?? 0;
     this.timedFailureDamage = config.timedFailureDamage ?? 0;
-    this.goldMultiplier = config.goldMultiplier ?? 1.0;
+    this.goldMultiplier = (config.goldMultiplier ?? 1.0);
 
     // Initialize trait and artifact systems
     this.traits = new TraitSystem(config.traitCounts);
     this.artifacts = new ArtifactSystem(config.artifacts);
+
+    // Reno's Coin: override chip bucket to 6 hit / 2 miss
+    if (this.artifacts.has('renos_coin')) {
+      this.resolver.setChipBucket(6, 8);
+    }
+
+    // Golden Scarab: +30% gold gain
+    this.goldMultiplier *= this.artifacts.getGoldGainMultiplier();
 
     // Base swaps + trait bonus
     const baseSwaps = config.swapsPerTurn ?? 3;
@@ -157,6 +159,9 @@ export class CombatManager {
       config.tileUpgrades,
       config.playerGold,
     );
+    // Mirage was transformed in CombatScene before CombatManager was created;
+    // record the chosen type so getUpgradeLevel can apply Mirage's upgrade.
+    this.player.mirageReplacementType = this.board.getMirageType();
 
     // Initialize enemies
     for (const def of config.enemies) {
@@ -173,21 +178,17 @@ export class CombatManager {
       this.bossController = new BossController(config.enemies[0].type);
     }
 
-    // Elite modifier: random board modifier at fight start
-    if (config.isElite) {
-      this.eliteModifier = rollEliteModifier();
-      applyEliteModifier(this.eliteModifier, this.hazardManager);
-      if (this.eliteModifier.id === 'cracked_ground') {
-        for (const enemy of this.enemies) {
-          enemy.state.crackedGround = 2;
-        }
-      }
-    }
+    this.isElite = config.isElite ?? false;
 
-    // Timed encounter: pre-place hazard tiles (e.g. Mine Cart)
+    // Timed encounter: pre-place hazard tiles and set fuse on mine cart
     if (this.turnLimit > 0) {
       this.hazardManager.placeRandomSand(3);
       this.hazardManager.placeRandomBombs(1);
+      for (const enemy of this.enemies) {
+        if (enemy.getDefinition().type === 'mine_cart') {
+          enemy.state.fuse = 5;
+        }
+      }
     }
 
     // Set board tile types and Sapper explosive radius
@@ -212,20 +213,31 @@ export class CombatManager {
     this.traits.onFightStart(this.player, this.isBoss, this.enemies);
     this.artifacts.onFightStart(this.player, this.enemies);
 
-    // Execute enemy startOfFight actions (e.g. Rattlesnake: Poison 3 Tiles)
+    // Execute enemy startOfFight actions (e.g. Rattlesnake: Poison 3 Tiles).
+    // Tile-hazard placement actions are skipped while the player has Protected
+    // (e.g. from High Vis Jacket), matching the in-turn immunity check.
+    const startOfFightHazardImmune = this.player.protectedStacks > 0;
     for (const enemy of this.enemies) {
       const sof = enemy.getDefinition().startOfFight;
       if (sof && sof.length > 0) {
         for (const action of sof) {
           // Only execute board-level actions (poison, bury, lock, etc.)
           // Skip attacks/blocks since combat hasn't started yet
-          if (action.kind === 'poison_tiles') this.hazardManager.placeRandomPoison(action.value);
-          else if (action.kind === 'bury') this.hazardManager.placeRandomSand(action.value);
-          else if (action.kind === 'lock') this.hazardManager.placeRandomLocks(action.value);
-          else if (action.kind === 'lock_row') this.hazardManager.lockRow(Math.floor(Math.random() * 8));
-          else if (action.kind === 'lock_column') this.hazardManager.lockColumn(Math.floor(Math.random() * 8));
-          else if (action.kind === 'suppress') this.hazardManager.placeRandomSuppress(action.value);
-          else if (action.kind === 'bomb') this.hazardManager.placeRandomBombs(action.value, 3 + this.traits.getBombCountdownBonus());
+          if (action.kind === 'poison_tiles') { if (!startOfFightHazardImmune) this.hazardManager.placeRandomPoison(action.value); }
+          else if (action.kind === 'bury') { if (!startOfFightHazardImmune) this.hazardManager.placeRandomSand(action.value); }
+          else if (action.kind === 'lock') { if (!startOfFightHazardImmune) this.hazardManager.placeRandomLocks(action.value); }
+          else if (action.kind === 'lock_row') { if (!startOfFightHazardImmune) this.hazardManager.lockRow(Math.floor(Math.random() * 8)); }
+          else if (action.kind === 'lock_column') { if (!startOfFightHazardImmune) this.hazardManager.lockColumn(Math.floor(Math.random() * 8)); }
+          else if (action.kind === 'suppress') { if (!startOfFightHazardImmune) this.hazardManager.placeRandomSuppress(action.value); }
+          else if (action.kind === 'bomb') { if (!startOfFightHazardImmune) this.hazardManager.placeRandomBombs(action.value, 2 + this.traits.getBombCountdownBonus()); }
+          else if (action.kind === 'gain_cloak') enemy.state.cloak += action.value;
+          else if (action.kind === 'gain_hardened') enemy.state.hardened += action.value;
+          else if (action.kind === 'gain_grace') enemy.state.graceStacks += action.value;
+          else if (action.kind === 'gain_dead_man_walking') enemy.state.deadManWalking += action.value;
+          else if (action.kind === 'apply_terrified') this.player.terrifiedStacks += action.value;
+          else if (action.kind === 'apply_vulnerable') this.player.vulnerableStacks += action.value;
+          else if (action.kind === 'block') enemy.addBlock(action.value);
+          else if (action.kind === 'summon' && action.summonType) this.trySummonEnemy(enemy, action.summonType);
         }
       }
     }
@@ -369,9 +381,6 @@ export class CombatManager {
     return this.hazardManager;
   }
 
-  getEliteModifier(): EliteModifier | null {
-    return this.eliteModifier;
-  }
 
   getBossPhase(): number | null {
     return this.bossController?.getPhase() ?? null;
@@ -426,6 +435,7 @@ export class CombatManager {
         poisonedStacks: this.player.poisonedStacks,
         readyStacks: this.player.readyStacks,
         chainStacks: this.player.chainStacks,
+        protectedStacks: this.player.protectedStacks,
         critChance: 0, // deprecated, kept for snapshot compat
         thorns: this.player.thorns,
         shedSkinAvailable: this.player.shedSkinAvailable,
@@ -439,7 +449,7 @@ export class CombatManager {
       },
       enemies: serializedEnemies,
       bossController: this.bossController?.serialize() ?? null,
-      eliteModifierId: (this.eliteModifier?.id as EliteModifierId) ?? null,
+      eliteModifierId: null,
       suppressedTypes: this.hazardManager.serializeSuppressedTypes(),
       longestCascadeThisFight: this.longestCascadeThisFight,
       playerTookDamageThisFight: this.playerTookDamageThisFight,
@@ -485,17 +495,27 @@ export class CombatManager {
     this.player.poisonedStacks = sp.poisonedStacks ?? 0;
     this.player.readyStacks = sp.readyStacks ?? 0;
     this.player.chainStacks = sp.chainStacks ?? 0;
+    this.player.protectedStacks = sp.protectedStacks ?? 0;
     // critChance deprecated — Lucky stacks are the crit chance now
     this.player.thorns = sp.thorns;
     this.player.shedSkinAvailable = sp.shedSkinAvailable ?? false;
     this.player.deadManWalkingAvailable = sp.deadManWalkingAvailable ?? false;
     this.player.damageReduction = sp.damageReduction ?? 0;
     this.player.goldThisFight = sp.goldThisFight;
+    // Mirage was already restored on the board; mirror it onto the player so
+    // getUpgradeLevel applies the mirage upgrade after a mid-combat reload.
+    this.player.mirageReplacementType = this.board.getMirageType();
 
     // Restore enemies
     this.enemies = snapshot.enemies.map((se) => {
       const enemy = new Enemy(se.definition);
-      enemy.state = { ...se.state, intent: { ...se.state.intent } };
+      enemy.state = {
+        ...se.state,
+        // Backfill fields that may be missing from older snapshots
+        deadManWalking: se.state.deadManWalking ?? 0,
+        barricadeStacks: se.state.barricadeStacks ?? 0,
+        intent: { ...se.state.intent },
+      };
       enemy.skipNextAction = se.skipNextAction;
       enemy.summoned = se.state.summoned ?? false;
       return enemy;
@@ -522,13 +542,6 @@ export class CombatManager {
     // Restore boss controller
     if (snapshot.bossController && this.bossController) {
       this.bossController.restoreState(snapshot.bossController);
-    }
-
-    // Restore elite modifier
-    if (snapshot.eliteModifierId) {
-      this.eliteModifier = ELITE_MODIFIERS.find(
-        (m) => m.id === snapshot.eliteModifierId,
-      ) ?? null;
     }
 
     // Restore suppressed types
@@ -578,6 +591,11 @@ export class CombatManager {
 
     this.turnNumber++;
 
+    // Tick fuse on timed enemies
+    for (const enemy of this.aliveEnemies()) {
+      if (enemy.state.fuse > 0) enemy.state.fuse--;
+    }
+
     // Timed encounter: if turn limit exceeded, apply failure damage and end
     if (this.turnLimit > 0 && this.turnNumber > this.turnLimit) {
       this.resolveTimedEncounterFailure();
@@ -622,20 +640,49 @@ export class CombatManager {
     // Artifact turn-start effects (Stolen Badge block, etc.)
     this.artifacts.onTurnStart(this.player);
 
-    // Announce enemy intents for this turn (using type-specific AI)
+    // Resurrecting Nails: on 3rd turn during boss combat, restore 30% HP
+    if (this.artifacts.shouldResurrect(this.isBoss)) {
+      const healAmt = Math.round(this.player.maxHealth * 0.3);
+      const healed = this.player.heal(healAmt);
+      if (healed > 0) {
+        this.floatOnPlayer(`+${healed}`, '#40D840');
+        EventBus.emit(GameEvent.PLAYER_HP_CHANGE, this.player.health, this.player.maxHealth);
+      }
+    }
+
+    // Strong Liver: lose 1 gold, gain random buff
+    if (this.artifacts.shouldStrongLiver() && this.player.gold > 0) {
+      this.player.addGold(-1);
+      EventBus.emit(GameEvent.GOLD_CHANGE, this.player.gold);
+      const buffs = ['rageful', 'sturdy', 'ace', 'lucky', 'ready'] as const;
+      const pick = buffs[Math.floor(Math.random() * buffs.length)];
+      switch (pick) {
+        case 'rageful': this.player.ragefulStacks += 1; break;
+        case 'sturdy': this.player.sturdyStacks += 1; break;
+        case 'ace': this.player.addAceStacks(1); break;
+        case 'lucky': this.player.addLuckyStacks(1); break;
+        case 'ready': this.player.addReady(1); break;
+      }
+    }
+
+    // Announce enemy intents for this turn
     for (const enemy of this.aliveEnemies()) {
-      if (this.bossController && this.isBossEnemy(enemy)) {
-        enemy.state.intent = this.bossController.chooseBossIntent(
-          enemy,
-          this.aliveEnemies().length,
-          this.hazardManager,
-        );
-      } else if (this.isTimedEnemy(enemy)) {
+      if (this.isTimedEnemy(enemy)) {
         // Timed enemies show countdown instead of a real attack intent
         const turnsLeft = this.turnLimit - this.turnNumber;
         enemy.state.intent = chooseMineCartTimedIntent(turnsLeft, this.timedFailureDamage);
       } else {
-        enemy.state.intent = chooseEnemyIntent(enemy, this.aliveEnemies().length);
+        const allies = this.aliveEnemies().filter(e => e !== enemy);
+        const allyInjured = allies.some(e => e.state.health < e.state.maxHealth);
+        enemy.state.intent = chooseEnemyIntent(enemy, this.aliveEnemies().length, allyInjured);
+        // Copperhead: patch multi-attack hits to current poison tile count
+        if (enemy.getDefinition().type === 'copperhead_cassidy' && enemy.state.intent.actions) {
+          for (const a of enemy.state.intent.actions) {
+            if (a.kind === 'multi_attack') {
+              a.hits = Math.max(1, this.hazardManager.countHazards('poison'));
+            }
+          }
+        }
       }
     }
 
@@ -693,7 +740,7 @@ export class CombatManager {
     this.currentSwapIsLasso = !this.board.isAdjacent(from, to);
 
     // Non-adjacent swaps require lasso consumable
-    if (this.currentSwapIsLasso && !this.lassoNextSwap) {
+    if (this.currentSwapIsLasso && this.lassoSwapsRemaining <= 0) {
       // Refund the swap -- not allowed without lasso
       this.swapsRemaining++;
       this.swapsUsedThisTurn--;
@@ -702,8 +749,14 @@ export class CombatManager {
       playSwapFail();
       return;
     }
-    if (this.currentSwapIsLasso) {
-      this.lassoNextSwap = false;
+
+    // Consume a lasso charge on any swap while lasso is active
+    const usingLasso = this.lassoSwapsRemaining > 0;
+    if (usingLasso) {
+      this.lassoSwapsRemaining--;
+      if (this.lassoSwapsRemaining <= 0) {
+        this.board.setLassoMode(false);
+      }
     }
 
     // Track trait/artifact swap hooks
@@ -712,10 +765,12 @@ export class CombatManager {
     this.ricochetTriggeredThisResolution = false;
 
     // Process each cascade step's matches immediately (damage, block, etc.)
+    // Shared step counter across swap cascade, prairie fire, and dust devil boots
     let cascadeSteps = 0;
-    const onCascadeStep = this.makeCascadeStepHandler(() => ++cascadeSteps);
+    const nextStep = () => ++cascadeSteps;
+    const onCascadeStep = this.makeCascadeStepHandler(nextStep);
 
-    const result: SwapResult = await this.board.trySwap(from, to, onCascadeStep);
+    const result: SwapResult = await this.board.trySwap(from, to, onCascadeStep, usingLasso);
 
     // Update longest cascade tracking
     if (cascadeSteps > this.longestCascadeThisFight) {
@@ -743,23 +798,24 @@ export class CombatManager {
       }
     }
 
+    // Prairie Fire spread: after each swap, each prairie_fire tile has 50% chance to convert 1 adjacent tile
+    if (this.board.spreadPrairieFire()) {
+      this.ricochetTriggeredThisResolution = false;
+      const onFireStep = this.makeCascadeStepHandler(nextStep);
+      await this.board.resolveMatchesFull(onFireStep);
+      while (this.ricochetTriggeredThisResolution) {
+        this.ricochetTriggeredThisResolution = false;
+        await this.board.applyGravityAnimated();
+        await this.board.fillEmptyTilesAnimated();
+        await this.board.resolveMatchesFull(onFireStep);
+      }
+    }
+
     // Artifact swap hook (check for Quickdraw kill refund)
     const swapResult = this.artifacts.onSwapPerformed(this.enemyDiedThisSwap);
     if (swapResult.refundSwaps) {
       this.swapsRemaining = this.swapsPerTurn;
       EventBus.emit(GameEvent.SWAPS_CHANGE, this.swapsRemaining, this.swapsPerTurn);
-    }
-
-    // Tick bomb countdowns per swap (not per turn) — skip if combat already won
-    if (!this.isCombatOver()) {
-      const bombResult = this.hazardManager.tickBombs();
-      if (bombResult.totalDamage > 0) {
-        const bombDmg = this.player.takeDamage(bombResult.totalDamage);
-        if (bombDmg.hpLost > 0) { playHit(); this.playerTookDamageThisFight = true; }
-        if (bombDmg.blocked > 0) { playBlock(); }
-        EventBus.emit(GameEvent.PLAYER_HP_CHANGE, this.player.health, this.player.maxHealth);
-        EventBus.emit(GameEvent.SCREEN_SHAKE, bombResult.detonations.length > 1 ? 'heavy' : 'medium');
-      }
     }
 
     // Auto-retarget if targeted enemy died during cascade
@@ -768,10 +824,8 @@ export class CombatManager {
       this.targetedEnemyIndex = 0;
     }
 
-    // Reset combo after cascade resolves
-    EventBus.emit(GameEvent.COMBO_UPDATE, 0);
-
     if (this.isCombatOver()) {
+      EventBus.emit(GameEvent.COMBO_UPDATE, 0);
       this.endCombat();
       return;
     }
@@ -782,21 +836,21 @@ export class CombatManager {
         this.board.setIsResolving(true);
         await this.board.shuffleRowsAnimated([6, 7]);
         this.ricochetTriggeredThisResolution = false;
-        let cascadeSteps = 0;
-        const onCascadeStep = this.makeCascadeStepHandler(() => ++cascadeSteps);
-        await this.board.resolveMatchesFull(onCascadeStep);
+        const onBootsStep = this.makeCascadeStepHandler(nextStep);
+        await this.board.resolveMatchesFull(onBootsStep);
         while (this.ricochetTriggeredThisResolution) {
           this.ricochetTriggeredThisResolution = false;
           await this.board.applyGravityAnimated();
           await this.board.fillEmptyTilesAnimated();
-          await this.board.resolveMatchesFull(onCascadeStep);
+          await this.board.resolveMatchesFull(onBootsStep);
         }
         this.board.setIsResolving(false);
-        EventBus.emit(GameEvent.COMBO_UPDATE, 0);
-        if (this.isCombatOver()) { this.endCombat(); return; }
+        if (this.isCombatOver()) { EventBus.emit(GameEvent.COMBO_UPDATE, 0); this.endCombat(); return; }
       }
+      EventBus.emit(GameEvent.COMBO_UPDATE, 0);
       this.endTurn();
     } else {
+      EventBus.emit(GameEvent.COMBO_UPDATE, 0);
       this.setPhase('swap-phase');
       // Save after phase transition: board is stable, phase is interactive
       EventBus.emit(GameEvent.COMBAT_SAVE_REQUESTED);
@@ -927,7 +981,7 @@ export class CombatManager {
 
   /**
    * Rust's Cylinder: last Deadeye shot targets an enemy directly,
-   * dealing 1 damage per Bounty stack on that enemy.
+   * dealing 7 damage plus 1 damage per Bounty stack on that enemy.
    */
   async deadeyeShootEnemy(enemyIndex: number): Promise<void> {
     if (!this.isDeadeyeActive || this.deadeyeShotsRemaining !== 1) return;
@@ -938,11 +992,9 @@ export class CombatManager {
 
     playDeadeyeShot();
 
-    const bountyDamage = enemy.state.bountyStacks * 1;
-    if (bountyDamage > 0) {
-      this.dealDamageToEnemy(enemy, bountyDamage, true);
-      this.emitEnemyHpChanges();
-    }
+    const damage = 7 + enemy.state.bountyStacks;
+    this.dealDamageToEnemy(enemy, damage, true);
+    this.emitEnemyHpChanges();
 
     this.deadeyeShotsRemaining = 0;
     this.board.setDeadeyeMode(false);
@@ -1044,12 +1096,13 @@ export class CombatManager {
     const triggerCount = this.artifacts.has('last_call_bell') ? 2 : 1;
 
     for (let trigger = 0; trigger < triggerCount; trigger++) {
+      const healMult = this.artifacts.getConsumableHealMultiplier();
       switch (consumableId) {
         case 'tonic':
-          this.player.heal(20);
+          this.player.heal(Math.round(20 * healMult));
           break;
         case 'bandage':
-          this.player.heal(10);
+          this.player.heal(Math.round(10 * healMult));
           this.hazardManager.clearAllOfType('poison');
           break;
         case 'strong_coffee':
@@ -1094,7 +1147,8 @@ export class CombatManager {
           this.resolveSnakeOil();
           break;
         case 'lasso':
-          this.lassoNextSwap = true;
+          this.lassoSwapsRemaining++;
+          this.board.setLassoMode(true);
           break;
         default:
           return false;
@@ -1300,9 +1354,27 @@ export class CombatManager {
         this.nextMatchMultiplier = 1.0;
       }
 
-      // Cracked Ground: suppress cascade damage while any enemy has the buff
+      // Cloak: suppress cascade damage while any enemy has the buff
       const suppressDamage = comboMultiplier > 1.0
-        && this.aliveEnemies().some(e => e.state.crackedGround > 0);
+        && this.aliveEnemies().some(e => e.state.cloak > 0);
+
+      // Player Terrified: deal 50% less damage
+      if (this.player.terrifiedStacks > 0 && output.damage > 0) {
+        output.damage = Math.round(output.damage * 0.5);
+      }
+
+      // Scope Lens: 5+ matches generate double resources
+      if (this.artifacts.shouldDoubleMatchResources(match.length)) {
+        output.damage *= 2;
+        output.block *= 2;
+        output.gold *= 2;
+        output.healing *= 2;
+      }
+
+      // Sniper's Eye: 5-match attacks deal damage to ALL enemies
+      if (this.artifacts.shouldFiveMatchAoE(match.length) && output.damage > 0) {
+        output.isAoE = true;
+      }
 
       // Apply multiplier + combo bonus to damage/block/gold/healing (not to status effects)
       const totalMultiplier = multiplier * comboMultiplier;
@@ -1336,6 +1408,27 @@ export class CombatManager {
         EventBus.emit(GameEvent.FLASH_LINE_TO_ENEMY, mid, match.tileType, fullIdx, this.enemies.length);
       }
 
+      // Heliograph Shard: once/combat, on 5-match, apply 1 Blinded to random enemy
+      if (this.artifacts.tryHeliographShard(match.length)) {
+        const alive = this.aliveEnemies();
+        if (alive.length > 0) {
+          const target = alive[Math.floor(Math.random() * alive.length)];
+          target.addBlinded(1);
+          if (!target.isImmuneToDebuffs()) {
+            this.floatOnEnemy(target, '+1 BLINDED', '#A0A0A0', 9);
+            EventBus.emit(GameEvent.ENEMY_HP_CHANGE, { ...target.state });
+          }
+        }
+      }
+
+      // Snake Eye: cascade matches have 50% chance to apply 1 Poison to all enemies
+      if (comboMultiplier > 1.0 && this.artifacts.shouldCascadePoison()) {
+        for (const enemy of this.aliveEnemies()) {
+          this.applyPoison(enemy, 1);
+        }
+        this.emitEnemyHpChanges();
+      }
+
       // Sniper(5): 6+ match kills non-boss targeted enemy
       if (this.traits.shouldSniperExecute(match.length)) {
         const target = this.getTargetedAliveEnemy();
@@ -1365,6 +1458,25 @@ export class CombatManager {
         this.resolveSaloonAdjacent(match);
       }
 
+      // Check HP triggers on all alive enemies
+      for (const enemy of this.aliveEnemies()) {
+        const triggers = enemy.getDefinition().hpTriggers;
+        if (!triggers) continue;
+        const hpRatio = enemy.state.health / enemy.state.maxHealth * 100;
+        for (const trigger of triggers) {
+          if (hpRatio <= trigger.threshold && !enemy.triggeredThresholds.has(trigger.threshold)) {
+            if (trigger.once) enemy.triggeredThresholds.add(trigger.threshold);
+            for (const action of trigger.actions) {
+              this.executeMoveAction(enemy, action);
+            }
+            if (trigger.forceNextMove) {
+              enemy.forcedNextMove = trigger.forceNextMove;
+            }
+            this.emitFullState();
+          }
+        }
+      }
+
       // Check if an enemy died from this match + trait kill hooks
       for (const enemy of this.enemies) {
         if (enemy.state.isDead && !enemy.state._deathProcessed) {
@@ -1392,11 +1504,21 @@ export class CombatManager {
             this.emitEnemyHpChanges();
             EventBus.emit(GameEvent.SCREEN_SHAKE, 'medium');
           }
-          // Kill Confirmed: kill with .50 Cal or 5+ match -> gain 1 swap
-          const killArt = this.artifacts.onEnemyKilled(match);
+          // Kill Confirmed, Detonator, Burial Rites
+          const killArt = this.artifacts.onEnemyKilled(match, enemy.summoned);
           if (killArt.killGrantsSwap) {
             this.swapsRemaining++;
             EventBus.emit(GameEvent.SWAPS_CHANGE, this.swapsRemaining, this.swapsPerTurn);
+          }
+          if (killArt.spawnExplosive) {
+            this.board.spawnExplosiveOnRandomTile();
+          }
+          if (killArt.healAmount > 0) {
+            const healed = this.player.heal(killArt.healAmount);
+            if (healed > 0) {
+              this.floatOnPlayer(`+${healed}`, '#40D840');
+              EventBus.emit(GameEvent.PLAYER_HP_CHANGE, this.player.health, this.player.maxHealth);
+            }
           }
         }
       }
@@ -1509,6 +1631,16 @@ export class CombatManager {
         this.floatOnEnemy(enemy, label, '#ff4444', critSize);
       }
     }
+    // Enemy thorns: reflect damage back to player
+    if (enemy.state.thorns > 0 && damage > 0) {
+      const thornsDmg = this.player.takeDamage(enemy.state.thorns);
+      if (thornsDmg.hpLost > 0) {
+        this.floatOnPlayer(`-${thornsDmg.hpLost}`, '#C04040');
+        this.playerTookDamageThisFight = true;
+      }
+      EventBus.emit(GameEvent.PLAYER_HP_CHANGE, this.player.health, this.player.maxHealth);
+    }
+
     // Bounty kill check after damage
     this.handleBountyKill(enemy);
   }
@@ -1561,6 +1693,12 @@ export class CombatManager {
         const target = this.getTargetedAliveEnemy();
         if (target) this.dealDamageToEnemy(target, damage, false, isCrit);
       }
+      // Duel: on exactly 4-match, deal the damage a second time
+      if (output.duelDoubleHit) {
+        const target = this.getTargetedAliveEnemy();
+        if (target) this.dealDamageToEnemy(target, damage, false, isCrit);
+      }
+
       this.emitEnemyHpChanges();
       this.traits.onDamageDealt();
     }
@@ -1599,8 +1737,15 @@ export class CombatManager {
       const healed = this.player.heal(output.healing);
       this.floatOnPlayer(`+${healed}`, '#40D840');
       EventBus.emit(GameEvent.PLAYER_HP_CHANGE, this.player.health, this.player.maxHealth);
-      // Offering Plate: healing grants gold equal to HP healed
-      this.artifacts.onPlayerHealed(healed, this.player);
+      // Offering Plate: healing grants gold. Absolution Rounds: damage to target.
+      const healArt = this.artifacts.onPlayerHealed(healed, this.player);
+      if (healArt.absolutionDamage > 0) {
+        const target = this.getTargetedAliveEnemy();
+        if (target) {
+          this.dealDamageToEnemy(target, healArt.absolutionDamage, false);
+          this.emitEnemyHpChanges();
+        }
+      }
     }
 
     // Ability charges (capped at threshold)
@@ -1742,9 +1887,12 @@ export class CombatManager {
   // ---------------------------------------------------------------------------
 
   private async endTurn(): Promise<void> {
-    // Tick cracked ground stacks
+    // Player Terrified: decrement at end of player's turn
+    if (this.player.terrifiedStacks > 0) this.player.terrifiedStacks--;
+
+    // Tick cloak stacks
     for (const enemy of this.aliveEnemies()) {
-      if (enemy.state.crackedGround > 0) enemy.state.crackedGround--;
+      if (enemy.state.cloak > 0) enemy.state.cloak--;
     }
 
     // Tracker(1): reveal all buried tiles at end of turn
@@ -1756,8 +1904,13 @@ export class CombatManager {
           this.player.ragefulStacks += cleared.length;
           this.floatOnPlayer(`+${cleared.length} RAGEFUL`, '#D04040', 9);
         }
-        // Artifact buried-reveal hooks (Trapper's Snare, Gravedigger's Shovel)
+        // Artifact buried-reveal hooks (Trapper's Snare, Gravedigger's Shovel, Golden Shovel)
         const buriedArt = this.artifacts.onBuriedRevealed();
+        if (buriedArt.goldPerReveal > 0) {
+          const totalGold = cleared.length * buriedArt.goldPerReveal;
+          this.player.addGold(Math.max(1, Math.round(totalGold * this.goldMultiplier)));
+          EventBus.emit(GameEvent.GOLD_CHANGE, this.player.gold);
+        }
         for (let i = 0; i < cleared.length; i++) {
           const alive = this.aliveEnemies();
           if (alive.length === 0) break;
@@ -1798,6 +1951,17 @@ export class CombatManager {
     // Artifact turn-end effects (Iron Will, Sheriff's Domino)
     this.artifacts.onTurnEnd(this.swapsRemaining, this.player);
 
+    // Holy Water: unused swaps heal 3 HP each
+    const holyWaterHeal = this.artifacts.getHolyWaterHealPerSwap();
+    if (holyWaterHeal > 0 && this.swapsRemaining > 0) {
+      const totalHeal = this.swapsRemaining * holyWaterHeal;
+      const healed = this.player.heal(totalHeal);
+      if (healed > 0) {
+        this.floatOnPlayer(`+${healed}`, '#40D840');
+        EventBus.emit(GameEvent.PLAYER_HP_CHANGE, this.player.health, this.player.maxHealth);
+      }
+    }
+
     // Trailblazer's Compass: unused swaps deal 3 damage each to targeted enemy
     if (this.artifacts.has('trailblazers_compass') && this.swapsRemaining > 0) {
       const compassTarget = this.getTargetedAliveEnemy();
@@ -1807,6 +1971,18 @@ export class CombatManager {
         this.damageDealtThisFight += hpLost;
         this.floatOnEnemy(compassTarget, `-${hpLost}`, '#70B0D0');
         EventBus.emit(GameEvent.ENEMY_HP_CHANGE, { ...compassTarget.state });
+      }
+    }
+
+    // Tick bomb countdowns at end of turn
+    if (!this.isCombatOver()) {
+      const bombResult = this.hazardManager.tickBombs();
+      if (bombResult.totalDamage > 0) {
+        const bombDmg = this.player.takeDamage(bombResult.totalDamage);
+        if (bombDmg.hpLost > 0) { playHit(); this.playerTookDamageThisFight = true; }
+        if (bombDmg.blocked > 0) { playBlock(); }
+        EventBus.emit(GameEvent.PLAYER_HP_CHANGE, this.player.health, this.player.maxHealth);
+        EventBus.emit(GameEvent.SCREEN_SHAKE, bombResult.detonations.length > 1 ? 'heavy' : 'medium');
       }
     }
 
@@ -1843,6 +2019,15 @@ export class CombatManager {
   }
 
   private async executeEnemyTurn(): Promise<void> {
+    // Clear enemy block at the start of their turn (Barricade retains it).
+    for (const enemy of this.aliveEnemies()) {
+      if (enemy.state.barricadeStacks > 0) {
+        enemy.state.barricadeStacks--;
+      } else {
+        enemy.state.block = 0;
+      }
+    }
+
     // 1. Venom ticks on all enemies (upgrade adds +1 bonus damage per tick per level)
     const wasteUpgrade = this.player.getUpgradeLevel('waste');
     for (const enemy of this.aliveEnemies()) {
@@ -1853,14 +2038,15 @@ export class CombatManager {
         EventBus.emit(GameEvent.ENEMY_HP_CHANGE, { ...enemy.state });
         this.handleBountyKill(enemy);
       }
-      // Vulnerable decreases by 1 at end of turn
+      // Vulnerable decreases by 1 at end of turn (affects damage taken during player turn,
+      // so decrement here is effectively end-of-player-turn and is correct)
       if (enemy.state.vulnerable > 0) {
         enemy.state.vulnerable--;
       }
-      // Terrified decreases by 1 at end of turn
-      if (enemy.state.terrifiedStacks > 0) {
-        enemy.state.terrifiedStacks--;
-      }
+      // Thorns cleared at end of turn
+      enemy.state.thorns = 0;
+      // NOTE: Blinded and Terrified are decremented AFTER the enemy acts (see below),
+      // since they must be active while the enemy attacks on this turn.
     }
 
     // Sync HUD after venom ticks so enemy HP bars update immediately
@@ -1878,6 +2064,9 @@ export class CombatManager {
         const phaseChanged = this.bossController.checkPhaseTransition(boss, this.hazardManager, this.board);
         if (phaseChanged) {
           EventBus.emit(GameEvent.SCREEN_SHAKE, 'heavy');
+          if (boss.getDefinition().type === 'copperhead_cassidy') {
+            this.floatOnEnemy(boss, 'SHED SKIN', '#40D840', 12);
+          }
         }
         this.bossController.executePerTurnEffects(
           this.hazardManager,
@@ -1907,44 +2096,21 @@ export class CombatManager {
 
       await new Promise(r => setTimeout(r, Math.round(600 / getSpeedMultiplier())));
       EventBus.emit(GameEvent.ENEMY_ACTION, enemy.state.id);
-      const action = enemy.executeIntent();
+      enemy.executeIntent();
 
-      // If intent has structured actions, execute each one
-      if (enemy.state.intent.actions && enemy.state.intent.actions.length > 0) {
-        for (const ma of enemy.state.intent.actions) {
-          if (enemy.state.isDead) break;
-          await this.executeMoveAction(enemy, ma);
-        }
-      } else {
-        // Legacy fallback for old-style intents
-        switch (action.type) {
-          case 'attack': {
-            if (action.value > 0) {
-              this.executeEnemyAttack(enemy, action.value);
-            }
-            break;
-          }
-          case 'block':
-            if (this.isBossEnemy(enemy)) {
-              this.artifacts.onBossGainedBlock(this.player);
-            }
-            break;
-          case 'summon':
-            this.trySummonEnemy(enemy);
-            break;
-          case 'board-manipulation':
-            if (enemy.state.intent.description.startsWith('SUPPRESS')) {
-              this.hazardManager.placeRandomSuppress(3);
-            } else {
-              executeBoardManipulation(enemy, enemy.state.intent, this.hazardManager, this.traits.getBombCountdownBonus());
-            }
-            break;
-          case 'ability':
-            break;
-        }
+      // Execute each structured action in the intent
+      const intentActions = enemy.state.intent.actions ?? [];
+      for (const ma of intentActions) {
+        if (enemy.state.isDead) break;
+        await this.executeMoveAction(enemy, ma);
       }
 
-      // Sync full state after each enemy action so HUD reflects block/status changes
+      // Blinded / Terrified decrement at end of turn, after the enemy has acted
+      if (enemy.state.blindedStacks > 0) enemy.state.blindedStacks--;
+      if (enemy.state.terrifiedStacks > 0) enemy.state.terrifiedStacks--;
+
+      // Clear intent after execution so icons disappear immediately
+      enemy.state.intent = { type: 'ability', value: 0, description: '' };
       this.emitFullState();
 
       if (this.player.isDead()) return;
@@ -1981,64 +2147,136 @@ export class CombatManager {
       case 'attack':
         this.executeEnemyAttack(enemy, ma.value);
         break;
-      case 'multi_attack':
-        for (let i = 0; i < (ma.hits ?? 2); i++) {
+      case 'multi_attack': {
+        // Copperhead: hits = number of poison tiles on board
+        let hits = ma.hits ?? 2;
+        if (enemy.getDefinition().type === 'copperhead_cassidy') {
+          hits = this.hazardManager.countHazards('poison');
+          if (hits <= 0) hits = 1;
+        }
+        for (let i = 0; i < hits; i++) {
           this.executeEnemyAttack(enemy, ma.value);
+          this.emitFullState();
+          if (i < hits - 1) {
+            await new Promise(r => setTimeout(r, Math.round(200 / getSpeedMultiplier())));
+          }
         }
         break;
+      }
       case 'block':
         enemy.addBlock(ma.value);
         if (this.isBossEnemy(enemy)) this.artifacts.onBossGainedBlock(this.player);
         break;
       case 'lock':
-        this.hazardManager.placeRandomLocks(ma.value);
+        if (this.player.protectedStacks <= 0) this.hazardManager.placeRandomLocks(ma.value);
         break;
       case 'lock_row':
-        this.hazardManager.lockRow(Math.floor(Math.random() * 8));
+        if (this.player.protectedStacks <= 0) this.hazardManager.lockRow(Math.floor(Math.random() * 8));
         break;
       case 'lock_column':
-        this.hazardManager.lockColumn(Math.floor(Math.random() * 8));
+        if (this.player.protectedStacks <= 0) this.hazardManager.lockColumn(Math.floor(Math.random() * 8));
         break;
       case 'poison_tiles':
-        this.hazardManager.placeRandomPoison(ma.value);
+        if (this.player.protectedStacks <= 0) this.hazardManager.placeRandomPoison(ma.value);
         break;
       case 'apply_poison':
-        this.player.poisonedStacks += ma.value;
-        this.floatOnPlayer(`+${ma.value} POISON`, '#40ff40', 9);
+        if (this.player.protectedStacks <= 0) {
+          this.player.poisonedStacks += ma.value;
+          this.floatOnPlayer(`+${ma.value} POISON`, '#40ff40', 9);
+        }
         break;
       case 'bomb':
-        this.hazardManager.placeRandomBombs(ma.value, 3 + this.traits.getBombCountdownBonus());
+        if (this.player.protectedStacks <= 0) this.hazardManager.placeRandomBombs(ma.value, 2 + this.traits.getBombCountdownBonus());
         break;
       case 'bury':
-        this.hazardManager.placeRandomSand(ma.value);
+        if (this.player.protectedStacks <= 0) this.hazardManager.placeRandomSand(ma.value);
         break;
       case 'suppress':
-        this.hazardManager.placeRandomSuppress(ma.value);
+        if (this.player.protectedStacks <= 0) this.hazardManager.placeRandomSuppress(ma.value);
         break;
       case 'fools_gold':
-        this.hazardManager.placeRandomFoolsGold(ma.value);
+        if (this.player.protectedStacks <= 0) this.hazardManager.placeRandomFoolsGold(ma.value);
         break;
       case 'summon':
         this.trySummonEnemy(enemy, ma.summonType);
         break;
-      case 'heal':
-        enemy.state.health = Math.min(enemy.state.maxHealth, enemy.state.health + ma.value);
-        this.floatOnEnemy(enemy, `+${ma.value}`, '#40D840');
+      case 'heal': {
+        let healAmount = ma.value;
+        // Copperhead: clear all poison tiles and heal 2% HP per tile cleared
+        if (enemy.getDefinition().type === 'copperhead_cassidy' && ma.value === 0) {
+          const poisonCleared = this.hazardManager.clearAllOfType('poison');
+          healAmount = Math.round(enemy.state.maxHealth * 0.02 * poisonCleared.length);
+        }
+        if (healAmount > 0) {
+          enemy.state.health = Math.min(enemy.state.maxHealth, enemy.state.health + healAmount);
+          this.floatOnEnemy(enemy, `+${healAmount}`, '#40D840');
+          EventBus.emit(GameEvent.ENEMY_HP_CHANGE, { ...enemy.state });
+        }
+        break;
+      }
+      case 'gain_rageful':
+        // Enemy buffs itself with Rageful (+1 damage per stack)
+        enemy.state.ragefulStacks += ma.value;
+        this.floatOnEnemy(enemy, `+${ma.value} RAGEFUL`, '#D04040', 9);
         EventBus.emit(GameEvent.ENEMY_HP_CHANGE, { ...enemy.state });
         break;
-      case 'gain_rageful':
-        this.player.ragefulStacks += ma.value;
-        this.floatOnPlayer(`+${ma.value} RAGEFUL`, '#D04040', 9);
+      case 'apply_terrified':
+        // Apply Terrified to the player (player deals 50% less damage)
+        this.player.terrifiedStacks += ma.value;
+        this.floatOnPlayer(`+${ma.value} TERRIFIED`, '#8B4789', 9);
         break;
-      case 'gain_terrified':
-        // Apply Terrified to the targeted enemy... wait, this is an enemy action applying to player
-        // Actually from the MD, Vulture applies Terrified to the player? No - Terrified is an enemy debuff.
-        // The MD says "Apply 1 Terrified" which means apply to ALL enemies? No that doesn't make sense.
-        // Actually looking at the Vulture moves: "Attack 8, Apply 1 Terrified" - this terrifies the player's enemies?
-        // No - Terrified is "Deal 50% less damage" - it's a debuff on enemies. But Vulture is an enemy...
-        // This must mean the Vulture applies Terrified to itself or to the player somehow.
-        // For now: skip, it's a no-op until clarified.
+      case 'apply_vulnerable':
+        // Apply Vulnerable to the player (player takes 50% more damage)
+        this.player.vulnerableStacks += ma.value;
+        this.floatOnPlayer(`+${ma.value} VULNERABLE`, '#C070D0', 9);
         break;
+      case 'gain_thorns':
+        enemy.state.thorns += ma.value;
+        this.floatOnEnemy(enemy, `+${ma.value} THORNS`, '#C04040', 9);
+        EventBus.emit(GameEvent.ENEMY_HP_CHANGE, { ...enemy.state });
+        break;
+      case 'gain_cloak':
+        enemy.state.cloak += ma.value;
+        this.floatOnEnemy(enemy, `+${ma.value} CLOAK`, '#808080', 9);
+        EventBus.emit(GameEvent.ENEMY_HP_CHANGE, { ...enemy.state });
+        break;
+      case 'gain_hardened':
+        enemy.state.hardened += ma.value;
+        this.floatOnEnemy(enemy, `+${ma.value} HARDENED`, '#8B7355', 9);
+        EventBus.emit(GameEvent.ENEMY_HP_CHANGE, { ...enemy.state });
+        break;
+      case 'gain_grace':
+        enemy.state.graceStacks = (enemy.state.graceStacks ?? 0) + ma.value;
+        this.floatOnEnemy(enemy, `+${ma.value} GRACE`, '#A0C8FF', 9);
+        EventBus.emit(GameEvent.ENEMY_HP_CHANGE, { ...enemy.state });
+        break;
+      case 'gain_dead_man_walking':
+        enemy.state.deadManWalking += ma.value;
+        this.floatOnEnemy(enemy, `+${ma.value} DEAD MAN WALKING`, '#C8B060', 9);
+        EventBus.emit(GameEvent.ENEMY_HP_CHANGE, { ...enemy.state });
+        break;
+      case 'gain_barricade':
+        enemy.state.barricadeStacks += ma.value;
+        this.floatOnEnemy(enemy, `+${ma.value} BARRICADE`, '#8B7355', 9);
+        EventBus.emit(GameEvent.ENEMY_HP_CHANGE, { ...enemy.state });
+        break;
+      case 'apply_vulnerable_self':
+        enemy.addVulnerable(ma.value);
+        this.floatOnEnemy(enemy, `+${ma.value} VULNERABLE`, '#C070D0', 9);
+        EventBus.emit(GameEvent.ENEMY_HP_CHANGE, { ...enemy.state });
+        break;
+      case 'heal_ally': {
+        // Heal another alive non-self enemy
+        const allies = this.aliveEnemies().filter(e => e !== enemy);
+        const injured = allies.filter(e => e.state.health < e.state.maxHealth);
+        const target = injured.length > 0 ? injured[0] : null;
+        if (target) {
+          target.state.health = Math.min(target.state.maxHealth, target.state.health + ma.value);
+          this.floatOnEnemy(target, `+${ma.value}`, '#40D840');
+          EventBus.emit(GameEvent.ENEMY_HP_CHANGE, { ...target.state });
+        }
+        break;
+      }
       case 'shuffle_rows': {
         // Encode: 67 = rows 6,7 (bottom 2), 1 = rows 0,1 (top 2)
         const rows = ma.value === 67 ? [6, 7] : ma.value === 1 ? [0, 1] : [6, 7];
@@ -2079,9 +2317,15 @@ export class CombatManager {
   /** Execute a single enemy attack against the player. */
   private executeEnemyAttack(enemy: Enemy, damage: number): void {
     if (damage <= 0) return;
-    let adjustedDamage = enemy.state.terrifiedStacks > 0
-      ? Math.round(damage * 0.5)
-      : damage;
+    // Blinded: attacks deal no damage
+    if (enemy.state.blindedStacks > 0) return;
+    // Enemy Rageful: +1 damage per stack, then decrement
+    let adjustedDamage = damage + enemy.state.ragefulStacks;
+    if (enemy.state.ragefulStacks > 0) enemy.state.ragefulStacks--;
+    // Enemy Terrified: deal 50% less damage
+    if (enemy.state.terrifiedStacks > 0) {
+      adjustedDamage = Math.round(adjustedDamage * 0.5);
+    }
     if (this.artifacts.has('preachers_bible')) {
       adjustedDamage = Math.max(0, adjustedDamage - 1);
     }
@@ -2097,6 +2341,9 @@ export class CombatManager {
       this.applyPoison(enemy, artDmg.poisonToAttacker);
       this.floatOnEnemy(enemy, `+${artDmg.poisonToAttacker} POISON`, '#40ff40', 9);
       EventBus.emit(GameEvent.ENEMY_HP_CHANGE, { ...enemy.state });
+    }
+    if (artDmg.grantConsumable) {
+      this.grantRandomConsumable();
     }
     EventBus.emit(GameEvent.PLAYER_HP_CHANGE, this.player.health, this.player.maxHealth);
     if (damage >= 25) {
@@ -2114,19 +2361,6 @@ export class CombatManager {
 
   private trySummonEnemy(summoner: Enemy, summonType?: string): void {
     if (this.aliveEnemies().length >= 3) return;
-
-    // Boss summons a specific minion type
-    if (this.bossController && this.isBossEnemy(summoner)) {
-      const minionDef = BossController.createBossMinion(summoner.getDefinition().type);
-      if (minionDef) {
-        const bossMinion = new Enemy(minionDef);
-        bossMinion.summoned = true;
-        bossMinion.state.summoned = true;
-        this.addEnemyToSlot(bossMinion);
-        this.emitFullState();
-        return;
-      }
-    }
 
     // If a specific summon type is given, look it up and use 1/3 HP
     if (summonType && ALL_ENEMIES[summonType]) {
@@ -2213,7 +2447,7 @@ export class CombatManager {
       let base: number;
       let range: number;
       if (this.isBoss) { base = 45; range = 10; }
-      else if (this.eliteModifier) { base = 25; range = 5; }
+      else if (this.isElite) { base = 25; range = 5; }
       else { base = 10; range = 3; }
       let goldReward = base + Math.floor(Math.random() * (range * 2 + 1)) - range;
       goldReward = Math.max(1, Math.round(goldReward * this.goldMultiplier));
@@ -2254,10 +2488,13 @@ export class CombatManager {
       const clearPoison = this.traits.clearsAdjacentPoison();
       let poisonCleared = 0;
       let locksFreed = 0;
+      let sandRevealed = 0;
       for (const match of stepMatches) {
         const locksBefore = this.hazardManager.countHazards('lock');
+        const sandBefore = this.hazardManager.countHazards('sand');
         const freed = this.hazardManager.resolveAdjacentHazards(match.tiles, clearPoison);
         locksFreed += locksBefore - this.hazardManager.countHazards('lock');
+        sandRevealed += sandBefore - this.hazardManager.countHazards('sand');
         if (clearPoison) {
           poisonCleared += freed.filter(p => {
             // Count tiles that were poison (now cleared)
@@ -2291,6 +2528,30 @@ export class CombatManager {
           this.player.addBlock(lockBlock);
           this.floatOnPlayer(`+${lockBlock}`, '#6888A0');
         }
+      }
+      // Artifact buried-reveal hooks (Trapper's Snare, Gravedigger's Shovel, Golden Shovel)
+      if (sandRevealed > 0) {
+        const buriedArt = this.artifacts.onBuriedRevealed();
+        if (buriedArt.goldPerReveal > 0) {
+          const totalGold = sandRevealed * buriedArt.goldPerReveal;
+          this.player.addGold(Math.max(1, Math.round(totalGold * this.goldMultiplier)));
+          EventBus.emit(GameEvent.GOLD_CHANGE, this.player.gold);
+        }
+        for (let i = 0; i < sandRevealed; i++) {
+          const alive = this.aliveEnemies();
+          if (alive.length === 0) break;
+          const rndEnemy = alive[Math.floor(Math.random() * alive.length)];
+          if (buriedArt.vulnerableCount > 0) {
+            rndEnemy.addVulnerable(buriedArt.vulnerableCount);
+            this.floatOnEnemy(rndEnemy, `+${buriedArt.vulnerableCount} VULNERABLE`, '#C070D0', 9);
+          }
+          if (buriedArt.damagePerReveal > 0) {
+            const { hpLost } = rndEnemy.takeDamage(buriedArt.damagePerReveal);
+            this.damageDealtThisFight += hpLost;
+            this.floatOnEnemy(rndEnemy, `-${hpLost}`, '#808080');
+          }
+        }
+        this.emitEnemyHpChanges();
       }
       const comboMultiplier = step > 1 ? Math.min(3.0, 1 + (step - 1) * 0.1) : 1.0;
       await this.processMatches(stepMatches, comboMultiplier);
@@ -2370,7 +2631,10 @@ export class CombatManager {
       poisonedStacks: this.player.poisonedStacks,
       readyStacks: this.player.readyStacks,
       chainStacks: this.player.chainStacks,
+      terrifiedStacks: this.player.terrifiedStacks,
+      vulnerableStacks: this.player.vulnerableStacks,
       thorns: this.player.thorns,
+      protectedStacks: this.player.protectedStacks,
       enemies: this.enemies.map((e) => ({ ...e.state })),
       targetedEnemyIndex: (() => {
         const alive = this.aliveEnemies();

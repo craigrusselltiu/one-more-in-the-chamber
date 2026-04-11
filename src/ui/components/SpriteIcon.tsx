@@ -27,6 +27,12 @@ interface SpriteIconProps {
   scale?: number;
   className?: string;
   title?: string;
+  /** Hex color string (e.g. '#D04040') to tint-fill over the sprite. */
+  tint?: string;
+  /** Alpha for the tint overlay (0-1). Default 0.3. */
+  tintAlpha?: number;
+  /** Hex color for a 1px outline that follows the sprite shape. */
+  outline?: string;
 }
 
 /**
@@ -39,6 +45,9 @@ export const SpriteIcon = memo(function SpriteIcon({
   scale = 1,
   className,
   title,
+  tint,
+  tintAlpha = 0.3,
+  outline,
 }: SpriteIconProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
@@ -59,14 +68,34 @@ export const SpriteIcon = memo(function SpriteIcon({
     loadSheet().then((img) => {
       const col = frame % SHEET_COLS;
       const row = Math.floor(frame / SHEET_COLS);
+      const sx = col * FRAME_SIZE;
+      const sy = row * FRAME_SIZE;
       ctx.clearRect(0, 0, canvas.width, canvas.height);
-      ctx.drawImage(
-        img,
-        col * FRAME_SIZE, row * FRAME_SIZE, FRAME_SIZE, FRAME_SIZE,
-        0, 0, canvasSize, canvasSize,
-      );
+
+      // Outline: draw sprite shifted in 4 cardinal directions, color-fill, then draw original on top
+      if (outline) {
+        for (const [dx, dy] of [[0, -1], [0, 1], [-1, 0], [1, 0]]) {
+          ctx.drawImage(img, sx, sy, FRAME_SIZE, FRAME_SIZE, dx, dy, canvasSize, canvasSize);
+        }
+        ctx.globalCompositeOperation = 'source-atop';
+        ctx.fillStyle = outline;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.globalCompositeOperation = 'source-over';
+      }
+
+      ctx.drawImage(img, sx, sy, FRAME_SIZE, FRAME_SIZE, 0, 0, canvasSize, canvasSize);
+
+      // Tint overlay: fill color only on non-transparent pixels
+      if (tint) {
+        ctx.globalCompositeOperation = 'source-atop';
+        ctx.globalAlpha = tintAlpha;
+        ctx.fillStyle = tint;
+        ctx.fillRect(0, 0, canvasSize, canvasSize);
+        ctx.globalAlpha = 1;
+        ctx.globalCompositeOperation = 'source-over';
+      }
     });
-  }, [frame, intScale, canvasSize]);
+  }, [frame, intScale, canvasSize, tint, tintAlpha, outline]);
 
   return (
     <canvas

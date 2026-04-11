@@ -49,6 +49,7 @@ export const TRAITS: TraitDefinition[] = [
     breakpoints: [
       { threshold: 2, description: 'Bullet-type tiles deal 1 extra damage per tile.' },
       { threshold: 4, description: 'Gain 1 Lucky for every bullet-type tile matched.' },
+      { threshold: 6, description: 'Lucky deals 2x damage instead of 1.5x.' },
     ],
   },
   {

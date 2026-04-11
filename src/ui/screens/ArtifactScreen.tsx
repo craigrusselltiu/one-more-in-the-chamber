@@ -53,10 +53,10 @@ export const ArtifactScreen = memo(function ArtifactScreen() {
   const bgImage = (() => {
     if (isBossReward) {
       const bossBgs: Record<number, string> = { 1: 'dusty_bg', 2: 'copperhead_bg', 3: 'ironeye_bg' };
-      return `${import.meta.env.BASE_URL}assets/${bossBgs[act]}.png`;
+      return `${import.meta.env.BASE_URL}assets/backgrounds/${bossBgs[act]}.png`;
     }
-    if (isEliteReward) return `${import.meta.env.BASE_URL}assets/act${act}_bg.png`;
-    return `${import.meta.env.BASE_URL}assets/treasure_bg.png`;
+    if (isEliteReward) return `${import.meta.env.BASE_URL}assets/backgrounds/act${act}_bg.png`;
+    return `${import.meta.env.BASE_URL}assets/backgrounds/artifact_bg.png`;
   })();
 
   const getNextScreen = (): Screen => {

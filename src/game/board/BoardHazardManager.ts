@@ -94,7 +94,7 @@ export class BoardHazardManager {
   }
 
   /** Place a bomb on N random non-hazarded tiles with a countdown. */
-  placeRandomBombs(count: number, countdown = 3): HazardPlacement[] {
+  placeRandomBombs(count: number, countdown = 2): HazardPlacement[] {
     return this.placeRandomHazard({ type: 'bomb', countdown }, count);
   }
 
@@ -163,6 +163,27 @@ export class BoardHazardManager {
         tile.hazard = { type: 'lock', hits: 1 };
       } else continue;
       placements.push({ position: { row, col }, hazard: { ...tile.hazard } });
+    }
+    return placements;
+  }
+
+  /** Lock all tiles on the edges of the board. */
+  lockEdges(): HazardPlacement[] {
+    const placements: HazardPlacement[] = [];
+    const grid = this.board.getGrid();
+    for (let row = 0; row < BOARD_SIZE; row++) {
+      for (let col = 0; col < BOARD_SIZE; col++) {
+        if (row !== 0 && row !== BOARD_SIZE - 1 && col !== 0 && col !== BOARD_SIZE - 1) continue;
+        const tile = grid[row]?.[col];
+        if (!tile) continue;
+        if (tile.hazard?.type === 'lock') {
+          tile.hazard.hits++;
+          tile.refreshStatusIndicator();
+        } else if (!tile.hazard) {
+          tile.hazard = { type: 'lock', hits: 1 };
+        } else continue;
+        placements.push({ position: { row, col }, hazard: { ...tile.hazard } });
+      }
     }
     return placements;
   }
@@ -325,9 +346,6 @@ export class BoardHazardManager {
           } else {
             tile.refreshStatusIndicator();
           }
-        } else if (hazType === 'suppress') {
-          tile.hazard = null;
-          freed.push(n);
         } else if (hazType === 'sand' || (hazType === 'poison' && clearPoison)) {
           tile.hazard = null;
           freed.push(n);

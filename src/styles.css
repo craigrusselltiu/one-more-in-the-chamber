@@ -143,6 +143,34 @@
 .animate-welcome-breathe {
   animation: welcome-breathe 3s ease-in-out infinite;
 }
+@keyframes intent-pop-in {
+  0% { transform: scale(0); opacity: 0; }
+  60% { transform: scale(1.2); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
+.intent-pop-in {
+  animation: intent-pop-in 0.2s ease-out forwards;
+}
+@keyframes intent-vfx-breathe {
+  0%, 100% {
+    filter:
+      drop-shadow( 1px  0px 0px var(--vfx-dim))
+      drop-shadow(-1px  0px 0px var(--vfx-dim))
+      drop-shadow( 0px  1px 0px var(--vfx-dim))
+      drop-shadow( 0px -1px 0px var(--vfx-dim));
+  }
+  50% {
+    filter:
+      drop-shadow( 1px  0px 0px var(--vfx-bright))
+      drop-shadow(-1px  0px 0px var(--vfx-bright))
+      drop-shadow( 0px  1px 0px var(--vfx-bright))
+      drop-shadow( 0px -1px 0px var(--vfx-bright));
+  }
+}
+.intent-pop-in.intent-vfx {
+  animation: intent-pop-in 0.2s ease-out forwards, intent-vfx-breathe 1.2s ease-in-out infinite;
+}
+
 @keyframes loading-breathe {
   0%, 100% { transform: scale(1); opacity: 0.7; }
   50% { transform: scale(1.08); opacity: 1; }

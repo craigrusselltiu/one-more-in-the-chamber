@@ -365,6 +365,7 @@ export class TraitSystem {
   // ---------------------------------------------------------------------------
 
   getCritConfig(): { multiplier: number; bonusFlatDamage: number; halveOnTrigger: boolean } {
-    return { multiplier: 1.5, bonusFlatDamage: 0, halveOnTrigger: false };
+    const multiplier = this.isActive('gunslinger', 6) ? 2.0 : 1.5;
+    return { multiplier, bonusFlatDamage: 0, halveOnTrigger: false };
   }
 }

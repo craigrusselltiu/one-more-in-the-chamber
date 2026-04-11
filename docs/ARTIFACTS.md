@@ -13,7 +13,7 @@
 - Rust exclusive artifact
 - Tags: Gunslinger, Outlaw
 - Rarity: Legendary
-- Effect: Increase Deadeye shots to 6. The last shot can now be used on an enemy, dealing 1 damage per stack of Bounty.
+- Effect: Increase Deadeye shots to 6. The last shot can now be used on an enemy, dealing 7 damage plus 1 damage per stack of Bounty.
 - Flavor: "Six in the chamber. No reloads."
 
 ### Rigged Deck
@@ -139,7 +139,7 @@
 ### Fool's Magnifying Glass
 - Tags: Prospector
 - Rarity: Common
-- Effect: Immune to fool's gold tiles.
+- Effect: Become immune to fool's gold tiles.
 - Flavor: "Can't fool the one who's been fooled before."
 - NOTE: it just prevents fool's gold tiles from being created on your board
 
@@ -166,7 +166,7 @@
 ### Tinker's Wrench
 - Tags: Sapper
 - Rarity: Legendary
-- Effect: Explosive tiles also spawn from 3-matches.
+- Effect: Explosive tiles also spawn from non-cascade 3-matches.
 - Flavor: "Every match is an explosion waiting to happen."
 
 ## Mustang
@@ -178,7 +178,7 @@
 - Flavor: "Room for two more."
 
 ### Trailblazer's Compass
-- Tags: Mustang
+- Tags: Mustang, Tracker
 - Rarity: Common
 - Effect: Unused swaps at turn end deal 3 damage each to targeted enemy.
 - Flavor: "Every path not taken is a bullet saved."
@@ -204,7 +204,7 @@
 - Flavor: "One lucky round. Make it count."
 
 ### Dead Man's Hand
-- Tags: Gunslinger
+- Tags: Gunslinger, Dead Man Walking
 - Rarity: Uncommon
 - Effect: Lucky triggers apply 1 Vulnerable.
 - Flavor: "Aces and eights. Bad luck for them."
@@ -241,7 +241,7 @@
 
 ### Gillie Suit
 - Tags: Sniper
-- Rarity: Common
+- Rarity: Rare
 - Effect: First 5+ match each combat grants 1 Grace.
 - Flavor: "They never saw you coming."
 - NOTE: New artifact
@@ -326,144 +326,114 @@
 
 ---
 
-## New Additions (Gap Fillers)
+## New Additions
 
-## Dead Man Walking
+### Holy Water
+- Tags: Preacher, Mustang
+- Rarity: Rare
+- Effect: Unused swaps at turn end heal you for 3 HP each.
+- Flavor: "The river heals those who stop running."
 
-### Coffin Nails
-- Tags: Dead Man Walking
-- Rarity: Common
-- Effect: Each turn you start below 50% HP, gain 1 Rageful.
-- Flavor: "Rusted and crooked. Just like you."
+### Resurrecting Nails
+- Tags: Dead Man Walking, Preacher
+- Rarity: Legendary
+- Effect: On the 3rd turn during boss combat, restore 30% HP.
+- Flavor: "On the third day, he rose."
 
-### Dead Man's Gambit
+### Dead Man's Bones
 - Tags: Dead Man Walking, Desperado
 - Rarity: Uncommon
-- Effect: When at or below 20% HP, gain 2 Ace at the start of each turn.
-- Flavor: "Nothing left to lose. Bet everything."
-- NOTE: Synergizes with DMW b5 (double damage below 20%) and Desperado's Ace/cascade theme
+- Effect: When at or below 20% HP, gain 4 Ace at the start of each turn.
+- Flavor: "Nothing left to lose. Everything left to prove."
 
-### Dusty Epitaph
-- Tags: Dead Man Walking, Undertaker
-- Rarity: Uncommon
-- Effect: When you kill an enemy while below 50% HP, heal 8 HP.
-- Flavor: "The headstone was meant for you. You keep rewriting the name."
+### Absolution Rounds
+- Tags: Preacher, Gunslinger
+- Rarity: Legendary
+- Effect: Healing deals damage to the target enemy equal to the HP healed.
+- Flavor: "Forgiveness comes in lead."
 
 ### Last Breath Tonic
 - Tags: Dead Man Walking, Saloon Keeper
-- Rarity: Common
-- Effect: Once per combat, when HP drops below 30%, gain a random consumable.
-- Flavor: "One for the road. The last road."
-
-### Unmarked Grave
-- Tags: Dead Man Walking, Preacher
 - Rarity: Rare
-- Effect: When an enemy dies, heal 3 HP.
-- Flavor: "Say a prayer. Shovel the dirt."
-
-## Preacher
-
-### Hymn Book
-- Tags: Preacher
-- Rarity: Common
-- Effect: At the end of each turn, if you have Grace, gain 3 block.
-- Flavor: "The faithful don't just endure. They fortify."
-
-### Hallowed Ground
-- Tags: Preacher, Undertaker
-- Rarity: Uncommon
-- Effect: When a summoned enemy dies, heal 5 HP and gain 1 Grace.
-- Flavor: "Consecrated soil reclaims the profane."
-
-### Bell Tower
-- Tags: Preacher, Sniper
-- Rarity: Rare
-- Effect: Every 5+ match grants 1 Grace.
-- Flavor: "Ring the bell from the highest perch. Let them hear it."
-- NOTE: Unlike Gillie Suit (first 5+ match per combat only), this triggers every time
+- Effect: Once per combat, when HP drops below 20%, gain a random consumable.
+- Flavor: "One more for the road."
 
 ### Temperance Flask
 - Tags: Preacher, Saloon Keeper
-- Rarity: Common
-- Effect: Healing consumables (Moonshine, Bandage) restore 50% more HP.
+- Rarity: Uncommon
+- Effect: Healing consumables restore 50% more HP.
 - Flavor: "Discipline makes the medicine stronger."
-
-## Sniper
 
 ### Scope Lens
 - Tags: Sniper
-- Rarity: Common
-- Effect: 5+ matches deal 4 extra damage.
+- Rarity: Legendary
+- Effect: 5+ matches generate double resources.
 - Flavor: "See farther. Hit harder."
 
-### Long Tom Rifle
-- Tags: Sniper, Desperado
-- Rarity: Rare
-- Effect: 5+ matches pierce enemy block.
-- Flavor: "Armor doesn't matter at this range."
-- NOTE: Named after the historical long-range frontier rifle
-
-### Tripwire Scope
-- Tags: Sniper, Tracker
-- Rarity: Uncommon
-- Effect: Revealing a Buried tile grants +3 damage to your next match.
-- Flavor: "The trap marks the target. The rifle finishes the job."
-
-## Desperado
-
-### All In
-- Tags: Desperado, Prospector
-- Rarity: Rare
-- Effect: At the start of each turn, lose 10 gold. Gain 3 Ace.
-- Flavor: "Shove the whole stack in. No looking back."
-- NOTE: If the player has less than 10 gold, still gain the Ace but lose whatever gold remains
-
-### Snake Eyes
-- Tags: Desperado, Rattlesnake
-- Rarity: Uncommon
-- Effect: Cascade matches have a 25% chance to apply 1 Poison to all enemies.
-- Flavor: "Bad roll. Worse bite."
-
-## Prospector
-
-### Motherlode Map
-- Tags: Prospector, Tracker
-- Rarity: Common
-- Effect: Whenever you reveal a Buried tile, gain 5 gold.
-- Flavor: "X marks the payday."
-
-### Prospector's Scale
-- Tags: Prospector
-- Rarity: Uncommon
-- Effect: Gold tiles generate 1.5x value.
-- Flavor: "Weigh every nugget. Miss nothing."
-
-## Saloon Keeper
-
-### Brass Spittoon
-- Tags: Saloon Keeper, Outlaw
-- Rarity: Common
-- Effect: When using a consumable, gain 1 Ready.
-- Flavor: "Swig. Spit. Draw."
-
-## Sapper
-
-### Fuse Box
-- Tags: Sapper
-- Rarity: Common
-- Effect: Explosive tiles deal 3 extra damage when detonated.
-- Flavor: "Short fuse. Big boom."
-
-### Demolition Charge
+### Detonator
 - Tags: Sapper, Undertaker
 - Rarity: Uncommon
-- Effect: When a summoned enemy dies, make 1 random tile explosive.
+- Effect: When an enemy dies, make 1 random tile explosive.
 - Flavor: "Rig the remains. Waste nothing."
 
-## Undertaker
+### Snake Eye
+- Tags: Desperado, Rattlesnake
+- Rarity: Uncommon
+- Effect: Cascade matches have a 50% chance to apply 1 Poison to all enemies.
+- Flavor: "Bad roll. Worse bite."
 
-### Shallow Grave
-- Tags: Undertaker, Antivenom
-- Rarity: Common
-- Effect: When an enemy dies, cleanse 2 poison tiles on your board.
-- Flavor: "Bury the source. Bury the venom with it."
+### Golden Shovel
+- Tags: Prospector, Tracker
+- Rarity: Uncommon
+- Effect: Whenever you reveal a Buried tile, gain 7 gold.
+- Flavor: "X marks the payday."
+
+### High Vis Jacket
+- Tags: Antivenom, Sapper, Tracker
+- Rarity: Rare
+- Effect: At the start of combat, gain 1 Protected.
+- Flavor: "They can see you coming. Doesn't matter."
+
+### Golden Scarab
+- Tags: Prospector
+- Rarity: Legendary
+- Effect: All gold gain is increased by 30%.
+- Flavor: "Everything it touches turns to gold."
+
+### Burial Rites
+- Tags: Preacher, Undertaker
+- Rarity: Uncommon
+- Effect: When a summoned enemy dies, heal 5 HP.
+- Flavor: "Rest now. Your fight is done."
+
+### Sniper's Eye
+- Tags: Sniper, Outlaw
+- Rarity: Rare
+- Effect: 5-match attacks deal damage to ALL enemies.
+- Flavor: "One shot. Every target."
+
+### Heliograph Shard
+- Tags: Sniper
+- Rarity: Uncommon
+- Effect: Once per combat, on 5-match, apply 1 Blinded to a random enemy.
+- Flavor: "A flash of light. Then nothing."
+
+### Death's Glare
+- Tags: Undertaker, Dead Man Walking
+- Rarity: Legendary
+- Effect: On combat start, apply 1 Vulnerable and 1 Terrified to ALL enemies.
+- Flavor: "They saw what was coming."
+
+### Strong Liver
+- Tags: Desperado, Prospector
+- Rarity: Rare
+- Effect: At the start of each turn, lose 1 gold and gain 1 Rageful, 1 Sturdy, 1 Ace, 1 Lucky, or 1 Ready.
+- Flavor: "Shove the whole stack in. No looking back."
+- NOTE: if the player has no gold, does nothing.
+
+### Golden Pickaxe
+- Tags: Prospector
+- Rarity: Uncommon
+- Effect: All gold gain is increased by 10%.
+- Flavor: "This makes no sense."
+

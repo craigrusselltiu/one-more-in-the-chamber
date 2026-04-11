@@ -59,7 +59,7 @@ export const TileSelectScreen = memo(function TileSelectScreen() {
   };
 
   return (
-    <div className="flex flex-col items-center justify-center" style={{ width: 960, height: 540, backgroundImage: `linear-gradient(rgba(0,0,0,0.45), rgba(0,0,0,0.45)), url(${import.meta.env.BASE_URL}assets/tile_bg.png)`, backgroundSize: 'cover', backgroundPosition: 'center' }}>
+    <div className="flex flex-col items-center justify-center" style={{ width: 960, height: 540, backgroundImage: `linear-gradient(rgba(0,0,0,0.45), rgba(0,0,0,0.45)), url(${import.meta.env.BASE_URL}assets/backgrounds/tile_bg.png)`, backgroundSize: 'cover', backgroundPosition: 'center' }}>
       {/* Title banner */}
       <div className="text-center mb-6">
         <h2 className="text-lg text-amber-400 font-bold uppercase" style={{ WebkitTextStroke: '4px #000', paintOrder: 'stroke fill' }}>Choose a Tile</h2>

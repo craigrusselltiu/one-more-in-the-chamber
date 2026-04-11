@@ -44,10 +44,17 @@ export const LeaderboardScreen = memo(function LeaderboardScreen() {
   };
 
   return (
-    <div className="flex flex-col items-center h-full bg-[#1a1a2e]/95">
+    <div
+      className="flex flex-col items-center h-full"
+      style={{
+        backgroundImage: `url(${import.meta.env.BASE_URL}assets/backgrounds/leaderboard.png)`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+      }}
+    >
       {/* Header */}
       <div className="mt-6 mb-2 text-center">
-        <h2 className="text-xl text-amber-400">Leaderboard</h2>
+        <h2 className="text-xl text-amber-400 font-bold uppercase" style={{ WebkitTextStroke: '3px #000', paintOrder: 'stroke fill' }}>Leaderboard</h2>
         <p className="text-xs text-stone-400 mt-1">Top gunslingers of the West</p>
       </div>
 
@@ -79,7 +86,7 @@ export const LeaderboardScreen = memo(function LeaderboardScreen() {
         )}
 
         {!loading && entries.length > 0 && (
-          <div className="border border-stone-600 bg-stone-800/50">
+          <div className="border border-stone-600 bg-stone-900/80">
             {/* Table header */}
             <div className="flex items-center px-3 py-2 border-b border-stone-600 bg-stone-700/30">
               <span className="w-8 text-stone-400 text-xs">#</span>

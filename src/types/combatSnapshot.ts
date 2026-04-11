@@ -51,6 +51,7 @@ export interface SerializedPlayer {
   poisonedStacks?: number;
   readyStacks?: number;
   chainStacks?: number;
+  protectedStacks?: number;
   critChance: number;
   thorns: number;
   shedSkinAvailable?: boolean;

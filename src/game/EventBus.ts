@@ -95,6 +95,8 @@ export const GameEvent = {
 
   // Music control
   MUSIC_FADE_OUT: 'music:fade-out',
+  /** Emitted when an encounter is ready, so BootScene can pick combat music based on enemy types. */
+  COMBAT_MUSIC_SET: 'music:combat-set',
 } as const;
 
 /**

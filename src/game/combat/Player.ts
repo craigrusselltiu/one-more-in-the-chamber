@@ -18,7 +18,12 @@ export class Player {
   poisonedStacks = 0;
   readyStacks = 0;
   chainStacks = 0;
+  terrifiedStacks = 0;
+  vulnerableStacks = 0;
   thorns = 0;
+  /** Protected: while > 0, immune to tile hazard placement. Decrements at end of player turn. */
+  protectedStacks = 0;
+  skipNextBlockReset = false;
   gold = 0;
   goldThisFight = 0;
   abilityCharge: number;
@@ -34,6 +39,8 @@ export class Player {
   damageReduction = 0;
   /** Dead Man Walking(7): once/combat lethal → heal 20% max HP. */
   deadManWalkingAvailable = false;
+  /** If the player owns Mirage, the type it transformed into for this combat. */
+  mirageReplacementType: TileType | null = null;
 
   constructor(
     health: number,
@@ -58,6 +65,11 @@ export class Player {
    */
   takeDamage(amount: number): { hpLost: number; blocked: number; thornsDamage: number } {
     let remaining = amount;
+
+    // Vulnerable: +50% damage taken
+    if (this.vulnerableStacks > 0) {
+      remaining = Math.round(remaining * 1.5);
+    }
 
     // Grace: negate entire damage instance
     if (this.graceStacks > 0 && remaining > 0) {
@@ -94,12 +106,8 @@ export class Player {
       this.shedSkinAvailable = false;
     }
 
-    // Thorns: reflect 100% of the incoming attack back (consumed on trigger)
-    let thornsDamage = 0;
-    if (this.thorns > 0) {
-      thornsDamage = amount;
-      this.thorns = 0;
-    }
+    // Thorns: deal damage back equal to stacks
+    const thornsDamage = this.thorns > 0 ? this.thorns : 0;
 
     return { hpLost: remaining, blocked, thornsDamage };
   }
@@ -168,16 +176,21 @@ export class Player {
 
   /** End-of-turn effects. Block expires unless Barricade is active. */
   resetTurnEffects(): void {
-    // Barricade: retain block, decrement stacks
-    if (this.barricadeStacks > 0) {
+    // Skip block reset once (Death's Pocket Watch)
+    if (this.skipNextBlockReset) {
+      this.skipNextBlockReset = false;
+    } else if (this.barricadeStacks > 0) {
+      // Barricade: retain block, decrement stacks
       this.barricadeStacks--;
-      // Block persists (not reset)
     } else {
       this.block = 0;
     }
     // Rageful/Sturdy: decrement stacks
     if (this.ragefulStacks > 0) this.ragefulStacks--;
     if (this.sturdyStacks > 0) this.sturdyStacks--;
+    if (this.vulnerableStacks > 0) this.vulnerableStacks--;
+    if (this.protectedStacks > 0) this.protectedStacks--;
+    this.thorns = 0;
     this.tookDamageThisTurn = false;
   }
 
@@ -192,6 +205,8 @@ export class Player {
     this.poisonedStacks = 0;
     this.readyStacks = 0;
     this.chainStacks = 0;
+    this.terrifiedStacks = 0;
+    this.protectedStacks = 0;
     this.thorns = 0;
     this.goldThisFight = 0;
   }
@@ -201,6 +216,11 @@ export class Player {
   }
 
   getUpgradeLevel(type: TileType): number {
-    return this.tileUpgrades[type] ?? 0;
+    let level = this.tileUpgrades[type] ?? 0;
+    // Mirage adds its upgrade level to the type it transformed into.
+    if (this.mirageReplacementType === type) {
+      level += this.tileUpgrades['mirage'] ?? 0;
+    }
+    return level;
   }
 }

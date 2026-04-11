@@ -8,14 +8,14 @@ import type { BoardHazardManager } from '../board/BoardHazardManager';
  *   Dust Storm    -- 3 random tiles start buried.
  *   Quicksand     -- bottom row is locked at fight start.
  *   Narrow Canyon -- 2 columns locked (6x8 playable area).
- *   Cracked Ground -- cascades deal no damage for the first 2 turns.
+ *   Cloak -- cascades deal no damage for the first 2 turns.
  */
 
 export type EliteModifierId =
   | 'dust_storm'
   | 'quicksand'
   | 'narrow_canyon'
-  | 'cracked_ground';
+  | 'cloak';
 
 export interface EliteModifier {
   id: EliteModifierId;
@@ -40,8 +40,8 @@ export const ELITE_MODIFIERS: EliteModifier[] = [
     description: '2 columns are locked.',
   },
   {
-    id: 'cracked_ground',
-    name: 'Cracked Ground',
+    id: 'cloak',
+    name: 'Cloak',
     description: 'Cascades deal no damage for the first 2 turns.',
   },
 ];
@@ -77,8 +77,8 @@ export function applyEliteModifier(
       break;
     }
 
-    case 'cracked_ground':
-      // Cracked Ground is a runtime modifier tracked by CombatManager;
+    case 'cloak':
+      // Cloak is a runtime modifier tracked by CombatManager;
       // no board setup needed here.
       break;
   }
@@ -86,11 +86,11 @@ export function applyEliteModifier(
 
 /**
  * Check if cascade damage should be suppressed this turn
- * (Cracked Ground: no cascade damage for first 2 turns).
+ * (Cloak: no cascade damage for first 2 turns).
  */
 export function shouldSuppressCascadeDamage(
   modifierId: EliteModifierId | null,
   turnNumber: number,
 ): boolean {
-  return modifierId === 'cracked_ground' && turnNumber <= 2;
+  return modifierId === 'cloak' && turnNumber <= 2;
 }

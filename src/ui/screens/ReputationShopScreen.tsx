@@ -11,18 +11,38 @@ export const ReputationShopScreen = memo(function ReputationShopScreen() {
   };
 
   return (
-    <div className="flex flex-col items-center h-full bg-[#1a1a2e]/95" style={{ width: 960, height: 540 }}>
+    <div
+      className="flex flex-col items-center h-full"
+      style={{
+        width: 960,
+        height: 540,
+        backgroundImage: `url(${import.meta.env.BASE_URL}assets/backgrounds/reputation.png)`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+      }}
+    >
       {/* Header */}
       <div className="mt-6 mb-2 text-center">
         <h2 className="text-xl text-amber-400 font-bold uppercase" style={{ WebkitTextStroke: '4px #000', paintOrder: 'stroke fill' }}>Reputation Shop</h2>
-        <p className="text-xs text-stone-400 mt-1">
-          Reputation: <span className="text-amber-300 font-bold">{reputation}</span>
+        <p className="text-xs text-stone-400 mt-1" style={{ WebkitTextStroke: '2px #000', paintOrder: 'stroke fill' }}>
+          Reputation: <span className="text-amber-300 font-bold">{reputation.toLocaleString()}</span>
         </p>
       </div>
 
       {/* Empty content area */}
       <div className="flex-1 flex items-center justify-center">
-        <span className="text-stone-500 text-sm">Coming soon</span>
+        <span
+          className="text-white font-bold uppercase"
+          style={{
+            fontSize: '64px',
+            lineHeight: 1,
+            letterSpacing: '0.05em',
+            WebkitTextStroke: '8px #000',
+            paintOrder: 'stroke fill',
+          }}
+        >
+          Coming Soon
+        </span>
       </div>
 
       {/* Back button */}

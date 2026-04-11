@@ -19,7 +19,7 @@ function getEnemySlotPosition(aliveIndex: number): { x: number; y: number } {
   // Alive index -> visual slot: 0->center(1), 1->top(0), 2->bottom(2)
   const SLOT_MAP = [1, 0, 2];
   const slot = SLOT_MAP[aliveIndex] ?? 1;
-  const SLOT_X = [772, 900, 772];
+  const SLOT_X = [772, 920, 772];
   const SLOT_Y = [150, 280, 410];
   return { x: SLOT_X[slot] ?? 900, y: SLOT_Y[slot] ?? 280 };
 }

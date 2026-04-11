@@ -153,7 +153,14 @@ export const ScoreScreen = memo(function ScoreScreen() {
   }
 
   return (
-    <div className="flex flex-col items-center justify-center h-full bg-[#1a1a2e]/95 px-8">
+    <div
+      className="flex flex-col items-center justify-center h-full px-8"
+      style={{
+        backgroundImage: `linear-gradient(rgba(0,0,0,0.55), rgba(0,0,0,0.55)), url(${import.meta.env.BASE_URL}assets/backgrounds/${score.completed ? 'victory' : 'defeat'}.png)`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+      }}
+    >
       <h2 className="text-xl text-amber-400 mb-0.5 font-bold uppercase" style={{ WebkitTextStroke: '4px #000', paintOrder: 'stroke fill' }}>
         {score.completed ? 'Victory' : 'Defeat'}
       </h2>

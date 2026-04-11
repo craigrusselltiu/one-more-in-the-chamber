@@ -143,13 +143,13 @@ export const TraitRow = memo(function TraitRow() {
             <div
               className="relative"
               style={{
-                width: 20,
-                height: 20,
+                width: 16,
+                height: 16,
                 opacity: isActive ? 1 : 0.4,
                 filter: isActive ? 'none' : 'grayscale(1) brightness(0.6)',
               }}
             >
-              <SpriteIcon frame={TRAIT_FRAMES[traitId] ?? 0} scale={1.25} />
+              <SpriteIcon frame={TRAIT_FRAMES[traitId] ?? 0} scale={1} />
               <span
                 className="absolute font-bold"
                 style={{

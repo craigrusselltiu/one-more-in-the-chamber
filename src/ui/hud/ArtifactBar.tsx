@@ -1,10 +1,11 @@
 import { memo } from 'react';
 import { useRunStore } from '../../store/runStore';
-import { ARTIFACTS, RARITY_BREATHE_CLASS } from '../../data/artifacts';
+import { ARTIFACTS, RARITY_BREATHE_CLASS, RARITY_COLORS_DIM } from '../../data/artifacts';
 import { ARTIFACT_FRAMES } from '../../data/spriteConfig';
 import { SpriteIcon } from '../components/SpriteIcon';
 import { Tooltip } from '../components/Tooltip';
 import { colorizeKeywords } from '../components/KeywordText';
+import { KEYWORDS } from '../../data/keywords';
 import type { TraitId } from '../../types/game';
 
 /** Primary color for each trait tag. */
@@ -46,6 +47,17 @@ const TRAIT_NAMES: Record<string, string> = {
 
 const DEFAULT_COLOR = '#808080';
 
+const KEYWORD_NAMES = Object.keys(KEYWORDS);
+const KEYWORD_REGEX = new RegExp(`\\b(${KEYWORD_NAMES.join('|')})\\b`, 'g');
+
+function extractKeywords(text: string): string[] {
+  const found = new Set<string>();
+  let match: RegExpExecArray | null;
+  const regex = new RegExp(KEYWORD_REGEX.source, 'g');
+  while ((match = regex.exec(text)) !== null) found.add(match[1]);
+  return [...found];
+}
+
 /**
  * ArtifactBar: left-aligned row of small 14x14 colored squares.
  * Color = first trait tag. Tooltip shows name + effect.
@@ -57,7 +69,7 @@ export const ArtifactBar = memo(function ArtifactBar() {
   if (artifacts.length === 0) return null;
 
   return (
-    <div className="absolute z-10 left-0 flex flex-wrap gap-1 px-2 py-px pointer-events-auto" style={{ top: 30, maxWidth: '48%' }}>
+    <div className="absolute z-10 left-0 flex flex-wrap gap-0.5 px-2 py-px pointer-events-auto" style={{ top: 30, maxWidth: '48%' }}>
       {artifacts.map((inst, i) => {
         const def = ARTIFACTS.find((a) => a.id === inst.id);
         const color =
@@ -85,10 +97,28 @@ export const ArtifactBar = memo(function ArtifactBar() {
               {def.description && (
                 <div className="text-stone-500 italic whitespace-nowrap" style={{ fontSize: '8px' }}>"{def.description}"</div>
               )}
+              {(() => {
+                const kws = extractKeywords(def.effect);
+                if (kws.length === 0) return null;
+                return (
+                  <div className="flex flex-col gap-px mt-0.5 pt-0.5" style={{ borderTop: '1px solid #44403c' }}>
+                    {kws.map(kw => (
+                      <div key={kw} className="whitespace-nowrap" style={{ fontSize: '8px' }}>
+                        <span style={{ color: KEYWORDS[kw].color, fontWeight: 'bold' }}>{kw}</span>
+                        <span className="text-stone-400"> - {KEYWORDS[kw].description}</span>
+                      </div>
+                    ))}
+                  </div>
+                );
+              })()}
             </div>
           ) : undefined} text={def ? undefined : inst.id}>
             {ARTIFACT_FRAMES[inst.id] != null ? (
-              <SpriteIcon frame={ARTIFACT_FRAMES[inst.id]} scale={1} />
+              <SpriteIcon
+                frame={ARTIFACT_FRAMES[inst.id]}
+                scale={1}
+                outline={RARITY_COLORS_DIM[def?.rarity ?? 'common']}
+              />
             ) : (
               <div
                 className="flex items-center justify-center text-[6px] text-white font-bold"

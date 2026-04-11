@@ -21,7 +21,9 @@ function buildDescription(actions: MoveAction[]): string {
       case 'summon': return `SUMMON ${a.summonType ?? '?'}`;
       case 'heal': return `HEAL ${a.value}`;
       case 'gain_rageful': return `+${a.value} RGF`;
-      case 'gain_terrified': return `TERRIFY ${a.value}`;
+      case 'apply_terrified': return `TERRIFY ${a.value}`;
+      case 'gain_dead_man_walking': return `+${a.value} DMW`;
+      case 'gain_barricade': return `+${a.value} BARRICADE`;
       case 'shuffle_rows': return 'SHUFFLE';
       case 'gravity_shift': return 'GRAV';
       case 'transform_tumbleweed': return `TWEED ${a.value}`;
@@ -57,6 +59,10 @@ export class Enemy {
   skipNextAction = false;
   /** If true, this enemy was summoned mid-combat (not an original enemy). */
   summoned = false;
+  /** Tracks which hpTrigger thresholds have already fired. */
+  triggeredThresholds = new Set<number>();
+  /** If set, overrides the next chooseIntent call (e.g. Dust Devil enrage). */
+  forcedNextMove: MoveAction[] | null = null;
 
   constructor(definition: EnemyDefinition) {
     this.definition = definition;
@@ -68,14 +74,21 @@ export class Enemy {
       block: 0,
       poisonStacks: 0,
       vulnerable: 0,
-      crackedGround: 0,
+      cloak: 0,
       bountyStacks: 0,
       terrifiedStacks: 0,
+      blindedStacks: 0,
+      ragefulStacks: 0,
+      thorns: 0,
+      graceStacks: 0,
+      hardened: 0,
+      fuse: definition.initialFuse ?? 0,
+      deadManWalking: 0,
+      barricadeStacks: 0,
       summoned: false,
       intent: { type: 'attack', value: 0, description: '' },
       isDead: false,
     };
-    this.state.intent = this.chooseIntent();
   }
 
   getDefinition(): EnemyDefinition {
@@ -89,89 +102,91 @@ export class Enemy {
   /** Index of the last move used (for no-repeat rule). */
   private lastMoveIndex = -1;
 
-  chooseIntent(): EnemyIntent {
+  chooseIntent(aliveCount = 1, allyInjured = false): EnemyIntent {
+    // Forced next move (e.g. Dust Devil's enrage Multi-attack 2x4)
+    if (this.forcedNextMove) {
+      const move: EnemyMove = { actions: this.forcedNextMove };
+      this.forcedNextMove = null;
+      this.lastMoveIndex = -1; // allow any move next time without no-repeat interference
+      return moveToIntent(move);
+    }
+
+    // First move override (e.g. Dusty Dan always summons both on turn 1)
+    if (this.lastMoveIndex === -1 && this.definition.firstMove) {
+      this.lastMoveIndex = -2; // mark as used
+      return moveToIntent(this.definition.firstMove);
+    }
+
     const moves = this.definition.moves;
 
-    // If the enemy has an explicit moveset, pick randomly (no repeat)
     if (moves && moves.length > 0) {
-      const candidates = moves
-        .map((mv, i) => ({ mv, i }))
-        .filter(({ i }) => moves.length <= 1 || i !== this.lastMoveIndex);
-      const pick = candidates[Math.floor(Math.random() * candidates.length)];
-      this.lastMoveIndex = pick.i;
-      return moveToIntent(pick.mv);
+      const canSummon = aliveCount < 3 && !this.summoned;
+      const hpRatio = this.state.health / this.state.maxHealth;
+
+      // Sequential move order (e.g. Hangman)
+      if (this.definition.sequential) {
+        const idx = (this.lastMoveIndex + 1) % moves.length;
+        this.lastMoveIndex = idx;
+        return moveToIntent(moves[idx]);
+      }
+
+      // Hellfire Preacher: prioritize heal_ally when an ally is injured
+      if (allyInjured && this.definition.type === 'hellfire_preacher') {
+        const healMove = moves.find(mv => mv.actions.some(a => a.kind === 'heal_ally'));
+        if (healMove) return moveToIntent(healMove);
+      }
+
+      // Special: Coyote always summons when alone
+      if (this.definition.type === 'coyote' && aliveCount === 1 && canSummon) {
+        const summonMove = moves.find(mv => mv.actions.some(a => a.kind === 'summon'));
+        if (summonMove) return moveToIntent(summonMove);
+      }
+
+      // Build weighted candidate list
+      const candidates: { mv: EnemyMove; i: number; weight: number }[] = [];
+      for (let i = 0; i < moves.length; i++) {
+        const mv = moves[i];
+        // No-repeat rule
+        if (moves.length > 1 && i === this.lastMoveIndex) continue;
+        // Filter summon when field is full or enemy is summoned
+        if (!canSummon && mv.actions.some(a => a.kind === 'summon')) continue;
+
+        // Calculate weight based on HP
+        const threshold = mv.lowHpThreshold ?? 0.5;
+        const baseWeight = mv.weight ?? 1;
+        const weight = (mv.lowHpWeight != null && hpRatio <= threshold)
+          ? mv.lowHpWeight
+          : baseWeight;
+        if (weight > 0) candidates.push({ mv, i, weight });
+      }
+
+      // Fallback if all filtered out
+      if (candidates.length === 0) {
+        const fallback = moves.filter(mv => !mv.actions.some(a => a.kind === 'summon'));
+        if (fallback.length === 0) return moveToIntent(moves[0]);
+        return moveToIntent(fallback[Math.floor(Math.random() * fallback.length)]);
+      }
+
+      // Weighted random selection
+      const totalWeight = candidates.reduce((sum, c) => sum + c.weight, 0);
+      let roll = Math.random() * totalWeight;
+      for (const c of candidates) {
+        roll -= c.weight;
+        if (roll <= 0) {
+          this.lastMoveIndex = c.i;
+          return moveToIntent(c.mv);
+        }
+      }
+      // Shouldn't reach here, but fallback
+      const last = candidates[candidates.length - 1];
+      this.lastMoveIndex = last.i;
+      return moveToIntent(last.mv);
     }
 
-    // Fallback: legacy weighted random for enemies without movesets
-    const abilities = this.definition.abilities;
-    const options: { intent: EnemyIntent; weight: number }[] = [];
-
-    const damage = this.rollDamage();
-    options.push({
-      intent: { type: 'attack', value: damage, description: `ATK ${damage}` },
-      weight: 3,
-    });
-
-    if (abilities.includes('block')) {
-      options.push({
-        intent: { type: 'block', value: 5, description: 'BLOCK +5' },
-        weight: 1,
-      });
-    }
-
-    if (abilities.includes('howl') || abilities.includes('summon')) {
-      options.push({
-        intent: { type: 'summon', value: 1, description: 'HOWL' },
-        weight: 1,
-      });
-    }
-
-    if (abilities.includes('poison')) {
-      options.push({
-        intent: { type: 'board-manipulation', value: 2, description: 'POISON 2' },
-        weight: 1,
-      });
-    }
-    if (abilities.includes('lock')) {
-      options.push({
-        intent: { type: 'board-manipulation', value: 1, description: 'LOCK 1' },
-        weight: 1,
-      });
-    }
-    if (abilities.includes('bury')) {
-      options.push({
-        intent: { type: 'board-manipulation', value: 3, description: 'BURY 3' },
-        weight: 1,
-      });
-    }
-    if (abilities.includes('bomb')) {
-      options.push({
-        intent: { type: 'board-manipulation', value: 1, description: 'BOMB' },
-        weight: 1,
-      });
-    }
-
-    return this.weightedRandom(options);
+    // Fallback for enemies without movesets (should not happen)
+    return { type: 'attack', value: 0, description: 'ATK 0', actions: [{ kind: 'attack', value: 0 }] };
   }
 
-  private weightedRandom(actions: { intent: EnemyIntent; weight: number }[]): EnemyIntent {
-    const totalWeight = actions.reduce((sum, a) => sum + a.weight, 0);
-    let roll = Math.random() * totalWeight;
-    for (const action of actions) {
-      roll -= action.weight;
-      if (roll <= 0) return action.intent;
-    }
-    return actions[0].intent;
-  }
-
-  private rollDamage(): number {
-    return (
-      this.definition.minDamage +
-      Math.floor(
-        Math.random() * (this.definition.maxDamage - this.definition.minDamage + 1),
-      )
-    );
-  }
 
   /**
    * Apply damage to this enemy. Accounts for Vulnerable and Block.
@@ -179,6 +194,17 @@ export class Enemy {
    */
   takeDamage(amount: number): { hpLost: number; blocked: number } {
     let remaining = amount;
+
+    // Grace: negate entire damage instance
+    if (this.state.graceStacks > 0 && remaining > 0) {
+      this.state.graceStacks--;
+      return { hpLost: 0, blocked: 0 };
+    }
+
+    // Hardened: cap damage to hardened stacks
+    if (this.state.hardened > 0 && remaining > this.state.hardened) {
+      remaining = this.state.hardened;
+    }
 
     // Vulnerable: +50% damage (stacks decrease at end of turn, not on hit)
     if (this.state.vulnerable > 0) {
@@ -220,20 +246,34 @@ export class Enemy {
     this.state.block += amount;
   }
 
+  /** Dead Man Walking grants immunity to debuff application. */
+  isImmuneToDebuffs(): boolean {
+    return this.state.deadManWalking > 0;
+  }
+
   addPoison(stacks: number): void {
+    if (this.isImmuneToDebuffs()) return;
     this.state.poisonStacks += stacks;
   }
 
   addVulnerable(stacks: number): void {
+    if (this.isImmuneToDebuffs()) return;
     this.state.vulnerable += stacks;
   }
 
   addBounty(stacks: number): void {
+    if (this.isImmuneToDebuffs()) return;
     this.state.bountyStacks += stacks;
   }
 
   addTerrified(stacks: number): void {
+    if (this.isImmuneToDebuffs()) return;
     this.state.terrifiedStacks += stacks;
+  }
+
+  addBlinded(stacks: number): void {
+    if (this.isImmuneToDebuffs()) return;
+    this.state.blindedStacks += stacks;
   }
 
   /** Check if bounty kill threshold is met: HP <= bountyStacks. */
@@ -256,10 +296,6 @@ export class Enemy {
     const intent = this.state.intent;
     const result = { type: intent.type, value: intent.value ?? 0 };
 
-    // Apply block if this is a block action
-    if (intent.type === 'block') {
-      this.addBlock(intent.value ?? 5);
-    }
 
     return result;
   }

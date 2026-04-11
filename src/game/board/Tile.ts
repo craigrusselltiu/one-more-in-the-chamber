@@ -192,6 +192,13 @@ export class Tile {
       tint = (r << 16) | (g << 8) | b;
       overlayAlpha = 0.25 + breath * 0.2;
       outlineAlpha = 0.6 + breath * 0.3;
+    } else if (this._hazard?.type === 'suppress') {
+      // Grey gradient: cycle between dark grey and near-black
+      const suppressPhase = 0.5 + 0.5 * Math.sin(time / 600);
+      const v = Math.floor(0x30 + suppressPhase * 0x30); // 0x30..0x60
+      tint = (v << 16) | (v << 8) | v;
+      overlayAlpha = 0.25 + breath * 0.2;
+      outlineAlpha = 0.6 + breath * 0.3;
     } else if (this.isExplosive) {
       tint = 0xff8800;
       overlayAlpha = 0.15 + breath * 0.2;
@@ -226,7 +233,7 @@ export class Tile {
 
     if (this.hintUntil > 0 && time >= this.hintUntil) {
       this.hintUntil = 0;
-      if (!this.isShowdown && !this.isExplosive && !this.isShadow && this._hazard?.type !== 'bomb' && this._hazard?.type !== 'poison') {
+      if (!this.isShowdown && !this.isExplosive && !this.isShadow && this._hazard?.type !== 'bomb' && this._hazard?.type !== 'poison' && this._hazard?.type !== 'suppress') {
         this.destroyOverlay();
         this.destroyOutline();
       }
@@ -259,7 +266,7 @@ export class Tile {
   }
 
   private updateOverlay(): void {
-    const needsOverlay = this.isShowdown || this.isExplosive || this.isShadow || this._hazard?.type === 'bomb' || this._hazard?.type === 'poison' || this.hintUntil > 0;
+    const needsOverlay = this.isShowdown || this.isExplosive || this.isShadow || this._hazard?.type === 'bomb' || this._hazard?.type === 'poison' || this._hazard?.type === 'suppress' || this.hintUntil > 0;
     const cx = this.sprite.x;
     const cy = this.sprite.y;
     const frame = TILE_FRAMES[this.type];
@@ -362,16 +369,18 @@ export class Tile {
       this.destroyPoisonIcon();
       this.destroySandLabel();
       this.sprite.clearTint();
+      if (this.sprite.preFX) this.sprite.preFX.clear();
       return;
     }
 
-    // Suppress: desaturate to black and white
+    // Suppress: dark tint + overlay/outline breathing in updateOverlay()
     if (this._hazard.type === 'suppress') {
       this.destroyStatusIndicator();
       this.destroyLockIcon();
       this.destroyPoisonIcon();
       this.destroySandLabel();
-      this.sprite.setTint(0x555555);
+      if (this.sprite.preFX) this.sprite.preFX.clear();
+      this.sprite.setTint(0x666666);
       return;
     }
 

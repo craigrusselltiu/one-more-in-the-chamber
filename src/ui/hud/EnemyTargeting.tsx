@@ -19,25 +19,59 @@ const ENEMY_SPRITES: Record<string, string> = {
   dusty_dan: 'dusty.png',
   tumbleweed_golem: 'tumbleweed_golem.png',
   dust_devil: 'dust_devil.png',
-  prospector_gone_mad: 'bandit.png',
-  cave_bat: 'vulture.png',
+  prospector_gone_mad: 'mad_prospector.png',
   powder_monkey: 'powder_monkey.png',
-  canary_swarm: 'vulture.png',
-  dynamite_outlaw: 'bandit.png',
-  mine_foreman: 'bandit.png',
-  mine_cart: 'mine_cart.png',
-  copperhead_cassidy: 'rattlesnake.png',
-  card_shark: 'card_shark.png',
-  corrupt_deputy: 'bandit.png',
-  train_guard: 'bandit.png',
-  hangman: 'bandit.png',
-  phantom_rider: 'coyote.png',
-  dynamite_duchess: 'bandit.png',
-  saloon_brawler: 'bandit.png',
+  mining_canary: 'canary.png',
+  tunnel_rat: 'tunnel_rat.png',
+  mine_foreman: 'mining_foreman.png',
+  ore_golem: 'ore_golem.png',
+  mine_cart: 'minecart.png',
+  copperhead_cassidy: 'copperhead.png',
+  train_guard: 'train_guard.png',
+  hellfire_preacher: 'hellfire_preacher.png',
+  hangman: 'hangman.png',
+  corrupt_deputy: 'corrupt_deputy.png',
+  saloon_brawler: 'saloon_brawler.png',
   sheriffs_shadow: 'bandit.png',
-  outlaw_king: 'bandit.png',
-  iron_eye_isabella: 'bandit.png',
+  outlaw_king: 'outlaw_king.png',
+  outlaw_king_act1: 'outlaw_king.png',
+  outlaw_king_act2: 'outlaw_king.png',
+  iron_eye_isabella: 'ironeye.png',
 };
+
+/** Enemies with random sprite variants, picked deterministically by enemy id. */
+const ENEMY_SPRITE_VARIANTS: Record<string, string[]> = {
+  mining_canary: ['canary.png', 'canary_alt.png'],
+};
+
+/** Per-enemy sprite scale overrides. Scale is applied via CSS transform with
+ *  a bottom-center origin so the feet stay anchored to the shadow. */
+const ENEMY_SPRITE_SCALE: Record<string, number> = {
+  outlaw_king: 1.5,
+  outlaw_king_act1: 1.5,
+  outlaw_king_act2: 1.5,
+  iron_eye_isabella: 1.5,
+};
+
+/** Resolve sprite filename for an enemy, picking a variant if available. */
+function getEnemySprite(enemy: EnemyState): string | undefined {
+  const variants = ENEMY_SPRITE_VARIANTS[enemy.enemyType];
+  if (variants) {
+    let hash = 0;
+    for (let i = 0; i < enemy.id.length; i++) hash = (hash + enemy.id.charCodeAt(i)) | 0;
+    return variants[Math.abs(hash) % variants.length];
+  }
+  // Iron Eye Isabella switches to her enraged sprite at <50% HP (matches the
+  // 50% HP trigger that grants Rageful, Block, Barricade, Cloak, Grace, Terrified).
+  if (
+    enemy.enemyType === 'iron_eye_isabella'
+    && enemy.health > 0
+    && enemy.health < enemy.maxHealth * 0.5
+  ) {
+    return 'ironeye_alt.png';
+  }
+  return ENEMY_SPRITES[enemy.enemyType];
+}
 
 /**
  * EnemyTargeting: shows up to 3 fixed enemy slots on the right side.
@@ -62,7 +96,7 @@ export const EnemyTargeting = memo(function EnemyTargeting() {
   const slotToEnemyIndex = (slotIdx: number): number => SLOT_TO_ENEMY[slotIdx] ?? slotIdx;
 
   // Zig-zag offsets: slots 0 & 2 (top/bottom) left, slot 1 (center) right
-  const SLOT_OFFSET: Record<number, number> = { 0: -60, 1: 68, 2: -60 };
+  const SLOT_OFFSET: Record<number, number> = { 0: -60, 1: 88, 2: -60 };
 
   return (
     <div className="flex flex-col items-center" style={{ position: 'relative', gap: '-8px' }}>
@@ -132,19 +166,26 @@ const EnemySlot = memo(function EnemySlot({
     <button
       onClick={handleClick}
       data-no-click-sfx
-      className="flex flex-col items-center text-center px-1 py-0.5 pointer-events-auto outline-none cursor-pointer"
+      className="relative flex flex-col items-center text-center px-1 py-0.5 pointer-events-auto outline-none cursor-pointer"
       style={{
         width: 116,
         height: 152,
       }}
     >
-      {/* Intent above sprite */}
-      <EnemyIntent intent={enemy.intent} />
+      {/* Intent above sprite. Scaled enemies (e.g. Outlaw King, Iron Eye) grow
+          upward from the bottom, so the intent must be lifted by the extra
+          sprite height to stay above the head. */}
+      <div
+        className="absolute left-1/2 -translate-x-1/2"
+        style={{ top: -16 - 96 * ((ENEMY_SPRITE_SCALE[enemy.enemyType] ?? 1) - 1) }}
+      >
+        <EnemyIntent intent={enemy.intent} />
+      </div>
 
       {/* Enemy sprite with shadow + name tooltip */}
       <Tooltip text={ALL_ENEMIES[enemy.enemyType]?.name ?? enemy.enemyType} position="bottom" gap={16}>
-        {ENEMY_SPRITES[enemy.enemyType] ? (
-          <div className={`relative mb-0.5 shrink-0${isTargeted ? ' enemy-targeted' : ''}${shaking ? ' enemy-shake' : ''}`} style={{ width: 96, height: 96 }}>
+        {getEnemySprite(enemy) ? (
+          <div className={`relative my-1.5 shrink-0${shaking ? ' enemy-shake' : ''}`} style={{ width: 96, height: 96 }}>
             <img
               src={`${import.meta.env.BASE_URL}assets/sprites/shadow.png`}
               alt=""
@@ -152,9 +193,19 @@ const EnemySlot = memo(function EnemySlot({
               style={{ width: 80, imageRendering: 'pixelated', opacity: 0.5 }}
             />
             <img
-              src={`${import.meta.env.BASE_URL}assets/sprites/${ENEMY_SPRITES[enemy.enemyType]}`}
+              className={isTargeted ? 'enemy-targeted' : undefined}
+              src={`${import.meta.env.BASE_URL}assets/sprites/${getEnemySprite(enemy)}`}
               alt={enemy.enemyType}
-              style={{ width: 96, height: 96, imageRendering: 'pixelated', objectFit: 'contain' }}
+              style={{
+                width: 96,
+                height: 96,
+                imageRendering: 'pixelated',
+                objectFit: 'contain',
+                transform: ENEMY_SPRITE_SCALE[enemy.enemyType]
+                  ? `scale(${ENEMY_SPRITE_SCALE[enemy.enemyType]})`
+                  : undefined,
+                transformOrigin: 'bottom center',
+              }}
             />
           </div>
         ) : (

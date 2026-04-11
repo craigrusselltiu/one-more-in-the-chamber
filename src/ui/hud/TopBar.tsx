@@ -262,7 +262,8 @@ function TilesPopup({
             if (tileType === 'mirage' && mirageType) {
               const mDef = TILE_DEFINITIONS[mirageType];
               if (mDef) {
-                const mLevel = tileUpgrades[mirageType] ?? 0;
+                // Mirage adds its upgrade level to the transformed tile's level.
+                const mLevel = (tileUpgrades[mirageType] ?? 0) + (tileUpgrades['mirage'] ?? 0);
                 const mTooltip = (
                   <div className="flex flex-col gap-0.5">
                     <div className="font-bold text-amber-400" style={{ fontSize: '10px' }}>{mDef.label}</div>

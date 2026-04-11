@@ -39,6 +39,9 @@ import {
   rollAct3Encounter,
   rollAct3EliteEncounter,
   BOSSES,
+  BOSS_COMPANIONS,
+  ALL_ENEMIES,
+  encounterContainsOutlawKing,
 } from './data/enemies';
 import type { EnemyDefinition } from './types/combat';
 import type { MapNodeType, Act } from './types/game';
@@ -60,14 +63,17 @@ export type Screen =
   | 'leaderboard'
   | 'settings';
 
-const ENCOUNTER_ROLLERS: Record<Act, { regular: (r: () => number, nodeIndex?: number) => EnemyDefinition[]; elite: (r?: () => number) => EnemyDefinition[] }> = {
+const ENCOUNTER_ROLLERS: Record<Act, {
+  regular: (r: () => number, nodeIndex?: number, outlawKingAvailable?: boolean) => EnemyDefinition[];
+  elite: (r?: () => number, outlawKingAvailable?: boolean) => EnemyDefinition[];
+}> = {
   1: { regular: rollAct1Encounter, elite: rollAct1EliteEncounter },
   2: { regular: rollAct2Encounter, elite: rollAct2EliteEncounter },
   3: { regular: rollAct3Encounter, elite: rollAct3EliteEncounter },
 };
 
 /** Mine Cart timed encounter config. */
-const MINE_CART_TURN_LIMIT = 6;
+const MINE_CART_TURN_LIMIT = 5;
 const MINE_CART_FAILURE_DAMAGE = 50;
 
 interface EncounterInfo {
@@ -79,16 +85,28 @@ interface EncounterInfo {
 }
 
 /** Roll enemies for a given act and node type. */
-function rollEncounter(act: Act, nodeType: MapNodeType, seed?: string, nodeId?: string, nodeIndex = 99): EncounterInfo {
+function rollEncounter(
+  act: Act,
+  nodeType: MapNodeType,
+  seed?: string,
+  nodeId?: string,
+  nodeIndex = 99,
+  outlawKingAvailable = false,
+): EncounterInfo {
   const rand = seed && nodeId ? createSeededRandom(`${seed}-encounter-${nodeId}`) : undefined;
   if (nodeType === 'boss') {
-    return { enemies: [{ ...BOSSES[act] }], isElite: false, isBoss: true };
+    const enemies: EnemyDefinition[] = [{ ...BOSSES[act] }];
+    for (const type of (BOSS_COMPANIONS[act] ?? [])) {
+      const def = ALL_ENEMIES[type];
+      if (def) enemies.push({ ...def, _summoned: true } as EnemyDefinition);
+    }
+    return { enemies, isElite: false, isBoss: true };
   }
   const rollers = ENCOUNTER_ROLLERS[act];
   if (nodeType === 'elite') {
-    return { enemies: rollers.elite(rand), isElite: true, isBoss: false };
+    return { enemies: rollers.elite(rand, outlawKingAvailable), isElite: true, isBoss: false };
   }
-  const enemies = rollers.regular(rand ?? Math.random, nodeIndex);
+  const enemies = rollers.regular(rand ?? Math.random, nodeIndex, outlawKingAvailable);
   const isMineCart = enemies.some((e) => e.type === 'mine_cart');
   return {
     enemies,
@@ -264,6 +282,17 @@ export default function App() {
         useCombatStore.getState().setGold(snapshot.player.gold);
         if (run) useCombatStore.getState().setAct(run.currentAct);
 
+        // Announce encounter so BootScene can pick the right combat music
+        if (run) {
+          const currentNode = run.mapState?.nodes.find((n) => n.id === run.currentNodeId);
+          EventBus.emit(GameEvent.COMBAT_MUSIC_SET, {
+            enemyTypes: snapshot.enemies.map((e) => e.definition.type),
+            isElite: currentNode?.type === 'elite',
+            isBoss: currentNode?.type === 'boss',
+            act: run.currentAct,
+          });
+        }
+
         setCombatSceneData({ snapshot });
         game.scene.start('CombatScene', { snapshot });
       } else {
@@ -273,7 +302,14 @@ export default function App() {
           const currentNode = run.mapState?.nodes.find((n) => n.id === run.currentNodeId);
           const nodeType = currentNode?.type ?? 'combat';
           const nodeRow = currentNode?.row ?? 99;
-          const encounter = rollEncounter(run.currentAct, nodeType, run.seed, run.currentNodeId ?? undefined, nodeRow);
+          const outlawKingAvailable = !run.outlawKingEncountered;
+          const encounter = rollEncounter(
+            run.currentAct, nodeType, run.seed, run.currentNodeId ?? undefined, nodeRow, outlawKingAvailable,
+          );
+          // Once-per-run: mark Outlaw King encountered if he was rolled.
+          if (encounterContainsOutlawKing(encounter.enemies)) {
+            useRunStore.getState().markOutlawKingEncountered();
+          }
           applyAscensionToEnemies(encounter.enemies, run.ascensionLevel);
           const ascMods = getAscensionModifiers(run.ascensionLevel);
 
@@ -303,6 +339,14 @@ export default function App() {
           useCombatStore.getState().setPlayerHealth(run.health, run.maxHealth);
           useCombatStore.getState().setGold(run.gold);
           useCombatStore.getState().setAct(run.currentAct);
+
+          // Announce encounter so BootScene can pick the right combat music
+          EventBus.emit(GameEvent.COMBAT_MUSIC_SET, {
+            enemyTypes: encounter.enemies.map((e) => e.type),
+            isElite: encounter.isElite,
+            isBoss: encounter.isBoss,
+            act: run.currentAct,
+          });
 
           setCombatSceneData({ config: combatConfig });
           game.scene.start('CombatScene', { config: combatConfig });
@@ -572,7 +616,7 @@ export default function App() {
           className="absolute right-2 bottom-1 pointer-events-none z-[60]"
           style={{ fontSize: '9px', color: 'rgba(255,255,255,0.3)' }}
         >
-          Pre-alpha v0.5.5
+          Pre-alpha v0.6.0
         </span>
       </div>
     </div>

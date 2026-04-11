@@ -24,7 +24,7 @@ function MenuButton({
       <div
         className="py-1 px-3 text-left"
         style={{
-          fontSize: '18px',
+          fontSize: '14px',
           letterSpacing: '1px',
           color: '#5a3a3a',
           WebkitTextStroke: '3px #000',
@@ -42,7 +42,7 @@ function MenuButton({
       onMouseEnter={playHover}
       className="group relative text-left py-1 px-3 bg-transparent border-none outline-none"
       style={{
-        fontSize: '18px',
+        fontSize: '14px',
         letterSpacing: '1px',
         color: '#e8e8e8',
         WebkitTextStroke: '3px #000',
@@ -182,7 +182,7 @@ export const MainMenu = memo(function MainMenu() {
       style={{
         width: 960,
         height: 540,
-        backgroundImage: `url(${import.meta.env.BASE_URL}assets/main_menu_bg.png)`,
+        backgroundImage: `url(${import.meta.env.BASE_URL}assets/backgrounds/main_menu_bg.png)`,
         backgroundSize: 'cover',
         backgroundPosition: 'center',
       }}

@@ -255,7 +255,7 @@ export function buildTileDescription(type: TileType, upgradeLevel: number): Reac
     case 'waste':
       return [...seg('Apply 1 Poison per tile', false), ...flatBonus(upgradeLevel, uv), ...seg('.', false)];
     case 'prairie_fire':
-      return [...seg('Deal 2 damage per tile', false), ...flatBonus(upgradeLevel, uv), ...seg('. Each tile has a 10% chance to spread to 1 adjacent tile.', false)];
+      return [...seg('Deal 2 damage per tile', false), ...flatBonus(upgradeLevel, uv), ...seg('. After each swap, each tile has a 1 in 3 chance to convert 1 adjacent or diagonal tile to Prairie Fire.', false)];
     case 'chain':
       return [...seg('Deal 1 damage per tile', false), ...flatBonus(upgradeLevel, uv), ...seg('. Each Chain match adds +1 damage to ALL Chain tiles for this combat.', false)];
     case 'whiskey': {
@@ -277,7 +277,17 @@ export function buildTileDescription(type: TileType, upgradeLevel: number): Reac
     case 'cavalry':
       return [...seg('1 damage per tile', false), ...flatBonus(upgradeLevel, uv), ...seg('. If 4+ matched, +1 swap this turn (max 1 per turn).', false)];
     case 'duel':
-      return [...seg('Deal 4 damage per tile', false), ...flatBonus(upgradeLevel, uv), ...seg(' but ONLY if exactly 4 matched. 3 or 5+ matches deal no damage.', false)];
+      return [...seg('Deal 4 damage per tile. On exactly 4-match, deal the damage twice.', false)];
+    case 'mirage': {
+      const baseText = "At the start of combat, transforms into a random tile you don't own for the rest of combat.";
+      if (upgradeLevel <= 0) return [...seg(baseText, false)];
+      const levelWord = upgradeLevel === 1 ? 'level' : 'levels';
+      return [
+        ...seg(baseText + ' Transformed tile gains ', false),
+        ...seg(`+${upgradeLevel}`, true),
+        ...seg(` ${levelWord}.`, false),
+      ];
+    }
     case 'boulder': {
       const v = def.baseValue + bonus;
       return [
@@ -354,7 +364,7 @@ export function buildUpgradePreview(type: TileType, currentLevel: number): React
     case 'waste':
       return [...seg('Apply 1 Poison per tile', false), ...flatBonusPreview(currentLevel, uv), ...seg('.', false)];
     case 'prairie_fire':
-      return [...seg('Deal 2 damage per tile', false), ...flatBonusPreview(currentLevel, uv), ...seg('. Each tile has a 10% chance to spread to 1 adjacent tile.', false)];
+      return [...seg('Deal 2 damage per tile', false), ...flatBonusPreview(currentLevel, uv), ...seg('. After each swap, each tile has a 1 in 3 chance to convert 1 adjacent or diagonal tile to Prairie Fire.', false)];
     case 'chain':
       return [...seg('Deal 1 damage per tile', false), ...flatBonusPreview(currentLevel, uv), ...seg('. Each Chain match adds +1 damage to ALL Chain tiles for this combat.', false)];
     case 'whiskey': {
@@ -379,6 +389,12 @@ export function buildUpgradePreview(type: TileType, currentLevel: number): React
       return [...seg('1 damage per tile', false), ...flatBonusPreview(currentLevel, uv), ...seg('. If 4+ matched, +1 swap this turn (max 1 per turn).', false)];
     case 'duel':
       return [...seg('Deal 4 damage per tile', false), ...flatBonusPreview(currentLevel, uv), ...seg(' but ONLY if exactly 4 matched. 3 or 5+ matches deal no damage.', false)];
+    case 'mirage':
+      return [
+        ...seg("At the start of combat, transforms into a random tile you don't own for the rest of combat. Transformed tile gains ", false),
+        ...arrowUpgrade(currentLevel, currentLevel + 1),
+        ...seg(' levels.', false),
+      ];
 
     default:
       return colorizeKeywords(def.description);

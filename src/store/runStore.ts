@@ -47,6 +47,7 @@ interface RunStore {
   setMerchantSnapshot: (nodeId: string, snapshot: { ownedArtifactIds: string[]; activeTileTypes: TileType[] }) => void;
   markBossRewardTaken: () => void;
   markEliteRewardTaken: () => void;
+  markOutlawKingEncountered: () => void;
   advanceAct: () => void;
   setMapState: (map: MapState) => void;
   endRun: (completed: boolean) => void;
@@ -394,6 +395,12 @@ export const useRunStore = create<RunStore>((set, get) => ({
     set((state) => {
       if (!state.run) return state;
       return { run: { ...state.run, eliteRewardTaken: true } };
+    }),
+
+  markOutlawKingEncountered: () =>
+    set((state) => {
+      if (!state.run) return state;
+      return { run: { ...state.run, outlawKingEncountered: true } };
     }),
 
   advanceAct: () =>

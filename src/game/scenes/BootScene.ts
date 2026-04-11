@@ -1,7 +1,6 @@
 import Phaser from 'phaser';
 import { EventBus, GameEvent } from '../EventBus';
 import { useSettingsStore } from '../../store/settingsStore';
-import { useRunStore } from '../../store/runStore';
 
 /**
  * BootScene: asset loading and music management.
@@ -48,6 +47,7 @@ export class BootScene extends Phaser.Scene {
     this.load.audio('dustys_theme', `${base}assets/audio/dustys_theme.mp3`);
     this.load.audio('copperheads_theme', `${base}assets/audio/copperheads_theme.mp3`);
     this.load.audio('ironeyes_theme', `${base}assets/audio/ironeyes_theme.mp3`);
+    this.load.audio('outlaw_king_theme', `${base}assets/audio/outlaw_king_theme.mp3`);
     // SFX
     this.load.audio('sfx_click', `${base}assets/audio/sfx/click.wav`);
     this.load.audio('sfx_hover', `${base}assets/audio/sfx/hover.wav`);
@@ -65,17 +65,22 @@ export class BootScene extends Phaser.Scene {
     this.load.audio('sfx_shop', `${base}assets/audio/sfx/shop.wav`);
     this.load.audio('sfx_upgrade', `${base}assets/audio/sfx/upgrade.wav`);
     // Backgrounds
-    this.load.image('act1_bg', `${base}assets/act1_bg.png`);
-    this.load.image('act2_bg', `${base}assets/act2_bg.png`);
-    this.load.image('act3_bg', `${base}assets/act3_bg.png`);
-    this.load.image('dusty_bg', `${base}assets/dusty_bg.png`);
-    this.load.image('copperhead_bg', `${base}assets/copperhead_bg.png`);
-    this.load.image('ironeye_bg', `${base}assets/ironeye_bg.png`);
-    this.load.image('main_menu_bg', `${base}assets/main_menu_bg.png`);
-    this.load.image('campfire_bg', `${base}assets/campfire_bg.png`);
+    this.load.image('act1_bg', `${base}assets/backgrounds/act1_bg.png`);
+    this.load.image('act2_bg', `${base}assets/backgrounds/act2_bg.png`);
+    this.load.image('act3_bg', `${base}assets/backgrounds/act3_bg.png`);
+    this.load.image('dusty_bg', `${base}assets/backgrounds/dusty_bg.png`);
+    this.load.image('copperhead_bg', `${base}assets/backgrounds/copperhead_bg.png`);
+    this.load.image('ironeye_bg', `${base}assets/backgrounds/ironeye_bg.png`);
+    this.load.image('main_menu_bg', `${base}assets/backgrounds/main_menu_bg.png`);
+    this.load.image('campfire_bg', `${base}assets/backgrounds/campfire_bg.png`);
     this.load.image('board_bg', `${base}assets/board_bg.png`);
-    this.load.image('merchant_bg', `${base}assets/merchant_bg.png`);
-    this.load.image('treasure_bg', `${base}assets/treasure_bg.png`);
+    this.load.image('merchant_bg', `${base}assets/backgrounds/merchant_bg.png`);
+    this.load.image('artifact_bg', `${base}assets/backgrounds/artifact_bg.png`);
+    this.load.image('rust_bg', `${base}assets/backgrounds/rust_bg.png`);
+    this.load.image('reno_bg', `${base}assets/backgrounds/reno_bg.png`);
+    this.load.image('tile_bg', `${base}assets/backgrounds/tile_bg.png`);
+    this.load.image('map_bg', `${base}assets/map_bg.png`);
+    this.load.image('crate_bg', `${base}assets/backgrounds/crate_bg.png`);
     // Sprites
     this.load.spritesheet('items_sheet', `${base}assets/sprites/items_sheet.png`, {
       frameWidth: 16,
@@ -157,24 +162,9 @@ export class BootScene extends Phaser.Scene {
           setTrack('map_theme');
           break;
         case 'combat': {
-          const run = useRunStore.getState().run;
-          if (!run) break;
-          const currentNode = run.mapState?.nodes.find((n) => n.id === run.currentNodeId);
-          if (currentNode?.type === 'boss') {
-            const bossThemes: Record<number, string> = {
-              1: 'dustys_theme',
-              2: 'copperheads_theme',
-              3: 'ironeyes_theme',
-            };
-            setTrack(bossThemes[run.currentAct] ?? `act${run.currentAct}_theme`);
-          } else if (currentNode?.type === 'elite') {
-            setTrack(Math.random() < 0.5 ? 'elite_theme' : 'elite_theme_alt');
-          } else {
-            // Act themes: 3 variants each (1/3 chance)
-            const r = Math.random();
-            const suffix = r < 0.333 ? '' : r < 0.666 ? '_alt' : '_alt2';
-            setTrack(`act${run.currentAct}_theme${suffix}`);
-          }
+          // Music selection is deferred to COMBAT_MUSIC_SET, which fires once
+          // the encounter enemies are known (so we can pick encounter-specific
+          // tracks like the Outlaw King theme).
           break;
         }
         case 'merchant':
@@ -196,6 +186,43 @@ export class BootScene extends Phaser.Scene {
     EventBus.on(GameEvent.MUSIC_FADE_OUT, () => {
       desiredTrack = '';
       if (audioUnlocked) this.fadeOut();
+    });
+
+    // Combat music is chosen once the encounter is known, so we can swap in
+    // enemy-specific tracks (e.g. Outlaw King) instead of generic elite music.
+    EventBus.on(GameEvent.COMBAT_MUSIC_SET, (...args: unknown[]) => {
+      const payload = args[0] as {
+        enemyTypes: string[];
+        isElite: boolean;
+        isBoss: boolean;
+        act: number;
+      };
+      const setTrack = (track: string) => {
+        desiredTrack = track;
+        if (audioUnlocked) this.playTrack(track);
+      };
+      // Outlaw King's theme wins regardless of node type — he can appear in
+      // late normal or elite encounters via the 1% spawn roll.
+      const hasOutlawKing = payload.enemyTypes.some(
+        (t) => t === 'outlaw_king' || t.startsWith('outlaw_king_'),
+      );
+      if (hasOutlawKing) {
+        setTrack('outlaw_king_theme');
+      } else if (payload.isBoss) {
+        const bossThemes: Record<number, string> = {
+          1: 'dustys_theme',
+          2: 'copperheads_theme',
+          3: 'ironeyes_theme',
+        };
+        setTrack(bossThemes[payload.act] ?? `act${payload.act}_theme`);
+      } else if (payload.isElite) {
+        setTrack(Math.random() < 0.5 ? 'elite_theme' : 'elite_theme_alt');
+      } else {
+        // Act themes: 3 variants each (1/3 chance)
+        const r = Math.random();
+        const suffix = r < 0.333 ? '' : r < 0.666 ? '_alt' : '_alt2';
+        setTrack(`act${payload.act}_theme${suffix}`);
+      }
     });
   }
 

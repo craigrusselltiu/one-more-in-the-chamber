@@ -61,4 +61,16 @@ export const KEYWORDS: Record<string, KeywordDefinition> = {
     color: '#8B4789',
     description: 'Deal 50% less damage. Decrease stacks by 1 at the end of the turn.',
   },
+  Blinded: {
+    color: '#A0A0A0',
+    description: 'Attacks deal no damage. Decrease stacks by 1 at the end of the turn.',
+  },
+  'Dead Man Walking': {
+    color: '#C8B060',
+    description: 'Immune to debuffs.',
+  },
+  Protected: {
+    color: '#F9E27D',
+    description: 'Immune to tile hazards. Decrease stacks by 1 at the end of the turn.',
+  },
 };

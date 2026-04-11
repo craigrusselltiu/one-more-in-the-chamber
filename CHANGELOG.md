@@ -4,6 +4,117 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## v0.6.0
+
+### Added
+
+#### Artifacts & traits
+- 18 new artifacts: Holy Water, Resurrecting Nails, Dead Man's Bones, Absolution Rounds, Last Breath Tonic, Temperance Flask, Scope Lens, Detonator, Snake Eye, Golden Shovel, High Vis Jacket, Golden Scarab, Burial Rites, Sniper's Eye, Heliograph Shard, Death's Glare, Strong Liver, Golden Pickaxe
+- Gunslinger trait breakpoint 6: Lucky deals 2x damage instead of 1.5x
+
+#### Status effects
+- Player Vulnerable debuff: take 50% more damage; decrement at end of player turn
+- Player Protected buff: immune to tile hazard placement (covers enemy startOfFight hazards too); decrement at end of player turn. High Vis Jacket grants 1 Protected at fight start.
+- Enemy Cloak buff: cascade damage is nullified; decrement at end of turn (renamed from Cracked Ground)
+- Enemy Thorns buff: deal damage equal to stacks per hit taken; cleared at end of turn
+- Enemy Grace buff: negate the next instance of damage taken
+- Enemy Hardened buff: incoming damage capped to stack count
+- Enemy Fuse buff: countdown timer for Mine Cart (5 turns → 50 damage on failure)
+- Enemy Dead Man Walking buff: immune to debuffs (Poison, Vulnerable, Terrified, Blinded, Bounty)
+- Enemy Barricade buff: at the start of the enemy turn, retains block instead of clearing; decrement by 1
+- Enemy Blinded debuff: enemy attacks deal no damage; decrement at end of turn
+
+#### Enemy AI / encounters
+- Encounter bag system: no repeat presets until the bag is exhausted (normals and elites)
+- Late normal encounters use a 25/50/25 split: early preset / late preset / dynamic 2-pick
+- HP threshold triggers (Dust Devil at 50% gains 4 Rageful and forces a Multi-attack 2x4 next turn; Iron Eye Isabella at 50% enrages)
+- Forced next-move system that overrides the next telegraph (used by Dust Devil's enrage)
+- Sequential move order flag (Hangman cycles top-to-bottom, then loops)
+- `firstMove` override (Dusty Dan, Tunnel Rat, Ore Golem)
+
+#### Enemies & bosses
+- Act 2 roster additions: Mining Canary, Tunnel Rat, Ore Golem (starts with 15 Hardened)
+- Act 3 roster additions: Hellfire Preacher (Grace start, heal-ally AI), Hangman (sequential, vulnerable-self on big attack)
+- Copperhead Cassidy rework: starts with a full-HP Rattlesnake escort; phase transition at 50% HP clears all statuses ("SHED SKIN"), locks every edge tile, multi-attack hits scale with poison tile count, heal-from-poison move clears all poison tiles and heals 2% max HP per tile
+- Iron Eye Isabella 50% HP enrage: gains 5 Rageful, 30 Block, 1 Barricade, 1 Cloak, 1 Grace, applies 3 Terrified to the player, sprite swaps to her enraged variant
+- Iron Eye Isabella renders at 1.5× sprite scale, with intent icon lifted accordingly
+
+#### Tiles
+- Mirage is now upgradeable: each upgrade level adds +1 to the level of the tile it transforms into
+
+#### UI / polish
+- Sprite outlines on artifact bar icons tinted by rarity color
+- Artifact tooltips now show keyword descriptions below the artifact info
+- Enemy name shown via sprite-hover tooltip (replaced always-on name text)
+- Train Guard, Hangman, and Corrupt Deputy now use their own sprites instead of the bandit placeholder
+- Character selection remembered between sessions
+- Background images for leaderboard, reputation shop, victory/defeat screens
+- Event screen now uses the current act background
+- "Coming Soon" placeholder on the Reputation Shop screen is now large/centered
+- docs/EVENTS.md documents all 16 events
+- docs/ENEMIES_OLD.md preserves the pre-v0.6.0 enemy definitions for diffing
+
+### Changed
+
+#### Balance
+- Complete Act 1 rebalance: Bandit 42 HP, Coyote 32 HP, Rattlesnake 37 HP (Block 8), Vulture 28 HP, Pack Mule 64 HP, Tumbleweed Golem 84 HP (Gain 2 Thorns + Transform 5 tiles), Dust Devil 72 HP (Bury 8 + Gain 1 Cloak start), Dusty Dan 188 HP
+- Complete Act 2 rewrite: Powder Monkey 53 HP, Mining Canary 37 HP, Tunnel Rat 68 HP, Prospector Gone Mad 73 HP, Mine Foreman 123 HP, Ore Golem 145 HP, Mine Cart 194 HP (5-turn fuse, 50 damage on failure), Copperhead Cassidy 260 HP
+- Complete Act 3 rewrite: Train Guard 88 HP, Hellfire Preacher 76 HP, Hangman 138 HP, Corrupt Deputy 120 HP, Saloon Brawler 220 HP, Sheriff's Shadow 213 HP, Iron Eye Isabella 320 HP
+- Train Guard "Attack 4, Block 6" move now also applies 2 Vulnerable
+- Sheriff's Shadow max block move reduced 25 → 24
+- Hangman move 3 block value 8 → 18
+- Act 3 Late "1 Corrupt Deputy" preset now also includes 1 Coyote
+- Act 2 Late dynamic encounters can no longer roll two Prospectors Gone Mad
+- Reno's Coin now overrides the chip bucket to 6 hit / 2 miss instead of an independent re-roll
+- Tinker's Wrench now only spawns explosives from non-cascade 3-matches
+- Rust's Cylinder last shot now deals 7 base damage plus 1 per Bounty stack
+- Duel reworked: always deals damage, exactly 4-match deals damage twice (two separate hits)
+- Prairie Fire reworked: after each swap, each tile has a 1-in-3 chance to convert 1 adjacent or diagonal tile to Prairie Fire (8-way spread); resulting matches resolve cascades and continue the combo
+- Dust Devil row shuffle now reshuffles until no matches are created (matches out-of-moves reshuffle behavior)
+- Thorns reworked: deals damage equal to stacks per hit, cleared at end of turn (was reflect full damage, consumed on trigger)
+- Bombs start with a 2-turn timer (was 3)
+- High Vis Jacket effect text updated: "At the start of combat, gain 1 Protected"
+
+#### Mechanics
+- Enemy block now cleared at the start of the enemy turn (Barricade retains it)
+- Player Terrified decrements at end of player turn (was end of enemy turn)
+- Suppress tiles no longer cleared by matching adjacent tiles
+- `player_terrified` and `terrified` consolidated into a single status type
+- Renamed `gain_terrified` move action to `apply_terrified` for consistency with `apply_vulnerable`
+- Cracked Ground renamed to Cloak
+
+#### UI / assets
+- Main menu buttons smaller; artifact bar gap reduced
+- Background images reorganized into `assets/backgrounds/`
+- Sprite picker grid layout matches the underlying spritesheet
+
+### Fixed
+- Enemy Rageful now buffs the enemy (was incorrectly buffing the player)
+- Vulture's Terrified now applies to the player (was a no-op)
+- HP triggers now actually fire (e.g. Dust Devil gains 4 Rageful below 50% HP)
+- Coyote always summons when alone
+- Dusty Dan's first move is now always Summon 1 Bandit + Summon 1 Coyote
+- Dusty Dan gravity shift no longer fires twice per turn
+- Hangman `startOfFight` Terrified application now fires (the inline whitelist was missing the apply_terrified case)
+- Enemy Blinded / Terrified stacks no longer decrement before the enemy acts (single stacks now correctly apply on the turn they are active)
+- Enemy block no longer doubled by the legacy executeIntent path
+- Boss summons now use the full moveset instead of legacy empty minions
+- Death's Pocket Watch block now survives the end-of-turn reset
+- Trapper's Snare, Gravedigger's Shovel, and Golden Shovel now trigger when buried tiles are revealed by matching (not just by the Tracker trait)
+- Prairie Fire matches after a spread now resolve cascades and continue the combo
+- Dust Devil Boots matches continue the combo counter from the main cascade
+- Suppress tiles now render with a grey breathing overlay effect
+- Target outline only appears on the enemy sprite, not the shadow
+- Enemy intent icons use STATUS_FRAMES / HAZARD_FRAMES directly instead of duplicating in INTENT_FRAMES
+- Chain-destruction match SFX volume lowered (double-showdown, showdown clear-all-of-type, ricochet-into-showdown) so high-volume cascades no longer wall-of-sound the mix
+
+### Removed
+- All legacy enemy AI code
+- Elite modifier system (Dust Storm, Quicksand, Narrow Canyon, Cloak modifiers — Cloak is now an enemy buff, not a modifier)
+- Card Shark, Phantom Rider, Dynamite Duchess, Cave Bat, Canary Swarm, Dynamite Outlaw enemies
+- Legacy boss minion creation (`createBossMinion`)
+- `docs/SPEC.md` (outdated; superseded by topic-specific docs)
+
 ## v0.5.5
 
 ### Added

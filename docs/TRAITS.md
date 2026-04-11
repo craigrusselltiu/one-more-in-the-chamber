@@ -23,6 +23,7 @@ Trait level = number of artifacts held with that tag. Effects activate at breakp
 - Flavor: "Fastest hand in the west. And the luckiest."
 - 2 -- Bullet-type tiles deal 1 extra damage per tile.
 - 4 -- Gain 1 Lucky for every bullet-type tile matched.
+- 6 -- Lucky deals 2x damage instead of 1.5x.
 
 ## Saloon Keeper
 - Flavor: "On the house."

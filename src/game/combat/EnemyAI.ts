@@ -1,15 +1,13 @@
 import type { EnemyIntent } from '../../types/combat';
 import type { Enemy } from './Enemy';
-import type { BoardHazardManager } from '../board/BoardHazardManager';
 
 /**
- * EnemyAI: chooses intents for enemies.
- * Enemies with explicit movesets (defined in enemies.ts) use Enemy.chooseIntent() directly.
- * Legacy enemies without movesets fall back to Enemy.chooseIntent() which uses weighted random.
+ * EnemyAI: delegates intent selection to Enemy.chooseIntent() which uses
+ * the structured moveset system defined in enemies.ts.
  */
 
-export function chooseEnemyIntent(enemy: Enemy, _aliveCount: number): EnemyIntent {
-  return enemy.chooseIntent();
+export function chooseEnemyIntent(enemy: Enemy, aliveCount: number, allyInjured = false): EnemyIntent {
+  return enemy.chooseIntent(aliveCount, allyInjured);
 }
 
 /**
@@ -18,48 +16,9 @@ export function chooseEnemyIntent(enemy: Enemy, _aliveCount: number): EnemyInten
  */
 export function chooseMineCartTimedIntent(turnsLeft: number, failureDamage: number): EnemyIntent {
   return {
-    type: 'ability',
+    type: 'attack',
     value: failureDamage,
     description: turnsLeft <= 1 ? `ATK ${failureDamage}` : `ATK ${failureDamage} IN ${turnsLeft}`,
+    actions: [{ kind: 'attack', value: failureDamage }],
   };
-}
-
-/**
- * Execute a board-manipulation intent (legacy fallback).
- * Used only for enemies without structured movesets.
- */
-export function executeBoardManipulation(
-  enemy: Enemy,
-  intent: EnemyIntent,
-  hazardManager: BoardHazardManager,
-  bombCountdownBonus = 0,
-): string {
-  const def = enemy.getDefinition();
-  const desc = intent.description;
-
-  if (desc.startsWith('POISON')) {
-    const count = intent.value ?? 2;
-    hazardManager.placeRandomPoison(count);
-    return `${def.name} poisons ${count} tiles`;
-  }
-
-  if (desc.startsWith('LOCK')) {
-    const count = intent.value ?? 1;
-    hazardManager.placeRandomLocks(count);
-    return `${def.name} locks ${count} tiles`;
-  }
-
-  if (desc.startsWith('BURY')) {
-    const count = intent.value ?? 3;
-    hazardManager.placeRandomSand(count);
-    return `${def.name} buries ${count} tiles`;
-  }
-
-  if (desc.startsWith('BOMB')) {
-    const count = intent.value ?? 1;
-    hazardManager.placeRandomBombs(count, 3 + bombCountdownBonus);
-    return `${def.name} places ${count} bombs`;
-  }
-
-  return '';
 }

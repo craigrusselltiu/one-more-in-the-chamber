@@ -29,8 +29,12 @@ export class ArtifactSystem {
   private turnNumber = 0;
   /** Snakeskin Boots: whether the first poison this turn has been auto-cleansed. */
   private snakeskinUsedThisTurn = false;
-  /** Double Down: HP lost on chip miss (Reno's Coin). */
+  /** Reno's Coin: HP lost on chip miss. */
   doubleDownMissPenalty = 1;
+  /** Last Breath Tonic: once/combat, below 20% -> random consumable. */
+  private lastBreathTonicAvailable = false;
+  /** Heliograph Shard: once/combat, on 5-match, apply Blinded. */
+  private heliographShardAvailable = false;
 
   constructor(artifacts: ArtifactInstance[]) {
     this.artifactIds = new Set(artifacts.map((a) => a.id));
@@ -109,6 +113,33 @@ export class ArtifactSystem {
         if (!enemy.state.isDead) enemy.addPoison(2);
       }
     }
+
+    // Last Breath Tonic: once/combat, below 20% -> random consumable
+    if (this.has('last_breath_tonic')) {
+      this.lastBreathTonicAvailable = true;
+    }
+
+    // Heliograph Shard: once/combat, on 5-match, apply Blinded
+    if (this.has('heliograph_shard')) {
+      this.heliographShardAvailable = true;
+    }
+
+    // High Vis Jacket: grants 1 Protected stack at fight start (immune to tile
+    // hazards for 1 turn). Protected covers both enemy startOfFight hazard
+    // placement and turn-1 enemy hazard moves.
+    if (this.has('high_vis_jacket')) {
+      player.protectedStacks += 1;
+    }
+
+    // Death's Glare: apply 1 Vulnerable + 1 Terrified to ALL enemies
+    if (this.has('deaths_glare') && enemies) {
+      for (const enemy of enemies) {
+        if (!enemy.state.isDead) {
+          enemy.addVulnerable(1);
+          enemy.addTerrified(1);
+        }
+      }
+    }
   }
 
   /** Get number of Deadeye shots (3 default, 6 with Rust's Cylinder). */
@@ -136,6 +167,12 @@ export class ArtifactSystem {
     if (this.has('rusty_deputy_badge') && this.turnNumber === 2) {
       player.addBlock(13);
     }
+
+    // Dead Man's Bones: at or below 20% HP, gain 4 Ace
+    if (this.has('dead_mans_bones') && player.health <= player.maxHealth * 0.2) {
+      player.addAceStacks(4);
+    }
+
   }
 
   // ---------------------------------------------------------------------------
@@ -181,12 +218,8 @@ export class ArtifactSystem {
       modified.poisonStacks += 1;
     }
 
-    // Reno's Coin: hit chance 50%->75%, damage doubled, 1 HP on miss
+    // Reno's Coin: damage doubled, 1 HP on miss (hit chance handled by bucket)
     if (this.has('renos_coin') && match.tileType === 'chip') {
-      if (!modified.chipHit && Math.random() < 0.5) {
-        modified.chipHit = true;
-        modified.damage = modified.chipDamageIfHit ?? 0;
-      }
       if (modified.chipHit) {
         modified.damage *= 2;
       } else {
@@ -252,7 +285,7 @@ export class ArtifactSystem {
    * Called when an enemy attacks the player.
    * Returns venom stacks to apply to the attacker (Cactus Spine Vest).
    */
-  onPlayerDamaged(hpLost: number, player: Player): { poisonToAttacker: number } {
+  onPlayerDamaged(hpLost: number, player: Player): { poisonToAttacker: number; grantConsumable: boolean } {
     // Sheriff's Domino tracking
     this.enemyAttackedThisTurn = true;
     if (hpLost > 0) {
@@ -263,6 +296,14 @@ export class ArtifactSystem {
     if (this.deathsPocketWatchAvailable && player.health > 0 && player.health <= player.maxHealth * 0.2) {
       this.deathsPocketWatchAvailable = false;
       player.addBlock(20);
+      player.skipNextBlockReset = true;
+    }
+
+    // Last Breath Tonic: once/combat, below 20% -> random consumable
+    let grantConsumable = false;
+    if (this.lastBreathTonicAvailable && player.health > 0 && player.health <= player.maxHealth * 0.2) {
+      this.lastBreathTonicAvailable = false;
+      grantConsumable = true;
     }
 
     // Cactus Spine Vest: when enemy damages HP, apply 3 Venom to attacker
@@ -271,7 +312,7 @@ export class ArtifactSystem {
       poisonToAttacker = 3;
     }
 
-    return { poisonToAttacker };
+    return { poisonToAttacker, grantConsumable };
   }
 
   // ---------------------------------------------------------------------------
@@ -311,11 +352,14 @@ export class ArtifactSystem {
   // Heal Hook
   // ---------------------------------------------------------------------------
 
-  /** Offering Plate: healing grants gold equal to HP healed. */
-  onPlayerHealed(hpHealed: number, player: Player): void {
+  /** Offering Plate: healing grants gold. Absolution Rounds: returns damage to deal. */
+  onPlayerHealed(hpHealed: number, player: Player): { absolutionDamage: number } {
     if (this.has('offering_plate') && hpHealed > 0) {
       player.addGold(hpHealed);
     }
+
+    const absolutionDamage = this.has('absolution_rounds') ? hpHealed : 0;
+    return { absolutionDamage };
   }
 
   // ---------------------------------------------------------------------------
@@ -328,14 +372,16 @@ export class ArtifactSystem {
    * Gravedigger's Shovel: deal 3 damage to random enemy.
    * Returns { vulnerableCount, damagePerReveal }.
    */
-  onBuriedRevealed(): { vulnerableCount: number; damagePerReveal: number } {
+  onBuriedRevealed(): { vulnerableCount: number; damagePerReveal: number; goldPerReveal: number } {
     let vulnerableCount = 0;
     let damagePerReveal = 0;
+    let goldPerReveal = 0;
 
     if (this.has('trappers_snare')) vulnerableCount = 1;
     if (this.has('gravediggers_shovel')) damagePerReveal = 3;
+    if (this.has('golden_shovel')) goldPerReveal = 7;
 
-    return { vulnerableCount, damagePerReveal };
+    return { vulnerableCount, damagePerReveal, goldPerReveal };
   }
 
   // ---------------------------------------------------------------------------
@@ -347,7 +393,7 @@ export class ArtifactSystem {
    * Kill Confirmed: gain 1 swap if killed by .50 Cal or 5+ match.
    * Corpse Explosion: handled by caller (needs summoned check + maxHP).
    */
-  onEnemyKilled(match: MatchResult | null): { killGrantsSwap: boolean } {
+  onEnemyKilled(match: MatchResult | null, wasSummoned?: boolean): { killGrantsSwap: boolean; spawnExplosive: boolean; healAmount: number } {
     // Kill Confirmed: kill with .50 Cal or 5+ match -> gain 1 swap
     let killGrantsSwap = false;
     if (this.has('kill_confirmed') && match) {
@@ -356,7 +402,13 @@ export class ArtifactSystem {
       }
     }
 
-    return { killGrantsSwap };
+    // Detonator: make 1 random tile explosive on enemy death
+    const spawnExplosive = this.has('detonator');
+
+    // Burial Rites: heal 5 HP when summoned enemy dies
+    const healAmount = (this.has('burial_rites') && wasSummoned) ? 5 : 0;
+
+    return { killGrantsSwap, spawnExplosive, healAmount };
   }
 
   /** Corpse Explosion: when a summoned enemy dies, deal its maxHP to all enemies. */
@@ -469,5 +521,84 @@ export class ArtifactSystem {
 
   getCascadeUpgradeBonus(): number {
     return this.has('loaded_dice') ? 1 : 0;
+  }
+
+  // ---------------------------------------------------------------------------
+  // Temperance Flask: healing consumables restore 50% more
+  // ---------------------------------------------------------------------------
+
+  getConsumableHealMultiplier(): number {
+    return this.has('temperance_flask') ? 1.5 : 1.0;
+  }
+
+  // ---------------------------------------------------------------------------
+  // Scope Lens: 5+ matches generate double resources
+  // ---------------------------------------------------------------------------
+
+  shouldDoubleMatchResources(matchLength: number): boolean {
+    return this.has('scope_lens') && matchLength >= 5;
+  }
+
+  // ---------------------------------------------------------------------------
+  // Sniper's Eye: 5-match attacks deal damage to ALL enemies
+  // ---------------------------------------------------------------------------
+
+  shouldFiveMatchAoE(matchLength: number): boolean {
+    return this.has('snipers_eye') && matchLength === 5;
+  }
+
+  // ---------------------------------------------------------------------------
+  // Heliograph Shard: once/combat, on 5-match, apply Blinded
+  // ---------------------------------------------------------------------------
+
+  tryHeliographShard(matchLength: number): boolean {
+    if (this.heliographShardAvailable && matchLength >= 5) {
+      this.heliographShardAvailable = false;
+      return true;
+    }
+    return false;
+  }
+
+  // ---------------------------------------------------------------------------
+  // Snake Eye: cascade matches have 50% chance to apply 1 Poison to all
+  // ---------------------------------------------------------------------------
+
+  shouldCascadePoison(): boolean {
+    return this.has('snake_eye') && Math.random() < 0.5;
+  }
+
+  // ---------------------------------------------------------------------------
+  // Resurrecting Nails: on 3rd turn during boss, restore 30% HP
+  // ---------------------------------------------------------------------------
+
+  shouldResurrect(isBoss: boolean): boolean {
+    return this.has('resurrecting_nails') && isBoss && this.turnNumber === 3;
+  }
+
+  // ---------------------------------------------------------------------------
+  // Holy Water: unused swaps heal 3 HP each
+  // ---------------------------------------------------------------------------
+
+  getHolyWaterHealPerSwap(): number {
+    return this.has('holy_water') ? 3 : 0;
+  }
+
+  // ---------------------------------------------------------------------------
+  // Golden Scarab: gold gain +30%
+  // ---------------------------------------------------------------------------
+
+  getGoldGainMultiplier(): number {
+    let mult = 1.0;
+    if (this.has('golden_scarab')) mult += 0.3;
+    if (this.has('golden_pickaxe')) mult += 0.1;
+    return mult;
+  }
+
+  // ---------------------------------------------------------------------------
+  // Strong Liver: lose 1 gold, gain random buff
+  // ---------------------------------------------------------------------------
+
+  shouldStrongLiver(): boolean {
+    return this.has('strong_liver');
   }
 }

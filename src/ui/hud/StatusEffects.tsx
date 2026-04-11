@@ -30,15 +30,20 @@ const STATUS_TO_KEYWORD: Record<string, string> = {
   terrified: 'Terrified',
   ready: 'Ready',
   chain: 'Chain',
+  protected: 'Protected',
 };
 
 /** Descriptions for effects not in keywords.ts. */
 const EXTRA_DESCRIPTIONS: Record<string, { name: string; color: string; description: string }> = {
   block: { name: 'Block', color: '#6888A0', description: 'Absorbs incoming damage.' },
   crit: { name: 'Crit', color: '#D06080', description: 'Chance to deal 1.5x damage.' },
-  thorns: { name: 'Thorns', color: '#C04040', description: 'Reflect damage to attackers.' },
-  cracked_ground: { name: 'Cracked Ground', color: '#808080', description: 'Cascade damage is nullified.' },
+  thorns: { name: 'Thorns', color: '#C04040', description: 'When attacked, deal damage back equal to stacks. Cleared at end of turn.' },
+  cloak: { name: 'Cloak', color: '#808080', description: 'Cascade damage is nullified. Decrease stacks by 1 at the end of the turn.' },
+  blinded: { name: 'Blinded', color: '#A0A0A0', description: 'Attacks deal no damage.' },
+  hardened: { name: 'Hardened', color: '#8B7355', description: 'All damage taken is reduced to the number of Hardened stacks.' },
   summoned: { name: 'Summoned', color: '#E0C880', description: 'Dies when all non-summoned enemies have died.' },
+  fuse: { name: 'Fuse', color: '#ff4444', description: 'When this reaches zero, blows up dealing 50 damage, then dies.' },
+  dead_man_walking: { name: 'Dead Man Walking', color: '#C8B060', description: 'Immune to debuffs.' },
 };
 
 function getStatusTooltip(type: string, value: number, hideValue: boolean): ReactNode {

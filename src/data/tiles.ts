@@ -176,7 +176,7 @@ export const TILE_DEFINITIONS: Record<TileType, TileDefinition> = {
     baseValue: 2,
     upgradeValue: 2,
     pool: 'starter',
-    description: 'Deal 2 damage per tile. Each tile has a 10% chance to spread to 1 adjacent tile.',
+    description: 'Deal 2 damage per tile. After each swap, each tile has a 1 in 3 chance to convert 1 adjacent or diagonal tile to Prairie Fire.',
     flavor: 'Sparks fly. Some of them catch.',
     upgradeText: '+2 damage to match total per level',
   },
@@ -328,11 +328,10 @@ export const TILE_DEFINITIONS: Record<TileType, TileDefinition> = {
     abbreviation: 'Du',
     color: TILE_COLORS.duel,
     baseValue: 4,
-    upgradeValue: 4,
+    upgradeValue: 0,
     pool: 'additional',
-    description: 'Deal 4 damage per tile but ONLY if exactly 4 matched. 3 or 5+ matches deal no damage.',
+    description: 'Deal 4 damage per tile. On exactly 4-match, deal the damage twice. Cannot be upgraded.',
     flavor: 'In carnage, I bloom, like a flower in the dawn.',
-    upgradeText: '+4 damage to match total per level',
     resolveOrder: 4,
   },
   mirage: {
@@ -345,6 +344,7 @@ export const TILE_DEFINITIONS: Record<TileType, TileDefinition> = {
     pool: 'additional',
     description: "At the start of combat, transforms into a random tile you don't own for the rest of combat.",
     flavor: "Now you see it. Now you don't. Now it's something else.",
+    upgradeText: '+1 to the level of the tile it transforms into per level',
   },
 
   boulder: {

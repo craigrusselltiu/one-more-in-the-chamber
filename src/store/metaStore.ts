@@ -12,6 +12,7 @@ interface MetaProgression {
   unlockedCharacters: string[];
   highestAscensionCleared: number;
   lastAscensionLevel: number;
+  lastCharacter: string;
   playerName: string;
 }
 
@@ -29,6 +30,7 @@ interface MetaStore {
   isUnlocked: (unlockId: string, category: ShopCategory) => boolean;
   setHighestAscension: (level: number) => void;
   setLastAscensionLevel: (level: number) => void;
+  setLastCharacter: (id: string) => void;
   setPlayerName: (name: string) => void;
 }
 
@@ -49,6 +51,7 @@ const DEFAULT_META: MetaProgression = {
   unlockedCharacters: ['red_panda'],
   highestAscensionCleared: -1,
   lastAscensionLevel: 0,
+  lastCharacter: 'red_panda',
   playerName: '',
 };
 
@@ -156,6 +159,13 @@ export const useMetaStore = create<MetaStore>((set, get) => ({
   setLastAscensionLevel: (level) =>
     set((state) => {
       const meta = { ...state.meta, lastAscensionLevel: level };
+      persistMeta(meta);
+      return { meta };
+    }),
+
+  setLastCharacter: (id) =>
+    set((state) => {
+      const meta = { ...state.meta, lastCharacter: id };
       persistMeta(meta);
       return { meta };
     }),

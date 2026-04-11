@@ -336,7 +336,7 @@ export const MapScreen = memo(function MapScreen({ readonly }: { readonly?: bool
   }
 
   return (
-    <div className="relative flex flex-col h-full" style={{ overflow: 'hidden', backgroundImage: `url(${import.meta.env.BASE_URL}assets/crate_bg.png)`, backgroundSize: 'cover', backgroundPosition: 'center' }}>
+    <div className="relative flex flex-col h-full" style={{ overflow: 'hidden', backgroundImage: `url(${import.meta.env.BASE_URL}assets/backgrounds/crate_bg.png)`, backgroundSize: 'cover', backgroundPosition: 'center' }}>
       <div ref={slideRef} className="flex flex-col flex-1">
       {/* Map area -- parchment bg + horizontal scroll canvas */}
       <div className="relative flex-1 flex items-center justify-center">

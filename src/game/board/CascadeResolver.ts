@@ -45,7 +45,7 @@ export class CascadeResolver {
 
     while (matches.length > 0) {
       // Step 1: Collect positions and match metadata, then destroy with effects
-      const { allPositions, firePositions, matchMetadata } = this.prepareClear(board, matches);
+      const { allPositions, matchMetadata } = this.prepareClear(board, matches);
       const destroyed = await board.destroyTilesWithEffects(allPositions);
 
       // Build extra match results from tiles destroyed by explosive/showdown chain
@@ -97,11 +97,6 @@ export class CascadeResolver {
       // Step 2: Spawn special tiles at cleared positions
       this.spawnSpecials(board, matches, isFirstStep ? swapTarget : undefined);
       isFirstStep = false;
-
-      // Step 2.5: Prairie Fire spread -- happens per match step, not at end.
-      if (firePositions.length > 0) {
-        this.applyFireSpread(board, firePositions);
-      }
 
       // Step 3: Apply gravity with animation
       const moves = this.applyGravityTracked(board);
@@ -230,8 +225,8 @@ export class CascadeResolver {
       } else if (match.isExplosive && match.tiles.length > 0) {
         const pos = this.pickSpawnPosition(match.tiles, swapTarget);
         board.spawnSpecialTile(pos.row, pos.col, match.tileType, 'explosive');
-      } else if (this.threeMatchSpawnsExplosive && match.length === 3 && match.tiles.length > 0) {
-        // Tinker's Wrench: 3-matches also spawn explosive tiles
+      } else if (this.threeMatchSpawnsExplosive && match.length === 3 && match.tiles.length > 0 && swapTarget) {
+        // Tinker's Wrench: non-cascade 3-matches also spawn explosive tiles
         const pos = this.pickSpawnPosition(match.tiles, swapTarget);
         board.spawnSpecialTile(pos.row, pos.col, match.tileType, 'explosive');
       }
@@ -239,19 +234,31 @@ export class CascadeResolver {
   }
 
   /**
-   * Prairie Fire spread: after cascade resolution, each cleared prairie_fire tile has a
-   * 10% chance to convert 1 random adjacent tile into a prairie_fire tile.
+   * Prairie Fire spread: after each swap, each prairie_fire tile on the board
+   * has a 1-in-3 chance to convert 1 random adjacent tile into prairie_fire.
+   * Adjacency includes diagonals (8-way).
    */
-  private applyFireSpread(board: Board, firePositions: GridPosition[]): void {
+  applyFireSpread(board: Board): boolean {
     const grid = board.getGrid();
     const size = board.getBoardSize();
-    const SPREAD_CHANCE = 0.10;
+    const SPREAD_CHANCE = 1 / 3;
+    let spread = false;
     const directions = [
-      { dr: -1, dc: 0 },
-      { dr: 1, dc: 0 },
-      { dr: 0, dc: -1 },
-      { dr: 0, dc: 1 },
+      { dr: -1, dc: -1 }, { dr: -1, dc: 0 }, { dr: -1, dc: 1 },
+      { dr:  0, dc: -1 },                    { dr:  0, dc: 1 },
+      { dr:  1, dc: -1 }, { dr:  1, dc: 0 }, { dr:  1, dc: 1 },
     ];
+
+    // Find all existing prairie_fire tiles
+    const firePositions: GridPosition[] = [];
+    for (let r = 0; r < size; r++) {
+      for (let c = 0; c < size; c++) {
+        const tile = grid[r]?.[c];
+        if (tile && tile.type === 'prairie_fire') {
+          firePositions.push({ row: r, col: c });
+        }
+      }
+    }
 
     for (const pos of firePositions) {
       if (Math.random() >= SPREAD_CHANCE) continue;
@@ -275,8 +282,10 @@ export class CascadeResolver {
       const tile = grid[target.row][target.col];
       if (tile) {
         tile.setType('prairie_fire');
+        spread = true;
       }
     }
+    return spread;
   }
 
   applyGravityTracked(

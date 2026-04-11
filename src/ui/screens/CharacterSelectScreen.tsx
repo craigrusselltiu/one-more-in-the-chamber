@@ -32,7 +32,7 @@ const CHARACTERS: CharacterInfo[] = [
     abilityDescription:
       'Shoot any 3 tiles on the board. Each tile destroyed generates its resources.',
     sprite: 'rust.png',
-    bg: 'rust_bg.png',
+    bg: 'backgrounds/rust_bg.png',
   },
   {
     id: 'reno',
@@ -43,7 +43,7 @@ const CHARACTERS: CharacterInfo[] = [
     abilityDescription:
       'Shuffle the board.',
     sprite: 'reno.png',
-    bg: 'reno_bg.png',
+    bg: 'backgrounds/reno_bg.png',
   },
 ];
 
@@ -52,8 +52,10 @@ export const CharacterSelectScreen = memo(function CharacterSelectScreen() {
   const startRun = useRunStore((s) => s.startRun);
   const highestCleared = useMetaStore((s) => s.meta.highestAscensionCleared);
   const lastAscension = useMetaStore((s) => s.meta.lastAscensionLevel);
+  const lastCharacter = useMetaStore((s) => s.meta.lastCharacter) as CharacterId;
   const setLastAscensionLevel = useMetaStore((s) => s.setLastAscensionLevel);
-  const [selectedCharacter, setSelectedCharacter] = useState<CharacterId>('red_panda');
+  const setLastCharacter = useMetaStore((s) => s.setLastCharacter);
+  const [selectedCharacter, setSelectedCharacter] = useState<CharacterId>(lastCharacter ?? 'red_panda');
   const [ascensionLevel, setAscensionLevel] = useState(lastAscension ?? 0);
   const [customSeed, setCustomSeed] = useState('');
 
@@ -62,6 +64,7 @@ export const CharacterSelectScreen = memo(function CharacterSelectScreen() {
 
   const handleConfirm = () => {
     setLastAscensionLevel(ascensionLevel);
+    setLastCharacter(selectedCharacter);
     setPendingNewGame({ character: selectedCharacter, ascensionLevel });
     const seed = (customSeed.trim() || Date.now().toString(36) + Math.random().toString(36).slice(2, 6)).toUpperCase();
     startRun(seed, ascensionLevel);

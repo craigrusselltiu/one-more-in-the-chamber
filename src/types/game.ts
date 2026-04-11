@@ -32,6 +32,8 @@ export interface RunState {
   bossRewardTaken?: boolean;
   /** True after elite treasure is taken/skipped. */
   eliteRewardTaken?: boolean;
+  /** True after the once-per-run Outlaw King encounter has been rolled. */
+  outlawKingEncountered?: boolean;
   status: 'active' | 'completed' | 'abandoned';
 }
 

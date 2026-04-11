@@ -23,7 +23,10 @@ interface CombatStore {
   poisonedStacks: number;
   readyStacks: number;
   chainStacks: number;
+  terrifiedStacks: number;
+  vulnerableStacks: number;
   thorns: number;
+  protectedStacks: number;
 
   // Ability
   abilityCharge: number;
@@ -80,7 +83,10 @@ const initialState = {
   poisonedStacks: 0,
   readyStacks: 0,
   chainStacks: 0,
+  terrifiedStacks: 0,
+  vulnerableStacks: 0,
   thorns: 0,
+  protectedStacks: 0,
   abilityCharge: 0,
   abilityThreshold: 10,
   isDeadeyeActive: false,
@@ -120,7 +126,10 @@ export const useCombatStore = create<CombatStore>((set) => ({
       poisonedStacks: state.poisonedStacks,
       readyStacks: state.readyStacks,
       chainStacks: state.chainStacks,
+      terrifiedStacks: state.terrifiedStacks,
+      vulnerableStacks: state.vulnerableStacks,
       thorns: state.thorns,
+      protectedStacks: state.protectedStacks ?? 0,
       abilityCharge: state.abilityCharge,
       abilityThreshold: state.abilityThreshold,
       isDeadeyeActive: state.isDeadeyeActive,
@@ -173,7 +182,10 @@ export function getPlayerStatusEffects(store: CombatStore): PlayerStatusEffect[]
   if (store.poisonedStacks > 0) effects.push({ type: 'poisoned', value: store.poisonedStacks });
   if (store.readyStacks > 0) effects.push({ type: 'ready', value: store.readyStacks });
   if (store.chainStacks > 0) effects.push({ type: 'chain', value: store.chainStacks });
+  if (store.terrifiedStacks > 0) effects.push({ type: 'terrified', value: store.terrifiedStacks });
+  if (store.vulnerableStacks > 0) effects.push({ type: 'vulnerable', value: store.vulnerableStacks });
   if (store.thorns > 0) effects.push({ type: 'thorns', value: store.thorns });
+  if (store.protectedStacks > 0) effects.push({ type: 'protected', value: store.protectedStacks });
   return effects;
 }
 
@@ -183,9 +195,17 @@ export function getEnemyStatusEffects(enemy: EnemyState): EnemyStatusEffect[] {
   if (enemy.block > 0) effects.push({ type: 'block', value: enemy.block });
   if (enemy.poisonStacks > 0) effects.push({ type: 'poison', value: enemy.poisonStacks });
   if (enemy.vulnerable > 0) effects.push({ type: 'vulnerable', value: enemy.vulnerable });
-  if (enemy.crackedGround > 0) effects.push({ type: 'cracked_ground', value: enemy.crackedGround });
+  if (enemy.cloak > 0) effects.push({ type: 'cloak', value: enemy.cloak });
   if (enemy.bountyStacks > 0) effects.push({ type: 'bounty', value: enemy.bountyStacks });
   if (enemy.terrifiedStacks > 0) effects.push({ type: 'terrified', value: enemy.terrifiedStacks });
+  if (enemy.blindedStacks > 0) effects.push({ type: 'blinded', value: enemy.blindedStacks });
+  if (enemy.ragefulStacks > 0) effects.push({ type: 'rageful', value: enemy.ragefulStacks });
+  if (enemy.thorns > 0) effects.push({ type: 'thorns', value: enemy.thorns });
+  if (enemy.graceStacks > 0) effects.push({ type: 'grace', value: enemy.graceStacks });
+  if (enemy.hardened > 0) effects.push({ type: 'hardened', value: enemy.hardened });
+  if (enemy.fuse > 0) effects.push({ type: 'fuse', value: enemy.fuse });
+  if (enemy.deadManWalking > 0) effects.push({ type: 'dead_man_walking', value: enemy.deadManWalking });
+  if (enemy.barricadeStacks > 0) effects.push({ type: 'barricade', value: enemy.barricadeStacks });
   if (enemy.summoned) effects.push({ type: 'summoned', value: 1 });
   return effects;
 }

@@ -58,7 +58,7 @@ NOTE: Observe the difference between +1 to match total and +1 per tile. The tile
 - Flavor: "Slow poison. The patient killer's weapon."
 
 ### Prairie Fire
-- Behaviour: Deal 2 damage per tile. Each tile has a 50% chance to convert 1 adjacent tile to Ember.
+- Behaviour: Deal 2 damage per tile. After each swap, each tile has a 1 in 3 chance to convert 1 adjacent or diagonal tile to Prairie Fire.
 - Upgrade: +2 damage to match total per level
 - Flavor: "Sparks fly. Some of them catch."
 
@@ -126,12 +126,12 @@ NOTE: Observe the difference between +1 to match total and +1 per tile. The tile
 - Flavor: "Reinforcements have arrived."
 
 ### Duel
-- Behaviour: Deal 4 damage per tile but ONLY if exactly 4 matched. 3 or 5+ matches deal no damage.
-- Upgrade: +4 damage to match total per level
+- Behaviour: Deal 4 damage per tile. On exactly 4-match, deal the damage twice. Cannot be upgraded.
 - Flavor: "In carnage, I bloom, like a flower in the dawn."
 
 ### Mirage
 - Behaviour: At the start of combat, transforms into a random tile you don't own for the rest of combat.
+- Upgrade: +1 to the level of the tile it transforms into
 - Flavor: "Now you see it. Now you don't. Now it's something else."
 
 ## New Tile Ideas

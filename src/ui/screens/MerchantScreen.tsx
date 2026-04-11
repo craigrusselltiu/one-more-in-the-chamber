@@ -217,7 +217,7 @@ export const MerchantScreen = memo(function MerchantScreen() {
   const maxSlots = hasSaddlebag ? 5 : 3;
 
   return (
-    <div className="flex flex-col items-center justify-center h-full" style={{ padding: '24px 0', backgroundImage: `linear-gradient(rgba(0,0,0,0.45), rgba(0,0,0,0.45)), url(${import.meta.env.BASE_URL}assets/merchant_bg.png)`, backgroundSize: 'cover', backgroundPosition: 'center' }}>
+    <div className="flex flex-col items-center justify-center h-full" style={{ padding: '24px 0', backgroundImage: `linear-gradient(rgba(0,0,0,0.45), rgba(0,0,0,0.45)), url(${import.meta.env.BASE_URL}assets/backgrounds/merchant_bg.png)`, backgroundSize: 'cover', backgroundPosition: 'center' }}>
       <h2 className="text-xl text-amber-400 mb-4 font-bold uppercase" style={{ WebkitTextStroke: '4px #000', paintOrder: 'stroke fill' }}>General Merchant</h2>
 
       <div className="flex flex-col gap-4 px-2">

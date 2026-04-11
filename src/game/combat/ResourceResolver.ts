@@ -19,7 +19,7 @@ export interface ResourceOutput {
   chainStacks: number;
   /** Whether a Chip tile hit (true) or missed (false). Undefined for non-chip tiles. */
   chipHit?: boolean;
-  /** The damage Chip would deal if it hit (used by Reno's Coin re-roll). */
+  /** The damage Chip would deal if it hit (used by Reno's Coin damage doubling). */
   chipDamageIfHit?: number;
   /** Double Down artifact: HP penalty on chip miss. */
   doubleDownPenalty?: number;
@@ -32,6 +32,8 @@ export interface ResourceOutput {
   bonusSwaps: number;
   /** Buckshot: number of individual hits, each targeting a random enemy. */
   buckshotHits: number;
+  /** Duel: if true, damage is dealt a second time. */
+  duelDoubleHit?: boolean;
 }
 
 /** Tiles where upgrade scales per tile (not flat per match). */
@@ -46,14 +48,24 @@ const PER_TILE_UPGRADE: Set<TileType> = new Set([
 export class ResourceResolver {
   /** Whether cavalry bonus swap has been granted this turn. */
   cavalrySwapUsedThisTurn = false;
-  /** Chip marble bag: hits remaining / draws remaining out of 6. */
+  /** Chip marble bag: hits remaining / draws remaining. */
   private chipHitsLeft = 0;
   private chipDrawsLeft = 0;
+  private chipBucketHits = 3;
+  private chipBucketSize = 6;
+
+  /** Override the default (3/6) chip bucket ratio. */
+  setChipBucket(hits: number, size: number): void {
+    this.chipBucketHits = hits;
+    this.chipBucketSize = size;
+    this.chipHitsLeft = 0;
+    this.chipDrawsLeft = 0;
+  }
 
   private drawChipHit(): boolean {
     if (this.chipDrawsLeft <= 0) {
-      this.chipHitsLeft = 3;
-      this.chipDrawsLeft = 6;
+      this.chipHitsLeft = this.chipBucketHits;
+      this.chipDrawsLeft = this.chipBucketSize;
     }
     const hit = Math.random() < this.chipHitsLeft / this.chipDrawsLeft;
     if (hit) this.chipHitsLeft--;
@@ -186,8 +198,9 @@ export class ResourceResolver {
         break;
 
       case 'duel':
-        // Only deals damage on exactly 3-match
-        output.damage = count === 4 ? total : 0;
+        // Always deals damage; on exactly 4-match, damage is dealt twice
+        output.damage = total;
+        output.duelDoubleHit = count === 4;
         break;
 
       case 'boulder':

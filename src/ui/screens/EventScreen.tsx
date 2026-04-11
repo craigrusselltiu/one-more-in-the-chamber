@@ -292,8 +292,16 @@ export const EventScreen = memo(function EventScreen() {
   const showArtifactPopup = rewardArtifact && !artifactHandled;
   const showContinue = choiceMade && (!rewardArtifact || artifactHandled);
 
+  const actBg = `${import.meta.env.BASE_URL}assets/backgrounds/act${run?.currentAct ?? 1}_bg.png`;
   return (
-    <div className="flex flex-col h-full bg-[#1a1a2e]/95">
+    <div
+      className="flex flex-col h-full"
+      style={{
+        backgroundImage: `linear-gradient(rgba(0,0,0,0.55), rgba(0,0,0,0.55)), url(${actBg})`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+      }}
+    >
       <div className="flex-1 flex flex-col items-center justify-center">
       <div className="max-w-md w-full px-4">
         {/* Event title */}

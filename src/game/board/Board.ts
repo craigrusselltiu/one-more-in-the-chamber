@@ -189,6 +189,8 @@ export class Board {
 
   /** Whether deadeye targeting mode is active (clicks shoot instead of swap). */
   private deadeyeMode = false;
+  /** Whether lasso mode is active (clicks can target non-adjacent tiles). */
+  private lassoMode = false;
 
   // -- Hint system --
   private hintTimer = 0;
@@ -204,6 +206,10 @@ export class Board {
   setDeadeyeMode(active: boolean): void {
     this.deadeyeMode = active;
     if (active) this.clearSelection();
+  }
+
+  setLassoMode(active: boolean): void {
+    this.lassoMode = active;
   }
 
   setShuffleHoldMode(active: boolean): void {
@@ -295,8 +301,8 @@ export class Board {
           // Clicked same tile: deselect
           this.clearSelection();
           this.dragStart = null;
-        } else if (this.isAdjacent(this.selectedTile, pos)) {
-          // Clicked adjacent tile: route through CombatManager
+        } else if (this.isAdjacent(this.selectedTile, pos) || this.lassoMode) {
+          // Clicked adjacent tile (or any tile in lasso mode): route through CombatManager
           const from = { ...this.selectedTile };
           this.clearSelection();
           this.dragStart = null;
@@ -401,6 +407,7 @@ export class Board {
     from: GridPosition,
     to: GridPosition,
     onCascadeStep?: (matches: MatchResult[]) => void | Promise<void>,
+    isLasso = false,
   ): Promise<SwapResult> {
     if (this.isResolving) return { valid: false, matches: [] };
     this.resetHintTimer();
@@ -440,25 +447,49 @@ export class Board {
     // Block input during swap animation
     this.isResolving = true;
 
-    // Animate the swap visually
-    const dur = Board.SWAP_DURATION;
-    await Promise.all([
-      tileA.tweenToPosition(this.tileX(to.col), this.tileY(to.row), dur),
-      tileB.tweenToPosition(this.tileX(from.col), this.tileY(from.row), dur),
-    ]);
-
-    // Update grid positions
-    this.swapTilesInGrid(from, to);
+    // Animate: non-adjacent lasso swaps scale down/up; adjacent swaps slide
+    const isNonAdjacent = !this.isAdjacent(from, to);
+    if (isNonAdjacent) {
+      await Promise.all([tileA.tweenScale(0, 150), tileB.tweenScale(0, 150)]);
+      this.swapTilesInGrid(from, to);
+      tileA.setPosition(this.tileX(to.col), this.tileY(to.row));
+      tileB.setPosition(this.tileX(from.col), this.tileY(from.row));
+      await Promise.all([tileA.tweenScale(1, 150), tileB.tweenScale(1, 150)]);
+    } else {
+      const dur = Board.SWAP_DURATION;
+      await Promise.all([
+        tileA.tweenToPosition(this.tileX(to.col), this.tileY(to.row), dur),
+        tileB.tweenToPosition(this.tileX(from.col), this.tileY(from.row), dur),
+      ]);
+      this.swapTilesInGrid(from, to);
+    }
 
     // Check if swap produces matches
     const matches = this.findMatches();
     if (matches.length === 0) {
+      if (isLasso) {
+        // Lasso: no-match swap is still valid (just no cascades)
+        if (!this.hasValidMoves()) {
+          await this.reshuffleAnimated();
+        }
+        this.isResolving = false;
+        return { valid: true, matches: [] };
+      }
       // No match: animate swap back (bounce-back)
-      this.swapTilesInGrid(from, to);
-      await Promise.all([
-        tileA.tweenToPosition(this.tileX(from.col), this.tileY(from.row), dur),
-        tileB.tweenToPosition(this.tileX(to.col), this.tileY(to.row), dur),
-      ]);
+      if (isNonAdjacent) {
+        await Promise.all([tileA.tweenScale(0, 150), tileB.tweenScale(0, 150)]);
+        this.swapTilesInGrid(from, to);
+        tileA.setPosition(this.tileX(from.col), this.tileY(from.row));
+        tileB.setPosition(this.tileX(to.col), this.tileY(to.row));
+        await Promise.all([tileA.tweenScale(1, 150), tileB.tweenScale(1, 150)]);
+      } else {
+        const dur = Board.SWAP_DURATION;
+        this.swapTilesInGrid(from, to);
+        await Promise.all([
+          tileA.tweenToPosition(this.tileX(from.col), this.tileY(from.row), dur),
+          tileB.tweenToPosition(this.tileX(to.col), this.tileY(to.row), dur),
+        ]);
+      }
       this.isResolving = false;
       return { valid: false, matches: [] };
     }
@@ -839,10 +870,13 @@ export class Board {
       tilesToAnimate.push(tile);
     }
 
-    // Step 2: Animate the initial destruction
+    // Step 2: Animate the initial destruction.
+    // Stagger path plays per-tile SFX at a reduced volume so chain-destruction
+    // (double-showdown, showdown clear-all-of-type, ricochet → showdown) doesn't
+    // stack up into an overwhelming wall of sound.
     if (staggerMs > 0) {
       for (const tile of tilesToAnimate) {
-        playMatch(1);
+        playMatch(1, 0.25);
         tile.destroy();
         await new Promise(r => setTimeout(r, staggerMs));
       }
@@ -961,6 +995,29 @@ export class Board {
       const pos = candidates.splice(idx, 1)[0];
       const tile = this.grid[pos.row][pos.col];
       if (tile) tile.setShadow(true);
+    }
+  }
+
+  /** Prairie Fire spread: each prairie_fire tile has a 1-in-3 chance to convert 1 adjacent tile. Returns true if any spread. */
+  spreadPrairieFire(): boolean {
+    return this.cascadeResolver.applyFireSpread(this);
+  }
+
+  /** Make 1 random non-special tile explosive. */
+  spawnExplosiveOnRandomTile(): void {
+    const candidates: { row: number; col: number }[] = [];
+    for (let row = 0; row < BOARD_SIZE; row++) {
+      for (let col = 0; col < BOARD_SIZE; col++) {
+        const tile = this.grid[row][col];
+        if (tile && !tile.hazard && !tile.isExplosive && !tile.isShowdown && !tile.isShadow) {
+          candidates.push({ row, col });
+        }
+      }
+    }
+    if (candidates.length > 0) {
+      const pick = candidates[Math.floor(Math.random() * candidates.length)];
+      const tile = this.grid[pick.row][pick.col];
+      if (tile) tile.setExplosive(true);
     }
   }
 
@@ -1397,7 +1454,8 @@ export class Board {
     this.cascadeResolver.threeMatchSpawnsExplosive = value;
   }
 
-  /** Animated shuffle of tiles within specific rows (for Dust Devil Boots). */
+  /** Animated shuffle of tiles within specific rows (for Dust Devil Boots / Dust Devil enemy).
+   *  Reshuffles until no matches are created, matching the out-of-moves reshuffle behavior. */
   async shuffleRowsAnimated(rows: number[]): Promise<void> {
     const positions: { row: number; col: number }[] = [];
     const states: { type: TileType; isExplosive: boolean; isShowdown: boolean; isShadow: boolean }[] = [];
@@ -1420,21 +1478,32 @@ export class Board {
     // Scale down
     await Promise.all(tiles.map(t => t.tweenScale(0, 150)));
 
-    // Fisher-Yates shuffle
-    for (let i = states.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [states[i], states[j]] = [states[j], states[i]];
+    // Try Fisher-Yates shuffles until no matches are created on the board
+    let attempts = 0;
+    const MAX_ATTEMPTS = 100;
+    while (attempts < MAX_ATTEMPTS) {
+      // Fisher-Yates shuffle
+      for (let i = states.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [states[i], states[j]] = [states[j], states[i]];
+      }
+      // Apply shuffled state
+      for (let i = 0; i < positions.length; i++) {
+        const tile = this.grid[positions[i].row]?.[positions[i].col];
+        if (tile && i < states.length) {
+          tile.setType(states[i].type);
+          tile.isExplosive = states[i].isExplosive;
+          tile.isShowdown = states[i].isShowdown;
+          tile.isShadow = states[i].isShadow;
+        }
+      }
+      attempts++;
+      if (this.findMatches().length === 0) break;
     }
 
-    // Apply shuffled state
-    for (let i = 0; i < positions.length; i++) {
-      const tile = this.grid[positions[i].row]?.[positions[i].col];
-      if (tile && i < states.length) {
-        tile.setType(states[i].type);
-        tile.isExplosive = states[i].isExplosive;
-        tile.isShowdown = states[i].isShowdown;
-        tile.isShadow = states[i].isShadow;
-      }
+    // Fallback: break any remaining matches by swapping with other unlocked tiles
+    if (this.findMatches().length > 0) {
+      this.removeInitialMatchesBySwapping();
     }
 
     // Scale up
