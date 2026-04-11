@@ -109,13 +109,13 @@ export const ACT1_ELITE: Record<string, EnemyDefinition> = {
     type: 'tumbleweed_golem',
     name: 'Tumbleweed Golem',
     health: 109,
-    minDamage: 16, maxDamage: 18,
+    minDamage: 13, maxDamage: 16,
     abilities: ['lock', 'summon'],
     startOfFight: [lockRow(), lockCol(), gainCloak(1)],
     moves: [
-      m(atk(18), lockRow()),
+      m(atk(13), lockRow()),
       m(multiAtk(4, 4), lock(4)),
-      m(block(12), gainThorns(4), transformTumbleweed(5)),
+      m(block(10), gainThorns(2), transformTumbleweed(4)),
       m(block(20), summon('coyote')),
     ],
   },
@@ -123,7 +123,7 @@ export const ACT1_ELITE: Record<string, EnemyDefinition> = {
     type: 'dust_devil',
     name: 'Dust Devil',
     health: 94,
-    minDamage: 4, maxDamage: 15,
+    minDamage: 4, maxDamage: 14,
     abilities: ['bury', 'suppress'],
     startOfFight: [bury(8)],
     hpTriggers: [{
@@ -133,7 +133,7 @@ export const ACT1_ELITE: Record<string, EnemyDefinition> = {
       forceNextMove: [multiAtk(1, 6)],
     }],
     moves: [
-      m(atk(15), bury(3)),
+      m(atk(14), bury(3)),
       m(atk(7), suppress(1), bury(3)),
       m(atk(11), bury(5), shuffleRows(67)),   // bottom 2 rows (6,7)
       m(multiAtk(4, 3), shuffleRows(1)),  // top 2 rows (0,1)

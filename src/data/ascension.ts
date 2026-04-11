@@ -1,4 +1,4 @@
-import type { EnemyDefinition } from '../types/combat';
+import type { EnemyDefinition, EnemyMove } from '../types/combat';
 
 /**
  * Ascension difficulty system.
@@ -15,16 +15,16 @@ import type { EnemyDefinition } from '../types/combat';
  *   L7  — Normal enemies +10% HP
  *   L8  — Elite enemies +10% HP
  *   L9  — Bosses +10% HP
- *   L10 — Start each run with an extra Charcoal tile in the deck
+ *   L10 — Merchant prices ×1.1
  *   L11 — Consumable slots −1
- *   L12 — Upgraded merchant tiles are one tier lower (TBD — not yet wired)
+ *   L12 — Upgraded merchant tiles appear less often
  *   L13 — Gold earned ×0.9
  *   L14 — Max HP ×0.95
  *   L15 — Legendary artifact weight dropped from 3 to 1
- *   L16 — Merchant prices ×1.1
- *   L17 — Normal enemies gain new abilities (not yet implemented)
- *   L18 — Elites gain new abilities (not yet implemented)
- *   L19 — Bosses gain new abilities (not yet implemented)
+ *   L16 — Start each run with an extra Charcoal tile in the deck
+ *   L17 — Normal enemies gain an additional +10% HP and +10% damage (stacks with L2/L7)
+ *   L18 — Elites gain an additional +10% HP and +10% damage (stacks with L3/L8)
+ *   L19 — Bosses gain an additional +10% HP and +10% damage (stacks with L4/L9)
  *   L20 — Final boss spawns with a random Act 3 elite as a companion
  */
 
@@ -100,15 +100,63 @@ export function getAscensionMutations(level: number): AscensionMutations {
   if (l >= 7) m.normalHpMult = 1.1;
   if (l >= 8) m.eliteHpMult = 1.1;
   if (l >= 9) m.bossHpMult = 1.1;
-  if (l >= 10) m.extraCharcoalTile = true;
+  if (l >= 10) m.merchantPriceMultiplier = 1.1;
   if (l >= 11) m.consumableSlotPenalty = 1;
   if (l >= 12) m.reducedTileUpgradeFrequency = true;
   if (l >= 13) m.goldMultiplier = 0.9;
   if (l >= 14) m.maxHealthMultiplier = 0.95;
   if (l >= 15) m.legendaryWeight = 1;
-  if (l >= 16) m.merchantPriceMultiplier = 1.1;
+  if (l >= 16) m.extraCharcoalTile = true;
+  // L17/18/19: additional +10% HP and damage per enemy category, stacking
+  // additively with L2/L7 (normals), L3/L8 (elites), L4/L9 (bosses).
+  if (l >= 17) { m.normalHpMult += 0.1; m.normalDamageMult += 0.1; }
+  if (l >= 18) { m.eliteHpMult += 0.1; m.eliteDamageMult += 0.1; }
+  if (l >= 19) { m.bossHpMult += 0.1; m.bossDamageMult += 0.1; }
   if (l >= 20) m.finalBossExtraElite = true;
   return m;
+}
+
+/** Scale damage values on an enemy's full move library (moves + firstMove + hpTriggers). */
+function scaleEnemyDamage(enemy: EnemyDefinition, dmgMult: number): void {
+  if (dmgMult === 1.0) return;
+  // Clone move lists so we don't mutate shared module-level definitions.
+  if (enemy.moves) {
+    enemy.moves = enemy.moves.map((mv: EnemyMove) => ({
+      ...mv,
+      actions: mv.actions.map((a) =>
+        a.kind === 'attack' || a.kind === 'multi_attack'
+          ? { ...a, value: Math.max(1, Math.round(a.value * dmgMult)) }
+          : a,
+      ),
+    }));
+  }
+  if (enemy.firstMove) {
+    enemy.firstMove = {
+      ...enemy.firstMove,
+      actions: enemy.firstMove.actions.map((a) =>
+        a.kind === 'attack' || a.kind === 'multi_attack'
+          ? { ...a, value: Math.max(1, Math.round(a.value * dmgMult)) }
+          : a,
+      ),
+    };
+  }
+  if (enemy.hpTriggers) {
+    enemy.hpTriggers = enemy.hpTriggers.map((trig) => ({
+      ...trig,
+      actions: trig.actions.map((a) =>
+        a.kind === 'attack' || a.kind === 'multi_attack'
+          ? { ...a, value: Math.max(1, Math.round(a.value * dmgMult)) }
+          : a,
+      ),
+      forceNextMove: trig.forceNextMove
+        ? trig.forceNextMove.map((a) =>
+            a.kind === 'attack' || a.kind === 'multi_attack'
+              ? { ...a, value: Math.max(1, Math.round(a.value * dmgMult)) }
+              : a,
+          )
+        : trig.forceNextMove,
+    }));
+  }
 }
 
 /** Apply ascension HP/damage scaling to a group of enemies of the given category. */
@@ -127,5 +175,6 @@ export function applyAscensionToEnemies(
     e.health = Math.round(e.health * hpMult);
     e.minDamage = Math.round(e.minDamage * dmgMult);
     e.maxDamage = Math.round(e.maxDamage * dmgMult);
+    scaleEnemyDamage(e, dmgMult);
   }
 }

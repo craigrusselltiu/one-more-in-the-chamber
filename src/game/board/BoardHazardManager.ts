@@ -94,7 +94,7 @@ export class BoardHazardManager {
   }
 
   /** Place a bomb on N random non-hazarded tiles with a countdown. */
-  placeRandomBombs(count: number, countdown = 2): HazardPlacement[] {
+  placeRandomBombs(count: number, countdown = 3): HazardPlacement[] {
     return this.placeRandomHazard({ type: 'bomb', countdown }, count);
   }
 

@@ -8,7 +8,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
 ### Added
 - Charcoal tile: new Special-pool tile. On match deals 1 damage + gains 1 block (flat per match). Cannot be swapped out at the merchant, cannot be upgraded. Flavor: "A piece of charcoal. Somehow makes Fire-type moves more— wrong game."
-- Ascension system reworked into discrete per-level mutations (L1–L20, cumulative). Old global HP/damage/gold/price multipliers are gone. Active levels: L1 (+2 elites per act), L2/3/4 (+10% damage to normals/elites/bosses), L5 (80% inter-act heal), L6 (start at 90% HP), L7/8/9 (+10% HP to normals/elites/bosses), L10 (extra Charcoal in deck), L11 (−1 consumable slot), L12 (upgraded reward tiles appear less often), L13 (10% less gold), L14 (5% less max HP), L15 (legendary weight 3→1), L16 (10% shop markup), L20 (Act 3 final boss spawns with a random Act 3 elite companion). L17/18/19 are no-ops pending new enemy abilities.
+- Ascension system reworked into discrete per-level mutations (L1–L20, cumulative). Old global HP/damage/gold/price multipliers are gone. Active levels: L1 (+2 elites per act), L2/3/4 (+10% damage to normals/elites/bosses), L5 (80% inter-act heal), L6 (start at 90% HP), L7/8/9 (+10% HP to normals/elites/bosses), L10 (10% shop markup), L11 (−1 consumable slot), L12 (upgraded reward tiles appear less often), L13 (10% less gold), L14 (5% less max HP), L15 (legendary weight 3→1), L16 (extra Charcoal in deck), L17/18/19 (+10% HP and +10% damage to normals/elites/bosses, stacking with L2–L9), L20 (Act 3 final boss spawns with a random Act 3 elite companion).
 - Outlaw King now guarantees a Legendary artifact drop on defeat (routed through ArtifactScreen even from a normal combat node)
 - Character Select screen redesign:
   - "Starting Artifact" and "Unique Tile" row under the ability description with in-combat-style tooltips
@@ -26,6 +26,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 - Buckshot: base damage 1 → 2 per tile
 - Vulnerable: +25% damage taken (was +50%, briefly +20%)
 - Hint system: board idle-hint trigger delay 15s → 10s
+- Enemy bomb default countdown 2 → 3 turns (applies to all enemy-placed bombs including Powder Monkey, Prospector Gone Mad, Mine Cart, Hellfire Preacher, Dusty Dan's initial hazards). Sapper trait's +2 countdown bonus still stacks on top (5 total with both).
 - Boss reward artifacts restricted to Rare (25%) / Legendary (75%); commons/uncommons no longer appear after a boss fight
 - Prairie Fire spread: triggers once per turn (was per swap), 1-in-4 chance
 - Normal enemy HP increased ~15%: Bandit 42→48, Coyote 32→37, Rattlesnake 37→43, Vulture 28→32, Pack Mule 64→66, Powder Monkey 53→67, Mining Canary 37→49, Tunnel Rat 68→84, Prospector Gone Mad 73→104, Train Guard 88→111, Hellfire Preacher 76→97, Hangman 138→159, Corrupt Deputy 120→138
@@ -49,6 +50,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 - Merchant base tile upgrade distribution nerfed (Act 2: 80/20 Lv 1/Lv 2, Act 3: 20/60/20 Lv 1/Lv 2/Lv 3; was Lv 2/Lv 3 and Lv 3/Lv 4)
 
 ### Fixed
+- Ascension enemy damage scaling actually works now. Previously `applyAscensionToEnemies` only scaled the `minDamage`/`maxDamage` display fields, which combat never consults — so L2/3/4 "+10% damage" and L17/18/19 "+10% more" had zero effect in practice. The fix walks each enemy's full move library (`moves`, `firstMove`, `hpTriggers`, `forceNextMove`) and scales every `attack` / `multi_attack` action's `value`. Works cleanly at all ascension levels and across cascade triggers like Dust Devil's forced enrage.
 - Rageful: now decrements once per attack move, not once per hit. Multi-attacks no longer burn through stacks on hit 1.
 - Rageful bonus damage is now reflected in the enemy intent badge (e.g. "2x6" with +4 Rageful shows as "6x6" on the telegraph)
 - Cloak now suppresses cascade damage from Deadeye, False Shuffle (Reno), Dust Devil Boots, Prairie Fire spread, Tumbleweed Golem transform, and the dead-board reshuffle (previously only suppressed damage on swap-initiated cascades)

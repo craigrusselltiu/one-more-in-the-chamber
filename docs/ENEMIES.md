@@ -78,9 +78,9 @@
 - Base HP: 109
 - Start of fight: Lock 1 row and 1 column, Gain 1 Cloak
 - Moves:
-    - Attack 18, Lock 1 row
+    - Attack 13, Lock 1 row
     - Multi-attack 4x4, Lock 4
-    - Block 12, Gain 4 Thorns, Transform 5 tiles into Tumbleweeds
+    - Block 10, Gain 2 Thorns, Transform 4 tiles into Tumbleweeds
     - Block 20, Summon 1 Coyote
 
 ### Dust Devil
@@ -88,7 +88,7 @@
 - When HP drops below 50%, gain 2 Rageful. its next move should be Multi-attack 1x6
 - Start of fight: Bury 8
 - Moves:
-    - Attack 15, Bury 3
+    - Attack 14, Bury 3
     - Attack 7, Suppress 1, Bury 3
     - Attack 11, Bury 5, Shuffle bottom 2 rows
     - Multi-attack 4x3, Shuffle top 2 rows

@@ -235,7 +235,7 @@ export class CombatManager {
           else if (action.kind === 'lock_row') { if (!startOfFightHazardImmune) this.hazardManager.lockRow(Math.floor(Math.random() * 8)); }
           else if (action.kind === 'lock_column') { if (!startOfFightHazardImmune) this.hazardManager.lockColumn(Math.floor(Math.random() * 8)); }
           else if (action.kind === 'suppress') { if (!startOfFightHazardImmune) this.hazardManager.placeRandomSuppress(action.value); }
-          else if (action.kind === 'bomb') { if (!startOfFightHazardImmune) this.hazardManager.placeRandomBombs(action.value, 2 + this.traits.getBombCountdownBonus()); }
+          else if (action.kind === 'bomb') { if (!startOfFightHazardImmune) this.hazardManager.placeRandomBombs(action.value, 3 + this.traits.getBombCountdownBonus()); }
           else if (action.kind === 'gain_cloak') enemy.state.cloak += action.value;
           else if (action.kind === 'gain_hardened') enemy.state.hardened += action.value;
           else if (action.kind === 'gain_grace') enemy.state.graceStacks += action.value;
@@ -2225,7 +2225,7 @@ export class CombatManager {
         }
         break;
       case 'bomb':
-        if (this.player.protectedStacks <= 0) this.hazardManager.placeRandomBombs(ma.value, 2 + this.traits.getBombCountdownBonus());
+        if (this.player.protectedStacks <= 0) this.hazardManager.placeRandomBombs(ma.value, 3 + this.traits.getBombCountdownBonus());
         break;
       case 'bury':
         if (this.player.protectedStacks <= 0) this.hazardManager.placeRandomSand(ma.value);
