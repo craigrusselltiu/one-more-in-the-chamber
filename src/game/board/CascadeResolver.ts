@@ -18,8 +18,14 @@ export type GravityDirection = 'down' | 'left' | 'up' | 'right';
  */
 export class CascadeResolver {
   private gravityDirection: GravityDirection = 'down';
-  /** Tinker's Wrench: 3-matches also spawn explosive tiles. */
+  /** Tinker's Wrench: first non-cascade 3-match each turn spawns an explosive tile. */
   threeMatchSpawnsExplosive = false;
+  /** Tracks whether the Tinker's Wrench explosive has been used this turn. */
+  private threeMatchExplosiveUsed = false;
+
+  resetTurn(): void {
+    this.threeMatchExplosiveUsed = false;
+  }
 
   setGravityDirection(direction: GravityDirection): void {
     this.gravityDirection = direction;
@@ -45,12 +51,11 @@ export class CascadeResolver {
 
     while (matches.length > 0) {
       // Step 1: Collect positions and match metadata, then destroy with effects
-      const { allPositions, matchMetadata } = this.prepareClear(board, matches);
+      const { allPositions, matchPosKeys, matchMetadata } = this.prepareClear(board, matches);
       const destroyed = await board.destroyTilesWithEffects(allPositions);
 
-      // Build extra match results from tiles destroyed by explosive/showdown chain
-      // (tiles not in the original match positions)
-      const matchPosKeys = new Set(allPositions.map(p => `${p.row},${p.col}`));
+      // Build extra match results from tiles not in the original matches
+      // (cross-clear tiles + explosive/showdown chain tiles)
       const extraByType = new Map<TileType, GridPosition[]>();
       for (const info of destroyed) {
         const key = `${info.row},${info.col}`;
@@ -124,6 +129,7 @@ export class CascadeResolver {
     matches: MatchResult[],
   ): {
     allPositions: GridPosition[];
+    matchPosKeys: Set<string>;
     firePositions: GridPosition[];
     matchMetadata: Array<{ matchIndex: number; foolsGoldCount: number; poisonCount: number; shadowCount: number; bombCount: number; suppressCount: number }>;
   } {
@@ -133,16 +139,18 @@ export class CascadeResolver {
 
     // Collect all positions from original matches
     const collected = new Set<string>();
+    const matchPosKeys = new Set<string>();
     const allPositions: GridPosition[] = [];
     const firePositions: GridPosition[] = [];
     const matchMetadata: Array<{ matchIndex: number; foolsGoldCount: number; poisonCount: number; shadowCount: number; bombCount: number; suppressCount: number }> = [];
 
-    const addPos = (r: number, c: number) => {
+    const addPos = (r: number, c: number, isMatch = false) => {
       const key = posKey(r, c);
       if (collected.has(key)) return;
       const tile = grid[r]?.[c];
       if (!tile) return;
       collected.add(key);
+      if (isMatch) matchPosKeys.add(key);
       allPositions.push({ row: r, col: c });
       if (tile.type === 'prairie_fire') firePositions.push({ row: r, col: c });
     };
@@ -156,7 +164,7 @@ export class CascadeResolver {
       let bombCount = 0;
       let suppressCount = 0;
       for (const pos of match.tiles) {
-        addPos(pos.row, pos.col);
+        addPos(pos.row, pos.col, true);
         const tile = grid[pos.row]?.[pos.col];
         if (tile) {
           if (tile.hazard?.type === 'fools_gold') fgCount++;
@@ -180,7 +188,7 @@ export class CascadeResolver {
       }
     }
 
-    return { allPositions, firePositions, matchMetadata };
+    return { allPositions, matchPosKeys, firePositions, matchMetadata };
   }
 
   /**
@@ -236,10 +244,11 @@ export class CascadeResolver {
       } else if (match.isExplosive && match.tiles.length > 0) {
         const pos = this.pickSpawnPosition(match.tiles, swapTarget);
         board.spawnSpecialTile(pos.row, pos.col, match.tileType, 'explosive');
-      } else if (this.threeMatchSpawnsExplosive && match.length === 3 && match.tiles.length > 0 && swapTarget) {
-        // Tinker's Wrench: non-cascade 3-matches also spawn explosive tiles
+      } else if (this.threeMatchSpawnsExplosive && !this.threeMatchExplosiveUsed && match.length === 3 && match.tiles.length > 0 && swapTarget) {
+        // Tinker's Wrench: first non-cascade 3-match each turn spawns an explosive tile
         const pos = this.pickSpawnPosition(match.tiles, swapTarget);
         board.spawnSpecialTile(pos.row, pos.col, match.tileType, 'explosive');
+        this.threeMatchExplosiveUsed = true;
       }
     }
   }

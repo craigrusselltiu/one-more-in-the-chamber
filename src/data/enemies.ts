@@ -22,9 +22,12 @@ const gainCloak = (stacks: number): MoveAction => ({ kind: 'gain_cloak', value: 
 const gainHardened = (stacks: number): MoveAction => ({ kind: 'gain_hardened', value: stacks });
 const gainGrace = (stacks: number): MoveAction => ({ kind: 'gain_grace', value: stacks });
 const gainDeadManWalking = (stacks: number): MoveAction => ({ kind: 'gain_dead_man_walking', value: stacks });
+// @ts-ignore -- available for enemy definitions
 const gainBarricade = (stacks: number): MoveAction => ({ kind: 'gain_barricade', value: stacks });
+const gainInvulnerable = (stacks: number): MoveAction => ({ kind: 'gain_invulnerable', value: stacks });
 const applyVulnerable = (stacks: number): MoveAction => ({ kind: 'apply_vulnerable', value: stacks });
 const applyVulnerableSelf = (stacks: number): MoveAction => ({ kind: 'apply_vulnerable_self', value: stacks });
+// @ts-ignore -- available for enemy definitions
 const healAlly = (value: number): MoveAction => ({ kind: 'heal_ally', value });
 const shuffleRows = (rows: number): MoveAction => ({ kind: 'shuffle_rows', value: rows });
 const gravityShift = (): MoveAction => ({ kind: 'gravity_shift', value: 1 });
@@ -92,14 +95,14 @@ export const ACT1_NORMAL: Record<string, EnemyDefinition> = {
   pack_mule: {
     type: 'pack_mule',
     name: 'Pack Mule',
-    health: 66,
+    health: 63,
     minDamage: 4, maxDamage: 12,
     abilities: ['bomb', 'bury'],
     moves: [
       m(atk(12)),
       m(multiAtk(4, 2), block(8)),
       m(atk(5), bomb(1), bury(3)),
-      m(heal(7)),
+      m(heal(6)),
     ],
   },
 };
@@ -115,8 +118,8 @@ export const ACT1_ELITE: Record<string, EnemyDefinition> = {
     moves: [
       m(atk(13), lockRow()),
       m(multiAtk(4, 4), lock(4)),
-      m(block(10), gainThorns(2), transformTumbleweed(4)),
-      m(block(20), summon('coyote')),
+      m(block(8), gainThorns(2), transformTumbleweed(4)),
+      m(block(14), summon('coyote')),
     ],
   },
   dust_devil: {
@@ -133,10 +136,10 @@ export const ACT1_ELITE: Record<string, EnemyDefinition> = {
       forceNextMove: [multiAtk(1, 6)],
     }],
     moves: [
-      m(atk(14), bury(3)),
-      m(atk(7), suppress(1), bury(3)),
-      m(atk(11), bury(5), shuffleRows(67)),   // bottom 2 rows (6,7)
-      m(multiAtk(4, 3), shuffleRows(1)),  // top 2 rows (0,1)
+      m(atk(13), bury(3)),
+      m(atk(6), suppress(1), bury(3)),
+      m(atk(10), bury(5), shuffleRows(67)),   // bottom 2 rows (6,7)
+      m(multiAtk(3, 3), shuffleRows(1)),  // top 2 rows (0,1)
     ],
   },
 };
@@ -150,9 +153,9 @@ export const DUSTY_DAN: EnemyDefinition = {
   firstMove: m(summon('bandit'), summon('coyote')),
   moves: [
     m(gravityShift(), atk(12), block(12)),
-    m(gravityShift(), multiAtk(9, 2), lockRow()),
-    m(gravityShift(), atk(17), lockCol()),
-    m(gravityShift(), block(18), suppress(3)),
+    m(gravityShift(), multiAtk(3, 5), lockRow()),
+    m(gravityShift(), atk(16), lockCol()),
+    m(gravityShift(), block(16), lock(3), suppress(2)),
   ],
 };
 
@@ -186,9 +189,9 @@ export const ACT2_NORMAL: Record<string, EnemyDefinition> = {
     abilities: ['bomb', 'bury'],
     startOfFight: [bomb(2)],
     moves: [
-      m(atk(12), bomb(2)),
-      m(multiAtk(3, 5)),
-      m(bomb(5)),
+      m(atk(11), bomb(2)),
+      m(multiAtk(3, 3)),
+      m(bomb(3)),
       m(atk(8), bomb(2), bury(3)),
     ],
   },
@@ -199,8 +202,8 @@ export const ACT2_NORMAL: Record<string, EnemyDefinition> = {
     minDamage: 3, maxDamage: 12,
     abilities: ['lock', 'bury'],
     moves: [
-      m(atk(10), lock(2)),
-      m(multiAtk(4, 3), bury(4)),
+      m(atk(9), lock(2)),
+      m(multiAtk(2, 3), bury(4)),
       m(atk(3), lock(5)),
     ],
   },
@@ -214,8 +217,8 @@ export const ACT2_NORMAL: Record<string, EnemyDefinition> = {
     firstMove: m(atk(14), bury(2)),
     moves: [
       m(atk(14), bury(2)),
-      m(atk(12), heal(7)),
-      m(block(14), bury(5)),
+      m(atk(11), heal(7)),
+      m(block(12), bury(5)),
       m(summon('tunnel_rat')),
     ],
   },
@@ -227,10 +230,10 @@ export const ACT2_NORMAL: Record<string, EnemyDefinition> = {
     abilities: ['bomb'],
     startOfFight: [gainRageful(5)],
     moves: [
-      m(atk(16), bomb(3)),
-      m(bomb(5), gainRageful(3)),
+      m(atk(16), bomb(2)),
+      m(bomb(3), gainRageful(3)),
       m(atk(12), block(10), bomb(2)),
-      m(atk(23)),
+      m(atk(19)),
     ],
   },
 };
@@ -243,9 +246,9 @@ export const ACT2_ELITE: Record<string, EnemyDefinition> = {
     minDamage: 6, maxDamage: 24,
     abilities: ['lock', 'suppress', 'block', 'bury'],
     moves: [
-      m(atk(20), lock(5), bury(5)),
-      m(atk(24), suppress(1), block(12)),
-      m(multiAtk(6, 3), suppress(1)),
+      m(atk(18), lock(5), bury(5)),
+      m(atk(12), suppress(1), block(12)),
+      m(multiAtk(7, 3), suppress(1)),
       m(block(22), lockRow()),
     ],
   },
@@ -255,14 +258,14 @@ export const ACT2_ELITE: Record<string, EnemyDefinition> = {
     health: 174,
     minDamage: 6, maxDamage: 28,
     abilities: ['block', 'summon'],
-    startOfFight: [gainHardened(15)],
+    startOfFight: [gainHardened(21)],
     firstMove: m(summon('prospector_gone_mad')),
     moves: [
-      m(atk(28)),
-      m(block(30)),
-      m(multiAtk(8, 3)),
+      m(atk(22)),
+      m(block(25)),
+      m(multiAtk(6, 3)),
       m(atk(12), gainRageful(3)),
-      m(atk(6), block(14), summon('prospector_gone_mad')),
+      m(atk(6), summon('prospector_gone_mad')),
     ],
   },
   mine_cart: {
@@ -278,7 +281,7 @@ export const ACT2_ELITE: Record<string, EnemyDefinition> = {
       m(bomb(3), lock(4)),
       m(bomb(5), lock(2)),
       m(bomb(7)),
-      m(block(20), bomb(3), lockRow()),
+      m(block(20), bomb(2), lockRow()),
     ],
   },
 };
@@ -329,9 +332,9 @@ export const ACT3_NORMAL: Record<string, EnemyDefinition> = {
     startOfFight: [lockCol()],
     firstMove: m(block(30), lockRow()),
     moves: [
-      m(atk(18), lockRow()),
-      m(multiAtk(5, 4), lock(4)),
-      m(atk(12), block(14), applyVulnerable(2)),
+      m(atk(14), lockRow()),
+      m(multiAtk(4, 4), lock(4)),
+      m(atk(7), block(14), applyVulnerable(2)),
       m(block(30), gainThorns(5), lockRow()),
     ],
   },
@@ -341,12 +344,12 @@ export const ACT3_NORMAL: Record<string, EnemyDefinition> = {
     health: 97,
     minDamage: 4, maxDamage: 16,
     abilities: ['block', 'bomb', 'heal'],
-    startOfFight: [gainGrace(5)],
+    startOfFight: [gainGrace(3)],
     moves: [
-      m(multiAtk(4, 2), block(16), applyTerrified(1)),
-      m(atk(16), heal(18)),
-      m(atk(12), bomb(8)),
-      m(block(26), healAlly(24)),
+      m(multiAtk(4, 2), block(16)),
+      m(atk(12), heal(18)),
+      m(atk(9), bomb(6)),
+      m(block(26), applyTerrified(1)),
     ],
   },
   hangman: {
@@ -360,7 +363,7 @@ export const ACT3_NORMAL: Record<string, EnemyDefinition> = {
     moves: [
       m(lock(7), suppress(2)),
       m(atk(18), applyVulnerable(3)),
-      m(block(18), gainRageful(8)),
+      m(block(18), gainRageful(8), bury(8)),
       m(atk(34), applyVulnerableSelf(2)),
     ],
   },
@@ -371,9 +374,9 @@ export const ACT3_NORMAL: Record<string, EnemyDefinition> = {
     minDamage: 6, maxDamage: 18,
     abilities: ['lock', 'suppress', 'block', 'summon'],
     moves: [
-      m(atk(13), lock(5)),
-      m(atk(11), suppress(1)),
-      m(multiAtk(6, 3), lock(1)),
+      m(atk(18), lock(5)),
+      m(atk(16), suppress(1)),
+      m(multiAtk(7, 3), lock(1)),
       m(block(14), lock(5)),
       m(summon('bandit', true), summon('bandit', true)),
     ],
@@ -388,10 +391,10 @@ export const ACT3_ELITE: Record<string, EnemyDefinition> = {
     minDamage: 2, maxDamage: 20,
     abilities: [],
     moves: [
-      m(multiAtk(2, 6)),
-      m(multiAtk(4, 2), gainRageful(2)),
-      m(atk(20)),
-      m(multiAtk(5, 3)),
+      m(multiAtk(11, 2)),
+      m(multiAtk(4, 2), gainRageful(3)),
+      m(atk(24)),
+      m(multiAtk(6, 2)),  // also clears own statuses (handled by CombatManager)
     ],
   },
   sheriffs_shadow: {
@@ -400,12 +403,12 @@ export const ACT3_ELITE: Record<string, EnemyDefinition> = {
     health: 255,
     minDamage: 12, maxDamage: 18,
     abilities: ['block', 'suppress'],
-    startOfFight: [block(30)],
+    startOfFight: [block(30), gainDeadManWalking(3)],
     moves: [
       m(atk(12), block(12), suppress(1)),
-      m(atk(18), suppress(2)),
-      m(suppress(3)),
-      m(block(24)),
+      m(atk(25), suppress(2)),
+      m(suppress(3), applyTerrified(1)),
+      m(block(28), bury(5)),
     ],
   },
 };
@@ -421,7 +424,7 @@ export const OUTLAW_KING_ACT1: EnemyDefinition = {
   health: 169,
   minDamage: 5, maxDamage: 22,
   abilities: ['block'],
-  startOfFight: [applyTerrified(2), gainCloak(1), gainDeadManWalking(1)],
+  startOfFight: [applyTerrified(2), gainCloak(1), gainDeadManWalking(99)],
   moves: [
     m(atk(19), block(12)),
     m(multiAtk(5, 3), gainRageful(2)),
@@ -436,7 +439,7 @@ export const OUTLAW_KING_ACT2: EnemyDefinition = {
   health: 235,
   minDamage: 6, maxDamage: 31,
   abilities: ['block'],
-  startOfFight: [applyTerrified(3), gainCloak(1), gainDeadManWalking(1)],
+  startOfFight: [applyTerrified(3), gainCloak(1), gainDeadManWalking(99)],
   moves: [
     m(atk(24), block(18)),
     m(multiAtk(6, 3), gainRageful(2)),
@@ -448,15 +451,15 @@ export const OUTLAW_KING_ACT2: EnemyDefinition = {
 export const OUTLAW_KING_ACT3: EnemyDefinition = {
   type: 'outlaw_king',
   name: 'Outlaw King',
-  health: 344,
-  minDamage: 9, maxDamage: 37,
+  health: 321,
+  minDamage: 9, maxDamage: 35,
   abilities: ['block'],
-  startOfFight: [applyTerrified(4), gainCloak(2), gainDeadManWalking(1)],
+  startOfFight: [applyTerrified(4), gainCloak(2), gainDeadManWalking(99)],
   moves: [
-    m(atk(30), block(24)),
+    m(atk(28), block(22)),
     m(multiAtk(9, 3), gainRageful(5)),
-    m(block(42), gainCloak(1)),
-    m(atk(37)),
+    m(block(40), gainCloak(1)),
+    m(atk(35)),
   ],
 };
 
@@ -472,10 +475,7 @@ export const IRON_EYE_ISABELLA: EnemyDefinition = {
     once: true,
     actions: [
       gainRageful(5),
-      block(30),
-      gainBarricade(1),
-      gainCloak(1),
-      gainGrace(1),
+      gainInvulnerable(1),
       applyTerrified(3),
     ],
   }],
@@ -483,20 +483,22 @@ export const IRON_EYE_ISABELLA: EnemyDefinition = {
     m(atk(15), lockRow(), lockCol()),
     m(atk(22), suppress(2)),
     m(atk(28)),
-    m(suppress(5)),
+    m(suppress(4)),
   ],
 };
 
 export const ACT3_ENEMIES: Record<string, EnemyDefinition> = { ...ACT3_NORMAL, ...ACT3_ELITE };
 
 export const ACT3_EARLY_ENCOUNTERS: string[][] = [
-  ['train_guard'],
-  ['hellfire_preacher'],
-  ['corrupt_deputy'],
-  ['hangman'],
+  ['train_guard', 'train_guard'],
+  ['hellfire_preacher', 'bandit'],
 ];
 
-export const ACT3_LATE_ENCOUNTERS: string[][] = [];
+export const ACT3_LATE_ENCOUNTERS: string[][] = [
+  ['train_guard', 'hellfire_preacher'],
+  ['corrupt_deputy', 'coyote'],
+  ['hangman'],
+];
 
 // ---------------------------------------------------------------------------
 // Lookup helpers
@@ -560,7 +562,7 @@ function getBag(key: unknown, size: number): EncounterBag {
 }
 
 /** Chance per late-normal/elite encounter to roll Outlaw King (once per run). */
-const OUTLAW_KING_ENCOUNTER_CHANCE = 0.005;
+export const OUTLAW_KING_ENCOUNTER_CHANCE = 0.005;
 
 /** Build an Outlaw King encounter scaled to the given act, including his companions. */
 export function buildOutlawKingEncounter(act: 1 | 2 | 3): EnemyDefinition[] {

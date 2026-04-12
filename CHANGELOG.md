@@ -4,6 +4,47 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## v0.6.4
+
+### Added
+- Artifact choice screen: artifact map nodes and boss rewards now present 2 artifacts to choose from instead of a single random one. Elites remain single random with take/skip.
+- Invulnerable enemy buff: immune to all damage, decreases by 1 at end of turn
+- Duel player buff: stacks on Duel tile match, converts to Ready at 4 stacks
+- Outlaw King warning notification ("A chill runs down your spine...") on map entry if any node in the act would spawn him
+- Copperhead multi-attack intent now updates in real-time as poison tiles change during the player's turn
+- Cross-clear tiles now generate single-resolve resources (previously cleared without generating anything)
+- Enemy.clearAllStatuses() helper, used by Copperhead shed skin and Saloon Brawler
+- CONSUMABLES.md documentation
+
+### Changed
+- Outlaw King encounter chance reduced from 1% to 0.5%
+- Outlaw King restricted to post-artifact nodes in Act 1
+- Cloak: cascade damage reduced by 50% instead of fully nullified
+- Dead Man Walking: now decreases by 1 at end of turn instead of being permanent
+- Barricade: max increased from 1 to 2
+- Prospector(6): gold damage bonus reduced from 10% to 5%
+- Tinker's Wrench: explosive spawns from first non-cascade 3-match per turn only (was every 3-match)
+- Cavalry tile: changed from 1 damage to 2 block per tile
+- Duel tile: base damage 4→2, now upgradeable (+1 per tile per level), grants 1 Duel stack on match
+- Horseshoe tile: upgrade changed from flat to per-tile scaling
+- Saloon adjacency now respects adjacent tile upgrade levels (was always Lv0)
+- Single-resolve flat upgrade bonus divided by 3 (affects Ricochet/Saloon/explosive destruction)
+- Flat status effects (Vulnerable, Chain, Duel, Barricade) capped at 1 per explosive/showdown chain
+- Boulder single resolve: block bonus divided by 3
+- Iron Eye Isabella: stripped legacy 3-phase system, now just gains 10 block per turn as passive. HP trigger at 50%: Rageful 5 + Invulnerable 1 + Terrified 3
+- Saloon Brawler: reworked moveset, move 4 clears all own statuses
+- Sheriff's Shadow: added Dead Man Walking 3 at start, reworked moves
+- Outlaw King (all acts): Dead Man Walking 1→99
+- Outlaw King Act 3: HP 344→321, reduced attack/block values
+- Extensive enemy rebalance across all acts (see ENEMIES.md)
+- Act 3 encounters reworked: new early/late presets
+- Hellfire Preacher: reworked moveset, heal now targets injured ally first
+- Charcoal flavor text updated
+
+### Removed
+- Fool's Magnifying Glass artifact
+- Hellfire Preacher ally-heal priority AI behavior (replaced by heal action targeting)
+
 ## v0.6.3
 
 ### Changed

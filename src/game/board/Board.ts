@@ -1454,6 +1454,10 @@ export class Board {
     this.cascadeResolver.threeMatchSpawnsExplosive = value;
   }
 
+  resetTurn(): void {
+    this.cascadeResolver.resetTurn();
+  }
+
   /** Animated shuffle of tiles within specific rows (for Dust Devil Boots / Dust Devil enemy).
    *  Reshuffles until no matches are created, matching the out-of-moves reshuffle behavior. */
   async shuffleRowsAnimated(rows: number[]): Promise<void> {

@@ -22,6 +22,7 @@ interface CombatStore {
   graceStacks: number;
   poisonedStacks: number;
   readyStacks: number;
+  duelStacks: number;
   chainStacks: number;
   terrifiedStacks: number;
   vulnerableStacks: number;
@@ -81,6 +82,7 @@ const initialState = {
   graceStacks: 0,
   poisonedStacks: 0,
   readyStacks: 0,
+  duelStacks: 0,
   chainStacks: 0,
   terrifiedStacks: 0,
   vulnerableStacks: 0,
@@ -123,6 +125,7 @@ export const useCombatStore = create<CombatStore>((set) => ({
       graceStacks: state.graceStacks,
       poisonedStacks: state.poisonedStacks,
       readyStacks: state.readyStacks,
+      duelStacks: state.duelStacks,
       chainStacks: state.chainStacks,
       terrifiedStacks: state.terrifiedStacks,
       vulnerableStacks: state.vulnerableStacks,
@@ -178,6 +181,7 @@ export function getPlayerStatusEffects(store: CombatStore): PlayerStatusEffect[]
   if (store.graceStacks > 0) effects.push({ type: 'grace', value: store.graceStacks });
   if (store.poisonedStacks > 0) effects.push({ type: 'poisoned', value: store.poisonedStacks });
   if (store.readyStacks > 0) effects.push({ type: 'ready', value: store.readyStacks });
+  if (store.duelStacks > 0) effects.push({ type: 'duel', value: store.duelStacks });
   if (store.chainStacks > 0) effects.push({ type: 'chain', value: store.chainStacks });
   if (store.terrifiedStacks > 0) effects.push({ type: 'terrified', value: store.terrifiedStacks });
   if (store.vulnerableStacks > 0) effects.push({ type: 'vulnerable', value: store.vulnerableStacks });
@@ -203,6 +207,7 @@ export function getEnemyStatusEffects(enemy: EnemyState): EnemyStatusEffect[] {
   if (enemy.fuse > 0) effects.push({ type: 'fuse', value: enemy.fuse });
   if (enemy.deadManWalking > 0) effects.push({ type: 'dead_man_walking', value: enemy.deadManWalking });
   if (enemy.barricadeStacks > 0) effects.push({ type: 'barricade', value: enemy.barricadeStacks });
+  if (enemy.invulnerable > 0) effects.push({ type: 'invulnerable', value: enemy.invulnerable });
   if (enemy.summoned) effects.push({ type: 'summoned', value: 1 });
   return effects;
 }

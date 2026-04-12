@@ -215,6 +215,7 @@ export class CombatManager {
           else if (action.kind === 'gain_hardened') enemy.state.hardened += action.value;
           else if (action.kind === 'gain_grace') enemy.state.graceStacks += action.value;
           else if (action.kind === 'gain_dead_man_walking') enemy.state.deadManWalking += action.value;
+          else if (action.kind === 'gain_invulnerable') enemy.state.invulnerable += action.value;
           else if (action.kind === 'apply_terrified') this.player.terrifiedStacks += action.value;
           else if (action.kind === 'apply_vulnerable') this.player.vulnerableStacks += action.value;
           else if (action.kind === 'block') enemy.addBlock(action.value);
@@ -413,6 +414,7 @@ export class CombatManager {
         graceStacks: this.player.graceStacks,
         poisonedStacks: this.player.poisonedStacks,
         readyStacks: this.player.readyStacks,
+        duelStacks: this.player.duelStacks,
         chainStacks: this.player.chainStacks,
         protectedStacks: this.player.protectedStacks,
         critChance: 0, // deprecated, kept for snapshot compat
@@ -473,6 +475,7 @@ export class CombatManager {
     this.player.graceStacks = sp.graceStacks ?? 0;
     this.player.poisonedStacks = sp.poisonedStacks ?? 0;
     this.player.readyStacks = sp.readyStacks ?? 0;
+    this.player.duelStacks = sp.duelStacks ?? 0;
     this.player.chainStacks = sp.chainStacks ?? 0;
     this.player.protectedStacks = sp.protectedStacks ?? 0;
     // critChance deprecated — Lucky stacks are the crit chance now
@@ -572,6 +575,7 @@ export class CombatManager {
     this.nextMatchMultiplier = 1.0;
     this.swapsUsedThisTurn = 0;
     this.resolver.resetTurn();
+    this.board.resetTurn();
 
     this.hazardManager.resetTurnArtifactState();
 
@@ -633,17 +637,8 @@ export class CombatManager {
 
     // Announce enemy intents for this turn
     for (const enemy of this.aliveEnemies()) {
-      const allies = this.aliveEnemies().filter(e => e !== enemy);
-      const allyInjured = allies.some(e => e.state.health < e.state.maxHealth);
-      enemy.state.intent = chooseEnemyIntent(enemy, this.aliveEnemies().length, allyInjured);
-      // Copperhead: patch multi-attack hits to current poison tile count
-      if (enemy.getDefinition().type === 'copperhead_cassidy' && enemy.state.intent.actions) {
-        for (const a of enemy.state.intent.actions) {
-          if (a.kind === 'multi_attack') {
-            a.hits = Math.max(1, this.hazardManager.countHazards('poison'));
-          }
-        }
-      }
+      enemy.state.intent = chooseEnemyIntent(enemy, this.aliveEnemies().length);
+      this.patchCopperheadIntent(enemy);
     }
 
     // Ensure the board has valid moves; reshuffle if not
@@ -875,11 +870,7 @@ export class CombatManager {
 
     // Centralized destruction handles explosive chains and showdown triggers
     const destroyed = await this.board.destroyTilesWithEffects([{ row, col }]);
-    for (const info of destroyed) {
-      const upgradeLevel = this.player.getUpgradeLevel(info.type);
-      const output = this.resolver.resolveSingle(info.type, upgradeLevel);
-      this.applyResourceOutput(output);
-    }
+    this.resolveDestroyedTiles(destroyed);
 
     this.deadeyeShotsRemaining--;
     if (this.deadeyeShotsRemaining <= 0) {
@@ -1178,11 +1169,7 @@ export class CombatManager {
 
     // Centralized destruction handles explosive chains and showdown triggers
     const destroyed = await this.board.destroyTilesWithEffects(positions);
-    for (const info of destroyed) {
-      const upgradeLevel = this.player.getUpgradeLevel(info.type);
-      const output = this.resolver.resolveSingle(info.type, upgradeLevel);
-      this.applyResourceOutput(output);
-    }
+    this.resolveDestroyedTiles(destroyed);
 
     EventBus.emit(GameEvent.SCREEN_SHAKE, 'heavy');
 
@@ -1315,13 +1302,13 @@ export class CombatManager {
         this.nextMatchMultiplier = 1.0;
       }
 
-      // Cloak: suppress cascade damage while any enemy has the buff.
+      // Cloak: reduce cascade damage by 50% while any enemy has the buff.
       // `forceCascadeForCloak` treats every step as a cascade — used by abilities
       // (Deadeye, Shuffle, Dust Devil Boots, reshuffle) and board mutations
       // (Prairie Fire spread, Tumbleweed Golem transform) where the follow-up
       // matches are never direct player matches.
       const isCascade = forceCascadeForCloak || comboMultiplier > 1.0;
-      const suppressDamage = isCascade
+      const cloakActive = isCascade
         && this.aliveEnemies().some(e => e.state.cloak > 0);
 
       // Player Terrified: deal 50% less damage
@@ -1346,7 +1333,7 @@ export class CombatManager {
       const totalMultiplier = multiplier * comboMultiplier;
       const scaled: ResourceOutput = {
         ...output,
-        damage: suppressDamage ? 0 : Math.floor(output.damage * totalMultiplier),
+        damage: Math.floor(output.damage * totalMultiplier * (cloakActive ? 0.5 : 1)),
         block: Math.floor(output.block * totalMultiplier),
         gold: Math.floor(output.gold * totalMultiplier),
         healing: Math.floor(output.healing * totalMultiplier),
@@ -1489,6 +1476,11 @@ export class CombatManager {
         }
       }
 
+      // Copperhead: update intent in real-time as poison tiles change
+      for (const enemy of this.aliveEnemies()) {
+        this.patchCopperheadIntent(enemy);
+      }
+
       EventBus.emit(GameEvent.MATCH_RESOLVED, match, scaled);
     }
   }
@@ -1503,14 +1495,7 @@ export class CombatManager {
     if (result === null) return;
 
     // Apply resource output for each destroyed tile (includes explosive/showdown chain)
-    for (const info of result.destroyed) {
-      const upgradeLevel = this.player.getUpgradeLevel(info.type);
-      const isSuppressed = this.hazardManager.isSuppressed(info.type);
-      const output = isSuppressed
-        ? this.resolver.emptyOutput()
-        : this.resolver.resolveSingle(info.type, upgradeLevel);
-      this.applyResourceOutput(output);
-    }
+    this.resolveDestroyedTiles(result.destroyed);
     this.ricochetTriggeredThisResolution = true;
 
     // Flash a line from source match center to the picked tile
@@ -1527,6 +1512,7 @@ export class CombatManager {
     const size = this.board.getBoardSize();
     const directions = [[-1, 0], [1, 0], [0, -1], [0, 1]];
     const seen = new Set<string>();
+    const capSeen = new Set<string>();
 
     for (const pos of match.tiles) {
       for (const [dr, dc] of directions) {
@@ -1540,8 +1526,9 @@ export class CombatManager {
         const tile = grid[r]?.[c];
         if (!tile || tile.type === 'saloon' || tile.type === 'showdown' || tile.type === 'tumbleweed' || tile.type === 'fools_gold') continue;
 
-        // Saloon generates base (Lv0) resources of adjacent tiles
-        const output = this.resolver.resolveSingle(tile.type, 0);
+        const upgradeLevel = this.player.getUpgradeLevel(tile.type);
+        const output = this.resolver.resolveSingle(tile.type, upgradeLevel, this.player.block);
+        this.capFlatEffects(output, capSeen);
         this.applyResourceOutput(output);
       }
     }
@@ -1572,6 +1559,11 @@ export class CombatManager {
 
   /** Deal damage to an enemy, handling pierce, and show floating number. */
   private dealDamageToEnemy(enemy: Enemy, damage: number, pierce: boolean, isCrit = false): void {
+    // Invulnerable: immune to all damage
+    if (enemy.state.invulnerable > 0) {
+      this.floatOnEnemy(enemy, 'INVULNERABLE', '#FFD700');
+      return;
+    }
     // Undertaker(3): +50% damage to summoned enemies
     const undertakerBonus = this.traits.getUndertakerBonusDamage(enemy.summoned);
     if (undertakerBonus > 0) {
@@ -1665,9 +1657,9 @@ export class CombatManager {
       this.floatOnPlayer(`+${block}`, '#6888A0');
     }
 
-    // Barricade stacks (max 1)
+    // Barricade stacks (max 2)
     if (output.barricadeStacks > 0) {
-      this.player.barricadeStacks = 1;
+      this.player.barricadeStacks = Math.min(this.player.barricadeStacks + output.barricadeStacks, 2);
     }
 
     // Gold (reduced by ascension modifier)
@@ -1787,6 +1779,17 @@ export class CombatManager {
       this.floatOnPlayer(`+${output.chainStacks} CHAIN`, '#A08040', 9);
     }
 
+    // Duel stacks: at 4 stacks, convert to Ready and clear
+    if (output.duelStacks > 0) {
+      this.player.duelStacks += output.duelStacks;
+      this.floatOnPlayer(`+${output.duelStacks} DUEL`, '#D06060', 9);
+      if (this.player.duelStacks >= 4) {
+        this.player.duelStacks = 0;
+        this.player.addReady(1);
+        this.floatOnPlayer('+1 READY', '#D4A030', 9);
+      }
+    }
+
     // Bonus swaps (Cavalry 4+)
     if (output.bonusSwaps > 0) {
       this.swapsRemaining += output.bonusSwaps;
@@ -1868,6 +1871,8 @@ export class CombatManager {
     // Tick cloak stacks
     for (const enemy of this.aliveEnemies()) {
       if (enemy.state.cloak > 0) enemy.state.cloak--;
+      if (enemy.state.invulnerable > 0) enemy.state.invulnerable--;
+      if (enemy.state.deadManWalking > 0) enemy.state.deadManWalking--;
     }
 
     // Tracker(1): reveal all buried tiles at end of turn
@@ -2167,6 +2172,12 @@ export class CombatManager {
         }
         // Rageful decrements once after the full multi-attack (not per hit)
         if (enemy.state.ragefulStacks > 0) enemy.state.ragefulStacks--;
+        // Saloon Brawler: move 4 (6x2) clears all own statuses after attacking
+        if (enemy.getDefinition().type === 'saloon_brawler' && ma.value === 6 && ma.hits === 2) {
+          enemy.clearAllStatuses();
+          this.floatOnEnemy(enemy, 'CLEAR STATUSES', '#A0A0A0', 9);
+          EventBus.emit(GameEvent.ENEMY_HP_CHANGE, { ...enemy.state });
+        }
         break;
       }
       case 'block':
@@ -2221,9 +2232,13 @@ export class CombatManager {
           healAmount = Math.round(enemy.state.maxHealth * 0.02 * poisonCleared.length);
         }
         if (healAmount > 0) {
-          enemy.state.health = Math.min(enemy.state.maxHealth, enemy.state.health + healAmount);
-          this.floatOnEnemy(enemy, `+${healAmount}`, '#40D840');
-          EventBus.emit(GameEvent.ENEMY_HP_CHANGE, { ...enemy.state });
+          // Hellfire Preacher: heal injured ally if one exists, otherwise heal self
+          const healTarget = enemy.getDefinition().type === 'hellfire_preacher'
+            ? (this.aliveEnemies().filter(e => e !== enemy && e.state.health < e.state.maxHealth)[0] ?? enemy)
+            : enemy;
+          healTarget.state.health = Math.min(healTarget.state.maxHealth, healTarget.state.health + healAmount);
+          this.floatOnEnemy(healTarget, `+${healAmount}`, '#40D840');
+          EventBus.emit(GameEvent.ENEMY_HP_CHANGE, { ...healTarget.state });
         }
         break;
       }
@@ -2271,6 +2286,11 @@ export class CombatManager {
       case 'gain_barricade':
         enemy.state.barricadeStacks += ma.value;
         this.floatOnEnemy(enemy, `+${ma.value} BARRICADE`, '#8B7355', 9);
+        EventBus.emit(GameEvent.ENEMY_HP_CHANGE, { ...enemy.state });
+        break;
+      case 'gain_invulnerable':
+        enemy.state.invulnerable += ma.value;
+        this.floatOnEnemy(enemy, `+${ma.value} INVULNERABLE`, '#FFD700', 9);
         EventBus.emit(GameEvent.ENEMY_HP_CHANGE, { ...enemy.state });
         break;
       case 'apply_vulnerable_self':
@@ -2633,6 +2653,7 @@ export class CombatManager {
       graceStacks: this.player.graceStacks,
       poisonedStacks: this.player.poisonedStacks,
       readyStacks: this.player.readyStacks,
+      duelStacks: this.player.duelStacks,
       chainStacks: this.player.chainStacks,
       terrifiedStacks: this.player.terrifiedStacks,
       vulnerableStacks: this.player.vulnerableStacks,
@@ -2672,6 +2693,37 @@ export class CombatManager {
     }
   }
 
+  /**
+   * Cap flat-per-match status effects to 1 across a batch of single-resolved tiles
+   * (e.g. explosive chain). Per-tile effects (poison, ace, lucky, bounty) stack normally.
+   */
+  /** Resolve a batch of individually destroyed tiles (explosive/showdown/ricochet chains). */
+  private resolveDestroyedTiles(destroyed: { type: import('../../types/game').TileType; row: number; col: number }[]): void {
+    const seen = new Set<string>();
+    for (const info of destroyed) {
+      const upgradeLevel = this.player.getUpgradeLevel(info.type);
+      const isSuppressed = this.hazardManager.isSuppressed(info.type);
+      const output = isSuppressed
+        ? this.resolver.emptyOutput()
+        : this.resolver.resolveSingle(info.type, upgradeLevel, this.player.block);
+      this.capFlatEffects(output, seen);
+      this.applyResourceOutput(output);
+    }
+  }
+
+  private capFlatEffects(output: import('./ResourceResolver').ResourceOutput, seen: Set<string>): void {
+    const cap = (key: 'vulnerableStacks' | 'chainStacks' | 'duelStacks' | 'barricadeStacks') => {
+      if (output[key] > 0) {
+        if (seen.has(key)) output[key] = 0;
+        else seen.add(key);
+      }
+    };
+    cap('vulnerableStacks');
+    cap('chainStacks');
+    cap('duelStacks');
+    cap('barricadeStacks');
+  }
+
   private emitFullState(): void {
     EventBus.emit(GameEvent.COMBAT_STATE_UPDATE, this.buildState());
   }
@@ -2679,6 +2731,17 @@ export class CombatManager {
   private emitEnemyHpChanges(): void {
     for (const enemy of this.enemies) {
       EventBus.emit(GameEvent.ENEMY_HP_CHANGE, { ...enemy.state });
+    }
+  }
+
+  /** Copperhead: update multi-attack hit count to match current poison tiles on board. */
+  private patchCopperheadIntent(enemy: Enemy): void {
+    if (enemy.getDefinition().type === 'copperhead_cassidy' && enemy.state.intent.actions) {
+      for (const a of enemy.state.intent.actions) {
+        if (a.kind === 'multi_attack') {
+          a.hits = Math.max(1, this.hazardManager.countHazards('poison'));
+        }
+      }
     }
   }
 }

@@ -264,8 +264,10 @@ export function buildTileDescription(type: TileType, upgradeLevel: number): Reac
     }
     case 'ace':
       return [...seg('Gain 1 stack of Ace per tile', false), ...flatBonus(upgradeLevel, uv), ...seg('.', false)];
-    case 'horseshoe':
-      return [...seg('Gain 1 stack of Lucky per tile', false), ...flatBonus(upgradeLevel, uv), ...seg('.', false)];
+    case 'horseshoe': {
+      const hv = def.baseValue + bonus;
+      return [...seg('Gain ', false), ...seg(`${hv}`, upgraded), ...seg(' stack of Lucky per tile.', false)];
+    }
     case 'tombstone':
       return [...seg('Deal 2 damage per tile', false), ...flatBonus(upgradeLevel, uv), ...seg('. Deals double damage when target is below 30% HP.', false)];
     case 'saloon': {
@@ -275,9 +277,11 @@ export function buildTileDescription(type: TileType, upgradeLevel: number): Reac
     case 'shank':
       return [...seg('Deal 1 damage per tile', false), ...flatBonus(upgradeLevel, uv), ...seg(' and apply 1 Vulnerable.', false)];
     case 'cavalry':
-      return [...seg('1 damage per tile', false), ...flatBonus(upgradeLevel, uv), ...seg('. If 4+ matched, +1 swap this turn (max 1 per turn).', false)];
-    case 'duel':
-      return [...seg('Deal 4 damage per tile. On exactly 4-match, deal the damage twice.', false)];
+      return [...seg('Gain 2 block per tile', false), ...flatBonus(upgradeLevel, uv), ...seg('. If 4+ matched, +1 swap this turn (max 1 per turn).', false)];
+    case 'duel': {
+      const dv = def.baseValue + bonus;
+      return [...seg('Deal ', false), ...seg(`${dv}`, upgraded), ...seg(' damage per tile. On exactly 4-match, deal the damage twice. Gain 1 Duel.', false)];
+    }
     case 'mirage': {
       const baseText = "At the start of combat, transforms into a random tile you don't own for the rest of combat.";
       if (upgradeLevel <= 0) return [...seg(baseText, false)];

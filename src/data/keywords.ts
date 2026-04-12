@@ -19,7 +19,7 @@ export const KEYWORDS: Record<string, KeywordDefinition> = {
   },
   Barricade: {
     color: '#8B7355',
-    description: 'At the end of the turn, retain block and decrease stacks by 1. (max 1)',
+    description: 'At the end of the turn, retain block and decrease stacks by 1. (max 2)',
   },
   Vulnerable: {
     color: '#C070D0',
@@ -57,6 +57,10 @@ export const KEYWORDS: Record<string, KeywordDefinition> = {
     color: '#D4A030',
     description: 'Your next non-cascade attack deals 50% more damage. (max 1)',
   },
+  Duel: {
+    color: '#D06060',
+    description: 'When gaining this, if you have 4 stacks, gain Ready and clear Duel stacks.',
+  },
   Terrified: {
     color: '#8B4789',
     description: 'Deal 50% less damage. Decrease stacks by 1 at the end of the turn.',
@@ -67,10 +71,14 @@ export const KEYWORDS: Record<string, KeywordDefinition> = {
   },
   'Dead Man Walking': {
     color: '#C8B060',
-    description: 'Immune to debuffs.',
+    description: 'Immune to debuffs. Decrease stacks by 1 at the end of the turn.',
   },
   Protected: {
     color: '#F9E27D',
     description: 'Immune to tile hazards. Decrease stacks by 1 at the end of the turn.',
+  },
+  Invulnerable: {
+    color: '#FFD700',
+    description: 'Immune to all damage. Decrease stacks by 1 at the end of the turn.',
   },
 };

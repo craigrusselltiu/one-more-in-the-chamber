@@ -17,6 +17,7 @@ export interface CombatState {
   graceStacks: number;
   poisonedStacks: number;
   readyStacks: number;
+  duelStacks: number;
   chainStacks: number;
   terrifiedStacks: number;
   vulnerableStacks: number;
@@ -70,10 +71,12 @@ export interface EnemyState {
   graceStacks: number;
   hardened: number;
   fuse: number;
-  /** Dead Man Walking: while > 0, enemy is immune to Poison, Vulnerable, Terrified, Blinded, Bounty. Permanent (no decrement). */
+  /** Dead Man Walking: while > 0, enemy is immune to debuffs. Decrease stacks by 1 at end of turn. */
   deadManWalking: number;
   /** Barricade: at the start of the enemy turn, retain block instead of clearing it. Decrement by 1 per turn. */
   barricadeStacks: number;
+  /** Invulnerable: immune to all damage. Decrease stacks by 1 at end of turn. */
+  invulnerable: number;
   summoned: boolean;
   intent: EnemyIntent;
   isDead: boolean;
@@ -106,6 +109,7 @@ export type PlayerStatusEffect =
   | { type: 'grace'; value: number }
   | { type: 'poisoned'; value: number }
   | { type: 'ready'; value: number }
+  | { type: 'duel'; value: number }
   | { type: 'chain'; value: number }
   | { type: 'terrified'; value: number }
   | { type: 'vulnerable'; value: number }
@@ -128,7 +132,8 @@ export type EnemyStatusEffect =
   | { type: 'summoned'; value: number }
   | { type: 'fuse'; value: number }
   | { type: 'dead_man_walking'; value: number }
-  | { type: 'barricade'; value: number };
+  | { type: 'barricade'; value: number }
+  | { type: 'invulnerable'; value: number };
 
 export interface MatchResult {
   tiles: GridPosition[];
@@ -178,7 +183,7 @@ export interface MoveAction {
     | 'poison_tiles' | 'apply_poison' | 'bomb' | 'bury' | 'suppress' | 'fools_gold'
     | 'summon' | 'heal' | 'gain_rageful' | 'apply_terrified' | 'gain_thorns'
     | 'gain_cloak' | 'gain_hardened' | 'gain_grace' | 'gain_dead_man_walking'
-    | 'gain_barricade'
+    | 'gain_barricade' | 'gain_invulnerable'
     | 'apply_vulnerable' | 'apply_vulnerable_self'
     | 'heal_ally'
     | 'shuffle_rows' | 'gravity_shift' | 'transform_tumbleweed';

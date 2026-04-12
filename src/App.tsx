@@ -43,6 +43,7 @@ import {
   ALL_ENEMIES,
   ACT3_ELITE,
   encounterContainsOutlawKing,
+  OUTLAW_KING_ENCOUNTER_CHANCE,
 } from './data/enemies';
 import type { EnemyDefinition } from './types/combat';
 import type { MapNodeType, Act } from './types/game';
@@ -240,6 +241,27 @@ export default function App() {
             setTimeout(() => {
               EventBus.emit('game:notification', { text: 'The dust storm has settled.' });
             }, 1000);
+          }
+        }
+
+        // Outlaw King warning: pre-roll eligible nodes to check if he'd appear
+        if (run && !run.outlawKingEncountered) {
+          const visited = run.mapState?.nodes.filter((n) => n.visited).length ?? 0;
+          if (visited === 0 && run.mapState) {
+            const act = run.currentAct;
+            const hasOutlawKing = run.mapState.nodes.some((n) => {
+              if (n.type !== 'combat' && n.type !== 'elite') return false;
+              // Act 1: only after artifact node (row > 6); Acts 2/3: after early rows (row >= 3)
+              if (act === 1 && n.row <= 6) return false;
+              if (act !== 1 && n.row < 3) return false;
+              const rand = createSeededRandom(`${run.seed}-encounter-${n.id}`);
+              return rand() < OUTLAW_KING_ENCOUNTER_CHANCE;
+            });
+            if (hasOutlawKing) {
+              setTimeout(() => {
+                EventBus.emit('game:notification', { text: 'A chill runs down your spine...' });
+              }, 2000);
+            }
           }
         }
       }
@@ -645,7 +667,7 @@ export default function App() {
           className="absolute right-2 bottom-1 pointer-events-none z-[60]"
           style={{ fontSize: '9px', color: 'rgba(255,255,255,0.3)' }}
         >
-          Pre-alpha v0.6.3
+          Pre-alpha v0.6.4
         </span>
       </div>
     </div>

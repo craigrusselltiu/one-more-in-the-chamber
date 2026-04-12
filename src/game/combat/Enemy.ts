@@ -24,6 +24,7 @@ function buildDescription(actions: MoveAction[]): string {
       case 'apply_terrified': return `TERRIFY ${a.value}`;
       case 'gain_dead_man_walking': return `+${a.value} DMW`;
       case 'gain_barricade': return `+${a.value} BARRICADE`;
+      case 'gain_invulnerable': return `+${a.value} INVULN`;
       case 'shuffle_rows': return 'SHUFFLE';
       case 'gravity_shift': return 'GRAV';
       case 'transform_tumbleweed': return `TWEED ${a.value}`;
@@ -85,6 +86,7 @@ export class Enemy {
       fuse: definition.initialFuse ?? 0,
       deadManWalking: 0,
       barricadeStacks: 0,
+      invulnerable: 0,
       summoned: false,
       intent: { type: 'attack', value: 0, description: '' },
       isDead: false,
@@ -95,6 +97,24 @@ export class Enemy {
     return this.definition;
   }
 
+  /** Clear all buffs and debuffs from this enemy. */
+  clearAllStatuses(): void {
+    this.state.block = 0;
+    this.state.poisonStacks = 0;
+    this.state.vulnerable = 0;
+    this.state.cloak = 0;
+    this.state.bountyStacks = 0;
+    this.state.terrifiedStacks = 0;
+    this.state.blindedStacks = 0;
+    this.state.ragefulStacks = 0;
+    this.state.thorns = 0;
+    this.state.graceStacks = 0;
+    this.state.hardened = 0;
+    this.state.deadManWalking = 0;
+    this.state.barricadeStacks = 0;
+    this.state.invulnerable = 0;
+  }
+
   /**
    * Choose next intent based on enemy abilities and current state.
    * Weighted random selection from available actions.
@@ -102,7 +122,7 @@ export class Enemy {
   /** Index of the last move used (for no-repeat rule). */
   private lastMoveIndex = -1;
 
-  chooseIntent(aliveCount = 1, allyInjured = false): EnemyIntent {
+  chooseIntent(aliveCount = 1): EnemyIntent {
     // Forced next move (e.g. Dust Devil's enrage Multi-attack 2x4)
     if (this.forcedNextMove) {
       const move: EnemyMove = { actions: this.forcedNextMove };
@@ -128,12 +148,6 @@ export class Enemy {
         const idx = (this.lastMoveIndex + 1) % moves.length;
         this.lastMoveIndex = idx;
         return moveToIntent(moves[idx]);
-      }
-
-      // Hellfire Preacher: prioritize heal_ally when an ally is injured
-      if (allyInjured && this.definition.type === 'hellfire_preacher') {
-        const healMove = moves.find(mv => mv.actions.some(a => a.kind === 'heal_ally'));
-        if (healMove) return moveToIntent(healMove);
       }
 
       // Special: Coyote always summons when alone

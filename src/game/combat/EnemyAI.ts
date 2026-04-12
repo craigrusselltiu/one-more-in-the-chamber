@@ -6,6 +6,6 @@ import type { Enemy } from './Enemy';
  * the structured moveset system defined in enemies.ts.
  */
 
-export function chooseEnemyIntent(enemy: Enemy, aliveCount: number, allyInjured = false): EnemyIntent {
-  return enemy.chooseIntent(aliveCount, allyInjured);
+export function chooseEnemyIntent(enemy: Enemy, aliveCount: number): EnemyIntent {
+  return enemy.chooseIntent(aliveCount);
 }

@@ -248,7 +248,7 @@ export const ARTIFACTS: ArtifactDefinition[] = [
     name: "Tinker's Wrench",
     description: 'Every match is an explosion waiting to happen.',
     tags: ['sapper'],
-    effect: 'Explosive tiles also spawn from non-cascade 3-matches.',
+    effect: 'Explosive tiles also spawn from the first non-cascade 3-match each turn.',
     rarity: 'legendary',
   },
 

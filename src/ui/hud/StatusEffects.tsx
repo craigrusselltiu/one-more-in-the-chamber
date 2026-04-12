@@ -2,7 +2,7 @@ import { memo, type ReactNode } from 'react';
 import type { PlayerStatusEffect, EnemyStatusEffect } from '../../types/combat';
 import { SpriteIcon } from '../components/SpriteIcon';
 import { Tooltip } from '../components/Tooltip';
-import { STATUS_FRAMES } from '../../data/spriteConfig';
+import { STATUS_FRAMES, TILE_FRAMES } from '../../data/spriteConfig';
 import { KEYWORDS } from '../../data/keywords';
 import { KeywordLine } from '../components/KeywordText';
 
@@ -29,6 +29,7 @@ const STATUS_TO_KEYWORD: Record<string, string> = {
   bounty: 'Bounty',
   terrified: 'Terrified',
   ready: 'Ready',
+  duel: 'Duel',
   chain: 'Chain',
   protected: 'Protected',
 };
@@ -38,12 +39,13 @@ const EXTRA_DESCRIPTIONS: Record<string, { name: string; color: string; descript
   block: { name: 'Block', color: '#6888A0', description: 'Absorbs incoming damage.' },
   crit: { name: 'Crit', color: '#D06080', description: 'Chance to deal 1.5x damage.' },
   thorns: { name: 'Thorns', color: '#C04040', description: 'When attacked, deal damage back equal to stacks. Cleared at end of turn.' },
-  cloak: { name: 'Cloak', color: '#808080', description: 'Cascade damage is nullified. Decrease stacks by 1 at the end of the turn.' },
+  cloak: { name: 'Cloak', color: '#808080', description: 'Cascade damage taken is reduced by 50%. Decrease stacks by 1 at the end of the turn.' },
   blinded: { name: 'Blinded', color: '#A0A0A0', description: 'Attacks deal no damage.' },
   hardened: { name: 'Hardened', color: '#8B7355', description: 'All damage taken is reduced to the number of Hardened stacks.' },
   summoned: { name: 'Summoned', color: '#E0C880', description: 'Dies when all non-summoned enemies have died.' },
   fuse: { name: 'Fuse', color: '#ff4444', description: 'When this reaches zero, blows up dealing 50 damage, then dies.' },
-  dead_man_walking: { name: 'Dead Man Walking', color: '#C8B060', description: 'Immune to debuffs.' },
+  dead_man_walking: { name: 'Dead Man Walking', color: '#C8B060', description: 'Immune to debuffs. Decrease stacks by 1 at the end of the turn.' },
+  invulnerable: { name: 'Invulnerable', color: '#FFD700', description: 'Immune to all damage. Decrease stacks by 1 at the end of the turn.' },
 };
 
 function getStatusTooltip(type: string, value: number, hideValue: boolean): ReactNode {
@@ -85,7 +87,7 @@ export const StatusEffects = memo(function StatusEffects({ effects }: StatusEffe
             style={{ width: 16, height: 16 }}
           >
             <SpriteIcon
-              frame={STATUS_FRAMES[effect.type] ?? 0}
+              frame={STATUS_FRAMES[effect.type] ?? (TILE_FRAMES as Record<string, number>)[effect.type] ?? 0}
               scale={1}
             />
             {!hideValue && (

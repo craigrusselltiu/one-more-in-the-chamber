@@ -48,7 +48,7 @@ NOTE: The tile pool for Acts 2, 3, and also the shop should be the Starter Tiles
 - Behaviour text: Deal 1 damage per tile. Destroy 1 random other tile per 3-match, plus 1 per extra tile.
 - Upgrade text: +1 to number of tiles destroyed on match per level
 - Resource formula: 1 damage * tiles, (tiles - 2) + (level * 1) tiles destroyed
-- Single formula: 1 damage (upgrade does not affect single resolve)
+- Single formula: 1 damage
 
 ### Stampede
 - Flavor text: "The ground shakes. Everything in the way gets flattened."
@@ -89,8 +89,8 @@ NOTE: The tile pool for Acts 2, 3, and also the shop should be the Starter Tiles
 - Flavor text: "That's not a knife."
 - Behaviour text: Deal 1 damage per tile and apply 1 Vulnerable.
 - Upgrade text: +2 damage to match total per level
-- Resource formula: (1 damage * tiles) + (level * 2), 1 Vulnerable
-- Single formula: 1 damage + floor(level * 2 / 3), 1 Vulnerable
+- Resource formula: (1 damage * tiles) + (level * 2), 1 Vulnerable (max 1)
+- Single formula: 1 damage + floor(level * 2 / 3), 1 Vulnerable (max 1)
 
 ### Ace
 - Flavor text: "Always keep one up your sleeve."
@@ -105,8 +105,8 @@ NOTE: The tile pool for Acts 2, 3, and also the shop should be the Starter Tiles
 - Flavor text: "Links in the chain. More you match, harder they hit."
 - Behaviour text: Deal 1 damage per tile. Each Chain match adds +1 damage to ALL Chain tiles for this combat.
 - Upgrade text: +1 damage to match total per level
-- Resource formula: (1 damage * tiles) + (level * 1), +1 Chain
-- Single formula: 1 damage + floor(level * 1 / 3), +1 Chain
+- Resource formula: (1 damage * tiles) + (level * 1), 1 Chain
+- Single formula: 1 damage + floor(level * 1 / 3), 1 Chain
 
 ### Whiskey
 - Flavor text: "The cowboy's medicine."
@@ -118,7 +118,7 @@ NOTE: The tile pool for Acts 2, 3, and also the shop should be the Starter Tiles
 ### Horseshoe
 - Flavor text: "Luck favors the prepared."
 - Behaviour text: Gain 1 stack of Lucky per tile.
-- Upgrade text: +1 stack to match total per level
+- Upgrade text: +1 stack per tile per level
 - Resource formula: (1 Lucky * tiles) + (level * 1)
 - Single formula: 1 Lucky + floor(level * 1 / 3)
 
@@ -149,34 +149,34 @@ NOTE: The tile pool for Acts 2, 3, and also the shop should be the Starter Tiles
 - Upgrade text: +1 damage and poison stack to match total per level
 - Resource formula: (2 damage * tiles) + (level * 1) (pierces block), (1 Poison * tiles) + (level * 1)
 - Single formula: 2 damage + floor(level * 1 / 3) (pierces block), 1 Poison + floor(level * 1 / 3)
-- Note: if all enemies die by poison at turn start, the player has won the combat
 
 ### Barricade
 - Flavor text: "Flip the table. Take cover."
 - Behaviour text: Gain 2 block per tile and 1 Barricade.
 - Upgrade text: +1 block per tile per level
-- Resource formula: (2 block + level * 1) * tiles, 1 Barricade (max 1)
-- Single formula: 2 block + level * 1, 1 Barricade (max 1)
+- Resource formula: (2 block + level * 1) * tiles, 1 Barricade
+- Single formula: 2 block + level * 1, 1 Barricade
 
 ### Boulder
 - Flavor text: "Gravity does the rest."
 - Behaviour text: Deal 1 damage per tile, plus 1 damage per block.
 - Upgrade text: +1 damage per tile per level
 - Resource formula: (1 damage + level * 1) * tiles + current block
-- Single formula: 1 damage + level * 1 + current block
+- Single formula: 1 damage + level * 1 + floor(current block / 3)
 
 ### Cavalry
 - Flavor text: "Reinforcements have arrived."
-- Behaviour text: 1 damage per tile. If 4+ matched, +1 swap this turn (max 1 per turn).
-- Upgrade text: +2 damage to match total per level
-- Resource formula: (1 damage * tiles) + (level * 2), +1 swap if tiles >= 4 (max 1/turn)
-- Single formula: 1 damage + floor(level * 2 / 3)
+- Behaviour text: 2 block per tile. If 4+ matched, +1 swap this turn (max 1 per turn).
+- Upgrade text: +2 block to match total per level
+- Resource formula: (1 block * tiles) + (level * 2), +1 swap if tiles >= 4 (max 1/turn)
+- Single formula: 1 block + floor(level * 2 / 3)
 
 ### Duel
 - Flavor text: "In carnage, I bloom, like a flower in the dawn."
-- Behaviour text: Deal 4 damage per tile. On exactly 4-match, deal the damage twice.
-- Resource formula: 4 damage * tiles (dealt twice if tiles == 4)
-- Single formula: 4 damage
+- Behaviour text: Deal 2 damage per tile. On exactly 4-match, deal the damage twice. Gain 1 Duel.
+- Upgrade text: +1 damage per tile per level
+- Resource formula: (2 damage + level * 1) * tiles (dealt twice if tiles == 4), 1 Duel
+- Single formula: 2 damage + level * 1, 1 Duel
 
 ### Mirage
 - Flavor text: "Now you see it. Now you don't. Now it's something else."
@@ -184,6 +184,29 @@ NOTE: The tile pool for Acts 2, 3, and also the shop should be the Starter Tiles
 - Upgrade text: +1 to the level of the tile it transforms into
 - Resource formula: resolves as the transformed tile
 - Single formula: resolves as the transformed tile
+
+## Special Tiles
+
+### Showdown
+- Flavor text: "Clear the board. No survivors."
+- Behaviour text: Swap with any adjacent tile to destroy all tiles of that type on the board.
+- Single formula: no resource generation
+
+### Tumbleweed
+- Flavor text: "Just passing through. Taking up space."
+- Behaviour text: Does nothing.
+- Single formula: no resource generation
+
+### Charcoal
+- Flavor text: "It is said to makes Fire-type moves more powerful."
+- Behaviour text: On match, deal 1 damage and gain 1 block. Cannot be upgraded or swapped out for another tile.
+- Resource formula: 1 damage, 1 block (ignores tile count)
+- Single formula: 1 damage, 1 block
+
+### Fool's Gold
+- Flavor text: "All that glitters."
+- Behaviour text: Looks like Gold but generates nothing. Can match with regular Gold tiles. Reveals when matched.
+- Single formula: no resource generation
 
 ## New Tile Ideas
 
@@ -306,26 +329,3 @@ NOTE: The tile pool for Acts 2, 3, and also the shop should be the Starter Tiles
 - Behaviour: Deal 1 damage per tile. If the enemy has Poison, deal +1 damage per Poison stack.
 - Upgrade: +1 base damage to match total per level
 - Flavor: "Seal the deal."
-
-## Special Tiles
-
-### Showdown
-- Flavor text: "Clear the board. No survivors."
-- Behaviour text: Swap with any adjacent tile to destroy all tiles of that type on the board.
-- Single formula: no resource generation
-
-### Tumbleweed
-- Flavor text: "Just passing through. Taking up space."
-- Behaviour text: Does nothing.
-- Single formula: no resource generation
-
-### Charcoal
-- Flavor text: "A piece of charcoal. Somehow makes Fire-type moves more— wrong game."
-- Behaviour text: On match, deal 1 damage and gain 1 block. Cannot be upgraded or swapped out for another tile.
-- Resource formula: 1 damage, 1 block (ignores tile count)
-- Single formula: 1 damage, 1 block
-
-### Fool's Gold
-- Flavor text: "All that glitters."
-- Behaviour text: Looks like Gold but generates nothing. Can match with regular Gold tiles. Reveals when matched.
-- Single formula: no resource generation

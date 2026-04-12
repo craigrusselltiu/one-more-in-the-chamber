@@ -25,5 +25,3 @@ future ideas:
 - artifact combine
 - upgrading tile
 - dusty dan tumble weed deals damage to you when fighting him
-- add bullet holes for deadeye on shoot
-- artifact choice (instead of getting random you pick 1 of 2)

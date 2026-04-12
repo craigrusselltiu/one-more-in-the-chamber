@@ -17,6 +17,7 @@ export interface ResourceOutput {
   ragefulStacks: number;
   sturdyStacks: number;
   chainStacks: number;
+  duelStacks: number;
   /** Whether a Chip tile hit (true) or missed (false). Undefined for non-chip tiles. */
   chipHit?: boolean;
   /** The damage Chip would deal if it hit (used by Reno's Coin damage doubling). */
@@ -38,7 +39,7 @@ export interface ResourceOutput {
 
 /** Tiles where upgrade scales per tile (not flat per match). */
 const PER_TILE_UPGRADE: Set<TileType> = new Set([
-  'buckshot', 'fifty_cal', 'barricade', 'chip', 'boulder', 'bounty',
+  'buckshot', 'fifty_cal', 'barricade', 'chip', 'boulder', 'bounty', 'horseshoe', 'duel',
 ]);
 
 /**
@@ -93,7 +94,7 @@ export class ResourceResolver {
     return this.buildOutput(match.tileType, baseTotal, upgradeBonus, count);
   }
 
-  resolveSingle(type: TileType, upgradeLevel: number): ResourceOutput {
+  resolveSingle(type: TileType, upgradeLevel: number, playerBlock = 0): ResourceOutput {
     const def = TILE_DEFINITIONS[type];
     if (!def) return this.emptyOutput();
 
@@ -101,7 +102,10 @@ export class ResourceResolver {
 
     // Flat-upgrade tiles: divide upgrade bonus by 3 on single resolve
     const adjustedBonus = PER_TILE_UPGRADE.has(type) ? upgradeBonus : Math.floor(upgradeBonus / 3);
-    return this.buildOutput(type, baseTotal, adjustedBonus, 1);
+    const output = this.buildOutput(type, baseTotal, adjustedBonus, 1);
+    // Boulder: add block / 3 as bonus damage on single resolve
+    if (type === 'boulder') output.damage += Math.floor(playerBlock / 3);
+    return output;
   }
 
   resolveCount(type: TileType, count: number, upgradeLevel: number): ResourceOutput {
@@ -192,7 +196,7 @@ export class ResourceResolver {
         break;
 
       case 'cavalry':
-        output.damage = total;
+        output.block = total;
         if (count >= 4 && !this.cavalrySwapUsedThisTurn) {
           output.bonusSwaps = 1;
           this.cavalrySwapUsedThisTurn = true;
@@ -203,6 +207,7 @@ export class ResourceResolver {
         // Always deals damage; on exactly 4-match, damage is dealt twice
         output.damage = total;
         output.duelDoubleHit = count === 4;
+        output.duelStacks = 1;
         break;
 
       case 'boulder':
@@ -308,6 +313,7 @@ export class ResourceResolver {
       ragefulStacks: 0,
       sturdyStacks: 0,
       chainStacks: 0,
+      duelStacks: 0,
       isAoE: false,
       piercesBlock: false,
       targetsHighestHp: false,

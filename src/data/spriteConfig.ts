@@ -140,9 +140,7 @@ export const CONSUMABLE_FRAMES: Record<string, number> = {
 /** Status effect / buff / debuff sprite frames. */
 export const STATUS_FRAMES: Record<string, number> = {
   block: 196,
-  ace: 792,
   lucky: 1012,
-  barricade: 198,
   crit: 1080,
   thorns: 1015,
   poison: 828,
@@ -152,15 +150,14 @@ export const STATUS_FRAMES: Record<string, number> = {
   sturdy: 223,
   grace: 827,
   poisoned: 828,
-  bounty: 1245,
   terrified: 1206,
   blinded: 1258,
   ready: 3,
-  chain: 730,
   summoned: 704,
   hardened: 550,
   fuse: 725,
-  dead_man_walking: 1240,
+  dead_man_walking: 1259,
+  invulnerable: 783,
   protected: 235,
 };
 

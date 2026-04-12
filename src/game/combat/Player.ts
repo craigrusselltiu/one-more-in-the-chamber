@@ -17,6 +17,7 @@ export class Player {
   graceStacks = 0;
   poisonedStacks = 0;
   readyStacks = 0;
+  duelStacks = 0;
   chainStacks = 0;
   terrifiedStacks = 0;
   vulnerableStacks = 0;
@@ -204,6 +205,7 @@ export class Player {
     this.sturdyStacks = 0;
     this.poisonedStacks = 0;
     this.readyStacks = 0;
+    this.duelStacks = 0;
     this.chainStacks = 0;
     this.terrifiedStacks = 0;
     this.protectedStacks = 0;

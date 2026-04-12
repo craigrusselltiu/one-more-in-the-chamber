@@ -79,11 +79,12 @@ export function weightedArtifactPickN<T extends { rarity?: ArtifactRarity; tags:
   rand: () => number,
   desperadoActive = false,
   legendaryWeightOverride?: number,
+  bossReward = false,
 ): T[] {
   const remaining = [...pool];
   const picks: T[] = [];
   for (let i = 0; i < count && remaining.length > 0; i++) {
-    const pick = weightedArtifactPick(remaining, rand, desperadoActive, false, legendaryWeightOverride);
+    const pick = weightedArtifactPick(remaining, rand, desperadoActive, bossReward, legendaryWeightOverride);
     picks.push(pick);
     remaining.splice(remaining.indexOf(pick), 1);
   }

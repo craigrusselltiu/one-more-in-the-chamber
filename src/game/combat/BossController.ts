@@ -99,15 +99,7 @@ export class BossController {
       this.transitionTriggered = true;
       this.phase = 2;
 
-      // Clear all enemy statuses
-      boss.state.block = 0;
-      boss.state.poisonStacks = 0;
-      boss.state.vulnerable = 0;
-      boss.state.terrifiedStacks = 0;
-      boss.state.blindedStacks = 0;
-      boss.state.ragefulStacks = 0;
-      boss.state.thorns = 0;
-      boss.state.bountyStacks = 0;
+      boss.clearAllStatuses();
 
       // Lock all edge tiles
       hazardManager.lockEdges();
@@ -118,21 +110,8 @@ export class BossController {
     return false;
   }
 
-  private checkIsabellaTransition(boss: Enemy): boolean {
-    const hpRatio = boss.state.health / boss.state.maxHealth;
-
-    // Phase 2 at 65%
-    if (hpRatio <= 0.65 && this.phase < 2) {
-      this.phase = 2;
-      return true;
-    }
-
-    // Phase 3 at 30%
-    if (hpRatio <= 0.3 && this.phase < 3) {
-      this.phase = 3;
-      return true;
-    }
-
+  private checkIsabellaTransition(_boss: Enemy): boolean {
+    // Isabella uses standard hpTriggers for her 50% phase transition.
     return false;
   }
 
@@ -185,33 +164,12 @@ export class BossController {
   }
 
   private isabellaPerTurn(
-    hazardManager: BoardHazardManager,
+    _hazardManager: BoardHazardManager,
     boss?: Enemy,
     _activeTileTypes?: TileType[],
   ): void {
-    switch (this.phase) {
-      case 1: {
-        // Lock a random row each turn
-        const row = Math.floor(Math.random() * 8);
-        hazardManager.lockRow(row);
-        // 10 passive block per turn
-        boss?.addBlock(10);
-        break;
-      }
-      case 2:
-        // 2-hit locks (need 2 adjacent matches to free) instead of row locks
-        hazardManager.placeRandomLocks(2, 2);
-        // Suppress 3 random tiles per turn
-        hazardManager.placeRandomSuppress(3);
-        // Passive block continues in Phase 2
-        boss?.addBlock(10);
-        break;
-      case 3:
-        // Lockdown -- 2 locks + 2 poisons per turn. No passive block.
-        hazardManager.placeRandomLocks(2);
-        hazardManager.placeRandomPoison(2);
-        break;
-    }
+    // Passive: gain 10 block per turn
+    boss?.addBlock(10);
   }
 
   /** Serialize boss controller state for mid-combat save. */
