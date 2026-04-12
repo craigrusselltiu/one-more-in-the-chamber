@@ -449,15 +449,6 @@ export class ArtifactSystem {
   }
 
   // ---------------------------------------------------------------------------
-  // Fool's Gold Prevention
-  // ---------------------------------------------------------------------------
-
-  /** Fool's Magnifying Glass: immune to fool's gold tiles. */
-  isImmuneToFoolsGold(): boolean {
-    return this.has('fools_magnifying_glass');
-  }
-
-  // ---------------------------------------------------------------------------
   // Bomb Defuse Hook
   // ---------------------------------------------------------------------------
 

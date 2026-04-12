@@ -17,7 +17,7 @@ Trait level = number of artifacts held with that tag. Effects activate at breakp
 - Flavor: "There's gold in them hills. And in that match."
 - 2 -- On any match, 25% chance to generate 5 gold.
 - 4 -- Whenever you gain gold during combat, deal 1 damage to a random enemy.
-- 6 -- Deal 10% of your current gold as extra damage.
+- 6 -- Deal 5% of your current gold as extra damage.
 
 ## Gunslinger
 - Flavor: "Fastest hand in the west. And the luckiest."

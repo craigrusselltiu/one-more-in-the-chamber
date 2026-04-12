@@ -39,7 +39,7 @@ export const TRAITS: TraitDefinition[] = [
     breakpoints: [
       { threshold: 2, description: 'On any match, 25% chance to generate 5 gold.' },
       { threshold: 4, description: 'Whenever you gain gold during combat, deal 1 damage to a random enemy.' },
-      { threshold: 6, description: 'Deal 10% of your current gold as extra damage.' },
+      { threshold: 6, description: 'Deal 5% of your current gold as extra damage.' },
     ],
   },
   {

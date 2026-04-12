@@ -215,8 +215,6 @@ export class CombatScene extends Phaser.Scene {
       artifacts: snapshot.artifacts,
       traitCounts: snapshot.traitCounts,
       isBoss: snapshot.isBoss,
-      turnLimit: snapshot.turnLimit,
-      timedFailureDamage: snapshot.timedFailureDamage,
     };
     this.combatManager = new CombatManager(this.board, config);
 

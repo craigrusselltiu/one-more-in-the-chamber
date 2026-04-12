@@ -32,7 +32,7 @@ const ENEMY_SPRITES: Record<string, string> = {
   hangman: 'hangman.png',
   corrupt_deputy: 'corrupt_deputy.png',
   saloon_brawler: 'saloon_brawler.png',
-  sheriffs_shadow: 'bandit.png',
+  sheriffs_shadow: 'sheriffs_shadow.png',
   outlaw_king: 'outlaw_king.png',
   outlaw_king_act1: 'outlaw_king.png',
   outlaw_king_act2: 'outlaw_king.png',

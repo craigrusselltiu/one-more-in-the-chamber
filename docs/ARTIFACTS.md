@@ -136,13 +136,6 @@
 
 ## Prospector
 
-### Fool's Magnifying Glass
-- Tags: Prospector
-- Rarity: Common
-- Effect: Become immune to fool's gold tiles.
-- Flavor: "Can't fool the one who's been fooled before."
-- NOTE: it just prevents fool's gold tiles from being created on your board
-
 ### Gold Tooth
 - Tags: Prospector
 - Rarity: Rare

@@ -217,14 +217,6 @@ export const ARTIFACTS: ArtifactDefinition[] = [
   // ======================= Prospector =======================
 
   {
-    id: 'fools_magnifying_glass',
-    name: "Fool's Magnifying Glass",
-    description: "Can't fool the one who's been fooled before.",
-    tags: ['prospector'],
-    effect: "Become immune to fool's gold tiles.",
-    rarity: 'common',
-  },
-  {
     id: 'gold_tooth',
     name: 'Gold Tooth',
     description: 'Smiles and profits.',

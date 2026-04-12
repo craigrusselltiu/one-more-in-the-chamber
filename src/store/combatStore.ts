@@ -51,7 +51,6 @@ interface CombatStore {
   // Combat flow
   phase: CombatPhase;
   turnNumber: number;
-  turnLimit: number;
   comboCount: number;
   currentAct: number;
   mirageType: import('../types/game').TileType | null;
@@ -103,7 +102,6 @@ const initialState = {
   targetedEnemyIndex: 0,
   phase: 'turn-start' as CombatPhase,
   turnNumber: 0,
-  turnLimit: 0,
   comboCount: 0,
   currentAct: 1,
   mirageType: null,
@@ -145,7 +143,6 @@ export const useCombatStore = create<CombatStore>((set) => ({
       targetedEnemyIndex: state.targetedEnemyIndex,
       phase: state.phase,
       turnNumber: state.turnNumber,
-      turnLimit: state.turnLimit,
       mirageType: state.mirageType,
     }),
 

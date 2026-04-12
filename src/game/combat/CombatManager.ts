@@ -13,7 +13,7 @@ import { ArtifactSystem } from './ArtifactSystem';
 import type { ResourceOutput } from './ResourceResolver';
 import { BoardHazardManager } from '../board/BoardHazardManager';
 import { TILE_COLORS, TILE_DEFINITIONS } from '../../data/tiles';
-import { chooseEnemyIntent, chooseMineCartTimedIntent } from './EnemyAI';
+import { chooseEnemyIntent } from './EnemyAI';
 import { BossController } from './BossController';
 import { playSwapFail, playMatch, playDeadeyeShot, playHit, playBlock, playAbilityReady } from '../../services/sfx';
 import { useRunStore } from '../../store/runStore';
@@ -39,10 +39,6 @@ export interface CombatConfig {
   isBoss?: boolean;
   /** Set to true when this encounter contains the Outlaw King (guaranteed legendary drop on victory). */
   isOutlawKing?: boolean;
-  /** Turn limit for timed encounters (e.g. Mine Cart). 0 or undefined = no limit. */
-  turnLimit?: number;
-  /** Damage dealt to the player if a timed encounter expires. */
-  timedFailureDamage?: number;
   /** Gold multiplier from ascension (1.0 = normal, <1.0 = reduced). */
   goldMultiplier?: number;
 }
@@ -97,10 +93,6 @@ export class CombatManager {
   private deadeyeShotsRemaining = 0;
   private deadeyeMaxShots: number;
   private isBoss: boolean;
-  /** Turn limit for timed encounters. 0 = unlimited. */
-  private turnLimit: number;
-  /** Damage dealt to the player when a timed encounter expires. */
-  private timedFailureDamage: number;
   /** Next match multiplier from consumables (Moonshine 2x, Strong Coffee 1.5x). */
   private nextMatchMultiplier = 1.0;
   /** Track if any enemy died during the current swap resolution. */
@@ -128,8 +120,6 @@ export class CombatManager {
     this.resolver = new ResourceResolver();
     this.hazardManager = new BoardHazardManager(board);
     this.isBoss = config.isBoss ?? false;
-    this.turnLimit = config.turnLimit ?? 0;
-    this.timedFailureDamage = config.timedFailureDamage ?? 0;
     this.goldMultiplier = (config.goldMultiplier ?? 1.0);
 
     // Initialize trait and artifact systems
@@ -186,17 +176,6 @@ export class CombatManager {
     this.isElite = config.isElite ?? false;
     this.isOutlawKing = config.isOutlawKing ?? false;
 
-    // Timed encounter: pre-place hazard tiles and set fuse on mine cart
-    if (this.turnLimit > 0) {
-      this.hazardManager.placeRandomSand(3);
-      this.hazardManager.placeRandomBombs(1);
-      for (const enemy of this.enemies) {
-        if (enemy.getDefinition().type === 'mine_cart') {
-          enemy.state.fuse = 5;
-        }
-      }
-    }
-
     // Set board tile types and Sapper explosive radius
     this.board.setActiveTileTypes(config.activeTileTypes);
     if (this.traits.hasExpandedExplosiveRadius()) {
@@ -205,10 +184,6 @@ export class CombatManager {
     // Tinker's Wrench: 3-matches also spawn explosive tiles
     if (this.artifacts.shouldThreeMatchSpawnExplosive()) {
       this.board.setThreeMatchExplosive(true);
-    }
-    // Fool's Magnifying Glass: immune to fool's gold
-    if (this.artifacts.isImmuneToFoolsGold()) {
-      this.hazardManager.foolsGoldImmune = true;
     }
     // Snakeskin Boots: first poison per turn is auto-cleansed
     if (this.artifacts.has('snakeskin_boots')) {
@@ -422,8 +397,6 @@ export class CombatManager {
       deadeyeShotsRemaining: this.deadeyeShotsRemaining,
       deadeyeMaxShots: this.deadeyeMaxShots,
       isBoss: this.isBoss,
-      turnLimit: this.turnLimit,
-      timedFailureDamage: this.timedFailureDamage,
       nextMatchMultiplier: this.nextMatchMultiplier,
       damageDealtThisFight: this.damageDealtThisFight,
       swapsUsedThisTurn: this.swapsUsedThisTurn,
@@ -537,8 +510,6 @@ export class CombatManager {
     this.deadeyeShotsRemaining = snapshot.deadeyeShotsRemaining;
     this.deadeyeMaxShots = snapshot.deadeyeMaxShots;
     this.isBoss = snapshot.isBoss;
-    this.turnLimit = snapshot.turnLimit;
-    this.timedFailureDamage = snapshot.timedFailureDamage;
     this.nextMatchMultiplier = snapshot.nextMatchMultiplier;
     this.damageDealtThisFight = snapshot.damageDealtThisFight;
     this.swapsUsedThisTurn = snapshot.swapsUsedThisTurn;
@@ -596,14 +567,6 @@ export class CombatManager {
     if (this.isCombatOver()) return;
 
     this.turnNumber++;
-
-    // Safety net: if the turn limit has been exceeded and the timed enemy
-    // somehow survived the end-of-turn fuse check (e.g. snapshot restore
-    // edge case), resolve the failure here.
-    if (this.turnLimit > 0 && this.turnNumber > this.turnLimit) {
-      this.resolveTimedEncounterFailure();
-      return;
-    }
 
     this.swapsRemaining = this.swapsPerTurn;
     this.nextMatchMultiplier = 1.0;
@@ -670,20 +633,14 @@ export class CombatManager {
 
     // Announce enemy intents for this turn
     for (const enemy of this.aliveEnemies()) {
-      if (this.isTimedEnemy(enemy)) {
-        // Timed enemies show countdown based on the mine cart's current fuse
-        // (kept in sync with the Fuse status icon). Both tick at end of turn.
-        enemy.state.intent = chooseMineCartTimedIntent(enemy.state.fuse, this.timedFailureDamage);
-      } else {
-        const allies = this.aliveEnemies().filter(e => e !== enemy);
-        const allyInjured = allies.some(e => e.state.health < e.state.maxHealth);
-        enemy.state.intent = chooseEnemyIntent(enemy, this.aliveEnemies().length, allyInjured);
-        // Copperhead: patch multi-attack hits to current poison tile count
-        if (enemy.getDefinition().type === 'copperhead_cassidy' && enemy.state.intent.actions) {
-          for (const a of enemy.state.intent.actions) {
-            if (a.kind === 'multi_attack') {
-              a.hits = Math.max(1, this.hazardManager.countHazards('poison'));
-            }
+      const allies = this.aliveEnemies().filter(e => e !== enemy);
+      const allyInjured = allies.some(e => e.state.health < e.state.maxHealth);
+      enemy.state.intent = chooseEnemyIntent(enemy, this.aliveEnemies().length, allyInjured);
+      // Copperhead: patch multi-attack hits to current poison tile count
+      if (enemy.getDefinition().type === 'copperhead_cassidy' && enemy.state.intent.actions) {
+        for (const a of enemy.state.intent.actions) {
+          if (a.kind === 'multi_attack') {
+            a.hits = Math.max(1, this.hazardManager.countHazards('poison'));
           }
         }
       }
@@ -1708,9 +1665,9 @@ export class CombatManager {
       this.floatOnPlayer(`+${block}`, '#6888A0');
     }
 
-    // Barricade stacks
+    // Barricade stacks (max 1)
     if (output.barricadeStacks > 0) {
-      this.player.barricadeStacks += output.barricadeStacks;
+      this.player.barricadeStacks = 1;
     }
 
     // Gold (reduced by ascension modifier)
@@ -2004,17 +1961,29 @@ export class CombatManager {
       }
     }
 
-    // Tick fuse on timed enemies (Mine Cart). If any fuse hits 0 after the
-    // player's turn, explode immediately — don't wait for the next turn start.
+    // Tick Fuse status on enemies. When fuse reaches 0, deal fuseDamage
+    // to the player and kill the enemy.
     if (!this.isCombatOver()) {
       let fuseTicked = false;
       for (const enemy of this.aliveEnemies()) {
-        if (this.isTimedEnemy(enemy) && enemy.state.fuse > 0) {
+        if (enemy.state.fuse > 0) {
           enemy.state.fuse--;
           fuseTicked = true;
           if (enemy.state.fuse === 0) {
-            this.resolveTimedEncounterFailure();
-            return;
+            const fuseDamage = enemy.getDefinition().fuseDamage ?? 0;
+            if (fuseDamage > 0) {
+              if (this.player.takeDamage(fuseDamage).hpLost > 0) this.playerTookDamageThisFight = true;
+              EventBus.emit(GameEvent.PLAYER_HP_CHANGE, this.player.health, this.player.maxHealth);
+              EventBus.emit(GameEvent.SCREEN_SHAKE, 'heavy');
+            }
+            enemy.state.health = 0;
+            enemy.state.isDead = true;
+            EventBus.emit(GameEvent.ENEMY_HP_CHANGE, { ...enemy.state });
+            this.emitFullState();
+            if (this.isCombatOver()) {
+              this.endCombat();
+              return;
+            }
           }
         }
       }
@@ -2126,8 +2095,6 @@ export class CombatManager {
     for (const enemy of sorted) {
       // Re-check: enemy may have died from venom, thorns, or mid-turn effects
       if (enemy.state.isDead) continue;
-      // Timed enemies (Mine Cart) don't attack -- damage only on time expiry
-      if (this.isTimedEnemy(enemy)) continue;
 
       await new Promise(r => setTimeout(r, Math.round(600 / getSpeedMultiplier())));
       EventBus.emit(GameEvent.ENEMY_ACTION, enemy.state.id);
@@ -2634,32 +2601,6 @@ export class CombatManager {
     return alive[this.targetedEnemyIndex] ?? alive[0] ?? null;
   }
 
-  /** Check if an enemy is a timed encounter entity (e.g. Mine Cart). */
-  private isTimedEnemy(enemy: Enemy): boolean {
-    return this.turnLimit > 0 && enemy.getDefinition().type === 'mine_cart';
-  }
-
-  /**
-   * Resolve a timed encounter that has expired (player ran out of turns).
-   * Applies failure damage, marks the timed enemy as "escaped", and ends combat.
-   */
-  private resolveTimedEncounterFailure(): void {
-    // Apply crash damage
-    if (this.timedFailureDamage > 0) {
-      if (this.player.takeDamage(this.timedFailureDamage).hpLost > 0) this.playerTookDamageThisFight = true;
-      EventBus.emit(GameEvent.PLAYER_HP_CHANGE, this.player.health, this.player.maxHealth);
-    }
-
-    // Mark all timed enemies as dead (the cart escapes / encounter ends)
-    for (const enemy of this.aliveEnemies()) {
-      if (this.isTimedEnemy(enemy)) {
-        enemy.state.isDead = true;
-      }
-    }
-
-    this.endCombat();
-  }
-
   private isBossEnemy(enemy: Enemy): boolean {
     // The first enemy in the list is the boss when bossController is active
     return this.enemies.indexOf(enemy) === 0;
@@ -2715,7 +2656,6 @@ export class CombatManager {
       isShuffleHoldMode: false,
       shuffleHoldsRemaining: 0,
       shuffleMaxHolds: 0,
-      turnLimit: this.turnLimit,
       suppressedTileTypes: [],
       mirageType: this.board.getMirageType(),
     };

@@ -4,6 +4,15 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## v0.6.3
+
+### Changed
+- Mine Cart reworked: removed legacy "timed encounter" system. Fuse is now a standard enemy status — starts at 5, ticks down each turn, and when it reaches 0 deals 50 damage to the player and kills the Mine Cart. Mine Cart now executes its bomb moveset each turn instead of being inert.
+- Mine Cart bomb values corrected to match spec: 5/7/9/3 → 3/5/7/3
+- Mine Cart moves now cycle sequentially through the moveset
+- Elite HP reduced by 8%: Tumbleweed Golem 109→100, Dust Devil 94→86, Mine Foreman 160→147, Ore Golem 189→174, Mine Cart 252→232, Saloon Brawler 286→263, Sheriff's Shadow 277→255, Outlaw King (Act 1) 184→169, (Act 2) 255→235, (Act 3) 374→344
+- Boss HP reduced by 15%: Dusty Dan 244→207, Copperhead Cassidy 338→287, Iron Eye Isabella 416→354
+
 ## v0.6.2
 
 ### Added
@@ -22,7 +31,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 - Final boss + random Act 3 elite companion (ascension L20)
 - Tile reward level rolls: between-acts tile select and merchant now roll upgrade levels per offered tile based on the target act (Act 2: 80% Lv 1 / 20% Lv 2; Act 3: 20% Lv 1 / 60% Lv 2 / 20% Lv 3). L12 ascension lowers these to Act 2 90/10 and Act 3 50/40/10.
 
+### Removed
+- Fool's Magnifying Glass artifact (Prospector common) — fool's gold immunity removed from the game
+
 ### Changed
+- Prospector(6) trait: gold damage bonus reduced from 10% to 5%
+- Barricade: now capped at max 1 stack
+- Shank and Ace moved from Additional tile pool to Starter tile pool
+- Single-tile resolve (Saloon adjacency, Ricochet bounce) now scales flat-upgrade bonuses correctly — divides upgrade bonus by 3 for single-tile resolution instead of applying the full match bonus
 - Buckshot: base damage 1 → 2 per tile
 - Vulnerable: +25% damage taken (was +50%, briefly +20%)
 - Hint system: board idle-hint trigger delay 15s → 10s

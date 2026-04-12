@@ -31,7 +31,7 @@ const TRAIT_DESCRIPTIONS: Record<string, Record<number, string>> = {
   prospector: {
     2: 'On any match, 25% chance to generate 5 gold.',
     4: 'Whenever you gain gold during combat, deal 1 damage to a random enemy.',
-    6: 'Deal 10% of your current gold as extra damage.',
+    6: 'Deal 5% of your current gold as extra damage.',
   },
   gunslinger: {
     2: 'Bullet-type tiles deal 1 extra damage per tile.',

@@ -38,8 +38,6 @@ export interface CombatState {
   /** Number of holds remaining during False Shuffle. */
   shuffleHoldsRemaining: number;
   shuffleMaxHolds: number;
-  /** Turn limit for timed encounters (e.g. Mine Cart). 0 = no limit. */
-  turnLimit: number;
   /** Tile types currently suppressed by warrants (produce no output when matched). */
   suppressedTileTypes: TileType[];
   /** If mirage is active, the tile type it transformed into this combat. */
@@ -229,6 +227,8 @@ export interface EnemyDefinition {
   }>;
   /** Initial fuse stacks (e.g. Mine Cart starts with 5). */
   initialFuse?: number;
+  /** Damage dealt to the player when fuse reaches 0. */
+  fuseDamage?: number;
   /** If true, moves are executed sequentially in order, looping back to the start. */
   sequential?: boolean;
 }

@@ -66,23 +66,17 @@ export type Screen =
 
 const ENCOUNTER_ROLLERS: Record<Act, {
   regular: (r: () => number, nodeIndex?: number, outlawKingAvailable?: boolean) => EnemyDefinition[];
-  elite: (r?: () => number, outlawKingAvailable?: boolean) => EnemyDefinition[];
+  elite: (r?: () => number, outlawKingAvailable?: boolean, nodeIndex?: number) => EnemyDefinition[];
 }> = {
   1: { regular: rollAct1Encounter, elite: rollAct1EliteEncounter },
   2: { regular: rollAct2Encounter, elite: rollAct2EliteEncounter },
   3: { regular: rollAct3Encounter, elite: rollAct3EliteEncounter },
 };
 
-/** Mine Cart timed encounter config. */
-const MINE_CART_TURN_LIMIT = 5;
-const MINE_CART_FAILURE_DAMAGE = 50;
-
 interface EncounterInfo {
   enemies: EnemyDefinition[];
   isElite: boolean;
   isBoss: boolean;
-  turnLimit?: number;
-  timedFailureDamage?: number;
 }
 
 /** Roll enemies for a given act and node type. */
@@ -107,16 +101,13 @@ function rollEncounter(
   }
   const rollers = ENCOUNTER_ROLLERS[act];
   if (nodeType === 'elite') {
-    return { enemies: rollers.elite(rand, outlawKingAvailable), isElite: true, isBoss: false };
+    return { enemies: rollers.elite(rand, outlawKingAvailable, nodeIndex), isElite: true, isBoss: false };
   }
   const enemies = rollers.regular(rand ?? Math.random, nodeIndex, outlawKingAvailable);
-  const isMineCart = enemies.some((e) => e.type === 'mine_cart');
   return {
     enemies,
     isElite: false,
     isBoss: false,
-    turnLimit: isMineCart ? MINE_CART_TURN_LIMIT : undefined,
-    timedFailureDamage: isMineCart ? MINE_CART_FAILURE_DAMAGE : undefined,
   };
 }
 
@@ -356,8 +347,6 @@ export default function App() {
             isElite: encounter.isElite,
             isBoss: encounter.isBoss,
             isOutlawKing: hasOutlawKing,
-            turnLimit: encounter.turnLimit,
-            timedFailureDamage: encounter.timedFailureDamage,
             goldMultiplier: ascMods.goldMultiplier,
           };
 
@@ -656,7 +645,7 @@ export default function App() {
           className="absolute right-2 bottom-1 pointer-events-none z-[60]"
           style={{ fontSize: '9px', color: 'rgba(255,255,255,0.3)' }}
         >
-          Pre-alpha v0.6.2
+          Pre-alpha v0.6.3
         </span>
       </div>
     </div>

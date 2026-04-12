@@ -99,7 +99,9 @@ export class ResourceResolver {
 
     const { baseTotal, upgradeBonus } = this.computeTotals(type, def.baseValue, def.upgradeValue, 1, upgradeLevel, 1.0);
 
-    return this.buildOutput(type, baseTotal, upgradeBonus, 1);
+    // Flat-upgrade tiles: divide upgrade bonus by 3 on single resolve
+    const adjustedBonus = PER_TILE_UPGRADE.has(type) ? upgradeBonus : Math.floor(upgradeBonus / 3);
+    return this.buildOutput(type, baseTotal, adjustedBonus, 1);
   }
 
   resolveCount(type: TileType, count: number, upgradeLevel: number): ResourceOutput {

@@ -65,39 +65,39 @@
     - Heal 6
 
 ### Pack Mule
-- Base HP: 66
+- Base HP: 63
 - Moves:
     - Attack 12
     - Multi-attack 4x2, Block 8
     - Attack 5, Bomb 1, Bury 3
-    - Heal 7
+    - Heal 6
 
 ## Elite Enemies Pool
 
 ### Tumbleweed Golem
-- Base HP: 109
+- Base HP: 100
 - Start of fight: Lock 1 row and 1 column, Gain 1 Cloak
 - Moves:
     - Attack 13, Lock 1 row
     - Multi-attack 4x4, Lock 4
-    - Block 10, Gain 2 Thorns, Transform 4 tiles into Tumbleweeds
-    - Block 20, Summon 1 Coyote
+    - Block 8, Gain 2 Thorns, Transform 4 tiles into Tumbleweeds
+    - Block 14, Summon 1 Coyote
 
 ### Dust Devil
-- Base HP: 94
+- Base HP: 86
 - When HP drops below 50%, gain 2 Rageful. its next move should be Multi-attack 1x6
 - Start of fight: Bury 8
 - Moves:
-    - Attack 14, Bury 3
-    - Attack 7, Suppress 1, Bury 3
-    - Attack 11, Bury 5, Shuffle bottom 2 rows
+    - Attack 13, Bury 3
+    - Attack 6, Suppress 1, Bury 3
+    - Attack 10, Bury 5, Shuffle bottom 2 rows
     - Multi-attack 4x3, Shuffle top 2 rows
 - NOTE: use same logic as dust devil boots for shuffling
 
 ## Outlaw King
 
 ### Outlaw King (Act 1)
-- Base HP: 184
+- Base HP: 169
 - Starts with 2 Coyote (summoned)
 - Start of fight: Apply 2 Terrified, Gain 1 Cloak, Gain 1 Dead Man Walking
 - Moves:
@@ -120,7 +120,7 @@
 ## Bosses
 
 ### "Dusty" Dan McGraw
-- Base HP: 244
+- Base HP: 207
 - Moves:
     - Gravity Shift, Attack 12, Block 12
     - Gravity Shift, Attack 9x2, Lock 1 row
@@ -138,7 +138,7 @@
 - Moves:
     - Attack 12, Bomb 2
     - Multi-attack 3x5
-    - Bomb 5
+    - Bomb 3
     - Attack 8, Bomb 2, Bury 3
 
 ### Mining Canary
@@ -162,15 +162,15 @@
 - Base HP: 104
 - Start of fight: Gain 5 Rageful
 - Moves:
-    - Attack 16, Bomb 3
-    - Bomb 5, Gain 3 Rageful
+    - Attack 16, Bomb 2
+    - Bomb 3, Gain 3 Rageful
     - Attack 12, Block 10, Bomb 2
     - Attack 23
 
 ## Elite Enemies Pool
 
 ### Mine Foreman
-- Base HP: 160
+- Base HP: 147
 - Moves:
     - Attack 20, Lock 5, Bury 5
     - Attack 24, Suppress 1, Block 12
@@ -178,29 +178,29 @@
     - Block 22, Lock 1 row
 
 ### Ore Golem
-- Base HP: 189
+- Base HP: 174
 - Start of fight: Gain 15 Hardened
 - Moves:
-    - Attack 28
+    - Attack 24
     - Block 30
-    - Multi-attack 8x3
+    - Multi-attack 6x3
     - Attack 12, Gain 3 Rageful
     - Attack 6, Block 14, Summon 1 Prospector Gone Mad
 - NOTE: The first move he does is always Summon 1 Prospector Gone Mad
 
 ### Mine Cart
-- Base HP: 252
-- Start of fight: Gain 5 Fuse. 5 turns to destroy. Deals 50 damage on failure.
+- Base HP: 232
+- Start of fight: Gain 5 Fuse. When Fuse reaches 0, deals 50 damage to the player and dies.
 - Moves:
-    - Bomb 5, Lock 4
-    - Bomb 7, Lock 2
-    - Bomb 9
+    - Bomb 3, Lock 4
+    - Bomb 5, Lock 2
+    - Bomb 7
     - Block 20, Bomb 3, Lock 1 row
 
 ## Outlaw King
 
 ### Outlaw King (Act 2)
-- Base HP: 255
+- Base HP: 235
 - Starts with 2 Coyotes (with full HP, not 1/3)
 - Start of fight: Apply 3 Terrified, Gain 1 Cloak, Gain 1 Dead Man Walking
 - Moves:
@@ -224,7 +224,7 @@
 ## Bosses
 
 ### "Copperhead" Cassidy
-- Base HP: 338
+- Base HP: 287
 - Starts with 2 Rattlesnake (not summoned)
 - Start of fight: Poison 4 Tiles
 - When HP drops below 50%, clear ALL statuses, and should show a float text "SHED SKIN", then locks all tiles on the edge of the board.
@@ -280,7 +280,7 @@
 ## Elite Enemies Pool
 
 ### Saloon Brawler
-- Base HP: 286
+- Base HP: 263
 - Moves:
     - Multi-attack 2x6
     - Multi-attack 4x2, Gain 2 Rageful
@@ -288,7 +288,7 @@
     - Attack 5x3
 
 ### Sheriff's Shadow
-- Base HP: 277
+- Base HP: 255
 - Start of fight: Gain 30 block
 - Moves:
     - Attack 12, Block 12, Suppress 1
@@ -299,7 +299,7 @@
 ## Outlaw King
 
 ### Outlaw King  (Act 3)
-- Base HP: 374
+- Base HP: 344
 - Starts with 2 Bandits (with full HP, not 1/3)
 - Start of fight: Apply 4 Terrified, Gain 2 Cloak, Gain 1 Dead Man Walking
 - Moves:
@@ -320,7 +320,7 @@
 ## Bosses
 
 ### "Iron Eye" Isabella
-- Base HP: 416
+- Base HP: 354
 - Start of fight: Lock 2 rows
 - When HP drops below 50%, Gain 5 Rageful, 30 Block, 1 Barricade, 1 Cloak, 1 Grace, Apply 3 Terrified. sprite changes to ironeye_alt
 - Moves:

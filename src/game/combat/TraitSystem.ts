@@ -170,9 +170,9 @@ export class TraitSystem {
       }
     }
 
-    // Prospector(6): deal 10% of current gold as extra damage
+    // Prospector(6): deal 5% of current gold as extra damage
     if (this.isActive('prospector', 6) && player.gold > 0) {
-      modified.damage += Math.floor(player.gold * 0.1);
+      modified.damage += Math.floor(player.gold * 0.05);
     }
 
     // --- Gunslinger ---

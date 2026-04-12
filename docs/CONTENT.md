@@ -6,7 +6,7 @@ Bullet tiles - Bullet, .50 Cal, Buckshot, and Ricochet
 - Sturdy - Gain 1 extra block per stack. Decrease stacks by 1 at the end of the turn.
 - Ace - Add x0.25 multiplier per stack to the next non-Ace non-casade match.
 - Lucky - 1% chance per stack to deal 1.5x damage. (max 50)
-- Barricade - At the end of the turn, retain block and decrease stacks by 1.
+- Barricade - At the end of the turn, retain block and decrease stacks by 1. (max 1)
 - Grace - Negate the next instance of damage taken.
 - Resourceful - Double all non-damage resources this turn. Decrease stacks by 1 at the end of the turn.
 - Ready - Your next non-cascade attack deals 50% more damage. (max 1)

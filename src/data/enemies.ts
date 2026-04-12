@@ -108,7 +108,7 @@ export const ACT1_ELITE: Record<string, EnemyDefinition> = {
   tumbleweed_golem: {
     type: 'tumbleweed_golem',
     name: 'Tumbleweed Golem',
-    health: 109,
+    health: 100,
     minDamage: 13, maxDamage: 16,
     abilities: ['lock', 'summon'],
     startOfFight: [lockRow(), lockCol(), gainCloak(1)],
@@ -122,7 +122,7 @@ export const ACT1_ELITE: Record<string, EnemyDefinition> = {
   dust_devil: {
     type: 'dust_devil',
     name: 'Dust Devil',
-    health: 94,
+    health: 86,
     minDamage: 4, maxDamage: 14,
     abilities: ['bury', 'suppress'],
     startOfFight: [bury(8)],
@@ -144,7 +144,7 @@ export const ACT1_ELITE: Record<string, EnemyDefinition> = {
 export const DUSTY_DAN: EnemyDefinition = {
   type: 'dusty_dan',
   name: '"Dusty" Dan McGraw',
-  health: 244,
+  health: 207,
   minDamage: 9, maxDamage: 17,
   abilities: ['lock', 'summon', 'gravity_shift'],
   firstMove: m(summon('bandit'), summon('coyote')),
@@ -239,7 +239,7 @@ export const ACT2_ELITE: Record<string, EnemyDefinition> = {
   mine_foreman: {
     type: 'mine_foreman',
     name: 'Mine Foreman',
-    health: 160,
+    health: 147,
     minDamage: 6, maxDamage: 24,
     abilities: ['lock', 'suppress', 'block', 'bury'],
     moves: [
@@ -252,7 +252,7 @@ export const ACT2_ELITE: Record<string, EnemyDefinition> = {
   ore_golem: {
     type: 'ore_golem',
     name: 'Ore Golem',
-    health: 189,
+    health: 174,
     minDamage: 6, maxDamage: 28,
     abilities: ['block', 'summon'],
     startOfFight: [gainHardened(15)],
@@ -268,14 +268,16 @@ export const ACT2_ELITE: Record<string, EnemyDefinition> = {
   mine_cart: {
     type: 'mine_cart',
     name: 'Mine Cart',
-    health: 252,
+    health: 232,
     minDamage: 0, maxDamage: 0,
     abilities: ['hazard'],
     initialFuse: 5,
+    fuseDamage: 50,
+    sequential: true,
     moves: [
-      m(bomb(5), lock(4)),
-      m(bomb(7), lock(2)),
-      m(bomb(9)),
+      m(bomb(3), lock(4)),
+      m(bomb(5), lock(2)),
+      m(bomb(7)),
       m(block(20), bomb(3), lockRow()),
     ],
   },
@@ -284,7 +286,7 @@ export const ACT2_ELITE: Record<string, EnemyDefinition> = {
 export const COPPERHEAD_CASSIDY: EnemyDefinition = {
   type: 'copperhead_cassidy',
   name: '"Copperhead" Cassidy',
-  health: 338,
+  health: 287,
   minDamage: 4, maxDamage: 24,
   abilities: ['poison', 'block', 'fools_gold'],
   startOfFight: [poisonTiles(4)],
@@ -382,7 +384,7 @@ export const ACT3_ELITE: Record<string, EnemyDefinition> = {
   saloon_brawler: {
     type: 'saloon_brawler',
     name: 'Saloon Brawler',
-    health: 286,
+    health: 263,
     minDamage: 2, maxDamage: 20,
     abilities: [],
     moves: [
@@ -395,7 +397,7 @@ export const ACT3_ELITE: Record<string, EnemyDefinition> = {
   sheriffs_shadow: {
     type: 'sheriffs_shadow',
     name: "Sheriff's Shadow",
-    health: 277,
+    health: 255,
     minDamage: 12, maxDamage: 18,
     abilities: ['block', 'suppress'],
     startOfFight: [block(30)],
@@ -416,7 +418,7 @@ export const ACT3_ELITE: Record<string, EnemyDefinition> = {
 export const OUTLAW_KING_ACT1: EnemyDefinition = {
   type: 'outlaw_king_act1',
   name: 'Outlaw King',
-  health: 184,
+  health: 169,
   minDamage: 5, maxDamage: 22,
   abilities: ['block'],
   startOfFight: [applyTerrified(2), gainCloak(1), gainDeadManWalking(1)],
@@ -431,7 +433,7 @@ export const OUTLAW_KING_ACT1: EnemyDefinition = {
 export const OUTLAW_KING_ACT2: EnemyDefinition = {
   type: 'outlaw_king_act2',
   name: 'Outlaw King',
-  health: 255,
+  health: 235,
   minDamage: 6, maxDamage: 31,
   abilities: ['block'],
   startOfFight: [applyTerrified(3), gainCloak(1), gainDeadManWalking(1)],
@@ -446,7 +448,7 @@ export const OUTLAW_KING_ACT2: EnemyDefinition = {
 export const OUTLAW_KING_ACT3: EnemyDefinition = {
   type: 'outlaw_king',
   name: 'Outlaw King',
-  health: 374,
+  health: 344,
   minDamage: 9, maxDamage: 37,
   abilities: ['block'],
   startOfFight: [applyTerrified(4), gainCloak(2), gainDeadManWalking(1)],
@@ -461,7 +463,7 @@ export const OUTLAW_KING_ACT3: EnemyDefinition = {
 export const IRON_EYE_ISABELLA: EnemyDefinition = {
   type: 'iron_eye_isabella',
   name: '"Iron Eye" Isabella',
-  health: 416,
+  health: 354,
   minDamage: 15, maxDamage: 28,
   abilities: ['lock', 'suppress'],
   startOfFight: [lockRow(), lockRow()],
@@ -558,7 +560,7 @@ function getBag(key: unknown, size: number): EncounterBag {
 }
 
 /** Chance per late-normal/elite encounter to roll Outlaw King (once per run). */
-const OUTLAW_KING_ENCOUNTER_CHANCE = 0.01;
+const OUTLAW_KING_ENCOUNTER_CHANCE = 0.005;
 
 /** Build an Outlaw King encounter scaled to the given act, including his companions. */
 export function buildOutlawKingEncounter(act: 1 | 2 | 3): EnemyDefinition[] {
@@ -672,7 +674,7 @@ export function rollAct1Encounter(
   if (isEarly) {
     return rollPresetEncounter(ACT1_EARLY_ENCOUNTERS, ACT1_NORMAL, rand);
   }
-  if (outlawKingAvailable && rand() < OUTLAW_KING_ENCOUNTER_CHANCE) {
+  if (outlawKingAvailable && nodeIndex > 6 && rand() < OUTLAW_KING_ENCOUNTER_CHANCE) {
     return buildOutlawKingEncounter(1);
   }
   return rollLateEncounter(ACT1_EARLY_ENCOUNTERS, ACT1_LATE_ENCOUNTERS, ACT1_NORMAL, ['pack_mule'], rand);
@@ -681,8 +683,9 @@ export function rollAct1Encounter(
 export function rollAct1EliteEncounter(
   rand: () => number = Math.random,
   outlawKingAvailable = false,
+  nodeIndex = 99,
 ): EnemyDefinition[] {
-  if (outlawKingAvailable && rand() < OUTLAW_KING_ENCOUNTER_CHANCE) {
+  if (outlawKingAvailable && nodeIndex > 6 && rand() < OUTLAW_KING_ENCOUNTER_CHANCE) {
     return buildOutlawKingEncounter(1);
   }
   const pool = Object.values(ACT1_ELITE);

@@ -1,138 +1,189 @@
 # Tiles
 
+NOTE: The tile pool for Acts 2, 3, and also the shop should be the Starter Tiles AND the Additional Tiles. Act 1 should only be limited to Starter Tiles.
+
 ## Exclusive Tiles
-NOTE: Observe the difference between +1 to match total and +1 per tile. The tile pool for Acts 2, 3, and also the shop should be the Starter Tiles AND the Additional Tiles. Act 1 should only be limited to Starter Tiles.
 
 ### Bounty
 - Rust exclusive
-- Behaviour: Apply 1 stack of Bounty per tile. When this kills a non-summoned enemy, gain 10 gold.
-- Upgrade: +1 stack per tile per level
-- Flavor: "The S is silent."
+- Flavor text: "The S is silent."
+- Behaviour text: Apply 1 stack of Bounty per tile. When this kills a non-summoned enemy, gain 10 gold.
+- Upgrade text: +1 stack per tile per level
+- Resource formula: (1 stack + level * 1) * tiles
+- Single formula: 1 stack + level * 1
 
 ### Chip
 - Reno exclusive
-- Behaviour: 50% chance to deal 6 damage per tile; 50% chance to deal 0.
-- Upgrade: +1 damage per tile per level
-- Flavor: "What's the most you ever lost on a coin toss?"
+- Flavor text: "What's the most you ever lost on a coin toss?"
+- Behaviour text: 50% chance to deal 6 damage per tile; 50% chance to deal 0.
+- Upgrade text: +1 damage per tile per level
+- Resource formula: (6 damage + level * 1) * tiles (on hit)
+- Single formula: 6 damage + level * 1 (on hit)
 
 ## Starter Tiles
 
 ### Bullet
-- Behaviour: Deal 2 damage per tile.
-- Upgrade: +2 damage to match total per level
-- Flavor: "Highly effective negotiation tool."
+- Flavor text: "Highly effective negotiation tool."
+- Behaviour text: Deal 2 damage per tile.
+- Upgrade text: +2 damage to match total per level
+- Resource formula: (2 damage * tiles) + (level * 2)
+- Single formula: 2 damage + floor(level * 2 / 3)
 
 ### Iron
-- Behaviour: Gain 2 block per tile.
-- Upgrade: +2 block to match total per level
-- Flavor: "Bend, don't break."
+- Flavor text: "Bend, don't break."
+- Behaviour text: Gain 2 block per tile.
+- Upgrade text: +2 block to match total per level
+- Resource formula: (2 block * tiles) + (level * 2)
+- Single formula: 2 block + floor(level * 2 / 3)
 
 ### Gold
-- Behaviour: Earn 1 gold per tile.
-- Upgrade: +2 gold to match total per level
-- Flavor: "Makes the world go 'round."
+- Flavor text: "Makes the world go 'round."
+- Behaviour text: Earn 1 gold per tile.
+- Upgrade text: +2 gold to match total per level
+- Resource formula: (1 gold * tiles) + (level * 2)
+- Single formula: 1 gold + floor(level * 2 / 3)
 
 ### Ricochet
-- Behaviour: Deal 1 damage per tile. Destroy 1 random other tile per 3-match, plus 1 per extra tile.
-- Upgrade: +1 to number of tiles destroyed on match per level
-- Flavor: "Bullets bounce. You never know what they'll hit."
+- Flavor text: "Bullets bounce. You never know what they'll hit."
+- Behaviour text: Deal 1 damage per tile. Destroy 1 random other tile per 3-match, plus 1 per extra tile.
+- Upgrade text: +1 to number of tiles destroyed on match per level
+- Resource formula: 1 damage * tiles, (tiles - 2) + (level * 1) tiles destroyed
+- Single formula: 1 damage (upgrade does not affect single resolve)
 
 ### Stampede
-- Behaviour: Deal 1 damage to ALL enemies per tile.
-- Upgrade: +2 damage to match total per level
-- Flavor: "The ground shakes. Everything in the way gets flattened."
+- Flavor text: "The ground shakes. Everything in the way gets flattened."
+- Behaviour text: Deal 1 damage to ALL enemies per tile.
+- Upgrade text: +2 damage to match total per level
+- Resource formula: (1 AoE damage * tiles) + (level * 2)
+- Single formula: 1 AoE damage + floor(level * 2 / 3)
 
 ### Buckshot
-- Behaviour: Each tile deals 2 damage to a random enemy.
-- Upgrade: +1 damage per tile per level
-- Flavor: "Spread shot. Hits harder, less precise."
+- Flavor text: "Spread shot. Hits harder, less precise."
+- Behaviour text: Each tile deals 2 damage to a random enemy.
+- Upgrade text: +1 damage per tile per level
+- Resource formula: tiles hits, each dealing (2 damage + level * 1) to a random enemy
+- Single formula: 2 damage + level * 1 to a random enemy
 
 ### Battery
-- Behaviour: Gain 1 ability charge per 3-match, plus 1 per extra tile.
-- Upgrade: +1 charge to match total per level
-- Flavor: "Juice for the iron. Every spark counts."
+- Flavor text: "Juice for the iron. Every spark counts."
+- Behaviour text: Gain 1 ability charge per 3-match, plus 1 per extra tile.
+- Upgrade text: +1 charge to match total per level
+- Resource formula: (tiles - 2) charges + (level * 1)
+- Single formula: floor(level * 1 / 3) charges
 
 ### Waste
-- Behaviour: Apply 1 Poison per tile.
-- Upgrade: +1 stack to match total per level
-- Flavor: "Slow poison. The patient killer's weapon."
+- Flavor text: "Slow poison. The patient killer's weapon."
+- Behaviour text: Apply 1 Poison per tile.
+- Upgrade text: +1 stack to match total per level
+- Resource formula: (1 Poison * tiles) + (level * 1)
+- Single formula: 1 Poison + floor(level * 1 / 3)
 
 ### Prairie Fire
-- Behaviour: Deal 1 damage per tile. After each turn, each tile has a 1 in 4 chance to convert 1 adjacent or diagonal tile to Prairie Fire.
-- Upgrade: +2 damage to match total per level
-- Flavor: "Sparks fly. Some of them catch."
+- Flavor text: "Sparks fly. Some of them catch."
+- Behaviour text: Deal 2 damage per tile. After each turn, each tile has a 1 in 4 chance to convert 1 adjacent or diagonal tile to Prairie Fire.
+- Upgrade text: +2 damage to match total per level
+- Resource formula: (2 damage * tiles) + (level * 2)
+- Single formula: 2 damage + floor(level * 2 / 3)
+
+### Shank
+- Flavor text: "That's not a knife."
+- Behaviour text: Deal 1 damage per tile and apply 1 Vulnerable.
+- Upgrade text: +2 damage to match total per level
+- Resource formula: (1 damage * tiles) + (level * 2), 1 Vulnerable
+- Single formula: 1 damage + floor(level * 2 / 3), 1 Vulnerable
+
+### Ace
+- Flavor text: "Always keep one up your sleeve."
+- Behaviour text: Gain 1 stack of Ace per tile.
+- Upgrade text: +1 stack to match total per level
+- Resource formula: (1 Ace * tiles) + (level * 1)
+- Single formula: 1 Ace + floor(level * 1 / 3)
 
 ## Additional Tiles
 
 ### Chain
-- Behaviour: Deal 1 damage per tile. Each Chain match adds +1 damage to ALL Chain tiles for this combat.
-- Upgrade: +1 damage to match total per level
-- Flavor: "Links in the chain. More you match, harder they hit."
+- Flavor text: "Links in the chain. More you match, harder they hit."
+- Behaviour text: Deal 1 damage per tile. Each Chain match adds +1 damage to ALL Chain tiles for this combat.
+- Upgrade text: +1 damage to match total per level
+- Resource formula: (1 damage * tiles) + (level * 1), +1 Chain
+- Single formula: 1 damage + floor(level * 1 / 3), +1 Chain
 
 ### Whiskey
-- Behaviour: Heals 2 HP per 3-match, plus 1 per extra tile.
-- Upgrade: +1 heal to match total per level
-- Flavor: "The cowboy's medicine."
-
-### Ace
-- Behaviour: Gain 1 stack of Ace per tile.
-- Upgrade: +1 stack to match total per level
-- Flavor: "Always keep one up your sleeve."
+- Flavor text: "The cowboy's medicine."
+- Behaviour text: Heals 2 HP per 3-match, plus 1 per extra tile.
+- Upgrade text: +1 heal to match total per level
+- Resource formula: 2 healing + (tiles - 3) + (level * 1)
+- Single formula: 2 healing + floor(level * 1 / 3)
 
 ### Horseshoe
-- Behaviour: Gain 1 stack of Lucky per tile.
-- Upgrade: +1 stack to match total per level
-- Flavor: "Luck favors the prepared."
+- Flavor text: "Luck favors the prepared."
+- Behaviour text: Gain 1 stack of Lucky per tile.
+- Upgrade text: +1 stack to match total per level
+- Resource formula: (1 Lucky * tiles) + (level * 1)
+- Single formula: 1 Lucky + floor(level * 1 / 3)
 
 ### .50 Cal
-- Behaviour: Deal 3 damage per tile. 5-match deals double damage.
-- Upgrade: +1 damage per tile per level
-- Flavor: "Turns cover into a suggestion."
+- Flavor text: "Turns cover into a suggestion."
+- Behaviour text: Deal 3 damage per tile. 5-match deals double damage.
+- Upgrade text: +1 damage per tile per level
+- Resource formula: (3 damage + level * 1) * tiles (doubled if tiles >= 5)
+- Single formula: 3 damage + level * 1
 
 ### Tombstone
-- Behaviour: Deal 2 damage per tile. Deals double damage when target is below 30% HP.
-- Upgrade: +2 damage to match total per level
-- Flavor: "Dead men pay debts."
+- Flavor text: "Dead men pay debts."
+- Behaviour text: Deal 2 damage per tile. Deals double damage when target is below 30% HP.
+- Upgrade text: +2 damage to match total per level
+- Resource formula: (2 damage * tiles) + (level * 2) (doubled if target below 30% HP)
+- Single formula: 2 damage + floor(level * 2 / 3)
 
 ### Saloon
-- Behaviour: Heal 1 HP per 3-match, plus 1 per extra tile. Generate the base resources of adjacent tiles.
-- Upgrade: +1 heal per match total per level
-- Flavor: "Belly up to the bar. Drinks are on the house."
-
-### Shank
-- Behaviour: Deal 1 damage per tile and apply 1 Vulnerable.
-- Upgrade: +2 damage to match total per level
-- Flavor: "That's not a knife."
+- Flavor text: "Belly up to the bar. Drinks are on the house."
+- Behaviour text: Heal 1 HP per 3-match, plus 1 per extra tile. Generate the base resources of adjacent tiles.
+- Upgrade text: +1 heal to match total per level
+- Resource formula: (tiles - 2) healing + (level * 1), plus adjacent tile resources
+- Single formula: floor(level * 1 / 3) healing, plus adjacent tile resources
 
 ### Rattler
-- Behaviour: Deal 2 damage per tile and apply 1 Poison. Pierces block.
-- Upgrade: +1 damage and poison stack to match total per level
-- Flavor: "Fangs out. Bite first, ask questions never."
+- Flavor text: "Fangs out. Bite first, ask questions never."
+- Behaviour text: Deal 2 damage per tile and apply 1 Poison. Pierces block.
+- Upgrade text: +1 damage and poison stack to match total per level
+- Resource formula: (2 damage * tiles) + (level * 1) (pierces block), (1 Poison * tiles) + (level * 1)
+- Single formula: 2 damage + floor(level * 1 / 3) (pierces block), 1 Poison + floor(level * 1 / 3)
 - Note: if all enemies die by poison at turn start, the player has won the combat
 
 ### Barricade
-- Behaviour: Gain 2 block per tile and 1 Barricade.
-- Upgrade: +1 block per tile per level
-- Flavor: "Flip the table. Take cover."
+- Flavor text: "Flip the table. Take cover."
+- Behaviour text: Gain 2 block per tile and 1 Barricade.
+- Upgrade text: +1 block per tile per level
+- Resource formula: (2 block + level * 1) * tiles, 1 Barricade (max 1)
+- Single formula: 2 block + level * 1, 1 Barricade (max 1)
 
 ### Boulder
-- Behaviour: Deal 1 damage per tile, plus 1 damage per block.
-- Upgrade: +1 damage per tile per level
-- Flavor: "Gravity does the rest."
+- Flavor text: "Gravity does the rest."
+- Behaviour text: Deal 1 damage per tile, plus 1 damage per block.
+- Upgrade text: +1 damage per tile per level
+- Resource formula: (1 damage + level * 1) * tiles + current block
+- Single formula: 1 damage + level * 1 + current block
 
 ### Cavalry
-- Behaviour: 1 damage per tile. If 4+ matched, +1 swap this turn (max 1 per turn).
-- Upgrade: +2 damage to match total per level
-- Flavor: "Reinforcements have arrived."
+- Flavor text: "Reinforcements have arrived."
+- Behaviour text: 1 damage per tile. If 4+ matched, +1 swap this turn (max 1 per turn).
+- Upgrade text: +2 damage to match total per level
+- Resource formula: (1 damage * tiles) + (level * 2), +1 swap if tiles >= 4 (max 1/turn)
+- Single formula: 1 damage + floor(level * 2 / 3)
 
 ### Duel
-- Behaviour: Deal 4 damage per tile. On exactly 4-match, deal the damage twice. Cannot be upgraded.
-- Flavor: "In carnage, I bloom, like a flower in the dawn."
+- Flavor text: "In carnage, I bloom, like a flower in the dawn."
+- Behaviour text: Deal 4 damage per tile. On exactly 4-match, deal the damage twice.
+- Resource formula: 4 damage * tiles (dealt twice if tiles == 4)
+- Single formula: 4 damage
 
 ### Mirage
-- Behaviour: At the start of combat, transforms into a random tile you don't own for the rest of combat.
-- Upgrade: +1 to the level of the tile it transforms into
-- Flavor: "Now you see it. Now you don't. Now it's something else."
+- Flavor text: "Now you see it. Now you don't. Now it's something else."
+- Behaviour text: At the start of combat, transforms into a random tile you don't own for the rest of combat.
+- Upgrade text: +1 to the level of the tile it transforms into
+- Resource formula: resolves as the transformed tile
+- Single formula: resolves as the transformed tile
 
 ## New Tile Ideas
 
@@ -259,17 +310,22 @@ NOTE: Observe the difference between +1 to match total and +1 per tile. The tile
 ## Special Tiles
 
 ### Showdown
-- Behaviour: Swap with any adjacent tile to destroy all tiles of that type on the board.
-- Flavor: "Clear the board. No survivors."
+- Flavor text: "Clear the board. No survivors."
+- Behaviour text: Swap with any adjacent tile to destroy all tiles of that type on the board.
+- Single formula: no resource generation
 
 ### Tumbleweed
-- Behaviour: Does nothing.
-- Flavor: "Just passing through. Taking up space."
+- Flavor text: "Just passing through. Taking up space."
+- Behaviour text: Does nothing.
+- Single formula: no resource generation
 
 ### Charcoal
-- Behaviour: On match, deal 1 damage and gain 1 block. Cannot be upgraded or swapped out for another tile.
-- Flavor: "A piece of charcoal. Somehow makes Fire-type moves more— wrong game."
+- Flavor text: "A piece of charcoal. Somehow makes Fire-type moves more— wrong game."
+- Behaviour text: On match, deal 1 damage and gain 1 block. Cannot be upgraded or swapped out for another tile.
+- Resource formula: 1 damage, 1 block (ignores tile count)
+- Single formula: 1 damage, 1 block
 
 ### Fool's Gold
-- Behaviour: Looks like Gold but generates nothing. Can match with regular Gold tiles. Reveals when matched.
-- Flavor: "All that glitters."
+- Flavor text: "All that glitters."
+- Behaviour text: Looks like Gold but generates nothing. Can match with regular Gold tiles. Reveals when matched.
+- Single formula: no resource generation

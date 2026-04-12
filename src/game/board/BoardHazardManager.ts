@@ -103,16 +103,12 @@ export class BoardHazardManager {
     return this.placeRandomHazard({ type: 'sand' }, count);
   }
 
-  /** If true, fool's gold placement is blocked (Fool's Magnifying Glass). */
-  foolsGoldImmune = false;
-
   /**
    * Place fool's gold on N random non-gold, non-hazarded tiles.
    * Converts the tile's type to 'gold' so it looks identical, then marks
    * it with a hidden fools_gold hazard. When matched, gold output is zeroed.
    */
   placeRandomFoolsGold(count: number): HazardPlacement[] {
-    if (this.foolsGoldImmune) return [];
     const candidates = this.getNonGoldFreeTiles();
     const placements: HazardPlacement[] = [];
 

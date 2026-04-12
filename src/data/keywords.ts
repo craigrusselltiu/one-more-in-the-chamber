@@ -19,7 +19,7 @@ export const KEYWORDS: Record<string, KeywordDefinition> = {
   },
   Barricade: {
     color: '#8B7355',
-    description: 'At the end of the turn, retain block and decrease stacks by 1.',
+    description: 'At the end of the turn, retain block and decrease stacks by 1. (max 1)',
   },
   Vulnerable: {
     color: '#C070D0',

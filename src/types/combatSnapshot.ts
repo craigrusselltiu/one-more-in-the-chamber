@@ -100,8 +100,6 @@ export interface CombatSnapshot {
   deadeyeShotsRemaining: number;
   deadeyeMaxShots: number;
   isBoss: boolean;
-  turnLimit: number;
-  timedFailureDamage: number;
   nextMatchMultiplier: number;
   damageDealtThisFight: number;
   swapsUsedThisTurn: number;
