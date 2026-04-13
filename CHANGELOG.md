@@ -9,10 +9,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 ### Added
 - Vulture Scavenger passive: when another enemy dies, heal 6 HP (shown as a status icon with tooltip)
 - Scavenger keyword added to keywords and status effects UI
+- Leaderboard: Won column (amber checkmark for completed runs), Duration column (H:MM:SS), custom scrollbar
+- Preloaded all background images during boot for smoother transitions
+- Pack Mule sprite scaled to 1.5x
 
 ### Changed
 - Vulture: Heal 6 move removed, replaced by Scavenger start-of-fight buff
 - Copperhead Cassidy: reduced from 2 starting Rattlesnakes to 1, removed start-of-fight Poison 4 Tiles
+- Leaderboard table widened, columns adjusted for better readability
+- Settings screen row padding reduced for compact layout
+- Fixed base font size on game container to prevent Edge text scaling issues
 
 ### Fixed
 - Shuffle desync: explosive/showdown/shadow tile overlays not updating after Dust Devil Boots shuffle, reshuffles, or match-breaking swaps (tiles could appear explosive but not function as explosive, or vice versa)

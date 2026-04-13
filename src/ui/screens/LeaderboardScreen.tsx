@@ -79,7 +79,7 @@ export const LeaderboardScreen = memo(function LeaderboardScreen() {
       </div>
 
       {/* Table */}
-      <div className="flex-1 overflow-y-auto w-full max-w-[560px] px-4">
+      <div className="flex-1 overflow-y-auto w-full max-w-[820px] px-4 leaderboard-scroll">
         {loading && (
           <p className="text-stone-400 text-xs text-center mt-8">Loading...</p>
         )}
@@ -93,10 +93,12 @@ export const LeaderboardScreen = memo(function LeaderboardScreen() {
             {/* Table header */}
             <div className="flex items-center px-3 py-2 border-b border-stone-600 bg-stone-700/30">
               <span className="w-8 text-stone-400 text-xs">#</span>
-              <span className="w-32 text-stone-400 text-xs">Player</span>
-              <span className="w-[25%] text-stone-400 text-xs">Tiles</span>
-              <span className="w-14 text-center text-stone-400 text-xs">Char</span>
-              <span className="w-14 text-right text-stone-400 text-xs">Asc</span>
+              <span className="w-40 text-stone-400 text-xs">Player</span>
+              <span className="flex-1 text-stone-400 text-xs">Tiles</span>
+              <span className="w-10 text-center text-stone-400 text-xs">Won</span>
+              <span className="w-12 text-center text-stone-400 text-xs">Char</span>
+              <span className="w-10 text-right text-stone-400 text-xs">Asc</span>
+              <span className="w-16 text-right text-stone-400 text-xs">Time</span>
               <span className="w-20 text-right text-stone-400 text-xs">Score</span>
             </div>
 
@@ -111,12 +113,12 @@ export const LeaderboardScreen = memo(function LeaderboardScreen() {
                 <span className={`w-8 text-xs font-bold ${rankColor(entry.rank)}`}>
                   {entry.rank}
                 </span>
-                <div className="w-32 min-w-0">
+                <div className="w-40 min-w-0">
                   <span className="text-stone-200 text-sm truncate block">
                     {entry.playerName}
                   </span>
                 </div>
-                <div className="w-[25%] flex items-center gap-px flex-wrap">
+                <div className="flex-1 flex items-center gap-px flex-wrap">
                   {entry.tiles.map((tile, i) => {
                     const frame = TILE_FRAMES[tile.type as TileType];
                     if (frame == null) return null;
@@ -143,11 +145,17 @@ export const LeaderboardScreen = memo(function LeaderboardScreen() {
                     );
                   })}
                 </div>
-                <span className="w-14 text-center text-stone-400 text-xs">
+                <span className="w-10 text-center text-xs text-amber-300">
+                  {entry.runCompleted ? '\u2714' : ''}
+                </span>
+                <span className="w-12 text-center text-stone-400 text-xs">
                   {entry.character === 'reno' ? 'Reno' : 'Rust'}
                 </span>
-                <span className="w-14 text-right text-stone-400 text-xs">
+                <span className="w-10 text-right text-stone-400 text-xs">
                   {entry.ascensionLevel > 0 ? `A${entry.ascensionLevel}` : '-'}
+                </span>
+                <span className="w-16 text-right text-stone-400 text-xs">
+                  {formatDuration(entry.runDurationSeconds)}
                 </span>
                 <span className="w-20 text-right text-amber-300 text-sm font-bold">
                   {entry.score.toLocaleString()}
@@ -170,6 +178,14 @@ export const LeaderboardScreen = memo(function LeaderboardScreen() {
     </div>
   );
 });
+
+function formatDuration(seconds: number): string {
+  if (!seconds) return '-';
+  const h = Math.floor(seconds / 3600);
+  const m = Math.floor((seconds % 3600) / 60);
+  const s = seconds % 60;
+  return `${h}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+}
 
 function rankColor(rank: number): string {
   if (rank === 1) return 'text-amber-400';

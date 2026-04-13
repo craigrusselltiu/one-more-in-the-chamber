@@ -594,6 +594,7 @@ export default function App() {
           top: offsetY,
           transform: `scale(${scale})`,
           transformOrigin: 'top left',
+          fontSize: 16,
           pointerEvents: pointerMode,
         }}
       >

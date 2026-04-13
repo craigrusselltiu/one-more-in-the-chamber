@@ -18,6 +18,7 @@ Bullet tiles - Bullet, .50 Cal, Buckshot, and Ricochet
 - Protected - Immune to tile hazards. Decrease stacks by 1 at the end of the turn.
 - Invulnerable - Immune to all damage. Decrease stacks by 1 at the end of the turn.
 - Duel - When gaining this, if you have 4 stacks, gain Ready and clear Duel stacks.
+- Scavenger - When another enemy dies, heal 6 HP.
 
 # Debuffs
 - Vulnerable - Take 25% extra damage from attacks. Decrease stacks by 1 at the end of the turn.
