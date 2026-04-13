@@ -2,6 +2,7 @@ import { memo } from 'react';
 import { useRunStore } from '../../store/runStore';
 import { SpriteIcon } from '../components/SpriteIcon';
 import { Tooltip } from '../components/Tooltip';
+import { colorizeKeywords, getReferencedKeywords, KeywordLine } from '../components/KeywordText';
 import { TRAIT_FRAMES, TRAIT_BREAKPOINTS } from '../../data/spriteConfig';
 import type { TraitId } from '../../types/game';
 
@@ -121,6 +122,9 @@ export const TraitRow = memo(function TraitRow() {
           reached: count >= bp,
         }));
 
+        const allText = tooltipLines.map((l) => l.text).join(' ');
+        const referencedKeywords = getReferencedKeywords(allText);
+
         const tooltipContent = (
           <div className="flex flex-col gap-0.5">
             <div className="font-bold text-amber-400" style={{ fontSize: '10px' }}>
@@ -132,9 +136,16 @@ export const TraitRow = memo(function TraitRow() {
                 className="whitespace-nowrap"
                 style={{ fontSize: '9px', color: reached ? '#e5e5e5' : '#666', lineHeight: 1.4 }}
               >
-                <span className="font-bold">{threshold}</span> - {text}
+                <span className="font-bold">{threshold}</span> - {colorizeKeywords(text)}
               </div>
             ))}
+            {referencedKeywords.length > 0 && (
+              <div className="flex flex-col gap-px mt-0.5 pt-0.5" style={{ borderTop: '1px solid #44403c' }}>
+                {referencedKeywords.map((kw) => (
+                  <KeywordLine key={kw.name} name={kw.name} color={kw.color} description={kw.description} />
+                ))}
+              </div>
+            )}
           </div>
         );
 

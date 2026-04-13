@@ -194,7 +194,9 @@ export class CombatManager {
     this.traits.onFightStart(this.player, this.isBoss, this.enemies);
     this.artifacts.onFightStart(this.player, this.enemies);
 
-    // Execute enemy startOfFight actions (e.g. Rattlesnake: Poison 3 Tiles).
+    // Execute enemy startOfFight actions BEFORE Sidewinder poison,
+    // so Dead Man Walking is active when poison is applied.
+    // (e.g. Rattlesnake: Poison 3 Tiles).
     // Tile-hazard placement actions are skipped while the player has Protected
     // (e.g. from High Vis Jacket), matching the in-turn immunity check.
     const startOfFightHazardImmune = this.player.protectedStacks > 0;
@@ -222,6 +224,14 @@ export class CombatManager {
           else if (action.kind === 'block') enemy.addBlock(action.value);
           else if (action.kind === 'summon' && action.summonType) this.trySummonEnemy(enemy, action.summonType, action.summonFullHp);
         }
+      }
+    }
+
+    // Sidewinder Belt: apply poison AFTER enemy startOfFight (so DMW blocks it).
+    // Routed through applyPoison() so Rattlesnake Fang Necklace bonus applies.
+    if (this.artifacts.has('sidewinder_belt')) {
+      for (const enemy of this.enemies) {
+        if (!enemy.state.isDead) this.applyPoison(enemy, 2);
       }
     }
 

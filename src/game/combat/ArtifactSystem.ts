@@ -107,12 +107,7 @@ export class ArtifactSystem {
       this.deathsPocketWatchAvailable = true;
     }
 
-    // Sidewinder Belt: apply 2 Venom to ALL enemies at combat start
-    if (this.has('sidewinder_belt') && enemies) {
-      for (const enemy of enemies) {
-        if (!enemy.state.isDead) enemy.addPoison(2);
-      }
-    }
+    // Sidewinder Belt: handled by CombatManager (after enemy startOfFight)
 
     // Last Breath Tonic: once/combat, below 20% -> random consumable
     if (this.has('last_breath_tonic')) {

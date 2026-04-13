@@ -95,9 +95,8 @@ function rollEncounter(
     const enemies: EnemyDefinition[] = [{ ...BOSSES[act] }];
     for (const type of (BOSS_COMPANIONS[act] ?? [])) {
       const def = ALL_ENEMIES[type];
-      // Boss companions spawn at full HP and are NOT tagged as summoned
-      // (Copperhead's rattlesnakes per ENEMIES.md)
-      if (def) enemies.push({ ...def });
+      // Boss companions spawn at full HP and are tagged as summoned
+      if (def) enemies.push({ ...def, _summoned: true } as EnemyDefinition);
     }
     return { enemies, isElite: false, isBoss: true };
   }

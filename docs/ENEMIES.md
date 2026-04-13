@@ -232,7 +232,7 @@ I want just the text prompt that I can copy straight into Gemini. No formatting,
 
 ### "Copperhead" Cassidy
 - Base HP: 287
-- Starts with 1 Rattlesnake (not summoned)
+- Starts with 1 Rattlesnake (with full HP, not 1/3)
 - When HP drops below 50%, clear ALL statuses, and should show a float text "SHED SKIN", then locks all tiles on the edge of the board.
 - Moves:
     - Attack 24, Poison 4 Tiles

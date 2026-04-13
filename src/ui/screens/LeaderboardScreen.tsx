@@ -2,7 +2,8 @@ import { memo, useCallback, useEffect, useState } from 'react';
 import { EventBus, GameEvent } from '../../game/EventBus';
 import { fetchLeaderboard, type LeaderboardEntry, type LeaderboardPeriod } from '../../services/leaderboard';
 import { SpriteIcon } from '../components/SpriteIcon';
-import { TILE_FRAMES } from '../../data/spriteConfig';
+import { Tooltip } from '../components/Tooltip';
+import { TILE_FRAMES, ARTIFACT_FRAMES } from '../../data/spriteConfig';
 import type { TileType } from '../../types/game';
 import type { Screen } from '../../App';
 
@@ -93,8 +94,9 @@ export const LeaderboardScreen = memo(function LeaderboardScreen() {
             {/* Table header */}
             <div className="flex items-center px-3 py-2 border-b border-stone-600 bg-stone-700/30">
               <span className="w-8 text-stone-400 text-xs">#</span>
-              <span className="w-40 text-stone-400 text-xs">Player</span>
+              <span className="w-36 text-stone-400 text-xs">Player</span>
               <span className="flex-1 text-stone-400 text-xs">Tiles</span>
+              <span className="w-10 text-center text-stone-400 text-xs">Arts</span>
               <span className="w-10 text-center text-stone-400 text-xs">Won</span>
               <span className="w-12 text-center text-stone-400 text-xs">Char</span>
               <span className="w-10 text-right text-stone-400 text-xs">Asc</span>
@@ -113,12 +115,12 @@ export const LeaderboardScreen = memo(function LeaderboardScreen() {
                 <span className={`w-8 text-xs font-bold ${rankColor(entry.rank)}`}>
                   {entry.rank}
                 </span>
-                <div className="w-40 min-w-0">
+                <div className="w-36 min-w-0">
                   <span className="text-stone-200 text-sm truncate block">
                     {entry.playerName}
                   </span>
                 </div>
-                <div className="flex-1 flex items-center gap-px flex-wrap">
+                <div className="flex-1 flex items-center gap-0.5 flex-wrap">
                   {entry.tiles.map((tile, i) => {
                     const frame = TILE_FRAMES[tile.type as TileType];
                     if (frame == null) return null;
@@ -145,6 +147,23 @@ export const LeaderboardScreen = memo(function LeaderboardScreen() {
                     );
                   })}
                 </div>
+                <span className="w-10 text-center">
+                  {entry.artifacts.length > 0 ? (
+                    <Tooltip position="bottom" content={
+                      <div className="flex flex-wrap gap-0.5 py-1" style={{ maxWidth: 200 }}>
+                        {entry.artifacts.map((id, i) => {
+                          const frame = ARTIFACT_FRAMES[id];
+                          if (frame == null) return null;
+                          return <div key={i} style={{ width: 16, height: 16 }}><SpriteIcon frame={frame} /></div>;
+                        })}
+                      </div>
+                    }>
+                      <span className="text-xs text-stone-300">{entry.artifacts.length}</span>
+                    </Tooltip>
+                  ) : (
+                    <span className="text-xs text-stone-600">0</span>
+                  )}
+                </span>
                 <span className="w-10 text-center text-xs text-amber-300">
                   {entry.runCompleted ? '\u2714' : ''}
                 </span>

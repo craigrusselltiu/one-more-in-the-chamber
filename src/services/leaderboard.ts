@@ -21,6 +21,7 @@ export interface LeaderboardEntry {
   runDurationSeconds: number;
   character: string;
   tiles: LeaderboardTile[];
+  artifacts: string[];
   createdAt: string;
 }
 
@@ -47,7 +48,7 @@ export async function fetchLeaderboard(period: LeaderboardPeriod): Promise<Leade
 
   let query = sb
     .from('scores')
-    .select('final_score, ascension_level, run_completed, run_duration_seconds, character, created_at, player_name, tiles')
+    .select('final_score, ascension_level, run_completed, run_duration_seconds, character, created_at, player_name, tiles, artifacts')
     .order('final_score', { ascending: false })
     .limit(100);
 
@@ -68,6 +69,7 @@ export async function fetchLeaderboard(period: LeaderboardPeriod): Promise<Leade
     runDurationSeconds: (row.run_duration_seconds as number) ?? 0,
     character: (row.character as string) ?? 'red_panda',
     tiles: (Array.isArray(row.tiles) ? row.tiles : []) as LeaderboardTile[],
+    artifacts: (Array.isArray(row.artifacts) ? row.artifacts : []) as string[],
     createdAt: (row.created_at as string) ?? '',
   }));
 }

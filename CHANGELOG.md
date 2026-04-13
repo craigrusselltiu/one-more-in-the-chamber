@@ -9,9 +9,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 ### Added
 - Vulture Scavenger passive: when another enemy dies, heal 6 HP (shown as a status icon with tooltip)
 - Scavenger keyword added to keywords and status effects UI
-- Leaderboard: Won column (amber checkmark for completed runs), Duration column (H:MM:SS), custom scrollbar
+- Leaderboard: Won column (amber checkmark), Duration column (H:MM:SS), Artifacts column (count with icon tooltip on hover), custom scrollbar
+- Leaderboard: artifact IDs saved and synced with score records
 - Preloaded all background images during boot for smoother transitions
-- Pack Mule sprite scaled to 1.5x
+- Pack Mule and Tumbleweed Golem sprites scaled to 1.5x
+- Trait tooltips now colorize keywords and show keyword sub-tooltips
+- Boss companions tagged as Summoned status
 
 ### Changed
 - Vulture: Heal 6 move removed, replaced by Scavenger start-of-fight buff
@@ -21,6 +24,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 - Fixed base font size on game container to prevent Edge text scaling issues
 
 ### Fixed
+- Sidewinder Belt now respects Dead Man Walking (poison applied after enemy start-of-fight buffs)
+- Sidewinder Belt now benefits from Rattlesnake Fang Necklace (+1 poison)
+- Horseshoe upgrade now correctly scales Lucky stacks per tile (was ignoring upgrade levels)
+- Outlaw King artifact reward can no longer be claimed multiple times by spam-clicking
 - Shuffle desync: explosive/showdown/shadow tile overlays not updating after Dust Devil Boots shuffle, reshuffles, or match-breaking swaps (tiles could appear explosive but not function as explosive, or vice versa)
 
 ## v0.6.5

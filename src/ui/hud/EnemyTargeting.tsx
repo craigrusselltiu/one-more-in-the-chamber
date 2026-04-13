@@ -50,6 +50,7 @@ const ENEMY_SPRITE_VARIANTS: Record<string, string[]> = {
 const ENEMY_SPRITE_SCALE: Record<string, number> = {
   hangman: 1.5,
   pack_mule: 1.5,
+  tumbleweed_golem: 1.5,
   mine_cart: 1.5,
   mine_foreman: 1.5,
   ore_golem: 1.5,

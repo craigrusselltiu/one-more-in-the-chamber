@@ -258,7 +258,7 @@ export class ResourceResolver {
         break;
 
       case 'horseshoe':
-        output.luckyStacks = count + Math.round(upgradeBonus);
+        output.luckyStacks = total;
         break;
 
       case 'waste':

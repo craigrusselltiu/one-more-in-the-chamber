@@ -112,6 +112,7 @@ export const ScoreScreen = memo(function ScoreScreen() {
       type: t,
       level: (run.tileUpgrades as Record<string, number>)?.[t] ?? 0,
     }));
+    const artifactIds = (run.artifacts ?? []).map((a: { id: string }) => a.id);
     const record = {
       id: crypto.randomUUID(),
       runId: run.id,
@@ -127,6 +128,7 @@ export const ScoreScreen = memo(function ScoreScreen() {
       bossesDefeated: score.bossNodes,
       runCompleted: score.completed,
       tiles,
+      artifacts: artifactIds,
       createdAt: new Date().toISOString(),
     };
 

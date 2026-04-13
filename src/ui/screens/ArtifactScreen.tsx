@@ -1,4 +1,4 @@
-import { memo, useEffect, useMemo, useState } from 'react';
+import { memo, useEffect, useMemo, useRef, useState } from 'react';
 import { EventBus, GameEvent } from '../../game/EventBus';
 import { useRunStore } from '../../store/runStore';
 import { ARTIFACTS, RARITY_COLORS_DIM, RARITY_LABELS, RARITY_BREATHE_CLASS } from '../../data/artifacts';
@@ -89,8 +89,10 @@ export const ArtifactScreen = memo(function ArtifactScreen() {
     if (isLegendaryReward) useRunStore.getState().setPendingLegendaryReward(false);
   };
 
+  const takenRef = useRef(false);
   const handleChoose = (index: number) => {
-    if (taken) return;
+    if (taken || takenRef.current) return;
+    takenRef.current = true;
     setTaken(true);
     const chosen = artifacts[index];
     addArtifact({ id: chosen.id, tags: chosen.tags });
@@ -103,6 +105,9 @@ export const ArtifactScreen = memo(function ArtifactScreen() {
   };
 
   const handleSkip = () => {
+    if (taken || takenRef.current) return;
+    takenRef.current = true;
+    setTaken(true);
     markRewardTaken();
     const next = getNextScreen();
     if (next === 'score') {
