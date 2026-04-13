@@ -48,6 +48,7 @@ const ENEMY_SPRITE_VARIANTS: Record<string, string[]> = {
 /** Per-enemy sprite scale overrides. Scale is applied via CSS transform with
  *  a bottom-center origin so the feet stay anchored to the shadow. */
 const ENEMY_SPRITE_SCALE: Record<string, number> = {
+  copperhead_cassidy: 1.5,
   outlaw_king: 1.5,
   outlaw_king_act1: 1.5,
   outlaw_king_act2: 1.5,
