@@ -160,6 +160,7 @@ export const STATUS_FRAMES: Record<string, number> = {
   dead_man_walking: 1259,
   invulnerable: 783,
   protected: 235,
+  scavenger: 1240,
 };
 
 /** Map node type icons. */

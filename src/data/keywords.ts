@@ -81,4 +81,8 @@ export const KEYWORDS: Record<string, KeywordDefinition> = {
     color: '#FFD700',
     description: 'Immune to all damage. Decrease stacks by 1 at the end of the turn.',
   },
+  Scavenger: {
+    color: '#40D840',
+    description: 'When another enemy dies, heal 6 HP.',
+  },
 };

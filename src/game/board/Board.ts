@@ -143,8 +143,8 @@ export class Board {
               const tmpShowdown = tile.isShowdown;
               const tmpShadow = tile.isShadow;
               const tmpHazard = tile.hazard;
-              tile.setType(other.type); tile.isExplosive = other.isExplosive; tile.isShowdown = other.isShowdown; tile.isShadow = other.isShadow; tile.hazard = other.hazard;
-              other.setType(tmpType); other.isExplosive = tmpExplosive; other.isShowdown = tmpShowdown; other.isShadow = tmpShadow; other.hazard = tmpHazard;
+              tile.setType(other.type); tile.isExplosive = other.isExplosive; tile.isShowdown = other.isShowdown; tile.isShadow = other.isShadow; tile.hazard = other.hazard; tile.refreshStatusIndicator();
+              other.setType(tmpType); other.isExplosive = tmpExplosive; other.isShowdown = tmpShowdown; other.isShadow = tmpShadow; other.hazard = tmpHazard; other.refreshStatusIndicator();
               hasMatches = true;
             }
           }
@@ -1309,6 +1309,7 @@ export class Board {
       tile.isShowdown = s.isShowdown;
       tile.isShadow = s.isShadow;
       tile.hazard = s.hazard;
+      tile.refreshStatusIndicator();
     }
   }
 
@@ -1499,6 +1500,7 @@ export class Board {
           tile.isExplosive = states[i].isExplosive;
           tile.isShowdown = states[i].isShowdown;
           tile.isShadow = states[i].isShadow;
+          tile.refreshStatusIndicator();
         }
       }
       attempts++;

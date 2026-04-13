@@ -63,7 +63,7 @@ I want just the text prompt that I can copy straight into Gemini. No formatting,
 
 ### Vulture
 - Base HP: 32
-- Passive: When another enemy dies, heal 6 HP
+- Start of fight: Gain 1 Scavenger
 - Moves:
     - Attack 8, Apply 1 Terrified
     - Multi-attack 2x3, Bury 3
@@ -232,8 +232,7 @@ I want just the text prompt that I can copy straight into Gemini. No formatting,
 
 ### "Copperhead" Cassidy
 - Base HP: 287
-- Starts with 2 Rattlesnake (not summoned)
-- Start of fight: Poison 4 Tiles
+- Starts with 1 Rattlesnake (not summoned)
 - When HP drops below 50%, clear ALL statuses, and should show a float text "SHED SKIN", then locks all tiles on the edge of the board.
 - Moves:
     - Attack 24, Poison 4 Tiles

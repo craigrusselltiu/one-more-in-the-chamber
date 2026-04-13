@@ -46,6 +46,7 @@ const EXTRA_DESCRIPTIONS: Record<string, { name: string; color: string; descript
   fuse: { name: 'Fuse', color: '#ff4444', description: 'When this reaches zero, blows up dealing 50 damage, then dies.' },
   dead_man_walking: { name: 'Dead Man Walking', color: '#C8B060', description: 'Immune to debuffs. Decrease stacks by 1 at the end of the turn or whenever a debuff is applied.' },
   invulnerable: { name: 'Invulnerable', color: '#FFD700', description: 'Immune to all damage. Decrease stacks by 1 at the end of the turn.' },
+  scavenger: { name: 'Scavenger', color: '#40D840', description: 'When another enemy dies, heal 6 HP.' },
 };
 
 function getStatusTooltip(type: string, value: number, hideValue: boolean): ReactNode {

@@ -77,6 +77,8 @@ export interface EnemyState {
   barricadeStacks: number;
   /** Invulnerable: immune to all damage. Decrease stacks by 1 at end of turn. */
   invulnerable: number;
+  /** Scavenger: when another enemy dies, heal this amount of HP. */
+  scavenger: number;
   summoned: boolean;
   intent: EnemyIntent;
   isDead: boolean;
@@ -133,7 +135,8 @@ export type EnemyStatusEffect =
   | { type: 'fuse'; value: number }
   | { type: 'dead_man_walking'; value: number }
   | { type: 'barricade'; value: number }
-  | { type: 'invulnerable'; value: number };
+  | { type: 'invulnerable'; value: number }
+  | { type: 'scavenger'; value: number };
 
 export interface MatchResult {
   tiles: GridPosition[];
@@ -186,7 +189,8 @@ export interface MoveAction {
     | 'gain_barricade' | 'gain_invulnerable'
     | 'apply_vulnerable' | 'apply_vulnerable_self'
     | 'heal_ally'
-    | 'shuffle_rows' | 'gravity_shift' | 'transform_tumbleweed';
+    | 'shuffle_rows' | 'gravity_shift' | 'transform_tumbleweed'
+    | 'gain_scavenger';
   value: number;
   /** For multi-attack: number of hits. For shuffle_rows: rows to shuffle (encoded). */
   hits?: number;

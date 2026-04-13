@@ -216,6 +216,7 @@ export class CombatManager {
           else if (action.kind === 'gain_grace') enemy.state.graceStacks += action.value;
           else if (action.kind === 'gain_dead_man_walking') enemy.state.deadManWalking += action.value;
           else if (action.kind === 'gain_invulnerable') enemy.state.invulnerable += action.value;
+          else if (action.kind === 'gain_scavenger') enemy.state.scavenger += action.value;
           else if (action.kind === 'apply_terrified') this.player.terrifiedStacks += action.value;
           else if (action.kind === 'apply_vulnerable') this.player.vulnerableStacks += action.value;
           else if (action.kind === 'block') enemy.addBlock(action.value);
@@ -1487,6 +1488,18 @@ export class CombatManager {
               EventBus.emit(GameEvent.PLAYER_HP_CHANGE, this.player.health, this.player.maxHealth);
             }
           }
+          // Scavenger: other alive enemies with scavenger heal 6 HP per stack
+          for (const ally of this.aliveEnemies()) {
+            if (ally.state.scavenger > 0) {
+              const scavengerHeal = ally.state.scavenger * 6;
+              const healAmt = Math.min(scavengerHeal, ally.state.maxHealth - ally.state.health);
+              if (healAmt > 0) {
+                ally.state.health += healAmt;
+                this.floatOnEnemy(ally, `+${healAmt}`, '#40D840');
+              }
+            }
+          }
+          this.emitEnemyHpChanges();
         }
       }
 
@@ -2305,6 +2318,11 @@ export class CombatManager {
       case 'gain_invulnerable':
         enemy.state.invulnerable += ma.value;
         this.floatOnEnemy(enemy, `+${ma.value} INVULNERABLE`, '#FFD700', 9);
+        EventBus.emit(GameEvent.ENEMY_HP_CHANGE, { ...enemy.state });
+        break;
+      case 'gain_scavenger':
+        enemy.state.scavenger += ma.value;
+        this.floatOnEnemy(enemy, `+${ma.value} SCAVENGER`, '#40D840', 9);
         EventBus.emit(GameEvent.ENEMY_HP_CHANGE, { ...enemy.state });
         break;
       case 'apply_vulnerable_self':

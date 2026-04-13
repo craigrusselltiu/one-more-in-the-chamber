@@ -4,6 +4,19 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## v0.6.6
+
+### Added
+- Vulture Scavenger passive: when another enemy dies, heal 6 HP (shown as a status icon with tooltip)
+- Scavenger keyword added to keywords and status effects UI
+
+### Changed
+- Vulture: Heal 6 move removed, replaced by Scavenger start-of-fight buff
+- Copperhead Cassidy: reduced from 2 starting Rattlesnakes to 1, removed start-of-fight Poison 4 Tiles
+
+### Fixed
+- Shuffle desync: explosive/showdown/shadow tile overlays not updating after Dust Devil Boots shuffle, reshuffles, or match-breaking swaps (tiles could appear explosive but not function as explosive, or vice versa)
+
 ## v0.6.5
 
 ### Added

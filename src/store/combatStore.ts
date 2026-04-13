@@ -208,6 +208,7 @@ export function getEnemyStatusEffects(enemy: EnemyState): EnemyStatusEffect[] {
   if (enemy.deadManWalking > 0) effects.push({ type: 'dead_man_walking', value: enemy.deadManWalking });
   if (enemy.barricadeStacks > 0) effects.push({ type: 'barricade', value: enemy.barricadeStacks });
   if (enemy.invulnerable > 0) effects.push({ type: 'invulnerable', value: enemy.invulnerable });
+  if (enemy.scavenger > 0) effects.push({ type: 'scavenger', value: enemy.scavenger });
   if (enemy.summoned) effects.push({ type: 'summoned', value: 1 });
   return effects;
 }

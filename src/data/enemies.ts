@@ -32,6 +32,7 @@ const healAlly = (value: number): MoveAction => ({ kind: 'heal_ally', value });
 const shuffleRows = (rows: number): MoveAction => ({ kind: 'shuffle_rows', value: rows });
 const gravityShift = (): MoveAction => ({ kind: 'gravity_shift', value: 1 });
 const transformTumbleweed = (count: number): MoveAction => ({ kind: 'transform_tumbleweed', value: count });
+const gainScavenger = (stacks: number): MoveAction => ({ kind: 'gain_scavenger', value: stacks });
 const m = (...actions: MoveAction[]): EnemyMove => ({ actions });
 
 // ---------------------------------------------------------------------------
@@ -85,11 +86,11 @@ export const ACT1_NORMAL: Record<string, EnemyDefinition> = {
     health: 32,
     minDamage: 2, maxDamage: 8,
     abilities: ['bury'],
+    startOfFight: [gainScavenger(1)],
     moves: [
       m(atk(8), applyTerrified(1)),
       m(multiAtk(2, 3), bury(3)),
       m(atk(4), block(6)),
-      m(heal(6)),
     ],
   },
   pack_mule: {
@@ -293,7 +294,6 @@ export const COPPERHEAD_CASSIDY: EnemyDefinition = {
   health: 287,
   minDamage: 4, maxDamage: 24,
   abilities: ['poison', 'block', 'fools_gold'],
-  startOfFight: [poisonTiles(4)],
   // Phase transition at 50% HP handled by BossController (clear statuses, lock edges)
   moves: [
     m(atk(24), poisonTiles(4)),
@@ -543,7 +543,7 @@ export const BOSSES: Record<number, EnemyDefinition> = {
 /** Non-summoned companions that start alongside the boss. */
 export const BOSS_COMPANIONS: Record<number, string[]> = {
   1: [],
-  2: ['rattlesnake', 'rattlesnake'],
+  2: ['rattlesnake'],
   3: [],
 };
 

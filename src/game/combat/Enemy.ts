@@ -28,6 +28,7 @@ function buildDescription(actions: MoveAction[]): string {
       case 'shuffle_rows': return 'SHUFFLE';
       case 'gravity_shift': return 'GRAV';
       case 'transform_tumbleweed': return `TWEED ${a.value}`;
+      case 'gain_scavenger': return `+${a.value} SCAV`;
       default: return String(a.kind);
     }
   }).join(', ');
@@ -87,6 +88,7 @@ export class Enemy {
       deadManWalking: 0,
       barricadeStacks: 0,
       invulnerable: 0,
+      scavenger: 0,
       summoned: false,
       intent: { type: 'attack', value: 0, description: '' },
       isDead: false,
@@ -113,6 +115,7 @@ export class Enemy {
     this.state.deadManWalking = 0;
     this.state.barricadeStacks = 0;
     this.state.invulnerable = 0;
+    this.state.scavenger = 0;
   }
 
   /**
