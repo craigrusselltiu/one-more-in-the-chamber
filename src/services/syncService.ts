@@ -153,6 +153,7 @@ export async function pushScore(score: LocalScore, playerName?: string): Promise
     nodes_cleared: score.nodesCleared ?? 0,
     bosses_defeated: score.bossesDefeated ?? 0,
     run_completed: score.runCompleted ?? false,
+    tiles: score.tiles ?? null,
     created_at: score.createdAt ?? new Date().toISOString(),
   });
 }

@@ -1,4 +1,6 @@
-import { memo, useState } from 'react';
+import { memo, useState, useEffect } from 'react';
+import { useTutorialStore } from '../../store/tutorialStore';
+import { TUTORIAL_INTRO } from '../../data/tutorials';
 import { EventBus, GameEvent } from '../../game/EventBus';
 import { useRunStore } from '../../store/runStore';
 import { useMetaStore } from '../../store/metaStore';
@@ -13,7 +15,6 @@ import { colorizeKeywords, KeywordSubTooltips, getReferencedKeywords, buildTileD
 import type { CharacterId, TileType } from '../../types/game';
 import type { Screen } from '../../App';
 
-const MAX_ASCENSION = 20;
 
 interface CharacterInfo {
   id: CharacterId;
@@ -69,8 +70,12 @@ export const CharacterSelectScreen = memo(function CharacterSelectScreen() {
   const [ascensionLevel, setAscensionLevel] = useState(lastAscension ?? 0);
   const [customSeed, setCustomSeed] = useState('');
 
-  const maxSelectable = Math.min(highestCleared + 1, MAX_ASCENSION);
+  const maxSelectable = highestCleared + 1;
   const char = CHARACTERS.find((c) => c.id === selectedCharacter) ?? CHARACTERS[0];
+
+  useEffect(() => {
+    useTutorialStore.getState().startTutorial(TUTORIAL_INTRO);
+  }, []);
 
   const handleConfirm = () => {
     setLastAscensionLevel(ascensionLevel);

@@ -1,6 +1,8 @@
-import { memo, useMemo, useState, useRef } from 'react';
+import { memo, useMemo, useState, useRef, useEffect } from 'react';
 import { EventBus, GameEvent } from '../../game/EventBus';
 import { useRunStore } from '../../store/runStore';
+import { useTutorialStore } from '../../store/tutorialStore';
+import { TUTORIAL_TILE_SELECT } from '../../data/tutorials';
 import { STARTER_POOL, ADDITIONAL_POOL, TILE_DEFINITIONS } from '../../data/tiles';
 import { buildTileDescription } from '../components/KeywordText';
 import { TILE_FRAMES } from '../../data/spriteConfig';
@@ -61,6 +63,12 @@ export const TileSelectScreen = memo(function TileSelectScreen() {
   }, []);
 
   const setTileUpgrade = useRunStore((s) => s.setTileUpgrade);
+
+  useEffect(() => {
+    if (isStarterSelection) {
+      useTutorialStore.getState().startTutorial(TUTORIAL_TILE_SELECT);
+    }
+  }, [isStarterSelection]);
 
   const handleConfirm = () => {
     if (!selected) return;

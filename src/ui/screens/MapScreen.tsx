@@ -1,6 +1,8 @@
 import { memo, useCallback, useRef, useEffect, useState } from 'react';
 import { EventBus, GameEvent } from '../../game/EventBus';
 import { useRunStore } from '../../store/runStore';
+import { useTutorialStore } from '../../store/tutorialStore';
+import { TUTORIAL_MAP } from '../../data/tutorials';
 import { getReachableNodes } from '../../game/map/MapGenerator';
 import { NODE_FRAMES } from '../../data/spriteConfig';
 import type { MapNode, MapNodeType } from '../../types/game';
@@ -60,6 +62,10 @@ export const MapScreen = memo(function MapScreen({ readonly }: { readonly?: bool
   const nodes = mapState?.nodes ?? [];
   const slideRef = useRef<HTMLDivElement>(null);
   const reachable = mapState ? getReachableNodes(mapState) : [];
+
+  useEffect(() => {
+    useTutorialStore.getState().startTutorial(TUTORIAL_MAP);
+  }, []);
 
   // 15 floors horizontal, 7 paths vertical
   const canvasWidth = PADDING_LEFT + 14 * FLOOR_SPACING + 40 + 30; // +30 for boss extra offset

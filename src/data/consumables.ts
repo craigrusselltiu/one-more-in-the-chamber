@@ -36,7 +36,7 @@ export const CONSUMABLES: ConsumableDefinition[] = [
     name: 'Strong Coffee',
     category: 'offensive',
     description: 'Eyes sharp, hands steady.',
-    effect: '1.5x next match resources.',
+    effect: 'Double next match resources.',
   },
   // Defensive
   {

@@ -16,7 +16,7 @@
 
 ### Strong Coffee
 - Flavor: "Eyes sharp, hands steady."
-- Effect: 1.5x next match resources.
+- Effect: Double next match resources.
 
 ## Defensive
 

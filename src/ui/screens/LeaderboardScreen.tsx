@@ -1,6 +1,9 @@
 import { memo, useCallback, useEffect, useState } from 'react';
 import { EventBus, GameEvent } from '../../game/EventBus';
 import { fetchLeaderboard, type LeaderboardEntry, type LeaderboardPeriod } from '../../services/leaderboard';
+import { SpriteIcon } from '../components/SpriteIcon';
+import { TILE_FRAMES } from '../../data/spriteConfig';
+import type { TileType } from '../../types/game';
 import type { Screen } from '../../App';
 
 const TABS: { key: LeaderboardPeriod; label: string }[] = [
@@ -90,10 +93,11 @@ export const LeaderboardScreen = memo(function LeaderboardScreen() {
             {/* Table header */}
             <div className="flex items-center px-3 py-2 border-b border-stone-600 bg-stone-700/30">
               <span className="w-8 text-stone-400 text-xs">#</span>
-              <span className="flex-1 text-stone-400 text-xs">Player</span>
+              <span className="w-32 text-stone-400 text-xs">Player</span>
+              <span className="w-[25%] text-stone-400 text-xs">Tiles</span>
               <span className="w-14 text-center text-stone-400 text-xs">Char</span>
               <span className="w-14 text-right text-stone-400 text-xs">Asc</span>
-              <span className="w-24 text-right text-stone-400 text-xs">Score</span>
+              <span className="w-20 text-right text-stone-400 text-xs">Score</span>
             </div>
 
             {/* Rows */}
@@ -107,10 +111,37 @@ export const LeaderboardScreen = memo(function LeaderboardScreen() {
                 <span className={`w-8 text-xs font-bold ${rankColor(entry.rank)}`}>
                   {entry.rank}
                 </span>
-                <div className="flex-1 min-w-0">
+                <div className="w-32 min-w-0">
                   <span className="text-stone-200 text-sm truncate block">
                     {entry.playerName}
                   </span>
+                </div>
+                <div className="w-[25%] flex items-center gap-px flex-wrap">
+                  {entry.tiles.map((tile, i) => {
+                    const frame = TILE_FRAMES[tile.type as TileType];
+                    if (frame == null) return null;
+                    return (
+                      <div key={i} className="relative" style={{ width: 16, height: 16 }}>
+                        <SpriteIcon frame={frame} />
+                        {tile.level > 0 && (
+                          <span
+                            className="absolute font-bold"
+                            style={{
+                              fontSize: '7px',
+                              lineHeight: 1,
+                              right: -1,
+                              bottom: -1,
+                              color: '#fbbf24',
+                              WebkitTextStroke: '1.5px #000',
+                              paintOrder: 'stroke fill',
+                            }}
+                          >
+                            {tile.level}
+                          </span>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
                 <span className="w-14 text-center text-stone-400 text-xs">
                   {entry.character === 'reno' ? 'Reno' : 'Rust'}
@@ -118,7 +149,7 @@ export const LeaderboardScreen = memo(function LeaderboardScreen() {
                 <span className="w-14 text-right text-stone-400 text-xs">
                   {entry.ascensionLevel > 0 ? `A${entry.ascensionLevel}` : '-'}
                 </span>
-                <span className="w-24 text-right text-amber-300 text-sm font-bold">
+                <span className="w-20 text-right text-amber-300 text-sm font-bold">
                   {entry.score.toLocaleString()}
                 </span>
               </div>

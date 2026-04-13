@@ -108,6 +108,10 @@ export const ScoreScreen = memo(function ScoreScreen() {
     if (!run || !score || submittedRef.current) return;
     submittedRef.current = true;
 
+    const tiles = (run.activeTileTypes ?? []).map((t: string) => ({
+      type: t,
+      level: (run.tileUpgrades as Record<string, number>)?.[t] ?? 0,
+    }));
     const record = {
       id: crypto.randomUUID(),
       runId: run.id,
@@ -122,6 +126,7 @@ export const ScoreScreen = memo(function ScoreScreen() {
       nodesCleared: score.nodesVisited,
       bossesDefeated: score.bossNodes,
       runCompleted: score.completed,
+      tiles,
       createdAt: new Date().toISOString(),
     };
 

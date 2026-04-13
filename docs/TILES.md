@@ -80,7 +80,7 @@ NOTE: The tile pool for Acts 2, 3, and also the shop should be the Starter Tiles
 
 ### Prairie Fire
 - Flavor text: "Sparks fly. Some of them catch."
-- Behaviour text: Deal 2 damage per tile. After each turn, each tile has a 1 in 4 chance to convert 1 adjacent or diagonal tile to Prairie Fire.
+- Behaviour text: Deal 2 damage per tile. After each turn, each tile has a 1 in 4 chance to spread.
 - Upgrade text: +2 damage to match total per level
 - Resource formula: (2 damage * tiles) + (level * 2)
 - Single formula: 2 damage + floor(level * 2 / 3)
@@ -99,6 +99,13 @@ NOTE: The tile pool for Acts 2, 3, and also the shop should be the Starter Tiles
 - Resource formula: (1 Ace * tiles) + (level * 1)
 - Single formula: 1 Ace + floor(level * 1 / 3)
 
+### Whiskey
+- Flavor text: "The cowboy's medicine."
+- Behaviour text: Heals 1 HP per 3-match, plus 1 per extra tile.
+- Upgrade text: +1 heal to match total per level
+- Resource formula: 2 healing + (tiles - 3) + (level * 1)
+- Single formula: 2 healing + floor(level * 1 / 3)
+
 ## Additional Tiles
 
 ### Chain
@@ -107,13 +114,6 @@ NOTE: The tile pool for Acts 2, 3, and also the shop should be the Starter Tiles
 - Upgrade text: +1 damage to match total per level
 - Resource formula: (1 damage * tiles) + (level * 1), 1 Chain
 - Single formula: 1 damage + floor(level * 1 / 3), 1 Chain
-
-### Whiskey
-- Flavor text: "The cowboy's medicine."
-- Behaviour text: Heals 2 HP per 3-match, plus 1 per extra tile.
-- Upgrade text: +1 heal to match total per level
-- Resource formula: 2 healing + (tiles - 3) + (level * 1)
-- Single formula: 2 healing + floor(level * 1 / 3)
 
 ### Horseshoe
 - Flavor text: "Luck favors the prepared."

@@ -7,6 +7,7 @@ export type GameSpeed = 1 | 2 | 3;
 interface Settings {
   screenShakeEnabled: boolean;
   juiceAnimationsEnabled: boolean;
+  tutorialsEnabled: boolean;
   gameSpeed: GameSpeed;
   musicVolume: number; // 0-1
   sfxVolume: number;   // 0-1
@@ -15,6 +16,7 @@ interface Settings {
 interface SettingsStore extends Settings {
   setScreenShake: (enabled: boolean) => void;
   setJuiceAnimations: (enabled: boolean) => void;
+  setTutorialsEnabled: (enabled: boolean) => void;
   setGameSpeed: (speed: GameSpeed) => void;
   setMusicVolume: (volume: number) => void;
   setSfxVolume: (volume: number) => void;
@@ -46,6 +48,7 @@ function persist(settings: Settings): void {
 const DEFAULTS: Settings = {
   screenShakeEnabled: true,
   juiceAnimationsEnabled: true,
+  tutorialsEnabled: true,
   gameSpeed: 1,
   musicVolume: 0.25,
   sfxVolume: 0.5,
@@ -71,6 +74,13 @@ export const useSettingsStore = create<SettingsStore>((set, get) => ({
       const next = { ...strip(get()), juiceAnimationsEnabled: enabled };
       persist(next);
       return { juiceAnimationsEnabled: enabled };
+    }),
+
+  setTutorialsEnabled: (enabled) =>
+    set(() => {
+      const next = { ...strip(get()), tutorialsEnabled: enabled };
+      persist(next);
+      return { tutorialsEnabled: enabled };
     }),
 
   setGameSpeed: (speed) =>
@@ -102,6 +112,7 @@ function strip(state: SettingsStore): Settings {
   return {
     screenShakeEnabled: state.screenShakeEnabled,
     juiceAnimationsEnabled: state.juiceAnimationsEnabled,
+    tutorialsEnabled: state.tutorialsEnabled,
     gameSpeed: state.gameSpeed,
     musicVolume: state.musicVolume,
     sfxVolume: state.sfxVolume,

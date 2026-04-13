@@ -1,5 +1,6 @@
-import { memo, useMemo } from 'react';
+import { memo, useMemo, useState, useEffect, useRef } from 'react';
 import { useCombatStore, getPlayerStatusEffects } from '../../store/combatStore';
+import { EventBus, GameEvent } from '../../game/EventBus';
 import { HealthBar } from './HealthBar';
 import { BlockBadge } from './BlockBadge';
 import { StatusEffects } from './StatusEffects';
@@ -14,6 +15,11 @@ const CHARACTER_SPRITES: Record<string, string> = {
   reno: 'reno.png',
 };
 
+const CHARACTER_ATTACK_SPRITES: Record<string, string> = {
+  red_panda: 'rust_attack.png',
+  reno: 'reno_attack.png',
+};
+
 export const PlayerPanel = memo(function PlayerPanel() {
   const character = useCombatStore((s) => s.character);
   const health = useCombatStore((s) => s.playerHealth);
@@ -23,7 +29,25 @@ export const PlayerPanel = memo(function PlayerPanel() {
   const effects = getPlayerStatusEffects(store);
   const nonBlockEffects = useMemo(() => effects.filter((e) => e.type !== 'block'), [effects]);
 
-  const spriteFile = CHARACTER_SPRITES[character] ?? 'rust.png';
+  const [attacking, setAttacking] = useState(false);
+  const timerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
+
+  useEffect(() => {
+    const handler = () => {
+      setAttacking(true);
+      clearTimeout(timerRef.current);
+      timerRef.current = setTimeout(() => setAttacking(false), 500);
+    };
+    EventBus.on(GameEvent.PLAYER_ATTACK, handler);
+    return () => {
+      EventBus.off(GameEvent.PLAYER_ATTACK, handler);
+      clearTimeout(timerRef.current);
+    };
+  }, []);
+
+  const spriteFile = attacking
+    ? (CHARACTER_ATTACK_SPRITES[character] ?? CHARACTER_SPRITES[character] ?? 'rust.png')
+    : (CHARACTER_SPRITES[character] ?? 'rust.png');
 
   return (
     <div className="flex flex-col items-center">

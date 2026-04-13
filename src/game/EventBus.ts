@@ -73,6 +73,8 @@ export const GameEvent = {
   TILE_PARTICLES: 'vfx:tile-particles',
   /** Floating number: (target: 'player'|'enemy', index: number, text: string, color: string) */
   FLOATING_NUMBER: 'vfx:floating-number',
+  /** Player dealt damage to an enemy (for attack sprite animation). */
+  PLAYER_ATTACK: 'vfx:player-attack',
 
   // Board input -> CombatManager
   SWAP_REQUESTED: 'board:swap-requested',
@@ -123,4 +125,5 @@ export interface EventPayloads {
   [GameEvent.NODE_SELECTED]: [nodeId: string];
   [GameEvent.RUN_STARTED]: [];
   [GameEvent.RUN_ENDED]: [completed: boolean];
+  [GameEvent.PLAYER_ATTACK]: [];
 }

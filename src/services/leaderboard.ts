@@ -7,6 +7,11 @@ import { getSupabase } from './supabase';
 
 export type LeaderboardPeriod = 'daily' | 'weekly' | 'all-time';
 
+export interface LeaderboardTile {
+  type: string;
+  level: number;
+}
+
 export interface LeaderboardEntry {
   rank: number;
   playerName: string;
@@ -14,6 +19,7 @@ export interface LeaderboardEntry {
   ascensionLevel: number;
   runCompleted: boolean;
   character: string;
+  tiles: LeaderboardTile[];
   createdAt: string;
 }
 
@@ -40,7 +46,7 @@ export async function fetchLeaderboard(period: LeaderboardPeriod): Promise<Leade
 
   let query = sb
     .from('scores')
-    .select('final_score, ascension_level, run_completed, character, created_at, player_name')
+    .select('final_score, ascension_level, run_completed, character, created_at, player_name, tiles')
     .order('final_score', { ascending: false })
     .limit(100);
 
@@ -59,6 +65,7 @@ export async function fetchLeaderboard(period: LeaderboardPeriod): Promise<Leade
     ascensionLevel: (row.ascension_level as number) ?? 0,
     runCompleted: (row.run_completed as boolean) ?? false,
     character: (row.character as string) ?? 'red_panda',
+    tiles: (Array.isArray(row.tiles) ? row.tiles : []) as LeaderboardTile[],
     createdAt: (row.created_at as string) ?? '',
   }));
 }

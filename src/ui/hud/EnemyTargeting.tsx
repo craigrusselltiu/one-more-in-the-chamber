@@ -48,6 +48,10 @@ const ENEMY_SPRITE_VARIANTS: Record<string, string[]> = {
 /** Per-enemy sprite scale overrides. Scale is applied via CSS transform with
  *  a bottom-center origin so the feet stay anchored to the shadow. */
 const ENEMY_SPRITE_SCALE: Record<string, number> = {
+  hangman: 1.5,
+  mine_cart: 1.5,
+  mine_foreman: 1.5,
+  ore_golem: 1.5,
   dusty_dan: 1.5,
   copperhead_cassidy: 1.5,
   outlaw_king: 1.5,

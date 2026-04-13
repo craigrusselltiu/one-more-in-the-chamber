@@ -156,6 +156,37 @@ export class Enemy {
         if (summonMove) return moveToIntent(summonMove);
       }
 
+      // Special: Dusty Dan only summons vultures when alone (both vultures dead)
+      if (this.definition.type === 'dusty_dan' && aliveCount > 1) {
+        const filtered = moves.filter(mv => !mv.actions.some(a => a.kind === 'summon'));
+        if (filtered.length > 0) {
+          // Use filtered list for candidate building below
+          const adjustedMoves = filtered;
+          const hpRatio = this.state.health / this.state.maxHealth;
+          const cands: { mv: EnemyMove; i: number; weight: number }[] = [];
+          for (let i = 0; i < adjustedMoves.length; i++) {
+            const mv = adjustedMoves[i];
+            const origIdx = moves.indexOf(mv);
+            if (moves.length > 1 && origIdx === this.lastMoveIndex) continue;
+            const threshold = mv.lowHpThreshold ?? 0.5;
+            const baseWeight = mv.weight ?? 1;
+            const weight = (mv.lowHpWeight != null && hpRatio <= threshold) ? mv.lowHpWeight : baseWeight;
+            if (weight > 0) cands.push({ mv, i: origIdx, weight });
+          }
+          if (cands.length > 0) {
+            const total = cands.reduce((s, c) => s + c.weight, 0);
+            let r = Math.random() * total;
+            for (const c of cands) {
+              r -= c.weight;
+              if (r <= 0) { this.lastMoveIndex = c.i; return moveToIntent(c.mv); }
+            }
+            const last = cands[cands.length - 1];
+            this.lastMoveIndex = last.i;
+            return moveToIntent(last.mv);
+          }
+        }
+      }
+
       // Build weighted candidate list
       const candidates: { mv: EnemyMove; i: number; weight: number }[] = [];
       for (let i = 0; i < moves.length; i++) {
@@ -266,28 +297,37 @@ export class Enemy {
     return this.state.deadManWalking > 0;
   }
 
+  /** Consume 1 DMW stack when a debuff is blocked. */
+  private consumeDebuffImmunity(): boolean {
+    if (this.state.deadManWalking > 0) {
+      this.state.deadManWalking--;
+      return true;
+    }
+    return false;
+  }
+
   addPoison(stacks: number): void {
-    if (this.isImmuneToDebuffs()) return;
+    if (this.consumeDebuffImmunity()) return;
     this.state.poisonStacks += stacks;
   }
 
   addVulnerable(stacks: number): void {
-    if (this.isImmuneToDebuffs()) return;
+    if (this.consumeDebuffImmunity()) return;
     this.state.vulnerable += stacks;
   }
 
   addBounty(stacks: number): void {
-    if (this.isImmuneToDebuffs()) return;
+    if (this.consumeDebuffImmunity()) return;
     this.state.bountyStacks += stacks;
   }
 
   addTerrified(stacks: number): void {
-    if (this.isImmuneToDebuffs()) return;
+    if (this.consumeDebuffImmunity()) return;
     this.state.terrifiedStacks += stacks;
   }
 
   addBlinded(stacks: number): void {
-    if (this.isImmuneToDebuffs()) return;
+    if (this.consumeDebuffImmunity()) return;
     this.state.blindedStacks += stacks;
   }
 

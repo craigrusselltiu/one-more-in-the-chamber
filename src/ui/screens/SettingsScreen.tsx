@@ -20,7 +20,7 @@ function Toggle({
   return (
     <button
       onClick={() => onChange(!checked)}
-      className="flex items-center justify-between w-full py-3 px-4 bg-transparent border-none outline-none text-left group"
+      className="flex items-center justify-between w-full py-1.5 px-3 bg-transparent border-none outline-none text-left group"
       style={{ cursor: 'pointer' }}
     >
       <div className="flex flex-col gap-0.5">
@@ -54,7 +54,7 @@ function SpeedSelector({
 }) {
   const speeds: GameSpeed[] = [1, 2, 3];
   return (
-    <div className="flex items-center justify-between w-full py-3 px-4">
+    <div className="flex items-center justify-between w-full py-1.5 px-3">
       <div className="flex flex-col gap-0.5">
         <span className="text-sm text-stone-200">Game Speed</span>
         <span className="text-xs text-stone-500">Animation speed multiplier</span>
@@ -90,7 +90,7 @@ function VolumeSlider({
   onChange: (volume: number) => void;
 }) {
   return (
-    <div className="flex items-center justify-between w-full py-3 px-4">
+    <div className="flex items-center justify-between w-full py-1.5 px-3">
       <div className="flex flex-col gap-0.5" style={{ minWidth: 120 }}>
         <span className="text-sm text-stone-200">{label}</span>
         <span className="text-xs text-stone-500" style={{ minWidth: 32 }}>{Math.round(value * 100)}%</span>
@@ -115,6 +115,8 @@ export const SettingsScreen = memo(function SettingsScreen() {
   const sfxVolume = useSettingsStore((s) => s.sfxVolume);
   const setScreenShake = useSettingsStore((s) => s.setScreenShake);
   const setJuiceAnimations = useSettingsStore((s) => s.setJuiceAnimations);
+  const tutorialsEnabled = useSettingsStore((s) => s.tutorialsEnabled);
+  const setTutorialsEnabled = useSettingsStore((s) => s.setTutorialsEnabled);
   const setGameSpeed = useSettingsStore((s) => s.setGameSpeed);
   const setMusicVolume = useSettingsStore((s) => s.setMusicVolume);
   const setSfxVolume = useSettingsStore((s) => s.setSfxVolume);
@@ -138,7 +140,14 @@ export const SettingsScreen = memo(function SettingsScreen() {
   };
 
   return (
-    <div className="flex flex-col items-center h-full bg-[#1a1a2e]/95">
+    <div
+      className="relative flex flex-col items-center h-full"
+      style={{
+        backgroundImage: `linear-gradient(rgba(0,0,0,0.45), rgba(0,0,0,0.45)), url(${import.meta.env.BASE_URL}assets/blur.png)`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+      }}
+    >
       {/* Header */}
       <div className="mt-6 mb-4 text-center">
         <h2
@@ -153,7 +162,7 @@ export const SettingsScreen = memo(function SettingsScreen() {
       <div className="w-full max-w-[400px] px-4">
         <div className="border border-stone-700 bg-stone-800/30 divide-y divide-stone-700/50">
           {/* Change Name */}
-          <div className="flex items-center justify-between w-full py-3 px-4">
+          <div className="flex items-center justify-between w-full py-1.5 px-3">
             <div className="flex flex-col gap-0.5">
               <span className="text-sm text-stone-200">Name</span>
               <span className="text-xs text-stone-500">Your display name</span>
@@ -203,6 +212,12 @@ export const SettingsScreen = memo(function SettingsScreen() {
             checked={juiceAnimationsEnabled}
             onChange={setJuiceAnimations}
           />
+          <Toggle
+            label="Tutorials"
+            description="Show tutorial popups for new mechanics"
+            checked={tutorialsEnabled}
+            onChange={setTutorialsEnabled}
+          />
         </div>
       </div>
 
@@ -247,6 +262,8 @@ export const CombatSettingsPopup = memo(function CombatSettingsPopup({
   const setSfxVolume = useSettingsStore((s) => s.setSfxVolume);
   const setScreenShake = useSettingsStore((s) => s.setScreenShake);
   const setJuiceAnimations = useSettingsStore((s) => s.setJuiceAnimations);
+  const tutorialsEnabled = useSettingsStore((s) => s.tutorialsEnabled);
+  const setTutorialsEnabled = useSettingsStore((s) => s.setTutorialsEnabled);
 
   return (
     <div
@@ -338,6 +355,22 @@ export const CombatSettingsPopup = memo(function CombatSettingsPopup({
               }}
             >
               {juiceAnimationsEnabled ? 'ON' : 'OFF'}
+            </button>
+          </div>
+
+          <div className="flex items-center justify-between">
+            <span className="text-stone-300">Tutorials</span>
+            <button
+              onClick={() => setTutorialsEnabled(!tutorialsEnabled)}
+              className="text-[9px] px-2 py-0.5 border"
+              style={{
+                backgroundColor: tutorialsEnabled ? 'rgba(180, 83, 9, 0.4)' : 'rgba(28, 25, 23, 0.4)',
+                borderColor: tutorialsEnabled ? '#b45309' : '#44403c',
+                color: tutorialsEnabled ? '#fbbf24' : '#78716c',
+                cursor: 'pointer',
+              }}
+            >
+              {tutorialsEnabled ? 'ON' : 'OFF'}
             </button>
           </div>
         </div>

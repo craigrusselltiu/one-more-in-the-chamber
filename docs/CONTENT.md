@@ -6,15 +6,15 @@ Bullet tiles - Bullet, .50 Cal, Buckshot, and Ricochet
 - Sturdy - Gain 1 extra block per stack. Decrease stacks by 1 at the end of the turn.
 - Ace - Add x0.25 multiplier per stack to the next non-Ace non-casade match.
 - Lucky - 1% chance per stack to deal 1.5x damage. (max 50)
-- Barricade - At the end of the turn, retain block and decrease stacks by 1. (max 2)
+- Barricade - At the end of the turn, retain block and decrease stacks by 1. (max 1)
 - Grace - Negate the next instance of damage taken.
 - Resourceful - Double all non-damage resources this turn. Decrease stacks by 1 at the end of the turn.
 - Ready - Your next non-cascade attack deals 50% more damage. (max 1)
 - Chain - Your Chain tiles gain 1 extra damage per stack.
 - Thorns - When attacked, deal damage back equal to the number of stacks. Clear at the end of the turn.
 - Cloak - Cascade damage taken is reduced by 50%.. Decrease stacks by 1 at the end of the turn.
-- Hardened - All damage taken is reduced to the number of Hardened stacks.
-- Dead Man Walking - Immune to debuffs. Decrease stacks by 1 at the end of the turn.
+- Hardened - Damage taken every swapped is capped to the number of Hardened stacks.
+- Dead Man Walking - Immune to debuffs. Decrease stacks by 1 at the end of the turn or whenever a debuff is applied.
 - Protected - Immune to tile hazards. Decrease stacks by 1 at the end of the turn.
 - Invulnerable - Immune to all damage. Decrease stacks by 1 at the end of the turn.
 - Duel - When gaining this, if you have 4 stacks, gain Ready and clear Duel stacks.
@@ -66,4 +66,4 @@ Level 16 - Shops cost more. (10% more)
 Level 17 - Normal enemies gain an additional 10% HP and 10% damage.
 Level 18 - Elites gain an additional 10% HP and 10% damage.
 Level 19 - Bosses gain an additional 10% HP and 10% damage.
-Level 20 - At the end of Act 3, the final boss spawns with a random Act 3 elite.
+Level 20 - At the end of Act 3, the final boss spawns with a random Act 3 elite. (elite has Summoned status)

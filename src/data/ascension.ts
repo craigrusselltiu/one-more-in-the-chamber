@@ -25,7 +25,7 @@ import type { EnemyDefinition, EnemyMove } from '../types/combat';
  *   L17 — Normal enemies gain an additional +10% HP and +10% damage (stacks with L2/L7)
  *   L18 — Elites gain an additional +10% HP and +10% damage (stacks with L3/L8)
  *   L19 — Bosses gain an additional +10% HP and +10% damage (stacks with L4/L9)
- *   L20 — Final boss spawns with a random Act 3 elite as a companion
+ *   L20 — Final boss spawns with a random Act 3 elite (Summoned status)
  */
 
 export type EnemyCategory = 'normal' | 'elite' | 'boss';
@@ -87,9 +87,9 @@ const BASE_MUTATIONS: AscensionMutations = {
   finalBossExtraElite: false,
 };
 
-/** Compute the active ascension mutations for a given level (0–20, cumulative). */
+/** Compute the active ascension mutations for a given level (0+, cumulative). */
 export function getAscensionMutations(level: number): AscensionMutations {
-  const l = Math.max(0, Math.min(20, level));
+  const l = Math.max(0, level);
   const m: AscensionMutations = { ...BASE_MUTATIONS };
   if (l >= 1) m.eliteCountBonus = 2;
   if (l >= 2) m.normalDamageMult = 1.1;
@@ -113,6 +113,18 @@ export function getAscensionMutations(level: number): AscensionMutations {
   if (l >= 18) { m.eliteHpMult += 0.1; m.eliteDamageMult += 0.1; }
   if (l >= 19) { m.bossHpMult += 0.1; m.bossDamageMult += 0.1; }
   if (l >= 20) m.finalBossExtraElite = true;
+  // L21+: each level past 20 adds +10% HP and +5% damage to all enemies
+  if (l > 20) {
+    const extra = l - 20;
+    const hpBonus = extra * 0.1;
+    const dmgBonus = extra * 0.05;
+    m.normalHpMult += hpBonus;
+    m.eliteHpMult += hpBonus;
+    m.bossHpMult += hpBonus;
+    m.normalDamageMult += dmgBonus;
+    m.eliteDamageMult += dmgBonus;
+    m.bossDamageMult += dmgBonus;
+  }
   return m;
 }
 

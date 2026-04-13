@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import type { RunState, TileType, ArtifactInstance, ConsumableInstance, Act, MapState, CharacterId } from '../types/game';
 import { generateMap } from '../game/map/MapGenerator';
 import { useMetaStore } from './metaStore';
+import { useSettingsStore } from './settingsStore';
 import { ARTIFACTS } from '../data/artifacts';
 import { CHARACTER_TILES } from '../data/tiles';
 import { getAscensionMutations } from '../data/ascension';
@@ -61,6 +62,9 @@ export const useRunStore = create<RunStore>((set, get) => ({
   pendingNewGame: null,
 
   restoreRun: (run) => {
+    // Existing run means player isn't new -- disable tutorials by default
+    useSettingsStore.getState().setTutorialsEnabled(false);
+
     // Migrations for legacy saves
     const migrated = { ...run };
 

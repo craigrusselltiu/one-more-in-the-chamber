@@ -41,10 +41,10 @@ const EXTRA_DESCRIPTIONS: Record<string, { name: string; color: string; descript
   thorns: { name: 'Thorns', color: '#C04040', description: 'When attacked, deal damage back equal to stacks. Cleared at end of turn.' },
   cloak: { name: 'Cloak', color: '#808080', description: 'Cascade damage taken is reduced by 50%. Decrease stacks by 1 at the end of the turn.' },
   blinded: { name: 'Blinded', color: '#A0A0A0', description: 'Attacks deal no damage.' },
-  hardened: { name: 'Hardened', color: '#8B7355', description: 'All damage taken is reduced to the number of Hardened stacks.' },
+  hardened: { name: 'Hardened', color: '#8B7355', description: 'Damage taken per swap is capped to the number of Hardened stacks.' },
   summoned: { name: 'Summoned', color: '#E0C880', description: 'Dies when all non-summoned enemies have died.' },
   fuse: { name: 'Fuse', color: '#ff4444', description: 'When this reaches zero, blows up dealing 50 damage, then dies.' },
-  dead_man_walking: { name: 'Dead Man Walking', color: '#C8B060', description: 'Immune to debuffs. Decrease stacks by 1 at the end of the turn.' },
+  dead_man_walking: { name: 'Dead Man Walking', color: '#C8B060', description: 'Immune to debuffs. Decrease stacks by 1 at the end of the turn or whenever a debuff is applied.' },
   invulnerable: { name: 'Invulnerable', color: '#FFD700', description: 'Immune to all damage. Decrease stacks by 1 at the end of the turn.' },
 };
 

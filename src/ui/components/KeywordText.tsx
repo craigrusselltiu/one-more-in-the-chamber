@@ -255,13 +255,11 @@ export function buildTileDescription(type: TileType, upgradeLevel: number): Reac
     case 'waste':
       return [...seg('Apply 1 Poison per tile', false), ...flatBonus(upgradeLevel, uv), ...seg('.', false)];
     case 'prairie_fire':
-      return [...seg('Deal 2 damage per tile', false), ...flatBonus(upgradeLevel, uv), ...seg('. After each turn, each tile has a 1 in 4 chance to convert 1 adjacent or diagonal tile to Prairie Fire.', false)];
+      return [...seg('Deal 2 damage per tile', false), ...flatBonus(upgradeLevel, uv), ...seg('. After each turn, each tile has a 1 in 4 chance to spread.', false)];
     case 'chain':
       return [...seg('Deal 1 damage per tile', false), ...flatBonus(upgradeLevel, uv), ...seg('. Each Chain match adds +1 damage to ALL Chain tiles for this combat.', false)];
-    case 'whiskey': {
-      const bv = 2 + upgradeLevel * uv;
-      return [...seg('Heals ', false), ...seg(`${bv}`, upgraded), ...seg(' HP per 3-match, plus 1 per extra tile.', false)];
-    }
+    case 'whiskey':
+      return [...seg('Heals 1 HP per 3-match, plus 1 per extra tile', false), ...flatBonus(upgradeLevel, uv), ...seg('.', false)];
     case 'ace':
       return [...seg('Gain 1 stack of Ace per tile', false), ...flatBonus(upgradeLevel, uv), ...seg('.', false)];
     case 'horseshoe': {
@@ -368,14 +366,11 @@ export function buildUpgradePreview(type: TileType, currentLevel: number): React
     case 'waste':
       return [...seg('Apply 1 Poison per tile', false), ...flatBonusPreview(currentLevel, uv), ...seg('.', false)];
     case 'prairie_fire':
-      return [...seg('Deal 2 damage per tile', false), ...flatBonusPreview(currentLevel, uv), ...seg('. After each turn, each tile has a 1 in 4 chance to convert 1 adjacent or diagonal tile to Prairie Fire.', false)];
+      return [...seg('Deal 2 damage per tile', false), ...flatBonusPreview(currentLevel, uv), ...seg('. After each turn, each tile has a 1 in 4 chance to spread.', false)];
     case 'chain':
       return [...seg('Deal 1 damage per tile', false), ...flatBonusPreview(currentLevel, uv), ...seg('. Each Chain match adds +1 damage to ALL Chain tiles for this combat.', false)];
-    case 'whiskey': {
-      const oldBv = 2 + currentLevel * uv;
-      const newBv = 2 + (currentLevel + 1) * uv;
-      return [...seg('Heals ', false), ...arrowUpgrade(oldBv, newBv), ...seg(' HP per 3-match, plus 1 per extra tile.', false)];
-    }
+    case 'whiskey':
+      return [...seg('Heals 1 HP per 3-match, plus 1 per extra tile', false), ...flatBonusPreview(currentLevel, uv), ...seg('.', false)];
     case 'ace':
       return [...seg('Gain 1 stack of Ace per tile', false), ...flatBonusPreview(currentLevel, uv), ...seg('.', false)];
     case 'horseshoe':

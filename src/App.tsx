@@ -20,6 +20,7 @@ import { ArtifactBar } from './ui/hud/ArtifactBar';
 import { TraitRow } from './ui/hud/TraitRow';
 import { OfflineIndicator } from './ui/components/OfflineIndicator';
 import { GameNotification } from './ui/components/GameNotification';
+import { TutorialOverlay } from './ui/components/TutorialOverlay';
 import { EventBus, GameEvent } from './game/EventBus';
 import { useRunStore } from './store/runStore';
 import { useCombatStore } from './store/combatStore';
@@ -349,7 +350,7 @@ export default function App() {
             const elitePool = Object.values(ACT3_ELITE);
             if (elitePool.length > 0) {
               const pick = elitePool[Math.floor(Math.random() * elitePool.length)];
-              const companion = { ...pick };
+              const companion = { ...pick, _summoned: true } as typeof pick;
               applyAscensionToEnemies([companion], run.ascensionLevel, 'elite');
               encounter.enemies.push(companion);
             }
@@ -585,7 +586,7 @@ export default function App() {
 
       {/* Scaled overlay: 960x540 virtual pixels, CSS-transformed to match Phaser canvas */}
       <div
-        className={`absolute overflow-hidden ${showTopBar ? 'flex flex-col' : ''}`}
+        className={`absolute overflow-hidden select-none ${showTopBar ? 'flex flex-col' : ''}`}
         style={{
           width: UI_WIDTH,
           height: UI_HEIGHT,
@@ -644,6 +645,9 @@ export default function App() {
         {/* Floating numbers: rendered at top level so they appear above TopBar */}
         {screen === 'combat' && <FloatingNumbers />}
 
+        {/* Tutorial overlay: dark overlay with optional spotlight + tooltip */}
+        <TutorialOverlay />
+
         {/* Loading screen -- shown until assets are loaded, then slides left */}
         {!loadingDismissed && (
           <div
@@ -667,7 +671,7 @@ export default function App() {
           className="absolute right-2 bottom-1 pointer-events-none z-[60]"
           style={{ fontSize: '9px', color: 'rgba(255,255,255,0.3)' }}
         >
-          Pre-alpha v0.6.4
+          Pre-alpha v0.6.5
         </span>
       </div>
     </div>

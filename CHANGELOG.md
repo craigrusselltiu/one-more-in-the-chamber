@@ -4,6 +4,35 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## v0.6.5
+
+### Added
+- Tutorial system: guided overlay with spotlight cutouts, chained sequences, and "I'm good" skip option
+- Tutorials for intro, character select, tile select, map, and top bar
+- Tutorials toggle in both main menu settings and in-game settings popup
+- Tutorials auto-disabled for players with existing runs
+- Player attack sprites: character sprite swaps to attack pose for 0.5s when dealing damage (Rust and Reno)
+- Tiles column in leaderboard showing final tile loadout with upgrade levels
+- Ascension 21+: infinite scaling beyond level 20 (+10% enemy HP, +5% enemy damage per level)
+- Whiskey tile moved to starter pool
+
+### Changed
+- Barricade nerfed: max stacks reduced from 2 to 1
+- Dead Man Walking: now loses 1 stack whenever a debuff is applied (in addition to end of turn)
+- Hardened description updated: damage taken per swap is capped to stacks
+- Strong Coffee buffed: 1.5x next match resources changed to 2x (double)
+- Dusty Dan: first move and vulture summon now spawn vultures at full HP; summon move only triggers when alone
+- Saloon Brawler: first move is always Multi-attack 4x2, Gain 3 Rageful
+- Ascension 20 elite companion now has Summoned status
+- Act 1 merchants only offer starter tiles
+- Rageful and Sturdy bonuses no longer apply to single-tile resolves
+- Prairie Fire description simplified to "1 in 4 chance to spread"
+- Whiskey: description updated to "Heals 1 HP per 3-match, plus 1 per extra tile"
+- Settings screen: blurred background image, smaller row padding
+- Leaderboard: added Tiles column, adjusted column widths
+- Scaled Mine Cart, Mine Foreman, and Ore Golem sprites to 1.5x
+- Text selection disabled across game UI
+
 ## v0.6.4
 
 ### Added

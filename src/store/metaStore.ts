@@ -14,6 +14,7 @@ interface MetaProgression {
   lastAscensionLevel: number;
   lastCharacter: string;
   playerName: string;
+  completedTutorials: string[];
 }
 
 interface MetaStore {
@@ -32,6 +33,8 @@ interface MetaStore {
   setLastAscensionLevel: (level: number) => void;
   setLastCharacter: (id: string) => void;
   setPlayerName: (name: string) => void;
+  markTutorialComplete: (id: string) => void;
+  isTutorialComplete: (id: string) => boolean;
 }
 
 const CATEGORY_KEY: Record<ShopCategory, keyof Pick<MetaProgression, 'unlockedArtifacts' | 'unlockedEvents' | 'unlockedCosmetics' | 'unlockedLoadouts' | 'unlockedCharacters'>> = {
@@ -53,6 +56,7 @@ const DEFAULT_META: MetaProgression = {
   lastAscensionLevel: 0,
   lastCharacter: 'red_panda',
   playerName: '',
+  completedTutorials: [],
 };
 
 function loadMeta(): MetaProgression {
@@ -176,4 +180,16 @@ export const useMetaStore = create<MetaStore>((set, get) => ({
       persistMeta(meta);
       return { meta };
     }),
+
+  markTutorialComplete: (id) =>
+    set((state) => {
+      if (state.meta.completedTutorials.includes(id)) return state;
+      const meta = { ...state.meta, completedTutorials: [...state.meta.completedTutorials, id] };
+      persistMeta(meta);
+      return { meta };
+    }),
+
+  isTutorialComplete: (id) => {
+    return get().meta.completedTutorials.includes(id);
+  },
 }));

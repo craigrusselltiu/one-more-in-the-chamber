@@ -1058,7 +1058,7 @@ export class CombatManager {
           this.hazardManager.clearAllOfType('poison');
           break;
         case 'strong_coffee':
-          this.nextMatchMultiplier = 1.5;
+          this.nextMatchMultiplier = 2.0;
           break;
         case 'pocket_watch':
           this.swapsRemaining++;
@@ -1543,7 +1543,7 @@ export class CombatManager {
         const upgradeLevel = this.player.getUpgradeLevel(tile.type);
         const output = this.resolver.resolveSingle(tile.type, upgradeLevel, this.player.block);
         this.capFlatEffects(output, capSeen);
-        this.applyResourceOutput(output);
+        this.applyResourceOutput(output, false, true);
       }
     }
   }
@@ -1622,14 +1622,14 @@ export class CombatManager {
     return false;
   }
 
-  private applyResourceOutput(output: ResourceOutput, isCrit = false): void {
-    // Rageful: bonus damage per stack
-    const damage = output.damage > 0 ? output.damage + this.player.ragefulStacks : 0;
-    // Sturdy: bonus block per stack
-    const block = output.block > 0 ? output.block + this.player.sturdyStacks : 0;
+  private applyResourceOutput(output: ResourceOutput, isCrit = false, isSingle = false): void {
+    // Rageful/Sturdy bonuses only apply to matches, not single-tile resolves
+    const damage = output.damage > 0 ? output.damage + (isSingle ? 0 : this.player.ragefulStacks) : 0;
+    const block = output.block > 0 ? output.block + (isSingle ? 0 : this.player.sturdyStacks) : 0;
 
     // Damage
     if (damage > 0) {
+      EventBus.emit(GameEvent.PLAYER_ATTACK);
       if (output.buckshotHits > 0) {
         // Each hit targets a random alive enemy independently
         const alive = this.aliveEnemies();
@@ -1671,9 +1671,9 @@ export class CombatManager {
       this.floatOnPlayer(`+${block}`, '#6888A0');
     }
 
-    // Barricade stacks (max 2)
+    // Barricade stacks (max 1)
     if (output.barricadeStacks > 0) {
-      this.player.barricadeStacks = Math.min(this.player.barricadeStacks + output.barricadeStacks, 2);
+      this.player.barricadeStacks = Math.min(this.player.barricadeStacks + output.barricadeStacks, 1);
     }
 
     // Gold (reduced by ascension modifier)
@@ -2718,7 +2718,7 @@ export class CombatManager {
       const upgradeLevel = this.player.getUpgradeLevel(info.type);
       const output = this.resolver.resolveSingle(info.type, upgradeLevel, this.player.block);
       this.capFlatEffects(output, seen);
-      this.applyResourceOutput(output);
+      this.applyResourceOutput(output, false, true);
     }
   }
 

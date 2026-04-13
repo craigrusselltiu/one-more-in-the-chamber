@@ -119,7 +119,8 @@ export const MerchantScreen = memo(function MerchantScreen() {
       (t) => t !== 'tumbleweed' && t !== 'showdown' && t !== 'fools_gold' && t !== 'charcoal',
     );
     if (swappableTiles.length > 0) {
-      const available = [...STARTER_POOL, ...ADDITIONAL_POOL].filter((t) => !snapTileTypes.includes(t));
+      const tilePool = run.currentAct === 1 ? STARTER_POOL : [...STARTER_POOL, ...ADDITIONAL_POOL];
+      const available = tilePool.filter((t) => !snapTileTypes.includes(t));
       if (available.length > 0) {
         const swapTile = seededShuffle(available, rand)[0];
         const def = TILE_DEFINITIONS[swapTile];

@@ -150,12 +150,13 @@ export const DUSTY_DAN: EnemyDefinition = {
   health: 207,
   minDamage: 9, maxDamage: 17,
   abilities: ['lock', 'summon', 'gravity_shift'],
-  firstMove: m(summon('bandit'), summon('coyote')),
+  firstMove: m(summon('vulture', true), summon('vulture', true)),
   moves: [
     m(gravityShift(), atk(12), block(12)),
     m(gravityShift(), multiAtk(3, 5), lockRow()),
     m(gravityShift(), atk(16), lockCol()),
     m(gravityShift(), block(16), lock(3), suppress(2)),
+    m(gainRageful(3), summon('vulture', true), summon('vulture', true)),
   ],
 };
 
@@ -403,6 +404,7 @@ export const ACT3_ELITE: Record<string, EnemyDefinition> = {
     health: 263,
     minDamage: 2, maxDamage: 20,
     abilities: [],
+    firstMove: m(multiAtk(4, 2), gainRageful(3)),
     moves: [
       m(multiAtk(11, 2)),
       m(multiAtk(4, 2), gainRageful(3)),

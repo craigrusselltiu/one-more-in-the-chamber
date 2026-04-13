@@ -3,6 +3,11 @@
 - If a non-elite combat happens within the first 3 nodes of an act, choose from Early Normal Encounters, otherwise Late Normal Encounters.
 - Encounters should be taken from a bag, and gets refilled when empty, preventing duplicates as much as possible.
 
+## Gemini Prompt Prompt
+I need you to help me write prompts to give to Gemini to generate high-quality pixel art enemy sprites for my western-themed game.
+I want 64x64 with good quality shading, white background, facing left.
+I want just the text prompt that I can copy straight into Gemini. No formatting, no lines, no dots, no newlines, just plain text.
+
 ## Normal Moves
 - Attack - deal damage to the player
 - Multi-attack - deal damage X times to the player, e.g. 4x2 = 4 damage twice
@@ -58,11 +63,11 @@
 
 ### Vulture
 - Base HP: 32
+- Passive: When another enemy dies, heal 6 HP
 - Moves:
     - Attack 8, Apply 1 Terrified
     - Multi-attack 2x3, Bury 3
     - Attack 4, Block 6
-    - Heal 6
 
 ### Pack Mule
 - Base HP: 63
@@ -126,7 +131,8 @@
     - Gravity Shift, Attack 3x5, Lock 1 row
     - Gravity Shift, Attack 16, Lock 1 column
     - Gravity Shift, Gain 16 block, Lock 3, Suppress 2
-- NOTE: The first move he does is always Summon 1 Bandit and Summon 1 Coyote
+    - Gain 3 Rageful, Summon 2 Vultures (with full HP, not 1/3, only if both summoned vultures are dead)
+- NOTE: The first move he does is always Summon 2 Vultures (with full HP, not 1/3)
 
 # Act 2 -- The Canyon
 
@@ -295,6 +301,7 @@
     - Multi-attack 4x2, Gain 3 Rageful
     - Attack 24
     - Attack 6x2, Clear ALL statuses
+- NOTE: The first move he does is always Multi-attack 4x2, Gain 3 Rageful
 
 ### Sheriff's Shadow
 - Base HP: 255

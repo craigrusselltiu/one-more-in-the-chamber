@@ -177,7 +177,7 @@ export const TILE_DEFINITIONS: Record<TileType, TileDefinition> = {
     baseValue: 2,
     upgradeValue: 2,
     pool: 'starter',
-    description: 'Deal 2 damage per tile. After each turn, each tile has a 1 in 4 chance to convert 1 adjacent or diagonal tile to Prairie Fire.',
+    description: 'Deal 2 damage per tile. After each turn, each tile has a 1 in 4 chance to spread.',
     flavor: 'Sparks fly. Some of them catch.',
     upgradeText: '+2 damage to match total per level',
   },
@@ -202,8 +202,8 @@ export const TILE_DEFINITIONS: Record<TileType, TileDefinition> = {
     color: TILE_COLORS.whiskey,
     baseValue: 1,
     upgradeValue: 1,
-    pool: 'additional',
-    description: 'Heals 2 HP per 3-match, plus 1 per extra tile.',
+    pool: 'starter',
+    description: 'Heals 1 HP per 3-match, plus 1 per extra tile.',
     flavor: "The cowboy's medicine.",
     upgradeText: '+1 heal to match total per level',
     resolveOrder: 2,
@@ -419,10 +419,10 @@ export const CHARACTER_TILES: Record<import('../types/game').CharacterId, TileTy
 export const STARTER_POOL: TileType[] = [
   'bullet', 'iron', 'gold',
   'ricochet', 'stampede', 'buckshot', 'battery', 'waste', 'prairie_fire',
-  'ace', 'shank',
+  'ace', 'shank', 'whiskey',
 ];
 
 export const ADDITIONAL_POOL: TileType[] = [
-  'chain', 'whiskey', 'horseshoe', 'fifty_cal', 'tombstone',
+  'chain', 'horseshoe', 'fifty_cal', 'tombstone',
   'saloon', 'rattler', 'barricade', 'cavalry', 'duel', 'mirage', 'boulder',
 ];
