@@ -28,6 +28,7 @@ const ENEMY_SPRITES: Record<string, string> = {
   mine_cart: 'minecart.png',
   copperhead_cassidy: 'copperhead.png',
   train_guard: 'train_guard.png',
+  guard_dog: 'guard_dog.png',
   hellfire_preacher: 'hellfire_preacher.png',
   hangman: 'hangman.png',
   corrupt_deputy: 'corrupt_deputy.png',

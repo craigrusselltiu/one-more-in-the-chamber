@@ -7,6 +7,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 ## v0.6.4
 
 ### Added
+- Guard Dog enemy in Act 3: low HP aggressive attacker that accompanies Train Guard encounters
+- Act 3 late encounter: 1 Train Guard + 2 Guard Dogs
+- Act 3 late encounter: 1 Corrupt Deputy + 1 Coyote + 1 Bandit
 - Artifact choice screen: artifact map nodes and boss rewards now present 2 artifacts to choose from instead of a single random one. Elites remain single random with take/skip.
 - Invulnerable enemy buff: immune to all damage, decreases by 1 at end of turn
 - Duel player buff: stacks on Duel tile match, converts to Ready at 4 stacks
@@ -15,6 +18,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 - Cross-clear tiles now generate single-resolve resources (previously cleared without generating anything)
 - Enemy.clearAllStatuses() helper, used by Copperhead shed skin and Saloon Brawler
 - CONSUMABLES.md documentation
+- Panacea consumable: clears all tile hazards (locks, poison, bombs, sand, fools gold, suppress)
+- Consumables can now be used outside of combat (Strong Whiskey, Bandage, Snake Oil)
+- Lasso cursor: board cursor changes to lasso icon while lasso is active
+- Act 3 late encounter: 3 Guard Dogs
+- Death's Glare artifact buffed: 1 -> 3 stacks of Vulnerable and Terrified
+
+### Fixed
+- Artifact choice screen boxes now stretch to equal height regardless of text length
+- Quitting on the artifact choice screen (artifact map node) now correctly restores to that screen on continue instead of skipping to the map
 
 ### Changed
 - Outlaw King encounter chance reduced from 1% to 0.5%
@@ -31,7 +43,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 - Single-resolve flat upgrade bonus divided by 3 (affects Ricochet/Saloon/explosive destruction)
 - Flat status effects (Vulnerable, Chain, Duel, Barricade) capped at 1 per explosive/showdown chain
 - Boulder single resolve: block bonus divided by 3
-- Iron Eye Isabella: stripped legacy 3-phase system, now just gains 10 block per turn as passive. HP trigger at 50%: Rageful 5 + Invulnerable 1 + Terrified 3
+- Train Guard: simplified moveset, removed Thorns/Vulnerable from moves, block values adjusted (30->25)
+- Sheriff's Shadow: moves 3 and 4 now apply poison tiles instead of bury
+- Iron Eye Isabella: stripped legacy 3-phase system, now just gains 10 block per turn as passive. HP trigger at 50%: Rageful 5 + Invulnerable 1 + Terrified 1 + Vulnerable 1
+- Act 3 early encounter reworked: Train Guard + Guard Dog (was 2 Train Guards)
 - Saloon Brawler: reworked moveset, move 4 clears all own statuses
 - Sheriff's Shadow: added Dead Man Walking 3 at start, reworked moves
 - Outlaw King (all acts): Dead Man Walking 1→99

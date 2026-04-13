@@ -164,10 +164,12 @@ export const ArtifactScreen = memo(function ArtifactScreen() {
 
       {isChoiceMode ? (
         <>
-          <div className="flex gap-6 mb-8">
+          <div className="flex gap-6 mb-8 items-stretch">
             {artifacts.map((art, i) => (
               <div key={art.id} className="flex flex-col items-center">
-                {renderCard(art)}
+                <div className="flex-1 flex">
+                  {renderCard(art)}
+                </div>
                 <button
                   onClick={() => handleChoose(i)}
                   className="mt-3 px-6 py-1.5 text-xs bg-amber-900/80 text-amber-300 border border-amber-700 hover:bg-amber-800/80"

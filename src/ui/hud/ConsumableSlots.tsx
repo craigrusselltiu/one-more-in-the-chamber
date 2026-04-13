@@ -9,6 +9,33 @@ import { CONSUMABLE_FRAMES } from '../../data/spriteConfig';
 import { colorizeKeywords, getReferencedKeywords, KeywordSubTooltips } from '../components/KeywordText';
 import { getMaxConsumableSlots } from '../../utils/consumableSlots';
 
+/** Use a map-usable consumable outside of combat. Returns true if handled. */
+function useConsumableOnMap(consumableId: string): boolean {
+  const store = useRunStore.getState();
+  if (!store.run) return false;
+  switch (consumableId) {
+    case 'tonic':
+      store.updateHealth(20);
+      return true;
+    case 'bandage':
+      store.updateHealth(10);
+      return true;
+    case 'snake_oil': {
+      const roll = Math.random();
+      if (roll < 0.33) {
+        store.updateHealth(15);
+      } else if (roll < 0.66) {
+        store.updateGold(10);
+      } else {
+        store.updateHealth(-8);
+      }
+      return true;
+    }
+    default:
+      return false;
+  }
+}
+
 /**
  * ConsumableSlots: 3 fixed square slots (4 with Saddlebag) near the player.
  * Empty slots show as visible outlines. Click to use during consumable window.
@@ -20,7 +47,8 @@ export const ConsumableSlots = memo(function ConsumableSlots() {
   const phase = useCombatStore((s) => s.phase);
 
   const maxSlots = run ? getMaxConsumableSlots(run) : 3;
-  const canUse = phase === 'consumable-window' || phase === 'swap-phase';
+  const inCombat = useCombatStore((s) => s.enemies.length > 0);
+  const canUseCombat = phase === 'consumable-window' || phase === 'swap-phase';
 
   return (
     <div className="flex gap-0.5 items-center">
@@ -30,6 +58,10 @@ export const ConsumableSlots = memo(function ConsumableSlots() {
           ? CONSUMABLES.find((c) => c.id === instance.id)
           : undefined;
 
+        const canUseThis = !!instance && (
+          inCombat ? canUseCombat : !!(def?.canUseInMap)
+        );
+
         return (
           <ConsumableSlot
             key={i}
@@ -38,7 +70,8 @@ export const ConsumableSlots = memo(function ConsumableSlots() {
             category={def?.category}
             effect={def?.effect}
             filled={!!instance}
-            canUse={canUse && !!instance}
+            canUse={canUseThis}
+            inCombat={inCombat}
             consumableId={instance?.id}
             onRemove={removeConsumable}
           />
@@ -55,6 +88,7 @@ interface ConsumableSlotProps {
   effect?: string;
   filled: boolean;
   canUse: boolean;
+  inCombat: boolean;
 }
 
 const ConsumableSlot = memo(function ConsumableSlot({
@@ -64,6 +98,7 @@ const ConsumableSlot = memo(function ConsumableSlot({
   effect,
   filled,
   canUse,
+  inCombat,
   consumableId,
   onRemove,
 }: ConsumableSlotProps & { consumableId?: string; onRemove: (index: number) => void }) {
@@ -79,11 +114,15 @@ const ConsumableSlot = memo(function ConsumableSlot({
 
   const handleUse = useCallback(() => {
     if (canUse && consumableId) {
-      EventBus.emit(GameEvent.USE_CONSUMABLE, consumableId);
+      if (inCombat) {
+        EventBus.emit(GameEvent.USE_CONSUMABLE, consumableId);
+      } else {
+        useConsumableOnMap(consumableId);
+      }
       onRemove(index);
     }
     setShowMenu(false);
-  }, [canUse, consumableId, index, onRemove]);
+  }, [canUse, consumableId, index, onRemove, inCombat]);
 
   const handleDiscard = useCallback(() => {
     onRemove(index);

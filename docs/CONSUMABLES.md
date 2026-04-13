@@ -20,13 +20,15 @@
 
 ## Defensive
 
-### Moonshine
+### Strong Whiskey
 - Flavor: "Burns going down, patches you up."
-- Effect: Heal 20 HP. (Affected by consumable heal multiplier artifacts.)
+- Effect: Heal 20 HP.
+- Can use in map
 
 ### Bandage
 - Flavor: "Patch wounds, suck out poison."
-- Effect: Heal 10 HP and cleanse all poison tiles on the board. (Heal affected by consumable heal multiplier artifacts.)
+- Effect: Heal 10 HP and cleanse all poison tiles on the board.
+- Can use in map
 
 ## Utility
 
@@ -40,16 +42,17 @@
 
 ### Signal Flare
 - Flavor: "Nothing stays hidden."
-- Effect: Reveal all buried (sand) tiles on the board.
+- Effect: Reveal all Buried tiles on the board.
 
 ### Snake Oil
 - Flavor: "Who knows what's in the bottle."
 - Effect: Random effect (25% each): Heal 15 HP, deal 15 damage to targeted enemy, gain 10 gold, or take 8 damage to yourself.
+- Can use in map
 
 ### Lasso
 - Flavor: "Reach across the board."
 - Effect: Your next swap can target non-adjacent tiles.
 
 ### Panacea
-- Flavor:
+- Flavor: "Cures what ails the land itself."
 - Effect: Clear all tile hazards.

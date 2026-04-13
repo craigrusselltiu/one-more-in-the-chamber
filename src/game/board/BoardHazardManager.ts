@@ -1,8 +1,6 @@
 import type { Board } from './Board';
 import type { GridPosition } from '../../types/combat';
 import type { TileHazardState } from '../../types/tiles';
-import type { TileType } from '../../types/game';
-
 const BOARD_SIZE = 8;
 
 export interface HazardPlacement {
@@ -20,14 +18,10 @@ export interface HazardPlacement {
  *   Bomb          -- countdown timer. Detonates (damages player) if not matched. Matching defuses.
  *   Sand          -- hidden tile. Match adjacent to reveal.
  *
- * Board-level effects:
- *   Suppress (Warrant) -- a tile type produces no output when matched for N turns.
+ *   Suppress      -- matching suppressed tiles generates no resources.
  */
 export class BoardHazardManager {
   private board: Board;
-
-  /** Suppressed tile types mapped to remaining turn count. */
-  private suppressedTypes: Map<TileType, number> = new Map();
 
   constructor(board: Board) {
     this.board = board;
@@ -200,79 +194,6 @@ export class BoardHazardManager {
       placements.push({ position: { row, col }, hazard: { ...tile.hazard } });
     }
     return placements;
-  }
-
-  // ---------------------------------------------------------------------------
-  // Suppress (Warrant) -- board-level type suppression
-  // ---------------------------------------------------------------------------
-
-  /**
-   * Suppress random tile types so they produce no output when matched.
-   * Picks from the given pool of active types, skipping types already suppressed.
-   * @returns the tile types that were newly suppressed.
-   */
-  suppressRandomTypes(
-    count: number,
-    activeTileTypes: TileType[],
-    duration = 2,
-  ): TileType[] {
-    const candidates = activeTileTypes.filter((t) => !this.suppressedTypes.has(t));
-    const suppressed: TileType[] = [];
-
-    for (let i = 0; i < count && candidates.length > 0; i++) {
-      const idx = Math.floor(Math.random() * candidates.length);
-      const type = candidates.splice(idx, 1)[0];
-      this.suppressedTypes.set(type, duration);
-      suppressed.push(type);
-    }
-
-    return suppressed;
-  }
-
-  /** Check whether a tile type is currently suppressed (warrant active). */
-  isSuppressed(type: TileType): boolean {
-    return this.suppressedTypes.has(type);
-  }
-
-  /** Get all currently suppressed tile types. */
-  getSuppressedTypes(): TileType[] {
-    return Array.from(this.suppressedTypes.keys());
-  }
-
-  /**
-   * Tick suppress durations down by 1. Called once per turn.
-   * Returns tile types whose suppression just expired.
-   */
-  tickSuppressions(): TileType[] {
-    const expired: TileType[] = [];
-    for (const [type, remaining] of this.suppressedTypes) {
-      const next = remaining - 1;
-      if (next <= 0) {
-        this.suppressedTypes.delete(type);
-        expired.push(type);
-      } else {
-        this.suppressedTypes.set(type, next);
-      }
-    }
-    return expired;
-  }
-
-  /** Remove all active suppressions. */
-  clearAllSuppressions(): void {
-    this.suppressedTypes.clear();
-  }
-
-  /** Serialize suppressed types for mid-combat saves. */
-  serializeSuppressedTypes(): [TileType, number][] {
-    return Array.from(this.suppressedTypes.entries());
-  }
-
-  /** Restore suppressed types from a snapshot. */
-  restoreSuppressedTypes(data: [TileType, number][]): void {
-    this.suppressedTypes.clear();
-    for (const [type, turns] of data) {
-      this.suppressedTypes.set(type, turns);
-    }
   }
 
   // ---------------------------------------------------------------------------

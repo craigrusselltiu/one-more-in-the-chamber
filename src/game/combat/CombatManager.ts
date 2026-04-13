@@ -431,7 +431,7 @@ export class CombatManager {
       enemies: serializedEnemies,
       bossController: this.bossController?.serialize() ?? null,
       eliteModifierId: null,
-      suppressedTypes: this.hazardManager.serializeSuppressedTypes(),
+      suppressedTypes: [],
       longestCascadeThisFight: this.longestCascadeThisFight,
       playerTookDamageThisFight: this.playerTookDamageThisFight,
       matchCountThisFight: this.traits.getMatchCountThisFight(),
@@ -524,9 +524,6 @@ export class CombatManager {
       this.bossController.restoreState(snapshot.bossController);
     }
 
-    // Restore suppressed types
-    this.hazardManager.restoreSuppressedTypes(snapshot.suppressedTypes);
-
     // Restore subsystem state to prevent save/reload exploits
     this.traits.restoreState(
       snapshot.matchCountThisFight ?? 0,
@@ -543,6 +540,13 @@ export class CombatManager {
       this.deadeyeShotsRemaining = 0;
       this.board.setDeadeyeMode(false);
       document.body.classList.remove('cursor-crosshair');
+    }
+
+    // Cancel lasso on restore
+    if (this.lassoSwapsRemaining > 0) {
+      this.lassoSwapsRemaining = 0;
+      this.board.setLassoMode(false);
+      document.body.classList.remove('cursor-lasso');
     }
 
     // If the snapshot was taken mid-resolution (e.g. app backgrounded during
@@ -711,6 +715,7 @@ export class CombatManager {
       this.lassoSwapsRemaining--;
       if (this.lassoSwapsRemaining <= 0) {
         this.board.setLassoMode(false);
+        document.body.classList.remove('cursor-lasso');
       }
     }
 
@@ -1097,6 +1102,15 @@ export class CombatManager {
         case 'lasso':
           this.lassoSwapsRemaining++;
           this.board.setLassoMode(true);
+          document.body.classList.add('cursor-lasso');
+          break;
+        case 'panacea':
+          this.hazardManager.clearAllOfType('poison');
+          this.hazardManager.clearAllOfType('bomb');
+          this.hazardManager.clearAllOfType('sand');
+          this.hazardManager.clearAllOfType('fools_gold');
+          this.hazardManager.clearAllOfType('lock');
+          this.hazardManager.clearAllOfType('suppress');
           break;
         default:
           return false;
@@ -2702,10 +2716,7 @@ export class CombatManager {
     const seen = new Set<string>();
     for (const info of destroyed) {
       const upgradeLevel = this.player.getUpgradeLevel(info.type);
-      const isSuppressed = this.hazardManager.isSuppressed(info.type);
-      const output = isSuppressed
-        ? this.resolver.emptyOutput()
-        : this.resolver.resolveSingle(info.type, upgradeLevel, this.player.block);
+      const output = this.resolver.resolveSingle(info.type, upgradeLevel, this.player.block);
       this.capFlatEffects(output, seen);
       this.applyResourceOutput(output);
     }

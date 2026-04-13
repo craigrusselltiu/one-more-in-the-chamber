@@ -122,7 +122,7 @@ export const MainMenu = memo(function MainMenu() {
         merchant: 'merchant',
         campfire: 'campfire',
         event: 'event',
-        treasure: 'artifact',
+        artifact: 'artifact',
       };
       const screen = screenMap[currentNode.type];
       if (screen) {

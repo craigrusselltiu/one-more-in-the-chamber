@@ -135,6 +135,7 @@ export const CONSUMABLE_FRAMES: Record<string, number> = {
   signal_flare: 719,
   snake_oil: 1483,
   lasso: 685,
+  panacea: 1418,
 };
 
 /** Status effect / buff / debuff sprite frames. */

@@ -330,12 +330,25 @@ export const ACT3_NORMAL: Record<string, EnemyDefinition> = {
     minDamage: 5, maxDamage: 20,
     abilities: ['lock', 'block'],
     startOfFight: [lockCol()],
-    firstMove: m(block(30), lockRow()),
+    firstMove: m(block(25), lockRow()),
     moves: [
       m(atk(14), lockRow()),
       m(multiAtk(4, 4), lock(4)),
-      m(atk(7), block(14), applyVulnerable(2)),
-      m(block(30), gainThorns(5), lockRow()),
+      m(atk(7), block(16)),
+      m(block(25), lockRow()),
+    ],
+  },
+  guard_dog: {
+    type: 'guard_dog',
+    name: 'Guard Dog',
+    health: 58,
+    minDamage: 4, maxDamage: 12,
+    abilities: [],
+    moves: [
+      m(atk(12)),
+      m(multiAtk(4, 2)),
+      m(atk(8), applyVulnerable(1)),
+      m(atk(6), gainRageful(2)),
     ],
   },
   hellfire_preacher: {
@@ -407,8 +420,8 @@ export const ACT3_ELITE: Record<string, EnemyDefinition> = {
     moves: [
       m(atk(12), block(12), suppress(1)),
       m(atk(25), suppress(2)),
-      m(suppress(3), applyTerrified(1)),
-      m(block(28), bury(5)),
+      m(suppress(3), poisonTiles(3), applyTerrified(1)),
+      m(block(28), poisonTiles(5)),
     ],
   },
 };
@@ -476,7 +489,8 @@ export const IRON_EYE_ISABELLA: EnemyDefinition = {
     actions: [
       gainRageful(5),
       gainInvulnerable(1),
-      applyTerrified(3),
+      applyTerrified(1),
+      applyVulnerable(1),
     ],
   }],
   moves: [
@@ -490,14 +504,15 @@ export const IRON_EYE_ISABELLA: EnemyDefinition = {
 export const ACT3_ENEMIES: Record<string, EnemyDefinition> = { ...ACT3_NORMAL, ...ACT3_ELITE };
 
 export const ACT3_EARLY_ENCOUNTERS: string[][] = [
-  ['train_guard', 'train_guard'],
+  ['train_guard', 'guard_dog'],
   ['hellfire_preacher', 'bandit'],
 ];
 
 export const ACT3_LATE_ENCOUNTERS: string[][] = [
-  ['train_guard', 'hellfire_preacher'],
-  ['corrupt_deputy', 'coyote'],
+  ['train_guard', 'guard_dog', 'guard_dog'],
+  ['corrupt_deputy', 'coyote', 'bandit'],
   ['hangman'],
+  ['guard_dog', 'guard_dog', 'guard_dog'],
 ];
 
 // ---------------------------------------------------------------------------
@@ -741,7 +756,9 @@ export function rollAct3Encounter(
   if (outlawKingAvailable && rand() < OUTLAW_KING_ENCOUNTER_CHANCE) {
     return buildOutlawKingEncounter(3);
   }
-  return rollLateEncounter(ACT3_EARLY_ENCOUNTERS, ACT3_LATE_ENCOUNTERS, ACT3_NORMAL, [], rand, ['hangman', 'corrupt_deputy']);
+  // Act 3 has no dynamic "any 2" encounter -- 25% early preset, 75% late preset
+  if (rand() < 0.25) return rollPresetEncounter(ACT3_EARLY_ENCOUNTERS, ACT3_NORMAL, rand);
+  return rollPresetEncounter(ACT3_LATE_ENCOUNTERS, ACT3_NORMAL, rand);
 }
 
 export function rollAct3EliteEncounter(

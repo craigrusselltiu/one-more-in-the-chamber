@@ -246,9 +246,17 @@
 - Moves:
     - Attack 14, Lock 1 row
     - Multi-attack 4x4, Lock 4
-    - Attack 7, Block 14, Apply 2 Vulnerable
-    - Block 30, Gain 5 Thorns, Lock 1 row
-- NOTE: The first move he does is always Block 30, Lock 1 row
+    - Attack 7, Block 16
+    - Block 25, Lock 1 row
+- NOTE: The first move he does is always Block 25, Lock 1 row
+
+### Guard Dog
+- Base HP: 58
+- Moves:
+    - Attack 12
+    - Multi-attack 4x2
+    - Attack 8, Apply 1 Vulnerable
+    - Attack 6, Gain 2 Rageful
 
 ### Hellfire Preacher
 - Base HP: 97
@@ -294,8 +302,8 @@
 - Moves:
     - Attack 12, Block 12, Suppress 1
     - Attack 25, Suppress 2
-    - Suppress 3, Apply 1 Terrified
-    - Block 28, Bury 5
+    - Suppress 3, Poison 3, Apply 1 Terrified
+    - Block 28, Poison 5
 
 ## Outlaw King
 
@@ -310,15 +318,14 @@
     - Attack 35
 
 ## Early Normal Encounters
-- 1 Train Guard
-- 2 Train Guard
+- 1 Train Guard, 1 Guard Dog
 - 1 Hellfire Preacher, 1 Bandit
 
 ## Late Normal Encounters
-- 1 Train Guard, 1 Hellfire Preacher
-- 1 Corrupt Deputy, 1 Coyote
+- 1 Train Guard, 2 Guard Dogs
+- 1 Corrupt Deputy, 1 Coyote, 1 Bandit
 - 1 Hangman
-- Any 2 Normal Enemy (Except Hangman or Corrupt Deputy)
+- 3 Guard Dogs
 
 ## Bosses
 
@@ -326,7 +333,7 @@
 - Base HP: 354
 - Start of fight: Lock 2 rows
 - Passive: Gain 10 block per turn
-- When HP drops below 50%, Gain 5 Rageful, 1 Invulnerable, Apply 3 Terrified. sprite changes to ironeye_alt
+- When HP drops below 50%, Gain 5 Rageful, 1 Invulnerable, Apply 1 Terrified, Apply 1 Vulnerable. Sprite changes to ironeye_alt.
 - Moves:
     - Attack 15, Lock 1 row, Lock 1 column
     - Attack 22, Suppress 2

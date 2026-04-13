@@ -4,6 +4,7 @@ export interface ConsumableDefinition {
   category: 'offensive' | 'defensive' | 'utility';
   description: string;
   effect: string;
+  canUseInMap?: boolean;
 }
 
 /** All 13 consumables from SPEC. */
@@ -40,10 +41,11 @@ export const CONSUMABLES: ConsumableDefinition[] = [
   // Defensive
   {
     id: 'tonic',
-    name: 'Moonshine',
+    name: 'Strong Whiskey',
     category: 'defensive',
     description: 'Burns going down, patches you up.',
     effect: 'Heal 20 HP.',
+    canUseInMap: true,
   },
   {
     id: 'bandage',
@@ -51,6 +53,7 @@ export const CONSUMABLES: ConsumableDefinition[] = [
     category: 'defensive',
     description: 'Patch wounds, suck out poison.',
     effect: 'Heal 10 HP, cleanse all poison tiles on board.',
+    canUseInMap: true,
   },
   // Utility
   {
@@ -80,6 +83,7 @@ export const CONSUMABLES: ConsumableDefinition[] = [
     category: 'utility',
     description: 'Who knows what\'s in the bottle.',
     effect: 'Random effect (heal/damage/poison/gold).',
+    canUseInMap: true,
   },
   {
     id: 'lasso',
@@ -87,5 +91,12 @@ export const CONSUMABLES: ConsumableDefinition[] = [
     category: 'utility',
     description: 'Reach across the board.',
     effect: 'Your next swap can target non-adjacent tiles.',
+  },
+  {
+    id: 'panacea',
+    name: 'Panacea',
+    category: 'utility',
+    description: 'Cures what ails the land itself.',
+    effect: 'Clear all tile hazards.',
   },
 ];

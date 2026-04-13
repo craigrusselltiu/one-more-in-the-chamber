@@ -131,12 +131,12 @@ export class ArtifactSystem {
       player.protectedStacks += 1;
     }
 
-    // Death's Glare: apply 1 Vulnerable + 1 Terrified to ALL enemies
+    // Death's Glare: apply 3 Vulnerable + 3 Terrified to ALL enemies
     if (this.has('deaths_glare') && enemies) {
       for (const enemy of enemies) {
         if (!enemy.state.isDead) {
-          enemy.addVulnerable(1);
-          enemy.addTerrified(1);
+          enemy.addVulnerable(3);
+          enemy.addTerrified(3);
         }
       }
     }
