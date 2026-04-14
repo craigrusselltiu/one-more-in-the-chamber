@@ -25,3 +25,7 @@ future ideas:
 - artifact combine
 - upgrading tile
 - dusty dan tumble weed deals damage to you when fighting him
+
+artifact ideas:
+- free cookie at start of boss fight
+- trailblazer's compass - unused swaps give you block next turn

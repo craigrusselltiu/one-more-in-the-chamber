@@ -88,11 +88,11 @@ export const MainMenu = memo(function MainMenu() {
   const addReputation = useMetaStore((s) => s.addReputation);
 
   const handleConfirmNewGame = async () => {
-    // Award reputation for the abandoned run
+    // Award reputation for the abandoned run (1 rep per 10 score, no minimum)
     if (run) {
       const finalScore = calculateScore(run);
-      const rep = Math.max(10, Math.floor(finalScore / 10));
-      addReputation(rep);
+      const rep = Math.floor(finalScore / 10);
+      if (rep > 0) addReputation(rep);
     }
     await clearRun();
     setShowConfirm(false);

@@ -26,17 +26,18 @@ const TRAIT_DESCRIPTIONS: Record<string, Record<number, string>> = {
     6: 'Block reflects 100% of absorbed damage back to attacker.',
   },
   outlaw: {
-    2: 'Killing an enemy grants 1 Rageful.',
-    5: 'At the start of boss encounters, gain 3 Rageful and apply 2 Vulnerable to all enemies.',
+    2: 'Killing an enemy grants 3 Rageful.',
+    5: 'At the start of boss encounters, gain 5 Rageful and apply 3 Vulnerable to all enemies.',
   },
   prospector: {
-    2: 'On any match, 25% chance to generate 5 gold.',
-    4: 'Whenever you gain gold during combat, deal 1 damage to a random enemy.',
+    2: 'On any match, 25% chance to generate 7 gold.',
+    4: 'Whenever you gain gold during combat, deal 2 damage to a random enemy.',
     6: 'Deal 5% of your current gold as extra damage.',
   },
   gunslinger: {
     2: 'Bullet-type tiles deal 1 extra damage per tile.',
     4: 'Gain 1 Lucky for every bullet-type tile matched.',
+    6: 'Lucky deals 2x damage instead of 1.5x.',
   },
   saloon_keeper: {
     2: 'Consumables heal 5 HP on use (any consumable).',
@@ -65,7 +66,7 @@ const TRAIT_DESCRIPTIONS: Record<string, Record<number, string>> = {
   preacher: {
     2: "Whenever you don't deal damage in a turn, heal 5.",
     4: 'Take 20% less damage from enemies with lower HP than you.',
-    6: 'At the start of combat, gain 1 Grace.',
+    6: 'At the start of combat, gain 2 Grace.',
   },
   antivenom: {
     3: 'Matching next to a Poison tile clears it.',

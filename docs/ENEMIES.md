@@ -35,7 +35,7 @@ I want just the text prompt that I can copy straight into Gemini. No formatting,
 ## Normal Enemies Pool
 
 ### Bandit
-- Base HP: 48
+- Base HP: 44
 - Moves:
     - Attack 12, Lock 3
     - Multi-attack 6x2
@@ -44,7 +44,7 @@ I want just the text prompt that I can copy straight into Gemini. No formatting,
 - NOTE: If dropped below 50% HP, will try to block.
 
 ### Coyote
-- Base HP: 37
+- Base HP: 35
 - Moves:
     - Attack 7
     - Attack 5, Gain 2 Rageful
@@ -53,7 +53,7 @@ I want just the text prompt that I can copy straight into Gemini. No formatting,
 - NOTE: If alone, always summons.
 
 ### Rattlesnake
-- Base HP: 43
+- Base HP: 41
 - Start of fight: Poison 3 Tiles
 - Moves:
     - Attack 11, Apply 2 Poison
@@ -62,7 +62,7 @@ I want just the text prompt that I can copy straight into Gemini. No formatting,
     - Poison 4 Tiles
 
 ### Vulture
-- Base HP: 32
+- Base HP: 28
 - Start of fight: Gain 1 Scavenger
 - Moves:
     - Attack 8, Apply 1 Terrified
@@ -70,7 +70,7 @@ I want just the text prompt that I can copy straight into Gemini. No formatting,
     - Attack 4, Block 6
 
 ### Pack Mule
-- Base HP: 63
+- Base HP: 60
 - Moves:
     - Attack 12
     - Multi-attack 4x2, Block 8
@@ -118,7 +118,7 @@ I want just the text prompt that I can copy straight into Gemini. No formatting,
 
 ## Late Normal Encounters
 - 2 Coyote, 1 Summoned Coyotes
-- 3 Vultures
+- 3 Vultures (randomly make one of them have Summoned)
 - 1 Pack Mule
 - Any 2 Normal Enemy (except Pack Mule)
 

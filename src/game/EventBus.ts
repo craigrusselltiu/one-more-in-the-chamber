@@ -54,6 +54,8 @@ export const GameEvent = {
   ENEMY_DIED: 'enemy:died',
   DEADEYE_ACTIVATED: 'deadeye:activated',
   CONSUMABLE_USED: 'consumable:used',
+  /** A one-shot artifact effect has been spent (e.g. Shed Skin triggered). Payload: artifact id. */
+  ARTIFACT_USED: 'artifact:used',
 
   // Player actions (React -> Phaser)
   TARGET_ENEMY: 'player:target-enemy',
@@ -126,4 +128,5 @@ export interface EventPayloads {
   [GameEvent.RUN_STARTED]: [];
   [GameEvent.RUN_ENDED]: [completed: boolean];
   [GameEvent.PLAYER_ATTACK]: [];
+  [GameEvent.ARTIFACT_USED]: [artifactId: string];
 }

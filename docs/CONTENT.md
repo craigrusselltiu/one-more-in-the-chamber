@@ -68,3 +68,25 @@ Level 17 - Normal enemies gain an additional 10% HP and 10% damage.
 Level 18 - Elites gain an additional 10% HP and 10% damage.
 Level 19 - Bosses gain an additional 10% HP and 10% damage.
 Level 20 - At the end of Act 3, the final boss spawns with a random Act 3 elite. (elite has Summoned status)
+
+## Scoring
+
+NOTE: When starting a game, then immediately giving up, it should be zero under the following system.
+
+Combats (100 each)
+Elites (250 each)
+Bosses (500 each)
+Flawless (100 each)
+
+---
+
+Gold Obtained (1 point per gold obtained this run)
+Artifacts Obtained (50 points per artifact obtained this run)
+Damage Dealt (1 point per 5 damage dealt)
+Max Combo (100 each point above 1, e.g. 1.7x combo = 700 points)
+
+---
+
+Ascension (+ 0.05x each ascension level, e.g. ascension 2 is x1.1)
+Time (x2 at 0hrs, x1 at 1hr30, x1 is lowest, only appears if won)
+Reputation Gain (x0.5 if defeat, x1 if won, only appears if lost)

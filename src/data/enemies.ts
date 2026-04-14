@@ -43,7 +43,7 @@ export const ACT1_NORMAL: Record<string, EnemyDefinition> = {
   bandit: {
     type: 'bandit',
     name: 'Bandit',
-    health: 48,
+    health: 44,
     minDamage: 6, maxDamage: 12,
     abilities: ['lock', 'block'],
     moves: [
@@ -56,7 +56,7 @@ export const ACT1_NORMAL: Record<string, EnemyDefinition> = {
   coyote: {
     type: 'coyote',
     name: 'Coyote',
-    health: 37,
+    health: 35,
     minDamage: 5, maxDamage: 7,
     abilities: ['howl'],
     moves: [
@@ -69,7 +69,7 @@ export const ACT1_NORMAL: Record<string, EnemyDefinition> = {
   rattlesnake: {
     type: 'rattlesnake',
     name: 'Rattlesnake',
-    health: 43,
+    health: 41,
     minDamage: 5, maxDamage: 11,
     abilities: ['poison', 'block'],
     startOfFight: [poisonTiles(3)],
@@ -83,7 +83,7 @@ export const ACT1_NORMAL: Record<string, EnemyDefinition> = {
   vulture: {
     type: 'vulture',
     name: 'Vulture',
-    health: 32,
+    health: 28,
     minDamage: 2, maxDamage: 8,
     abilities: ['bury'],
     startOfFight: [gainScavenger(1)],
@@ -96,7 +96,7 @@ export const ACT1_NORMAL: Record<string, EnemyDefinition> = {
   pack_mule: {
     type: 'pack_mule',
     name: 'Pack Mule',
-    health: 63,
+    health: 60,
     minDamage: 4, maxDamage: 12,
     abilities: ['bomb', 'bury'],
     moves: [
@@ -173,7 +173,7 @@ export const ACT1_EARLY_ENCOUNTERS: string[][] = [
 
 export const ACT1_LATE_ENCOUNTERS: string[][] = [
   ['coyote', 'coyote', 'coyote:summoned'],
-  ['vulture', 'vulture', 'vulture'],
+  ['vulture:rsummoned', 'vulture:rsummoned', 'vulture:rsummoned'],
   ['pack_mule'],
   // 'dynamic:2' = pick any 2 from normal pool (except pack_mule)
 ];
@@ -565,21 +565,35 @@ class EncounterBag {
   }
 }
 
-// One bag per encounter pool so draws don't repeat
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const encounterBags = new Map<any, EncounterBag>();
+// One bag per encounter pool so draws don't repeat. Stored on globalThis with
+// stable string keys so the bag state survives Vite HMR reloads (otherwise
+// every code edit during dev resets the bag, defeating the no-repeat guarantee).
+const encounterBags: Map<string, EncounterBag> = (() => {
+  const g = globalThis as { __encounterBags?: Map<string, EncounterBag> };
+  if (!g.__encounterBags) g.__encounterBags = new Map();
+  return g.__encounterBags;
+})();
 
-function getBag(key: unknown, size: number): EncounterBag {
-  let bag = encounterBags.get(key);
+function getBag(key: string, size: number): EncounterBag {
+  // Include size in the cache key so a pool whose size changes (e.g. an enemy
+  // added in a future update) won't accidentally reuse a stale bag.
+  const fullKey = `${key}:${size}`;
+  let bag = encounterBags.get(fullKey);
   if (!bag) {
     bag = new EncounterBag(size);
-    encounterBags.set(key, bag);
+    encounterBags.set(fullKey, bag);
   }
   return bag;
 }
 
-/** Chance per late-normal/elite encounter to roll Outlaw King (once per run). */
-export const OUTLAW_KING_ENCOUNTER_CHANCE = 0.005;
+/** Per-node chance (late-normal/elite) to roll Outlaw King in each act. Once per run.
+ *  Act 1 stays rare; chance ramps up through later acts so players don't reach
+ *  Act 3 having never seen him. */
+export const OUTLAW_KING_ENCOUNTER_CHANCE_BY_ACT: Record<1 | 2 | 3, number> = {
+  1: 0.005,
+  2: 0.01,
+  3: 0.02,
+};
 
 /** Build an Outlaw King encounter scaled to the given act, including his companions. */
 export function buildOutlawKingEncounter(act: 1 | 2 | 3): EnemyDefinition[] {
@@ -622,17 +636,33 @@ export function encounterContainsOutlawKing(enemies: EnemyDefinition[]): boolean
   return enemies.some((e) => e.type === 'outlaw_king' || e.type.startsWith('outlaw_king_'));
 }
 
-/** Pick a preset encounter from a bag (no repeats until pool exhausted). */
+/** Pick a preset encounter from a bag (no repeats until pool exhausted).
+ *  Suffix conventions on each preset entry:
+ *    `type`              -- normal enemy
+ *    `type:summoned`     -- always spawned as a summoned variant (1/3 HP)
+ *    `type:rsummoned`    -- candidate for "exactly one of these is summoned";
+ *                           one matching index is picked at random per roll. */
 function rollPresetEncounter(
   presets: string[][],
   normalPool: Record<string, EnemyDefinition>,
   rand: () => number,
+  bagKey: string,
 ): EnemyDefinition[] {
-  const bag = getBag(presets, presets.length);
+  const bag = getBag(bagKey, presets.length);
   const preset = presets[bag.draw(rand)];
-  return preset.map((key) => {
-    const isSummoned = key.endsWith(':summoned');
-    const type = isSummoned ? key.replace(':summoned', '') : key;
+
+  // Randomized summoning: pick exactly one `:rsummoned` candidate per encounter.
+  const rsIndices = preset
+    .map((k, i) => (k.endsWith(':rsummoned') ? i : -1))
+    .filter((i) => i >= 0);
+  const chosenRsIndex = rsIndices.length > 0
+    ? rsIndices[Math.floor(rand() * rsIndices.length)]
+    : -1;
+
+  return preset.map((key, idx) => {
+    const isSummoned = key.endsWith(':summoned')
+      || (key.endsWith(':rsummoned') && idx === chosenRsIndex);
+    const type = key.replace(':rsummoned', '').replace(':summoned', '');
     const def = normalPool[type] ?? ALL_ENEMIES[type];
     if (!def) return { type, name: type, health: 20, minDamage: 5, maxDamage: 10, abilities: [] };
     const enemy = { ...def, _summoned: false };
@@ -649,11 +679,13 @@ function rollLateEncounter(
   early: string[][], late: string[][],
   normals: Record<string, EnemyDefinition>, exclude: string[],
   rand: () => number,
+  earlyBagKey: string,
+  lateBagKey: string,
   noDuplicateTypes: string[] = [],
 ): EnemyDefinition[] {
   const r = rand();
-  if (r < 0.25 && early.length > 0) return rollPresetEncounter(early, normals, rand);
-  if (r < 0.75 && late.length > 0) return rollPresetEncounter(late, normals, rand);
+  if (r < 0.25 && early.length > 0) return rollPresetEncounter(early, normals, rand, earlyBagKey);
+  if (r < 0.75 && late.length > 0) return rollPresetEncounter(late, normals, rand, lateBagKey);
   return rollDynamicEncounter(normals, 2, exclude, rand, noDuplicateTypes);
 }
 
@@ -691,12 +723,15 @@ export function rollAct1Encounter(
 ): EnemyDefinition[] {
   const isEarly = nodeIndex < 3;
   if (isEarly) {
-    return rollPresetEncounter(ACT1_EARLY_ENCOUNTERS, ACT1_NORMAL, rand);
+    return rollPresetEncounter(ACT1_EARLY_ENCOUNTERS, ACT1_NORMAL, rand, 'act1-early');
   }
-  if (outlawKingAvailable && nodeIndex > 6 && rand() < OUTLAW_KING_ENCOUNTER_CHANCE) {
+  if (outlawKingAvailable && nodeIndex > 6 && rand() < OUTLAW_KING_ENCOUNTER_CHANCE_BY_ACT[1]) {
     return buildOutlawKingEncounter(1);
   }
-  return rollLateEncounter(ACT1_EARLY_ENCOUNTERS, ACT1_LATE_ENCOUNTERS, ACT1_NORMAL, ['pack_mule'], rand);
+  return rollLateEncounter(
+    ACT1_EARLY_ENCOUNTERS, ACT1_LATE_ENCOUNTERS, ACT1_NORMAL, ['pack_mule'], rand,
+    'act1-early', 'act1-late',
+  );
 }
 
 export function rollAct1EliteEncounter(
@@ -704,11 +739,11 @@ export function rollAct1EliteEncounter(
   outlawKingAvailable = false,
   nodeIndex = 99,
 ): EnemyDefinition[] {
-  if (outlawKingAvailable && nodeIndex > 6 && rand() < OUTLAW_KING_ENCOUNTER_CHANCE) {
+  if (outlawKingAvailable && nodeIndex > 6 && rand() < OUTLAW_KING_ENCOUNTER_CHANCE_BY_ACT[1]) {
     return buildOutlawKingEncounter(1);
   }
   const pool = Object.values(ACT1_ELITE);
-  const bag = getBag(ACT1_ELITE, pool.length);
+  const bag = getBag('act1-elite', pool.length);
   return [{ ...pool[bag.draw(rand)] }];
 }
 
@@ -721,14 +756,16 @@ export function rollAct2Encounter(
 ): EnemyDefinition[] {
   const isEarly = nodeIndex < 3;
   if (isEarly) {
-    return rollPresetEncounter(ACT2_EARLY_ENCOUNTERS, ACT2_NORMAL, rand);
+    return rollPresetEncounter(ACT2_EARLY_ENCOUNTERS, ACT2_NORMAL, rand, 'act2-early');
   }
-  if (outlawKingAvailable && rand() < OUTLAW_KING_ENCOUNTER_CHANCE) {
+  if (outlawKingAvailable && rand() < OUTLAW_KING_ENCOUNTER_CHANCE_BY_ACT[2]) {
     return buildOutlawKingEncounter(2);
   }
   return rollLateEncounter(
     ACT2_EARLY_ENCOUNTERS, ACT2_LATE_ENCOUNTERS, ACT2_NORMAL,
-    ['mining_canary'], rand, ['prospector_gone_mad'],
+    ['mining_canary'], rand,
+    'act2-early', 'act2-late',
+    ['prospector_gone_mad'],
   );
 }
 
@@ -736,11 +773,11 @@ export function rollAct2EliteEncounter(
   rand: () => number = Math.random,
   outlawKingAvailable = false,
 ): EnemyDefinition[] {
-  if (outlawKingAvailable && rand() < OUTLAW_KING_ENCOUNTER_CHANCE) {
+  if (outlawKingAvailable && rand() < OUTLAW_KING_ENCOUNTER_CHANCE_BY_ACT[2]) {
     return buildOutlawKingEncounter(2);
   }
   const pool = Object.values(ACT2_ELITE);
-  const bag = getBag(ACT2_ELITE, pool.length);
+  const bag = getBag('act2-elite', pool.length);
   return [{ ...pool[bag.draw(rand)] }];
 }
 
@@ -753,24 +790,24 @@ export function rollAct3Encounter(
 ): EnemyDefinition[] {
   const isEarly = nodeIndex < 3;
   if (isEarly) {
-    return rollPresetEncounter(ACT3_EARLY_ENCOUNTERS, ACT3_NORMAL, rand);
+    return rollPresetEncounter(ACT3_EARLY_ENCOUNTERS, ACT3_NORMAL, rand, 'act3-early');
   }
-  if (outlawKingAvailable && rand() < OUTLAW_KING_ENCOUNTER_CHANCE) {
+  if (outlawKingAvailable && rand() < OUTLAW_KING_ENCOUNTER_CHANCE_BY_ACT[3]) {
     return buildOutlawKingEncounter(3);
   }
   // Act 3 has no dynamic "any 2" encounter -- 25% early preset, 75% late preset
-  if (rand() < 0.25) return rollPresetEncounter(ACT3_EARLY_ENCOUNTERS, ACT3_NORMAL, rand);
-  return rollPresetEncounter(ACT3_LATE_ENCOUNTERS, ACT3_NORMAL, rand);
+  if (rand() < 0.25) return rollPresetEncounter(ACT3_EARLY_ENCOUNTERS, ACT3_NORMAL, rand, 'act3-early');
+  return rollPresetEncounter(ACT3_LATE_ENCOUNTERS, ACT3_NORMAL, rand, 'act3-late');
 }
 
 export function rollAct3EliteEncounter(
   rand: () => number = Math.random,
   outlawKingAvailable = false,
 ): EnemyDefinition[] {
-  if (outlawKingAvailable && rand() < OUTLAW_KING_ENCOUNTER_CHANCE) {
+  if (outlawKingAvailable && rand() < OUTLAW_KING_ENCOUNTER_CHANCE_BY_ACT[3]) {
     return buildOutlawKingEncounter(3);
   }
   const pool = Object.values(ACT3_ELITE);
-  const bag = getBag(ACT3_ELITE, pool.length);
+  const bag = getBag('act3-elite', pool.length);
   return [{ ...pool[bag.draw(rand)] }];
 }

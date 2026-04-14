@@ -1,4 +1,5 @@
 import type { TileType } from '../../types/game';
+import { EventBus, GameEvent } from '../EventBus';
 
 /**
  * Player: runtime combat state + Deadeye ability.
@@ -26,7 +27,12 @@ export class Player {
   protectedStacks = 0;
   skipNextBlockReset = false;
   gold = 0;
+  /** Net gold change this fight (positive minus penalties). Reset between fights. */
   goldThisFight = 0;
+  /** Sum of POSITIVE gold gains this fight (penalties don't subtract). Used for the
+   *  run-wide goldObtained tally so a fight with heavy fool's-gold penalties still
+   *  credits the underlying gains. Reset between fights. */
+  goldObtainedThisFight = 0;
   abilityCharge: number;
   readonly abilityThreshold: number;
   deadeyeShots = 3;
@@ -95,22 +101,35 @@ export class Player {
     this.health = Math.max(0, this.health - remaining);
     if (remaining > 0) this.tookDamageThisTurn = true;
 
-    // Dead Man Walking(7): survive lethal → heal 20% max HP (once per combat)
-    if (this.health <= 0 && this.deadManWalkingAvailable) {
-      this.health = Math.max(1, Math.floor(this.maxHealth * 0.2));
-      this.deadManWalkingAvailable = false;
-    }
-
-    // Shed Skin: survive lethal damage, heal 50% max HP (once per fight, artifact self-destructs)
-    if (this.health <= 0 && this.shedSkinAvailable) {
-      this.health = Math.max(1, Math.floor(this.maxHealth * 0.5));
-      this.shedSkinAvailable = false;
-    }
+    this.tryLethalSave();
 
     // Thorns: deal damage back equal to stacks
     const thornsDamage = this.thorns > 0 ? this.thorns : 0;
 
     return { hpLost: remaining, blocked, thornsDamage };
+  }
+
+  /**
+   * If the player is currently at 0 HP, run lethal-damage saves in priority order
+   * (Dead Man Walking → Shed Skin) and revive if any are available. Returns true
+   * if a save fired. Call this whenever damage is applied outside `takeDamage`
+   * (e.g. poison ticks, self-damage from Reno's Coin) so the same protections
+   * apply uniformly.
+   */
+  tryLethalSave(): boolean {
+    if (this.health > 0) return false;
+    if (this.deadManWalkingAvailable) {
+      this.health = Math.max(1, Math.floor(this.maxHealth * 0.2));
+      this.deadManWalkingAvailable = false;
+      return true;
+    }
+    if (this.shedSkinAvailable) {
+      this.health = Math.max(1, Math.floor(this.maxHealth * 0.5));
+      this.shedSkinAvailable = false;
+      EventBus.emit(GameEvent.ARTIFACT_USED, 'shed_skin');
+      return true;
+    }
+    return false;
   }
 
   heal(amount: number): number {
@@ -126,6 +145,7 @@ export class Player {
   addGold(amount: number): void {
     this.gold += amount;
     this.goldThisFight += amount;
+    if (amount > 0) this.goldObtainedThisFight += amount;
   }
 
   /** Add Ace stacks. Each stack = +0.25x multiplier on next non-Ace match. */
@@ -211,6 +231,7 @@ export class Player {
     this.protectedStacks = 0;
     this.thorns = 0;
     this.goldThisFight = 0;
+    this.goldObtainedThisFight = 0;
   }
 
   isDead(): boolean {

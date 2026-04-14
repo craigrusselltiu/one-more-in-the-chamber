@@ -70,7 +70,8 @@ export const CharacterSelectScreen = memo(function CharacterSelectScreen() {
   const [ascensionLevel, setAscensionLevel] = useState(lastAscension ?? 0);
   const [customSeed, setCustomSeed] = useState('');
 
-  const maxSelectable = highestCleared + 1;
+  // Ascension caps at 20. Scaling beyond 20 is disabled.
+  const maxSelectable = Math.min(20, highestCleared + 1);
   const char = CHARACTERS.find((c) => c.id === selectedCharacter) ?? CHARACTERS[0];
 
   useEffect(() => {

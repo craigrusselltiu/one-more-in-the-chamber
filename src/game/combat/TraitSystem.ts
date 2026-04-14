@@ -74,11 +74,11 @@ export class TraitSystem {
       player.sturdyStacks += 4;
     }
 
-    // Outlaw(5): at start of Boss encounters, gain 3 Rageful + 2 Vulnerable to all enemies
+    // Outlaw(5): at start of Boss encounters, gain 5 Rageful + 3 Vulnerable to all enemies
     if (isBoss && this.isActive('outlaw', 5)) {
-      player.ragefulStacks += 3;
+      player.ragefulStacks += 5;
       for (const enemy of enemies) {
-        if (!enemy.state.isDead) enemy.addVulnerable(2);
+        if (!enemy.state.isDead) enemy.addVulnerable(3);
       }
     }
 
@@ -87,9 +87,9 @@ export class TraitSystem {
       this.deadManWalkingAvailable = true;
     }
 
-    // Preacher(6): gain 1 Grace at start of combat
+    // Preacher(6): gain 2 Grace at start of combat
     if (this.isActive('preacher', 6)) {
-      player.graceStacks += 1;
+      player.graceStacks += 2;
     }
   }
 
@@ -163,10 +163,10 @@ export class TraitSystem {
 
     // --- Prospector ---
 
-    // Prospector(2): any match: 25% chance to generate 5 gold
+    // Prospector(2): any match: 25% chance to generate 7 gold
     if (this.isActive('prospector', 2)) {
       if (Math.random() < 0.25) {
-        modified.gold += 5;
+        modified.gold += 7;
       }
     }
 
@@ -238,9 +238,9 @@ export class TraitSystem {
 
   /** Called when an enemy is killed. Returns rageful stacks to add. */
   onEnemyKilled(): number {
-    // Outlaw(2): killing an enemy grants 1 Rageful
+    // Outlaw(2): killing an enemy grants 3 Rageful
     if (this.isActive('outlaw', 2)) {
-      return 1;
+      return 3;
     }
     return 0;
   }
@@ -249,7 +249,7 @@ export class TraitSystem {
   // Gold Gain Hook
   // ---------------------------------------------------------------------------
 
-  /** Prospector(4): whenever gold is gained in combat, deal 1 damage to a random enemy. */
+  /** Prospector(4): whenever gold is gained in combat, deal 2 damage to a random enemy. */
   goldDealsDamage(): boolean {
     return this.isActive('prospector', 4);
   }

@@ -1,43 +1,42 @@
 import type { RunState } from '../types/game';
 
+/** Combo multiplier capped at 3.0x, derived from longest cascade step (step 1 = 1.0x). */
+export function comboMultiplierFromStep(step: number): number {
+  if (step <= 1) return 1.0;
+  return Math.min(3.0, 1 + (step - 1) * 0.1);
+}
+
 /** Calculate final score for a run. Used by ScoreScreen and MainMenu (abandon). */
 export function calculateScore(run: RunState): number {
   const completed = run.status === 'completed';
 
-  const nodesCompleted = run.mapState?.nodes.filter((n) => n.completed).length ?? 0;
-  const combatNodes = run.mapState?.nodes.filter((n) => n.completed && n.type === 'combat').length ?? 0;
-  const eliteNodes = run.mapState?.nodes.filter((n) => n.completed && n.type === 'elite').length ?? 0;
-  const bossNodes = run.bossesDefeated ?? 0;
+  const combatBonus = (run.combatsCleared ?? 0) * 100;
+  const eliteBonus = (run.elitesCleared ?? 0) * 250;
+  const bossBonus = (run.bossesDefeated ?? 0) * 500;
+  const flawlessBonus = (run.flawlessFights ?? 0) * 100;
+  const baseScore = combatBonus + eliteBonus + bossBonus + flawlessBonus;
 
-  const baseCombat = combatNodes * 100;
-  const baseElite = eliteNodes * 200;
-  const baseBoss = bossNodes * 500;
-  const baseComplete = completed ? 1000 : 0;
-  const actBonus = (run.currentAct - 1) * 200;
-  const otherNodes = nodesCompleted - combatNodes - eliteNodes - bossNodes;
-  const nodeBonus = otherNodes * 50;
-  const baseScore = baseCombat + baseElite + baseBoss + baseComplete + actBonus + nodeBonus;
+  const goldBonus = run.goldObtained ?? 0;
+  const artifactBonus = (run.artifactsObtained ?? 0) * 50;
+  const damageBonus = Math.floor((run.totalDamageDealt ?? 0) / 5);
+  const maxCombo = comboMultiplierFromStep(run.longestCascade ?? 0);
+  const comboBonus = Math.round((maxCombo - 1.0) * 1000);
+  const bonusPoints = goldBonus + artifactBonus + damageBonus + comboBonus;
 
-  const goldBonus = run.gold;
-  const artifactBonus = run.artifacts.length * 50;
-  const traitBonus = Object.values(run.traitCounts).reduce((sum, v) => sum + (v ?? 0), 0) * 25;
-  const damageBonus = Math.floor((run.totalDamageDealt ?? 0) / 10);
-  const cascadeBonus = (run.longestCascade ?? 0) * 50;
-  const flawlessBonus = (run.flawlessFights ?? 0) * 150;
-  const bonusPoints = goldBonus + artifactBonus + traitBonus + damageBonus + cascadeBonus + flawlessBonus;
-
-  const ascensionMultiplier = 1.0 + 0.2 * run.ascensionLevel;
+  // Ascension multiplier always applies; time only on win
+  const ascensionMultiplier = 1.0 + 0.05 * run.ascensionLevel;
   const timeMultiplier = completed ? computeTimeMultiplier(run.playTimeSeconds ?? 0) : 1.0;
 
   return Math.round((baseScore + bonusPoints) * ascensionMultiplier * timeMultiplier);
 }
 
-function computeTimeMultiplier(durationSeconds: number): number {
-  const MIN_45 = 45 * 60;
-  const MIN_90 = 90 * 60;
-  const MIN_180 = 180 * 60;
-  if (durationSeconds <= MIN_45) return 1.5;
-  if (durationSeconds <= MIN_90) return 1.5 - 0.5 * (durationSeconds - MIN_45) / (MIN_90 - MIN_45);
-  if (durationSeconds >= MIN_180) return 0.5;
-  return 1.0 - 0.5 * (durationSeconds - MIN_90) / (MIN_180 - MIN_90);
+/**
+ * Time multiplier: 2.0x at 0h, linear down to 1.0x at 1.5h, floor at 1.0x.
+ * Only meaningful on completed runs.
+ */
+export function computeTimeMultiplier(durationSeconds: number): number {
+  const NINETY_MIN = 90 * 60;
+  if (durationSeconds <= 0) return 2.0;
+  if (durationSeconds >= NINETY_MIN) return 1.0;
+  return 2.0 - (durationSeconds / NINETY_MIN);
 }

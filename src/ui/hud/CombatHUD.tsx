@@ -58,7 +58,7 @@ export const CombatHUD = memo(function CombatHUD() {
             <EndTurnButton />
           </div>
           {/* Ability meter - fixed position below player */}
-          <div className="absolute bottom-24 left-1/2 -translate-x-1/2 flex flex-col items-center">
+          <div className="absolute bottom-12 left-1/2 -translate-x-1/2 flex flex-col items-center">
             <AbilityMeter />
           </div>
         </div>

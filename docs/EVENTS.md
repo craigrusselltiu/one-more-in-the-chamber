@@ -2,6 +2,11 @@
 
 Random events encountered at event nodes on the map. Each event presents 2-3 choices with different risk/reward tradeoffs.
 
+## Gemini Prompt Prompt
+I need you to help me write prompts to give to Gemini to generate high-quality pixel art backgrounds for my western-themed game.
+I want 1920x1080 portrait with good quality shading. This will be a background for an event.
+I want just the text prompt that I can copy straight into Gemini. No formatting, no lines, no dots, no newlines, just plain text.
+
 ## The Card Game
 - Flavor: "Raccoon in a top hat. Three cards face down. 'Ten gold a card, friend.'"
 - Choices:

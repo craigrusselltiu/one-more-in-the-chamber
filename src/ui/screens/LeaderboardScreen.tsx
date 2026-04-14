@@ -140,7 +140,7 @@ export const LeaderboardScreen = memo(function LeaderboardScreen() {
                               paintOrder: 'stroke fill',
                             }}
                           >
-                            {tile.level}
+                            {`Lv${tile.level + 1}`}
                           </span>
                         )}
                       </div>

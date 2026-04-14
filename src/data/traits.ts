@@ -28,8 +28,8 @@ export const TRAITS: TraitDefinition[] = [
     name: 'Outlaw',
     description: 'Wanted: Alive. Preferably not.',
     breakpoints: [
-      { threshold: 2, description: 'Killing an enemy grants 1 Rageful.' },
-      { threshold: 5, description: 'At the start of Boss encounters, gain 3 Rageful and apply 2 Vulnerable to all enemies.' },
+      { threshold: 2, description: 'Killing an enemy grants 3 Rageful.' },
+      { threshold: 5, description: 'At the start of Boss encounters, gain 5 Rageful and apply 3 Vulnerable to all enemies.' },
     ],
   },
   {
@@ -37,8 +37,8 @@ export const TRAITS: TraitDefinition[] = [
     name: 'Prospector',
     description: "There's gold in them hills. And in that match.",
     breakpoints: [
-      { threshold: 2, description: 'On any match, 25% chance to generate 5 gold.' },
-      { threshold: 4, description: 'Whenever you gain gold during combat, deal 1 damage to a random enemy.' },
+      { threshold: 2, description: 'On any match, 25% chance to generate 7 gold.' },
+      { threshold: 4, description: 'Whenever you gain gold during combat, deal 2 damage to a random enemy.' },
       { threshold: 6, description: 'Deal 5% of your current gold as extra damage.' },
     ],
   },
@@ -113,7 +113,7 @@ export const TRAITS: TraitDefinition[] = [
     breakpoints: [
       { threshold: 2, description: "Whenever you don't deal damage in a turn, heal 5." },
       { threshold: 4, description: 'Take 20% less damage from enemies with lower HP than you.' },
-      { threshold: 6, description: 'At the start of combat, gain 1 Grace.' },
+      { threshold: 6, description: 'At the start of combat, gain 2 Grace.' },
     ],
   },
   {

@@ -46,14 +46,16 @@ const ENEMY_SPRITE_VARIANTS: Record<string, string[]> = {
 };
 
 /** Per-enemy sprite scale overrides. Scale is applied via CSS transform with
- *  a bottom-center origin so the feet stay anchored to the shadow. */
+ *  a bottom-center origin so the feet stay anchored to the shadow.
+ *  Scale >= 2.0 disables the top enemy slot (max 2 visible enemies). */
 const ENEMY_SPRITE_SCALE: Record<string, number> = {
   hangman: 1.5,
   pack_mule: 1.5,
-  tumbleweed_golem: 1.5,
+  dust_devil: 1.5,
+  tumbleweed_golem: 2.0,
   mine_cart: 1.5,
   mine_foreman: 1.5,
-  ore_golem: 1.5,
+  ore_golem: 2.0,
   dusty_dan: 1.5,
   copperhead_cassidy: 1.5,
   outlaw_king: 1.5,
@@ -61,6 +63,9 @@ const ENEMY_SPRITE_SCALE: Record<string, number> = {
   outlaw_king_act2: 1.5,
   iron_eye_isabella: 1.5,
 };
+
+/** Threshold above which a sprite is considered oversize and forces a 2-slot layout. */
+const OVERSIZE_SCALE_THRESHOLD = 2.0;
 
 /** Resolve sprite filename for an enemy, picking a variant if available. */
 function getEnemySprite(enemy: EnemyState): string | undefined {
@@ -95,14 +100,30 @@ export const EnemyTargeting = memo(function EnemyTargeting() {
   // First enemy (index 0) always stays in the center slot (slot 1).
   // Additional enemies fill top (slot 0) then bottom (slot 2).
   // This prevents the main enemy from shifting when minions are summoned.
+  // If any enemy in the encounter is oversize (>=2x scale), disable the top
+  // slot and route the second enemy to the bottom — leaves room for the big
+  // sprite. We deliberately include DEAD oversize enemies so the layout
+  // doesn't reshuffle (and visibly teleport the minion) the moment the 2x dies.
+  const hasOversize = enemies.some(
+    (e) => e && (ENEMY_SPRITE_SCALE[e.enemyType] ?? 1) >= OVERSIZE_SCALE_THRESHOLD,
+  );
   const slots: (EnemyState | null)[] = [null, null, null];
   if (enemies.length >= 1) slots[1] = enemies[0];
-  if (enemies.length >= 2) slots[0] = enemies[1];
-  if (enemies.length >= 3) slots[2] = enemies[2];
+  if (hasOversize) {
+    if (enemies.length >= 2) slots[2] = enemies[1];
+    // Any 3rd enemy is ignored — encounter design should ensure max 2 enemies with an oversize boss.
+  } else {
+    if (enemies.length >= 2) slots[0] = enemies[1];
+    if (enemies.length >= 3) slots[2] = enemies[2];
+  }
 
-  // Map visual slot index back to enemy array index
-  const SLOT_TO_ENEMY: Record<number, number> = { 0: 1, 1: 0, 2: 2 };
-  const slotToEnemyIndex = (slotIdx: number): number => SLOT_TO_ENEMY[slotIdx] ?? slotIdx;
+  // Map visual slot index back to enemy array index by looking up the assigned enemy.
+  const slotToEnemyIndex = (slotIdx: number): number => {
+    const e = slots[slotIdx];
+    if (!e) return slotIdx;
+    const idx = enemies.indexOf(e);
+    return idx === -1 ? slotIdx : idx;
+  };
 
   // Zig-zag offsets: slots 0 & 2 (top/bottom) left, slot 1 (center) right
   const SLOT_OFFSET: Record<number, number> = { 0: -60, 1: 88, 2: -60 };
@@ -111,8 +132,20 @@ export const EnemyTargeting = memo(function EnemyTargeting() {
     <div className="flex flex-col items-center" style={{ position: 'relative', gap: '-8px' }}>
       {slots.map((enemy, slotIdx) => {
         const enemyIdx = slotToEnemyIndex(slotIdx);
+        // 2x sprites extend ~48px past their container on each side; if this
+        // slot holds one, pull it left enough that the right edge clears the
+        // screen. Other slots/scales keep the normal zig-zag offset.
+        // When a 2x enemy is present (in slot 1), visually push slot 2 down
+        // ~20px so the minion isn't right under the big sprite. Use transform
+        // (not marginTop) to avoid growing the flex container — the parent
+        // is justify-center, which would otherwise shift slot 1 upward.
+        const isOversizeSlot = enemy
+          && (ENEMY_SPRITE_SCALE[enemy.enemyType] ?? 1) >= OVERSIZE_SCALE_THRESHOLD;
+        const marginLeft = isOversizeSlot ? 40 : (SLOT_OFFSET[slotIdx] ?? 0);
+        const marginTop = slotIdx > 0 ? -20 : 0;
+        const transform = hasOversize && slotIdx === 2 ? 'translateY(20px)' : undefined;
         return (
-          <div key={slotIdx} style={{ marginLeft: SLOT_OFFSET[slotIdx] ?? 0, marginTop: slotIdx > 0 ? -20 : 0 }}>
+          <div key={slotIdx} style={{ marginLeft, marginTop, transform }}>
             <EnemySlot
               enemy={enemy}
               index={enemyIdx}
@@ -202,7 +235,6 @@ const EnemySlot = memo(function EnemySlot({
               style={{ width: 80, imageRendering: 'pixelated', opacity: 0.5 }}
             />
             <img
-              className={isTargeted ? 'enemy-targeted' : undefined}
               src={`${import.meta.env.BASE_URL}assets/sprites/${getEnemySprite(enemy)}`}
               alt={enemy.enemyType}
               style={{
@@ -216,10 +248,32 @@ const EnemySlot = memo(function EnemySlot({
                 transformOrigin: 'bottom center',
               }}
             />
+            {isTargeted && (
+              // Duplicate sprite passed through the SVG outline filter — only the
+              // 2px alpha-aware ring is rendered, never the body, so the breathing
+              // opacity animation can never tint the original sprite.
+              <img
+                src={`${import.meta.env.BASE_URL}assets/sprites/${getEnemySprite(enemy)}`}
+                alt=""
+                aria-hidden
+                className="enemy-target-outline absolute top-0 left-0"
+                style={{
+                  width: 96,
+                  height: 96,
+                  imageRendering: 'pixelated',
+                  objectFit: 'contain',
+                  transform: ENEMY_SPRITE_SCALE[enemy.enemyType]
+                    ? `scale(${ENEMY_SPRITE_SCALE[enemy.enemyType]})`
+                    : undefined,
+                  transformOrigin: 'bottom center',
+                  filter: 'url(#enemy-target-outline)',
+                }}
+              />
+            )}
           </div>
         ) : (
           <div
-            className={`border border-stone-600 border-dashed mb-0.5 flex items-center justify-center shrink-0${isTargeted ? ' enemy-targeted' : ''}`}
+            className={`border ${isTargeted ? 'border-white' : 'border-stone-600'} border-dashed mb-0.5 flex items-center justify-center shrink-0`}
             style={{ width: 96, height: 96 }}
           >
             <span className="text-stone-600 capitalize" style={{ fontSize: '8px' }}>

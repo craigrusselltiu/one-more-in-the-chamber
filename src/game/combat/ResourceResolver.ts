@@ -49,21 +49,26 @@ const PER_TILE_UPGRADE: Set<TileType> = new Set([
 export class ResourceResolver {
   /** Whether cavalry bonus swap has been granted this turn. */
   cavalrySwapUsedThisTurn = false;
-  /** Chip marble bag: hits remaining / draws remaining. */
+  /** Chip marble bag (only used when an artifact like Reno's Coin opts in via
+   *  setChipBucket). When unset, chip hits are a true independent 50/50 roll. */
+  private chipBucketHits = 0;
+  private chipBucketSize = 0;
+  private chipBucketEnabled = false;
   private chipHitsLeft = 0;
   private chipDrawsLeft = 0;
-  private chipBucketHits = 3;
-  private chipBucketSize = 6;
 
-  /** Override the default (3/6) chip bucket ratio. */
+  /** Opt into a bag-based chip distribution with the given hit ratio. */
   setChipBucket(hits: number, size: number): void {
     this.chipBucketHits = hits;
     this.chipBucketSize = size;
+    this.chipBucketEnabled = true;
     this.chipHitsLeft = 0;
     this.chipDrawsLeft = 0;
   }
 
   private drawChipHit(): boolean {
+    // Default behaviour: true independent 50/50 (no bag, no streaks-by-design).
+    if (!this.chipBucketEnabled) return Math.random() < 0.5;
     if (this.chipDrawsLeft <= 0) {
       this.chipHitsLeft = this.chipBucketHits;
       this.chipDrawsLeft = this.chipBucketSize;

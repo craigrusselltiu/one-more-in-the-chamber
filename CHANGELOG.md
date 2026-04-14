@@ -4,6 +4,48 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## v0.6.7
+
+### Added
+- 2x enemy sprite scaling (Tumbleweed Golem and Ore Golem). When a 2x enemy is present, the top enemy slot is auto-disabled so the larger sprite has room.
+- Dust Devil scaled to 1.5x
+- Used-up artifacts are rendered greyscale and dim in the artifact bar. Shed Skin goes used after triggering its lethal save; Gold Tooth goes used on pickup (its +333 gold was already applied). Used artifacts no longer contribute their combat-time effects.
+- Sheriff(6) now actually reflects 100% of absorbed block damage back to the attacker (was documented but unimplemented).
+- Skeleton Key and Panacea now grant Jail Cell Keys block per lock they clear.
+- 10 new tile ideas added to docs/TILES.md (Echo, Hourglass, Bear Trap, Pact, Scorched Earth, Wagon Wheel, Ledger, Coyote Call, Dead Man's Hand, Anchor). All existing tile idea entries reformatted to the canonical flavor/behaviour/upgrade/formula style.
+
+### Changed
+- Act 1 normal enemy HP nerfed per ENEMIES.md: Bandit 48→44, Coyote 37→35, Rattlesnake 43→41, Vulture 32→28, Pack Mule 63→60.
+- 3 Vultures late-normal encounter now promotes exactly one random vulture to the Summoned variant (1/3 HP) per roll via a new `:rsummoned` preset marker.
+- Chip tile is now a true independent 50/50 roll by default. Reno's Coin still overrides to the 6/8 bag (75% hit, no streaks).
+- Traits tuned per TRAITS.md:
+  - Outlaw(2): 1 → 3 Rageful on kill
+  - Outlaw(5): 3 → 5 Rageful + 2 → 3 Vulnerable at boss start
+  - Prospector(2): 5 → 7 gold per proc
+  - Prospector(4): 1 → 2 damage per gold gain
+  - Preacher(6): 1 → 2 Grace at fight start
+  - Gunslinger(6) tooltip now shows its description ("Lucky deals 2x damage instead of 1.5x.")
+- Ascension 21+ disabled. Character select caps at 20 and levels past 20 get the same mutations as level 20 (was +4% HP / +2% damage per level beyond 20).
+- Scoring system rebuilt:
+  - Base: Combats (100 ea), Elites (250 ea), Bosses (500 ea), Flawless (100 ea)
+  - Bonus: Gold Obtained (1 pt/gold), Artifacts (50 ea), Damage Dealt (1 pt/5 dmg), Max Combo (100 per 0.1 above 1.0x, e.g. 1.7x = 700)
+  - Ascension multiplier: x(1.0 + 0.05 per level), always applies
+  - Time multiplier: x2 at 0h linear down to x1 at 1h30+, only on win
+  - Removed act-reached bonus, explored nodes bonus, trait bonus, gold-held bonus, run-complete bonus
+- Starting gold and starting artifacts no longer count toward the score (`goldObtained` initializes to 0; `artifactsObtained` only ticks on real pickups).
+- Reputation rounding: no longer floors at 10. A zero-score run (immediate abandon) now grants zero reputation.
+- Enemy target outline replaced with an SVG feMorphology-based ring that no longer tints the sprite body. Outline is now thinner (~1px).
+- Ability meter moved lower on the combat screen.
+- Leaderboard tile-level badge now displays "Lv2" etc. (base tile shows nothing).
+- Enemy encounter bag persisted across Vite HMR reloads via globalThis, with stable string keys so object-reference churn from module reloads no longer defeats the no-repeat guarantee (dev-only bug).
+
+### Fixed
+- Combats/Elites cleared and gold obtained now persist across acts (previously only the current act's map contributed to the score, since new acts regenerate the map).
+- Player could get stuck at 0 HP after poison ticks or Reno's Coin self-damage because those paths modified `player.health` directly, skipping Shed Skin / Dead Man Walking and not ending combat. Both now route through a shared `tryLethalSave` helper, and poison defeats end combat immediately instead of waiting for the next move.
+- Gold Obtained score was always 0 from combat. `resetFightEffects` zeroed `goldThisFight` before the combat result was built; captured it first, and switched to a positive-only counter so fool's-gold / Reno's-Coin penalties don't erase earned gold from the run tally.
+- 2x enemy death caused the minion to visually "teleport" from slot 2 to slot 0 because the layout reshuffled the moment the 2x died. Oversize layout now persists for the entire fight once a 2x is in the encounter.
+- Reno's Coin self-damage now goes through the lethal save (same root cause as the poison bug).
+
 ## v0.6.6
 
 ### Added

@@ -39,25 +39,17 @@
   animation: ready-breathe 1.2s ease-in-out infinite;
 }
 
-/* Enemy targeting: breathing pixel outline using offset drop-shadows */
+/* Enemy targeting: pixel-outline ring that breathes via opacity.
+   The ring itself is produced by an SVG feMorphology filter on a duplicated
+   sprite (see #enemy-target-outline in App.tsx). Animating opacity here avoids
+   the body-tinting that chained drop-shadows produced. */
 @keyframes target-breathe {
-  0%, 100% {
-    filter:
-      drop-shadow( 2px  0px 0px rgba(255,255,255,0.15))
-      drop-shadow(-2px  0px 0px rgba(255,255,255,0.15))
-      drop-shadow( 0px  2px 0px rgba(255,255,255,0.15))
-      drop-shadow( 0px -2px 0px rgba(255,255,255,0.15));
-  }
-  50% {
-    filter:
-      drop-shadow( 2px  0px 0px rgba(255,255,255,0.7))
-      drop-shadow(-2px  0px 0px rgba(255,255,255,0.7))
-      drop-shadow( 0px  2px 0px rgba(255,255,255,0.7))
-      drop-shadow( 0px -2px 0px rgba(255,255,255,0.7));
-  }
+  0%, 100% { opacity: 0.2; }
+  50% { opacity: 0.85; }
 }
-.enemy-targeted {
+.enemy-target-outline {
   animation: target-breathe 2s ease-in-out infinite;
+  pointer-events: none;
 }
 
 /* Enemy sprite shake when performing action */

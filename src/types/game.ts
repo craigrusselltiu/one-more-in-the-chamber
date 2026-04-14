@@ -23,6 +23,14 @@ export interface RunState {
   longestCascade: number;
   flawlessFights: number;
   bossesDefeated: number;
+  /** Cumulative combat nodes cleared across all acts (not derived from mapState, which resets). */
+  combatsCleared: number;
+  /** Cumulative elite nodes cleared across all acts. */
+  elitesCleared: number;
+  /** Total gold obtained over the run (sum of positive gold gains), not current balance. Excludes starting gold. */
+  goldObtained: number;
+  /** Number of artifacts obtained during the run. Excludes starting artifacts (loadout + character default). */
+  artifactsObtained: number;
   mapState: MapState | null;
   /** Tracks purchased item IDs per merchant node to persist across remounts. */
   merchantPurchases?: Record<string, string[]>;
@@ -98,6 +106,8 @@ export type TraitId =
 export interface ArtifactInstance {
   id: string;
   tags: TraitId[];
+  /** True once the artifact's one-shot effect has been spent (e.g. Shed Skin triggered, Gold Tooth picked up). */
+  used?: boolean;
 }
 
 export interface ConsumableInstance {

@@ -35,8 +35,13 @@ export const EventScreen = memo(function EventScreen() {
   const run = useRunStore((s) => s.run);
   const updateHealth = useRunStore((s) => s.updateHealth);
   const updateGold = useRunStore((s) => s.updateGold);
+  const addGoldObtained = useRunStore((s) => s.addGoldObtained);
   const addArtifact = useRunStore((s) => s.addArtifact);
   const addConsumable = useRunStore((s) => s.addConsumable);
+  const gainGold = (n: number) => {
+    updateGold(n);
+    addGoldObtained(n);
+  };
   const [choiceMade, setChoiceMade] = useState(false);
   const [displayText, setDisplayText] = useState('');
   const [rewardArtifact, setRewardArtifact] = useState<ArtifactDefinition | null>(null);
@@ -61,19 +66,19 @@ export const EventScreen = memo(function EventScreen() {
 
     switch (choice.effect) {
       case 'gold_5':
-        updateGold(5);
+        gainGold(5);
         setDisplayText('You found 5 gold.');
         break;
       case 'gold_10':
-        updateGold(10);
+        gainGold(10);
         setDisplayText('You received 10 gold.');
         break;
       case 'gold_15':
-        updateGold(15);
+        gainGold(15);
         setDisplayText('You pulled up 15 gold.');
         break;
       case 'gold_30_elite_buff':
-        updateGold(30);
+        gainGold(30);
         setDisplayText('You gained 30 gold. The next elite will be tougher.');
         break;
       case 'merchant_normalize':
@@ -132,11 +137,11 @@ export const EventScreen = memo(function EventScreen() {
           setDisplayText('You explored the first level. Found nothing useful.');
         } else if (roll < 0.5) {
           updateHealth(-8);
-          updateGold(20);
+          gainGold(20);
           setDisplayText('You went deeper and found some gold.');
         } else {
           updateHealth(-15);
-          updateGold(40);
+          gainGold(40);
           setDisplayText('Deep in the mine, you struck gold.');
         }
         break;
@@ -145,12 +150,12 @@ export const EventScreen = memo(function EventScreen() {
         setDisplayText('The merchant thanks you. Merchants will have more stock.');
         break;
       case 'rob_merchant':
-        updateGold(15);
+        gainGold(15);
         setDisplayText('You took what you needed. Next merchant costs more.');
         break;
       case 'climb_well':
         updateHealth(-10);
-        updateGold(30);
+        gainGold(30);
         setDisplayText('The climb was rough, but the payoff was worth it.');
         break;
       case 'gain_tnt':
@@ -175,7 +180,7 @@ export const EventScreen = memo(function EventScreen() {
         break;
       case 'lose_hp_gold_upgrade_tile':
         updateHealth(-5);
-        updateGold(25);
+        gainGold(25);
         setDisplayText('You dug him out. He hands you gold and shares a trick of the trade.');
         break;
       case 'gain_consumables_merchant_penalty':
@@ -196,7 +201,7 @@ export const EventScreen = memo(function EventScreen() {
         setDisplayText('You kept walking. Your focus sharpens.');
         break;
       case 'loot_train':
-        updateGold(20);
+        gainGold(20);
         addConsumable({ id: 'tonic' });
         setDisplayText('You scavenged gold and a tonic from the wreckage.');
         break;
@@ -205,7 +210,7 @@ export const EventScreen = memo(function EventScreen() {
         break;
       case 'bury_heal_gold':
         updateHealth(10);
-        updateGold(10);
+        gainGold(10);
         setDisplayText('You gave him a proper burial and found some gold in his pockets.');
         break;
       case 'defuse_bridge': {
@@ -258,7 +263,7 @@ export const EventScreen = memo(function EventScreen() {
         setDisplayText('He hands over the goods. Merchants will charge more this act.');
         break;
       case 'smoke_out_den':
-        updateGold(20);
+        gainGold(20);
         setDisplayText('The coyotes scatter. You find cached loot inside.');
         break;
       case 'gain_bandage':

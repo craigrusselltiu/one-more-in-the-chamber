@@ -132,7 +132,7 @@ export const CONSUMABLE_FRAMES: Record<string, number> = {
   bandage: 912,
   skeleton_key: 742,
   tumbleweed: 1098,
-  signal_flare: 719,
+  signal_flare: 162,
   snake_oil: 1483,
   lasso: 685,
   panacea: 1418,

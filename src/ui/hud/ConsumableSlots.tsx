@@ -26,6 +26,7 @@ function useConsumableOnMap(consumableId: string): boolean {
         store.updateHealth(15);
       } else if (roll < 0.66) {
         store.updateGold(10);
+        store.addGoldObtained(10);
       } else {
         store.updateHealth(-8);
       }

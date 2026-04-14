@@ -47,7 +47,11 @@ export interface CombatResult {
   victory: boolean;
   playerHealth: number;
   playerGold: number;
+  /** Net gold change during the fight (positive minus penalties). */
   goldEarned: number;
+  /** Sum of POSITIVE gold gains during the fight, ignoring penalties.
+   *  This is what feeds the run-wide goldObtained tally. */
+  goldGainedThisFight: number;
   abilityCharge: number;
   damageDealt: number;
   longestCascade: number;
@@ -435,6 +439,7 @@ export class CombatManager {
         damageReduction: this.player.damageReduction,
         gold: this.player.gold,
         goldThisFight: this.player.goldThisFight,
+        goldObtainedThisFight: this.player.goldObtainedThisFight,
         abilityCharge: this.player.abilityCharge,
         activeTileTypes: [...this.player.activeTileTypes],
         tileUpgrades: { ...this.player.tileUpgrades },
@@ -495,6 +500,7 @@ export class CombatManager {
     this.player.deadManWalkingAvailable = sp.deadManWalkingAvailable ?? false;
     this.player.damageReduction = sp.damageReduction ?? 0;
     this.player.goldThisFight = sp.goldThisFight;
+    this.player.goldObtainedThisFight = sp.goldObtainedThisFight ?? 0;
     // Mirage was already restored on the board; mirror it onto the player so
     // getUpgradeLevel applies the mirage upgrade after a mid-combat reload.
     this.player.mirageReplacementType = this.board.getMirageType();
@@ -601,9 +607,17 @@ export class CombatManager {
       const poisonDmg = Math.max(1, Math.round(rawDmg * this.artifacts.getPoisonDamageMultiplier()));
       this.player.health = Math.max(0, this.player.health - poisonDmg);
       this.player.poisonedStacks--;
+      // Lethal poison must still trigger Shed Skin / Dead Man Walking, and if the
+      // player dies here we must end combat — otherwise they sit at 0 HP until
+      // the next move's match resolution catches it.
+      this.player.tryLethalSave();
       this.floatOnPlayer(`-${poisonDmg}`, '#40ff40');
       EventBus.emit(GameEvent.PLAYER_HP_CHANGE, this.player.health, this.player.maxHealth);
-      if (this.player.health <= 0) this.playerTookDamageThisFight = true;
+      if (this.player.health <= 0) {
+        this.playerTookDamageThisFight = true;
+        this.endCombat();
+        return;
+      }
     }
 
     // Per-turn: +1 ability charge (capped at threshold)
@@ -1080,9 +1094,11 @@ export class CombatManager {
           if (target) target.addVulnerable(2);
           break;
         }
-        case 'skeleton_key':
-          this.hazardManager.clearAllOfType('lock');
+        case 'skeleton_key': {
+          const cleared = this.hazardManager.clearAllOfType('lock');
+          this.grantJailCellKeysBlock(cleared.length);
           break;
+        }
         case 'tumbleweed': {
           this.board.setIsResolving(true);
           await this.board.reshuffleAnimatedWithCascades();
@@ -1115,14 +1131,16 @@ export class CombatManager {
           this.board.setLassoMode(true);
           document.body.classList.add('cursor-lasso');
           break;
-        case 'panacea':
+        case 'panacea': {
           this.hazardManager.clearAllOfType('poison');
           this.hazardManager.clearAllOfType('bomb');
           this.hazardManager.clearAllOfType('sand');
           this.hazardManager.clearAllOfType('fools_gold');
-          this.hazardManager.clearAllOfType('lock');
+          const cleared = this.hazardManager.clearAllOfType('lock');
           this.hazardManager.clearAllOfType('suppress');
+          this.grantJailCellKeysBlock(cleared.length);
           break;
+        }
         default:
           return false;
       }
@@ -1587,6 +1605,16 @@ export class CombatManager {
     EventBus.emit(GameEvent.FLOATING_NUMBER, 'player', 0, text, color, fontSize);
   }
 
+  /** Grant Jail Cell Keys block per lock cleared by consumables (Skeleton Key, Panacea). */
+  private grantJailCellKeysBlock(locksCleared: number): void {
+    if (locksCleared <= 0) return;
+    const lockBlock = this.artifacts.onLockFreed() * locksCleared;
+    if (lockBlock > 0) {
+      this.player.addBlock(lockBlock);
+      this.floatOnPlayer(`+${lockBlock}`, '#6888A0');
+    }
+  }
+
   /** Get the highest-HP alive enemy. */
   private getHighestHpEnemy(): Enemy | null {
     const alive = this.aliveEnemies();
@@ -1706,12 +1734,12 @@ export class CombatManager {
 
       EventBus.emit(GameEvent.GOLD_CHANGE, this.player.gold);
 
-      // Prospector(4): gaining gold deals 1 damage to a random enemy
+      // Prospector(4): gaining gold deals 2 damage to a random enemy
       if (this.traits.goldDealsDamage()) {
         const alive = this.aliveEnemies();
         if (alive.length > 0) {
           const target = alive[Math.floor(Math.random() * alive.length)];
-          this.dealDamageToEnemy(target, 1, false);
+          this.dealDamageToEnemy(target, 2, false);
           this.emitEnemyHpChanges();
         }
       }
@@ -1870,6 +1898,7 @@ export class CombatManager {
     // Reno's Coin: self-damage on chip miss
     if (output.doubleDownPenalty && output.doubleDownPenalty > 0) {
       this.player.health = Math.max(0, this.player.health - output.doubleDownPenalty);
+      this.player.tryLethalSave();
       this.floatOnPlayer(`-${output.doubleDownPenalty}`, '#ff4444');
       EventBus.emit(GameEvent.PLAYER_HP_CHANGE, this.player.health, this.player.maxHealth);
       if (this.player.health <= 0) this.playerTookDamageThisFight = true;
@@ -2444,6 +2473,13 @@ export class CombatManager {
       this.damageDealtThisFight += enemy.takeDamage(thornsDamage).hpLost;
       EventBus.emit(GameEvent.ENEMY_HP_CHANGE, { ...enemy.state });
     }
+    // Sheriff(6): block reflects 100% of absorbed damage back to the attacker.
+    if (blocked > 0 && this.traits.blockReflectsDamage()) {
+      const reflected = enemy.takeDamage(blocked).hpLost;
+      this.damageDealtThisFight += reflected;
+      this.floatOnEnemy(enemy, `-${reflected}`, '#6888A0');
+      EventBus.emit(GameEvent.ENEMY_HP_CHANGE, { ...enemy.state });
+    }
   }
 
   private trySummonEnemy(summoner: Enemy, summonType?: string, fullHp?: boolean): void {
@@ -2543,14 +2579,18 @@ export class CombatManager {
       EventBus.emit(GameEvent.GOLD_CHANGE, this.player.gold);
     }
 
-    // Reset per-fight effects
+    // Snapshot per-fight totals BEFORE resetting (resetFightEffects zeroes them,
+    // which would otherwise make these always 0 — breaking the run-wide tally).
+    const goldEarnedThisFight = this.player.goldThisFight;
+    const goldGainedThisFight = this.player.goldObtainedThisFight;
     this.player.resetFightEffects();
 
     const result: CombatResult = {
       victory,
       playerHealth: this.player.health,
       playerGold: this.player.gold,
-      goldEarned: this.player.goldThisFight,
+      goldEarned: goldEarnedThisFight,
+      goldGainedThisFight,
       abilityCharge: this.player.abilityCharge,
       damageDealt: this.damageDealtThisFight,
       longestCascade: this.longestCascadeThisFight,

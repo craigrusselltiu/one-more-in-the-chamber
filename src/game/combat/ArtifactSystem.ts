@@ -37,7 +37,9 @@ export class ArtifactSystem {
   private heliographShardAvailable = false;
 
   constructor(artifacts: ArtifactInstance[]) {
-    this.artifactIds = new Set(artifacts.map((a) => a.id));
+    // Used artifacts (e.g. Shed Skin after triggering, Gold Tooth after pickup) stay in
+    // the player's inventory for display purposes but no longer apply their effects.
+    this.artifactIds = new Set(artifacts.filter((a) => !a.used).map((a) => a.id));
     this.artifactInstances = artifacts;
   }
 

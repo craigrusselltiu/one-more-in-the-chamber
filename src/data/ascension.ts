@@ -113,18 +113,7 @@ export function getAscensionMutations(level: number): AscensionMutations {
   if (l >= 18) { m.eliteHpMult += 0.1; m.eliteDamageMult += 0.1; }
   if (l >= 19) { m.bossHpMult += 0.1; m.bossDamageMult += 0.1; }
   if (l >= 20) m.finalBossExtraElite = true;
-  // L21+: each level past 20 adds +10% HP and +5% damage to all enemies
-  if (l > 20) {
-    const extra = l - 20;
-    const hpBonus = extra * 0.1;
-    const dmgBonus = extra * 0.05;
-    m.normalHpMult += hpBonus;
-    m.eliteHpMult += hpBonus;
-    m.bossHpMult += hpBonus;
-    m.normalDamageMult += dmgBonus;
-    m.eliteDamageMult += dmgBonus;
-    m.bossDamageMult += dmgBonus;
-  }
+  // Ascension caps at L20. Any level past 20 is treated as L20 (no extra scaling).
   return m;
 }
 

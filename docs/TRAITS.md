@@ -10,13 +10,13 @@ Trait level = number of artifacts held with that tag. Effects activate at breakp
 
 ## Outlaw
 - Flavor: "Wanted: Alive. Preferably not."
-- 2 -- Killing an enemy grants 1 Rageful.
-- 5 -- At the start of boss encounters, gain 3 Rageful and apply 2 Vulnerable to all enemies.
+- 2 -- Killing an enemy grants 3 Rageful.
+- 5 -- At the start of boss encounters, gain 5 Rageful and apply 3 Vulnerable to all enemies.
 
 ## Prospector
 - Flavor: "There's gold in them hills. And in that match."
-- 2 -- On any match, 25% chance to generate 5 gold.
-- 4 -- Whenever you gain gold during combat, deal 1 damage to a random enemy.
+- 2 -- On any match, 25% chance to generate 7 gold.
+- 4 -- Whenever you gain gold during combat, deal 2 damage to a random enemy.
 - 6 -- Deal 5% of your current gold as extra damage.
 
 ## Gunslinger
@@ -60,9 +60,9 @@ Trait level = number of artifacts held with that tag. Effects activate at breakp
 
 ## Preacher
 - Flavor: "The sermon ain't over yet."
-- 2 -- Whenever you don't deal damage in a turn, heal 5 
+- 2 -- Whenever you don't deal damage in a turn, heal 5
 - 4 -- Take 20% less damage from enemies with lower HP than you.
-- 6 -- At the start of combat, gain 1 Grace.
+- 6 -- At the start of combat, gain 2 Grace.
 
 ## Antivenom
 - Flavor: "Don't step on anything that hisses."

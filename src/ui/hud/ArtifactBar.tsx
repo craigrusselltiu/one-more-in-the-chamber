@@ -113,25 +113,27 @@ export const ArtifactBar = memo(function ArtifactBar() {
               })()}
             </div>
           ) : undefined} text={def ? undefined : inst.id}>
-            {ARTIFACT_FRAMES[inst.id] != null ? (
-              <SpriteIcon
-                frame={ARTIFACT_FRAMES[inst.id]}
-                scale={1}
-                outline={RARITY_COLORS_DIM[def?.rarity ?? 'common']}
-              />
-            ) : (
-              <div
-                className="flex items-center justify-center text-[6px] text-white font-bold"
-                style={{
-                  width: 18,
-                  height: 18,
-                  backgroundColor: color,
-                  border: `1px solid ${color}`,
-                }}
-              >
-                {(def?.name ?? inst.id).charAt(0).toUpperCase()}
-              </div>
-            )}
+            <div style={inst.used ? { filter: 'grayscale(1) brightness(0.55)' } : undefined}>
+              {ARTIFACT_FRAMES[inst.id] != null ? (
+                <SpriteIcon
+                  frame={ARTIFACT_FRAMES[inst.id]}
+                  scale={1}
+                  outline={RARITY_COLORS_DIM[def?.rarity ?? 'common']}
+                />
+              ) : (
+                <div
+                  className="flex items-center justify-center text-[6px] text-white font-bold"
+                  style={{
+                    width: 18,
+                    height: 18,
+                    backgroundColor: color,
+                    border: `1px solid ${color}`,
+                  }}
+                >
+                  {(def?.name ?? inst.id).charAt(0).toUpperCase()}
+                </div>
+              )}
+            </div>
           </Tooltip>
         );
       })}

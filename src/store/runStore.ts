@@ -30,6 +30,7 @@ interface RunStore {
   syncGold: (amount: number) => void;
   syncAbilityCharge: (charge: number) => void;
   addArtifact: (artifact: ArtifactInstance) => void;
+  markArtifactUsed: (id: string) => void;
   addConsumable: (consumable: ConsumableInstance) => void;
   removeConsumable: (index: number) => void;
   addTileType: (type: TileType) => void;
@@ -42,6 +43,9 @@ interface RunStore {
   updateLongestCascade: (steps: number) => void;
   addFlawlessFight: () => void;
   addBossDefeated: () => void;
+  addCombatCleared: () => void;
+  addEliteCleared: () => void;
+  addGoldObtained: (amount: number) => void;
   setCurrentNode: (nodeId: string) => void;
   markNodeVisited: (nodeId: string) => void;
   resetNodeVisited: (nodeId: string) => void;
@@ -75,6 +79,15 @@ export const useRunStore = create<RunStore>((set, get) => ({
       (upgrades as Record<string, number>)['waste'] = (upgrades as Record<string, number>)['venom'];
       delete (upgrades as Record<string, number>)['venom'];
       migrated.tileUpgrades = upgrades;
+    }
+
+    // Backfill persisted scoring counters for older saves.
+    // Starting gold (~100) and starting artifacts (1 character + optional loadout) shouldn't count.
+    if (migrated.combatsCleared == null) migrated.combatsCleared = 0;
+    if (migrated.elitesCleared == null) migrated.elitesCleared = 0;
+    if (migrated.goldObtained == null) migrated.goldObtained = Math.max(0, migrated.gold - 100);
+    if (migrated.artifactsObtained == null) {
+      migrated.artifactsObtained = Math.max(0, migrated.artifacts.length - 1);
     }
 
     // Rename 'treasure' map node type to 'artifact'
@@ -176,6 +189,10 @@ export const useRunStore = create<RunStore>((set, get) => ({
         longestCascade: 0,
         flawlessFights: 0,
         bossesDefeated: 0,
+        combatsCleared: 0,
+        elitesCleared: 0,
+        goldObtained: 0,
+        artifactsObtained: 0,
         mapState,
         status: 'active',
       },
@@ -216,15 +233,38 @@ export const useRunStore = create<RunStore>((set, get) => ({
   addArtifact: (artifact) =>
     set((state) => {
       if (!state.run) return state;
-      const artifacts = [...state.run.artifacts, artifact];
+      // Gold Tooth's effect is fully spent on pickup, so mark it used immediately.
+      const inst: ArtifactInstance =
+        artifact.id === 'gold_tooth' ? { ...artifact, used: true } : artifact;
+      const artifacts = [...state.run.artifacts, inst];
       const traitCounts = { ...state.run.traitCounts };
       for (const tag of artifact.tags) {
         traitCounts[tag] = (traitCounts[tag] ?? 0) + 1;
       }
       // Gold Tooth: upon pickup, gain 333 gold
       let gold = state.run.gold;
-      if (artifact.id === 'gold_tooth') gold += 333;
-      return { run: { ...state.run, artifacts, traitCounts, gold } };
+      let goldObtained = state.run.goldObtained;
+      if (artifact.id === 'gold_tooth') {
+        gold += 333;
+        goldObtained += 333;
+      }
+      const artifactsObtained = state.run.artifactsObtained + 1;
+      return { run: { ...state.run, artifacts, traitCounts, gold, goldObtained, artifactsObtained } };
+    }),
+
+  markArtifactUsed: (id) =>
+    set((state) => {
+      if (!state.run) return state;
+      let changed = false;
+      const artifacts = state.run.artifacts.map((a) => {
+        if (a.id === id && !a.used) {
+          changed = true;
+          return { ...a, used: true };
+        }
+        return a;
+      });
+      if (!changed) return state;
+      return { run: { ...state.run, artifacts } };
     }),
 
   addConsumable: (consumable) =>
@@ -315,6 +355,24 @@ export const useRunStore = create<RunStore>((set, get) => ({
     set((state) => {
       if (!state.run) return state;
       return { run: { ...state.run, bossesDefeated: state.run.bossesDefeated + 1 } };
+    }),
+
+  addCombatCleared: () =>
+    set((state) => {
+      if (!state.run) return state;
+      return { run: { ...state.run, combatsCleared: state.run.combatsCleared + 1 } };
+    }),
+
+  addEliteCleared: () =>
+    set((state) => {
+      if (!state.run) return state;
+      return { run: { ...state.run, elitesCleared: state.run.elitesCleared + 1 } };
+    }),
+
+  addGoldObtained: (amount) =>
+    set((state) => {
+      if (!state.run || amount <= 0) return state;
+      return { run: { ...state.run, goldObtained: state.run.goldObtained + amount } };
     }),
 
   setCurrentNode: (nodeId) =>

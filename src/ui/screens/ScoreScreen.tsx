@@ -4,21 +4,8 @@ import { useRunStore } from '../../store/runStore';
 import { useMetaStore } from '../../store/metaStore';
 import { saveScore } from '../../services/localSave';
 import { pushScore } from '../../services/syncService';
+import { computeTimeMultiplier, comboMultiplierFromStep } from '../../utils/scoring';
 import type { Screen } from '../../App';
-
-/**
- * Compute the time multiplier for scoring.
- * <=45 min: 1.5x, linear to 1.0x at 90 min, continues decreasing to 0.5x at 180 min.
- */
-function computeTimeMultiplier(durationSeconds: number): number {
-  const MIN_45 = 45 * 60;
-  const MIN_90 = 90 * 60;
-  const MIN_180 = 180 * 60;
-  if (durationSeconds <= MIN_45) return 1.5;
-  if (durationSeconds <= MIN_90) return 1.5 - 0.5 * (durationSeconds - MIN_45) / (MIN_90 - MIN_45);
-  if (durationSeconds >= MIN_180) return 0.5;
-  return 1.0 - 0.5 * (durationSeconds - MIN_90) / (MIN_180 - MIN_90);
-}
 
 /** Format seconds into MM:SS or H:MM:SS. */
 function formatDuration(totalSeconds: number): string {
@@ -44,33 +31,27 @@ export const ScoreScreen = memo(function ScoreScreen() {
 
     const completed = run.status === 'completed';
 
-    // Base scoring (only count completed nodes, not just visited)
-    const nodesCompleted = run.mapState?.nodes.filter((n) => n.completed).length ?? 0;
-    const combatNodes = run.mapState?.nodes.filter((n) => n.completed && n.type === 'combat').length ?? 0;
-    const eliteNodes = run.mapState?.nodes.filter((n) => n.completed && n.type === 'elite').length ?? 0;
-    const bossNodes = run.bossesDefeated ?? 0;
+    const combatsCleared = run.combatsCleared ?? 0;
+    const elitesCleared = run.elitesCleared ?? 0;
+    const bossesDefeated = run.bossesDefeated ?? 0;
+    const flawlessFights = run.flawlessFights ?? 0;
 
-    const baseCombat = combatNodes * 100;
-    const baseElite = eliteNodes * 200;
-    const baseBoss = bossNodes * 500;
-    const baseComplete = completed ? 1000 : 0;
-    const actBonus = (run.currentAct - 1) * 200;
-    const otherNodes = nodesCompleted - combatNodes - eliteNodes - bossNodes;
-    const nodeBonus = otherNodes * 50;
-    const baseScore = baseCombat + baseElite + baseBoss + baseComplete + actBonus + nodeBonus;
+    const combatBonus = combatsCleared * 100;
+    const eliteBonus = elitesCleared * 250;
+    const bossBonus = bossesDefeated * 500;
+    const flawlessBonus = flawlessFights * 100;
+    const baseScore = combatBonus + eliteBonus + bossBonus + flawlessBonus;
 
-    // Bonus: gold earned, artifacts, trait breakpoints, damage dealt, cascade, flawless
-    const goldBonus = run.gold;
-    const artifactBonus = run.artifacts.length * 50;
-    const traitBonus = Object.values(run.traitCounts).reduce((sum, v) => sum + (v ?? 0), 0) * 25;
-    const damageBonus = Math.floor((run.totalDamageDealt ?? 0) / 10);
-    const cascadeBonus = (run.longestCascade ?? 0) * 50;
-    const flawlessBonus = (run.flawlessFights ?? 0) * 150;
-    const bonusPoints = goldBonus + artifactBonus + traitBonus + damageBonus + cascadeBonus + flawlessBonus;
+    const goldObtained = run.goldObtained ?? 0;
+    const artifactCount = run.artifactsObtained ?? 0;
+    const artifactBonus = artifactCount * 50;
+    const totalDamageDealt = run.totalDamageDealt ?? 0;
+    const damageBonus = Math.floor(totalDamageDealt / 5);
+    const maxComboMultiplier = comboMultiplierFromStep(run.longestCascade ?? 0);
+    const comboBonus = Math.round((maxComboMultiplier - 1.0) * 1000);
+    const bonusPoints = goldObtained + artifactBonus + damageBonus + comboBonus;
 
-    // Multipliers
-    const ascensionMultiplier = 1.0 + 0.2 * run.ascensionLevel;
-    // Time multiplier only applies to completed runs (beat Act 3)
+    const ascensionMultiplier = 1.0 + 0.05 * run.ascensionLevel;
     const timeMultiplier = completed ? computeTimeMultiplier(run.playTimeSeconds ?? 0) : 1.0;
 
     const finalScore = Math.round((baseScore + bonusPoints) * ascensionMultiplier * timeMultiplier);
@@ -82,23 +63,22 @@ export const ScoreScreen = memo(function ScoreScreen() {
       timeMultiplier,
       finalScore,
       runDurationSeconds: run.playTimeSeconds ?? 0,
-      nodesVisited: nodesCompleted,
-      bossNodes,
-      combatNodes,
-      eliteNodes,
-      completed,
-      gold: run.gold,
-      artifacts: run.artifacts.length,
-      act: run.currentAct,
-      actBonus,
-      otherNodes,
-      nodeBonus,
-      damageBonus,
-      totalDamageDealt: run.totalDamageDealt ?? 0,
-      cascadeBonus,
-      longestCascade: run.longestCascade ?? 0,
+      combatsCleared,
+      elitesCleared,
+      bossesDefeated,
+      flawlessFights,
+      combatBonus,
+      eliteBonus,
+      bossBonus,
       flawlessBonus,
-      flawlessFights: run.flawlessFights ?? 0,
+      goldObtained,
+      artifactCount,
+      artifactBonus,
+      totalDamageDealt,
+      damageBonus,
+      maxComboMultiplier,
+      comboBonus,
+      completed,
     };
   }, [run]);
 
@@ -124,8 +104,8 @@ export const ScoreScreen = memo(function ScoreScreen() {
       timeBonus: score.timeMultiplier,
       finalScore: score.finalScore,
       runDurationSeconds: score.runDurationSeconds,
-      nodesCleared: score.nodesVisited,
-      bossesDefeated: score.bossNodes,
+      nodesCleared: score.combatsCleared + score.elitesCleared + score.bossesDefeated,
+      bossesDefeated: score.bossesDefeated,
       runCompleted: score.completed,
       tiles,
       artifacts: artifactIds,
@@ -142,10 +122,9 @@ export const ScoreScreen = memo(function ScoreScreen() {
     if (completed && run) {
       setHighestAscension(run.ascensionLevel);
     }
-    // Award reputation based on score (SPEC: "Reputation earned per run based on score")
     if (score) {
-      const rep = Math.max(10, Math.floor(score.finalScore / 10));
-      addReputation(rep);
+      const rep = Math.floor(score.finalScore / 10);
+      if (rep > 0) addReputation(rep);
     }
     endRun(completed);
     EventBus.emit(GameEvent.SCREEN_CHANGE, 'main-menu' satisfies Screen);
@@ -180,31 +159,26 @@ export const ScoreScreen = memo(function ScoreScreen() {
       {/* Score breakdown */}
       <div className="w-64 border border-stone-600 bg-stone-800/50 p-3 mb-3">
         <div className="flex flex-col gap-1.5">
-          <ScoreLine label="Combat" value={score.combatNodes * 100} detail={`${score.combatNodes} fights`} />
-          <ScoreLine label="Elites" value={score.eliteNodes * 200} detail={`${score.eliteNodes} elites`} />
-          <ScoreLine label="Bosses" value={score.bossNodes * 500} detail={`${score.bossNodes} bosses`} />
-          {score.actBonus > 0 && <ScoreLine label="Act Reached" value={score.actBonus} detail={`Act ${score.act}`} />}
-          {score.nodeBonus > 0 && <ScoreLine label="Explored" value={score.nodeBonus} detail={`${score.otherNodes} nodes`} />}
-          {score.completed && <ScoreLine label="Run Complete" value={1000} />}
+          <ScoreLine label="Combats" value={score.combatBonus} detail={`${score.combatsCleared} cleared`} />
+          <ScoreLine label="Elites" value={score.eliteBonus} detail={`${score.elitesCleared} cleared`} />
+          <ScoreLine label="Bosses" value={score.bossBonus} detail={`${score.bossesDefeated} cleared`} />
+          <ScoreLine label="Flawless" value={score.flawlessBonus} detail={`${score.flawlessFights} fights`} />
 
           <div className="border-t border-stone-600 my-1" />
 
-          <ScoreLine label="Gold held" value={score.gold} />
-          <ScoreLine label="Artifacts" value={score.artifacts * 50} detail={`${score.artifacts} collected`} />
+          <ScoreLine label="Gold Obtained" value={score.goldObtained} detail={`${score.goldObtained} gold`} />
+          <ScoreLine label="Artifacts" value={score.artifactBonus} detail={`${score.artifactCount} obtained`} />
           <ScoreLine label="Damage" value={score.damageBonus} detail={`${score.totalDamageDealt} dealt`} />
-          {score.cascadeBonus > 0 && <ScoreLine label="Cascade" value={score.cascadeBonus} detail={`${score.longestCascade} chain`} />}
-          {score.flawlessBonus > 0 && <ScoreLine label="Flawless" value={score.flawlessBonus} detail={`${score.flawlessFights} fights`} />}
-          <ScoreLine label="Traits" value={score.bonusPoints - score.gold - score.artifacts * 50 - score.damageBonus - score.cascadeBonus - score.flawlessBonus} />
+          <ScoreLine label="Max Combo" value={score.comboBonus} detail={`${score.maxComboMultiplier.toFixed(1)}x`} />
 
           <div className="border-t border-stone-600 my-1" />
 
-          {run.ascensionLevel > 0 && (
-            <ScoreLine
-              label="Ascension"
-              value={`x${score.ascensionMultiplier.toFixed(1)}`}
-              isMultiplier
-            />
-          )}
+          <ScoreLine
+            label="Ascension"
+            value={`x${score.ascensionMultiplier.toFixed(2)}`}
+            detail={`Level ${run.ascensionLevel}`}
+            isMultiplier
+          />
           {score.completed && (
             <ScoreLine
               label="Time"
@@ -230,7 +204,7 @@ export const ScoreScreen = memo(function ScoreScreen() {
       <div className="w-64 flex items-center justify-between mb-4 px-1">
         <span className="text-stone-400 text-xs">Reputation earned</span>
         <span className="text-amber-300 text-xs font-bold">
-          +{Math.max(10, Math.floor(score.finalScore / 10)).toLocaleString()}
+          +{Math.floor(score.finalScore / 10).toLocaleString()}
         </span>
       </div>
 

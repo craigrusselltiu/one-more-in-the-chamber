@@ -60,6 +60,7 @@ export interface SerializedPlayer {
   damageReduction?: number;
   gold: number;
   goldThisFight: number;
+  goldObtainedThisFight?: number;
   abilityCharge: number;
   activeTileTypes: TileType[];
   tileUpgrades: Partial<Record<TileType, number>>;

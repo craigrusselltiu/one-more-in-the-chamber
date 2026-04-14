@@ -44,7 +44,7 @@ import {
   ALL_ENEMIES,
   ACT3_ELITE,
   encounterContainsOutlawKing,
-  OUTLAW_KING_ENCOUNTER_CHANCE,
+  OUTLAW_KING_ENCOUNTER_CHANCE_BY_ACT,
 } from './data/enemies';
 import type { EnemyDefinition } from './types/combat';
 import type { MapNodeType, Act } from './types/game';
@@ -255,7 +255,7 @@ export default function App() {
               if (act === 1 && n.row <= 6) return false;
               if (act !== 1 && n.row < 3) return false;
               const rand = createSeededRandom(`${run.seed}-encounter-${n.id}`);
-              return rand() < OUTLAW_KING_ENCOUNTER_CHANCE;
+              return rand() < OUTLAW_KING_ENCOUNTER_CHANCE_BY_ACT[act];
             });
             if (hasOutlawKing) {
               setTimeout(() => {
@@ -432,7 +432,17 @@ export default function App() {
       if (result.victory) {
         // Mark the current node as completed
         const currentNodeId = store.run?.currentNodeId;
+        const currentNode = store.run?.mapState?.nodes.find((n) => n.id === currentNodeId);
         if (currentNodeId) store.markNodeCompleted(currentNodeId);
+
+        // Track persistent clear counts (mapState resets each act, so counters must be separate)
+        if (currentNode?.type === 'combat') store.addCombatCleared();
+        else if (currentNode?.type === 'elite') store.addEliteCleared();
+
+        // Record gold obtained during the fight. Use the positive-only counter
+        // (goldGainedThisFight) so penalties like fool's-gold or Reno's-Coin
+        // don't erase the underlying gains from the run-wide tally.
+        store.addGoldObtained(result.goldGainedThisFight);
 
         // Sync combat results back to run (use absolute values from combat end)
         const run = store.run;
@@ -491,6 +501,16 @@ export default function App() {
 
     EventBus.on(GameEvent.COMBAT_END, handleCombatEnd);
     return () => { EventBus.off(GameEvent.COMBAT_END, handleCombatEnd); };
+  }, []);
+
+  // Mark one-shot artifacts as used (greys them out and prevents future combat triggers)
+  useEffect(() => {
+    const handleArtifactUsed = (...args: unknown[]) => {
+      const id = args[0] as string;
+      useRunStore.getState().markArtifactUsed(id);
+    };
+    EventBus.on(GameEvent.ARTIFACT_USED, handleArtifactUsed);
+    return () => { EventBus.off(GameEvent.ARTIFACT_USED, handleArtifactUsed); };
   }, []);
 
   // Handle mid-combat save requests (emitted after each swap resolution)
@@ -583,6 +603,21 @@ export default function App() {
       <div ref={gameContainerRef} className="absolute inset-0" />
       <OfflineIndicator />
 
+      {/* Global SVG defs. The enemy-target-outline filter produces ONLY the
+          dilated-alpha ring around a sprite (no source merge), so a duplicate
+          sprite layered on top renders as a clean white outline whose opacity
+          can be animated without ever tinting the original sprite body. */}
+      <svg width="0" height="0" style={{ position: 'absolute', pointerEvents: 'none' }} aria-hidden>
+        <defs>
+          <filter id="enemy-target-outline" x="-20%" y="-20%" width="140%" height="140%">
+            <feMorphology in="SourceAlpha" operator="dilate" radius="1" result="dilated" />
+            <feComposite in="dilated" in2="SourceAlpha" operator="out" result="ring" />
+            <feFlood floodColor="white" result="white" />
+            <feComposite in="white" in2="ring" operator="in" />
+          </filter>
+        </defs>
+      </svg>
+
       {/* Scaled overlay: 960x540 virtual pixels, CSS-transformed to match Phaser canvas */}
       <div
         className={`absolute overflow-hidden select-none ${showTopBar ? 'flex flex-col' : ''}`}
@@ -671,7 +706,7 @@ export default function App() {
           className="absolute right-2 bottom-1 pointer-events-none z-[60]"
           style={{ fontSize: '9px', color: 'rgba(255,255,255,0.3)' }}
         >
-          Pre-alpha v0.6.5
+          Pre-alpha v0.6.7
         </span>
       </div>
     </div>
