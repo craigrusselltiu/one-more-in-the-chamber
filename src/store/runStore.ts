@@ -56,6 +56,13 @@ interface RunStore {
   markEliteRewardTaken: () => void;
   markOutlawKingEncountered: () => void;
   setPendingLegendaryReward: (value: boolean) => void;
+  setEventBag: (ids: string[]) => void;
+  setForcedCombatEnemies: (ids: string[] | undefined) => void;
+  setNextMerchantDiscount: (discount: number | undefined) => void;
+  setPendingEventArtifactChoiceCount: (count: number | undefined) => void;
+  setPendingActBossHpBonus: (amount: number | undefined) => void;
+  setPendingNextFightGrace: (amount: number | undefined) => void;
+  setPendingNextFightSwapBonus: (amount: number | undefined) => void;
   advanceAct: () => void;
   setMapState: (map: MapState) => void;
   endRun: (completed: boolean) => void;
@@ -485,6 +492,48 @@ export const useRunStore = create<RunStore>((set, get) => ({
       return { run: { ...state.run, pendingLegendaryReward: value } };
     }),
 
+  setEventBag: (ids) =>
+    set((state) => {
+      if (!state.run) return state;
+      return { run: { ...state.run, eventBag: ids } };
+    }),
+
+  setForcedCombatEnemies: (ids) =>
+    set((state) => {
+      if (!state.run) return state;
+      return { run: { ...state.run, forcedCombatEnemies: ids } };
+    }),
+
+  setNextMerchantDiscount: (discount) =>
+    set((state) => {
+      if (!state.run) return state;
+      return { run: { ...state.run, nextMerchantDiscount: discount } };
+    }),
+
+  setPendingEventArtifactChoiceCount: (count) =>
+    set((state) => {
+      if (!state.run) return state;
+      return { run: { ...state.run, pendingEventArtifactChoiceCount: count } };
+    }),
+
+  setPendingActBossHpBonus: (amount) =>
+    set((state) => {
+      if (!state.run) return state;
+      return { run: { ...state.run, pendingActBossHpBonus: amount } };
+    }),
+
+  setPendingNextFightGrace: (amount) =>
+    set((state) => {
+      if (!state.run) return state;
+      return { run: { ...state.run, pendingNextFightGrace: amount } };
+    }),
+
+  setPendingNextFightSwapBonus: (amount) =>
+    set((state) => {
+      if (!state.run) return state;
+      return { run: { ...state.run, pendingNextFightSwapBonus: amount } };
+    }),
+
   advanceAct: () =>
     set((state) => {
       if (!state.run || state.run.currentAct >= 3) return state;
@@ -502,6 +551,7 @@ export const useRunStore = create<RunStore>((set, get) => ({
           currentNodeId: null,
           health: newHealth,
           bossRewardTaken: false,
+          pendingActBossHpBonus: undefined,
           mapState,
         },
       };

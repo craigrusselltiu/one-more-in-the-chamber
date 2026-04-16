@@ -125,8 +125,6 @@ export const CharacterSelectScreen = memo(function CharacterSelectScreen() {
               style={{
                 padding: '10px 16px 10px 48px',
                 backgroundColor: isSelected ? 'rgba(120, 53, 15, 0.8)' : 'rgba(28, 25, 23, 0.8)',
-                border: `2px solid ${isSelected ? '#f59e0b' : '#44403c'}`,
-                borderLeft: 'none',
                 borderRadius: '0 6px 6px 0',
                 transform: isSelected ? 'translateX(0)' : 'translateX(-20px)',
                 transition: 'transform 0.15s',
@@ -219,13 +217,15 @@ export const CharacterSelectScreen = memo(function CharacterSelectScreen() {
         <div className="flex gap-3">
           <button
             onClick={handleBack}
-            className="px-4 py-1.5 text-xs bg-stone-800/80 text-stone-400 border border-stone-700 hover:bg-stone-700/80"
+            style={{ boxShadow: '3px 3px 2px rgba(0,0,0,0.7)' }}
+            className="px-4 py-1.5 text-xs rounded-sm bg-stone-800 text-stone-400 hover:bg-stone-700 transition-transform active:translate-y-0.5"
           >
             Back
           </button>
           <button
             onClick={handleConfirm}
-            className="px-5 py-1.5 text-xs bg-amber-900/60 text-amber-300 border border-amber-700 hover:bg-amber-800/60"
+            style={{ boxShadow: '3px 3px 2px rgba(0,0,0,0.7)' }}
+            className="px-5 py-1.5 text-xs rounded-sm bg-amber-800 text-amber-200 hover:bg-amber-700 transition-transform active:translate-y-0.5"
           >
             Confirm
           </button>

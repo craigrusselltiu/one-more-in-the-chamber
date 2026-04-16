@@ -120,6 +120,10 @@ export const ARTIFACT_FRAMES: Record<string, number> = {
   deaths_glare: 1217,
   strong_liver: 1214,
   golden_pickaxe: 24,
+  // Corrupt (curses) -- placeholder frames; swap once art is chosen
+  lethargic: 1216,
+  dry_atmosphere: 1195,
+  tinnitus: 862,
 };
 
 /** Consumable sprite frames (by consumable ID). */
@@ -161,6 +165,8 @@ export const STATUS_FRAMES: Record<string, number> = {
   invulnerable: 783,
   protected: 235,
   scavenger: 1240,
+  lethargic: 370,
+  tinnitus: 857,
 };
 
 /** Map node type icons. */
@@ -191,6 +197,7 @@ export const TRAIT_FRAMES: Record<string, number> = {
   antivenom: 914,
   undertaker: 825,
   rattlesnake: 1241,
+  corrupt: 1199,
 };
 
 /** Trait breakpoint thresholds (in order). */
@@ -210,6 +217,7 @@ export const TRAIT_BREAKPOINTS: Record<string, number[]> = {
   antivenom: [3],
   undertaker: [3, 6],
   rattlesnake: [2, 4],
+  corrupt: [2],
 };
 
 /** Tile hazard overlay icons. */

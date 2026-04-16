@@ -267,7 +267,7 @@ export const ARTIFACTS: ArtifactDefinition[] = [
     name: "Trailblazer's Compass",
     description: 'Every path not taken is a bullet saved.',
     tags: ['mustang', 'tracker'],
-    effect: 'Unused swaps at turn end deal 3 damage each to targeted enemy.',
+    effect: 'Unused swaps at turn end grant 6 block on your next turn.',
     rarity: 'common',
   },
   {
@@ -574,7 +574,7 @@ export const ARTIFACTS: ArtifactDefinition[] = [
     name: "Death's Glare",
     description: 'They saw what was coming.',
     tags: ['undertaker', 'dead_man_walking'],
-    effect: 'On combat start, apply 3 Vulnerable and 3 Terrified to ALL enemies.',
+    effect: 'On combat start, gain 3 Dead Man Walking, then apply 3 Vulnerable and 3 Terrified to ALL enemies.',
     rarity: 'legendary',
   },
   {
@@ -592,5 +592,32 @@ export const ARTIFACTS: ArtifactDefinition[] = [
     tags: ['prospector'],
     effect: 'All gold gain is increased by 10%.',
     rarity: 'uncommon',
+  },
+
+  // ======================= Corrupt (curses) =======================
+
+  {
+    id: 'lethargic',
+    name: 'Lethargic',
+    description: "Some mornings, you just aren't ready.",
+    tags: ['corrupt'],
+    effect: 'The first swap each combat does nothing.',
+    rarity: 'common',
+  },
+  {
+    id: 'dry_atmosphere',
+    name: 'Dry Atmosphere',
+    description: 'Sun bakes the blood before it can heal.',
+    tags: ['corrupt'],
+    effect: 'All healing is reduced by 10%.',
+    rarity: 'uncommon',
+  },
+  {
+    id: 'tinnitus',
+    name: 'Tinnitus',
+    description: 'The first shot always rings twice.',
+    tags: ['corrupt'],
+    effect: 'Enemy intents are hidden on the first turn of each combat.',
+    rarity: 'rare',
   },
 ];

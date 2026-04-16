@@ -10,7 +10,7 @@ interface FloatingNumber {
   vx: number;
   startTime: number;
   fontSize: number;
-  target: 'player' | 'enemy' | 'topbar';
+  target: 'player' | 'enemy' | 'topbar' | 'topbar-health';
 }
 
 let nextId = 0;
@@ -24,7 +24,7 @@ export const FloatingNumbers = memo(function FloatingNumbers() {
   const [numbers, setNumbers] = useState<FloatingNumber[]>([]);
 
   const handleFloat = useCallback((...args: unknown[]) => {
-    const target = args[0] as 'player' | 'enemy' | 'topbar';
+    const target = args[0] as 'player' | 'enemy' | 'topbar' | 'topbar-health';
     const index = (args[1] as number) ?? 0;
     const text = args[2] as string;
     const color = (args[3] as string) ?? '#ffffff';
@@ -43,6 +43,10 @@ export const FloatingNumbers = memo(function FloatingNumbers() {
       // Just right of the gold indicator
       x = 890;
       y = 14;
+    } else if (target === 'topbar-health') {
+      // Near the health indicator (sits left of gold on the topbar)
+      x = 825;
+      y = 14;
     } else {
       // Enemy sprite areas: zig-zag layout matching EnemyTargeting.
       // Alive index -> visual slot: 0->center(1), 1->top(0), 2->bottom(2)
@@ -56,7 +60,7 @@ export const FloatingNumbers = memo(function FloatingNumbers() {
 
     setNumbers((prev) => [
       ...prev,
-      { id: nextId++, text, color, x, y, vx: target === 'topbar' ? (Math.random() - 0.5) * 10 : (Math.random() - 0.5) * 40, startTime: Date.now(), fontSize, target },
+      { id: nextId++, text, color, x, y, vx: (target === 'topbar' || target === 'topbar-health') ? (Math.random() - 0.5) * 10 : (Math.random() - 0.5) * 40, startTime: Date.now(), fontSize, target },
     ]);
   }, []);
 
@@ -106,9 +110,10 @@ export const FloatingNumbers = memo(function FloatingNumbers() {
         const elapsed = (Date.now() - n.startTime) / 1000;
         const t = elapsed;
         // Topbar floats drift left and stay level; others pop up then arc down
-        const startVy = n.target === 'topbar' ? 0 : -50;
-        const gravity = n.target === 'topbar' ? 0 : 150;
-        const dx = n.target === 'topbar' ? 10 * t : n.vx * t;
+        const isTopbar = n.target === 'topbar' || n.target === 'topbar-health';
+        const startVy = isTopbar ? 0 : -50;
+        const gravity = isTopbar ? 0 : 150;
+        const dx = isTopbar ? 10 * t : n.vx * t;
         const px = n.x + dx;
         const py = n.y + startVy * t + 0.5 * gravity * t * t;
         const alpha = Math.max(0, 1 - elapsed);

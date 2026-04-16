@@ -16,7 +16,7 @@ const TRAIT_LABELS: Record<TraitId, string> = {
   mustang: 'Mustang', gunslinger: 'Gunslinger', saloon_keeper: 'Saloon Keeper',
   desperado: 'Desperado', sniper: 'Sniper', dead_man_walking: 'Dead Man Walking',
   tracker: 'Tracker', preacher: 'Preacher', antivenom: 'Antivenom', undertaker: 'Undertaker',
-  rattlesnake: 'Rattlesnake',
+  rattlesnake: 'Rattlesnake', corrupt: 'Corrupt',
 };
 
 const TRAIT_DESCRIPTIONS: Record<string, Record<number, string>> = {
@@ -82,6 +82,9 @@ const TRAIT_DESCRIPTIONS: Record<string, Record<number, string>> = {
   rattlesnake: {
     2: 'Clearing or matching Poison tiles applies Poison to target instead.',
     4: 'When you would apply Poison, apply it to ALL enemies.',
+  },
+  corrupt: {
+    2: 'At the start of combat, add Shadow to 2 random tiles for each Corrupt artifact you own.',
   },
 };
 

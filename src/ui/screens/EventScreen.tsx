@@ -1,404 +1,838 @@
-import { memo, useMemo, useState } from 'react';
+import { memo, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { EventBus, GameEvent } from '../../game/EventBus';
 import { useRunStore } from '../../store/runStore';
-import { EVENTS, type EventDefinition, type EventChoice } from '../../data/events';
-import { ARTIFACTS, type ArtifactDefinition } from '../../data/artifacts';
-import { createSeededRandom } from '../../utils/seededRandom';
-import { weightedArtifactPick } from '../../utils/weightedSelection';
-import { getAscensionMutations } from '../../data/ascension';
-import type { TraitId } from '../../types/game';
+import { pickEventFromBag, type EventChoice } from '../../data/events';
+import { createSeededRandom, seededShuffle } from '../../utils/seededRandom';
+import { pauseRunPersistence, resumeRunPersistence } from '../../services/runPersistence';
+import { SpriteIcon } from '../components/SpriteIcon';
+import { UI_FRAMES, ARTIFACT_FRAMES, CONSUMABLE_FRAMES } from '../../data/spriteConfig';
+import { ARTIFACTS, RARITY_COLORS_DIM, type ArtifactDefinition } from '../../data/artifacts';
+import { pickArtifactForRun } from '../../utils/artifactSelection';
+import { adjustHeal } from '../../utils/healAdjust';
+import { CONSUMABLES } from '../../data/consumables';
+import type { RunState, TraitId } from '../../types/game';
 import type { Screen } from '../../App';
 
-/** Pick a random unowned artifact, optionally filtered by tag. */
-function pickArtifact(
-  ownedIds: Set<string>,
-  character: string,
-  desperadoActive: boolean,
-  legendaryWeight: number,
-  tag?: TraitId,
-): ArtifactDefinition {
-  let pool = ARTIFACTS.filter((a) => !ownedIds.has(a.id) && (!a.exclusive || a.exclusive === character));
-  if (tag) {
-    const tagged = pool.filter((a) => a.tags.includes(tag));
-    if (tagged.length > 0) pool = tagged;
+type Phase = 'choose' | 'preview' | 'settle' | 'shuffle' | 'pick' | 'reveal-picked' | 'reveal' | 'result';
+
+type GameType = 'gold' | 'item' | 'health';
+
+type Reward =
+  | { kind: 'gold'; amount: number }
+  | { kind: 'artifact'; id: string; tags: TraitId[] }
+  | { kind: 'consumables'; ids: string[] }
+  | { kind: 'lose_hp'; amount: number }
+  | { kind: 'max_hp'; amount: number }
+  | { kind: 'heal_full' };
+
+const PLAY_COST = 50;
+const PREVIEW_MS = 1500;
+const SETTLE_MS = 1000;
+const SHUFFLE_MS = 2000;
+const SHUFFLE_INTERVAL_MS = 70;
+const SLOT_OFFSETS_PX = [-150, 0, 150];
+const CARD_W = 120;
+const CARD_H = 180;
+
+/** Abandoned Mine: each step drills deeper, risking more HP for a better artifact roll. */
+const MINE_LEVELS: Array<{ label: string; description: string; hpPct: number; chance: number }> = [
+  { label: 'Investigate', description: 'Lose 3% max HP for artifact chance. (10%)', hpPct: 0.03, chance: 0.10 },
+  { label: 'Go deeper', description: 'Lose 5% max HP for artifact chance. (25%)', hpPct: 0.05, chance: 0.25 },
+  { label: 'Go deeper', description: 'Lose 7% max HP for artifact chance. (50%)', hpPct: 0.07, chance: 0.50 },
+  { label: 'Go deeper', description: 'Lose 10% max HP for artifact.', hpPct: 0.10, chance: 1.00 },
+];
+
+function renderEventParagraph(text: string, baseKey: number): ReactNode[] {
+  const pattern = /\{\{(green|red|blue|yellow):([^}]+)\}\}/g;
+  const parts: ReactNode[] = [];
+  let lastIdx = 0;
+  let match: RegExpExecArray | null;
+  let key = baseKey;
+  while ((match = pattern.exec(text)) !== null) {
+    if (match.index > lastIdx) parts.push(text.slice(lastIdx, match.index));
+    const color = match[1] as 'green' | 'red' | 'blue' | 'yellow';
+    const content = match[2];
+    if (color === 'green' || color === 'yellow') {
+      const colorClass = color === 'green' ? 'text-green-400' : 'text-yellow-400';
+      parts.push(
+        <span key={key++} className={`event-wiggle ${colorClass}`}>{content}</span>,
+      );
+    } else if (color === 'blue') {
+      parts.push(
+        <span key={key++} className="event-breathe text-sky-400">{content}</span>,
+      );
+    } else {
+      parts.push(
+        <span key={key++} className="text-red-400">
+          {content.split('').map((ch, i) => (
+            <span
+              key={i}
+              className="event-char-jump"
+              style={{ animationDelay: `${i * 0.08}s` }}
+            >
+              {ch}
+            </span>
+          ))}
+        </span>,
+      );
+    }
+    lastIdx = match.index + match[0].length;
   }
-  if (pool.length === 0) pool = tag ? ARTIFACTS.filter((a) => a.tags.includes(tag) && (!a.exclusive || a.exclusive === character)) : ARTIFACTS.filter((a) => !a.exclusive || a.exclusive === character);
-  if (pool.length === 0) pool = ARTIFACTS;
-  return weightedArtifactPick(pool, Math.random, desperadoActive, false, legendaryWeight);
+  if (lastIdx < text.length) parts.push(text.slice(lastIdx));
+  return parts;
 }
 
-/**
- * EventScreen: narrative encounter with choices.
- * Picks a random event and presents choices with effects.
- */
+function renderEventText(text: string): ReactNode[] {
+  const paragraphs = text.split('\n');
+  return paragraphs.map((para, i) => (
+    <span
+      key={i}
+      style={{
+        display: 'block',
+        marginBottom: i < paragraphs.length - 1 ? 8 : 0,
+      }}
+    >
+      {renderEventParagraph(para, i * 1000)}
+    </span>
+  ));
+}
+
+function generateRewards(
+  gameType: GameType,
+  rand: () => number,
+  run: RunState,
+): Reward[] {
+  switch (gameType) {
+    case 'gold':
+      return [
+        { kind: 'gold', amount: 0 },
+        { kind: 'gold', amount: 49 },
+        { kind: 'gold', amount: 267 },
+      ];
+    case 'item': {
+      const owned = new Set(run.artifacts.map((a) => a.id));
+      const character = run.character;
+      // Corrupt-tagged artifacts are event-granted only; exclude from the card-game spread.
+      const nonCorrupt = ARTIFACTS.filter((a) => !a.tags.includes('corrupt'));
+      const available = nonCorrupt.filter(
+        (a) => !owned.has(a.id) && (!a.exclusive || a.exclusive === character),
+      );
+      const pool = available.length > 0 ? available : nonCorrupt;
+      const legendaries = pool.filter((a) => a.rarity === 'legendary');
+      const commons = pool.filter((a) => (a.rarity ?? 'common') === 'common');
+      const pickFrom = (arr: ArtifactDefinition[]) => arr[Math.floor(rand() * arr.length)];
+      const legendary = legendaries.length > 0 ? pickFrom(legendaries) : pickFrom(pool);
+      const common = commons.length > 0 ? pickFrom(commons) : pickFrom(pool);
+      const consumablePool = CONSUMABLES.map((c) => c.id);
+      const consumableIds: string[] = [];
+      for (let i = 0; i < 3 && consumablePool.length > 0; i++) {
+        const idx = Math.floor(rand() * consumablePool.length);
+        consumableIds.push(consumablePool[idx]);
+        consumablePool.splice(idx, 1);
+      }
+      return [
+        { kind: 'artifact', id: legendary.id, tags: legendary.tags },
+        { kind: 'consumables', ids: consumableIds },
+        { kind: 'artifact', id: common.id, tags: common.tags },
+      ];
+    }
+    case 'health':
+      return [
+        { kind: 'lose_hp', amount: 7 },
+        { kind: 'max_hp', amount: 5 },
+        { kind: 'heal_full' },
+      ];
+  }
+}
+
 export const EventScreen = memo(function EventScreen() {
   const run = useRunStore((s) => s.run);
-  const updateHealth = useRunStore((s) => s.updateHealth);
   const updateGold = useRunStore((s) => s.updateGold);
   const addGoldObtained = useRunStore((s) => s.addGoldObtained);
+  const updateHealth = useRunStore((s) => s.updateHealth);
+  const syncHealth = useRunStore((s) => s.syncHealth);
   const addArtifact = useRunStore((s) => s.addArtifact);
   const addConsumable = useRunStore((s) => s.addConsumable);
-  const gainGold = (n: number) => {
-    updateGold(n);
-    addGoldObtained(n);
-  };
-  const [choiceMade, setChoiceMade] = useState(false);
-  const [displayText, setDisplayText] = useState('');
-  const [rewardArtifact, setRewardArtifact] = useState<ArtifactDefinition | null>(null);
-  const [artifactHandled, setArtifactHandled] = useState(false);
+  const setEventBag = useRunStore((s) => s.setEventBag);
 
-  const event: EventDefinition = useMemo(() => {
-    const rand = createSeededRandom(`${run?.seed ?? ''}-event-${run?.currentNodeId ?? ''}`);
-    return EVENTS[Math.floor(rand() * EVENTS.length)];
+  const { event, newBag } = useMemo(() =>
+    pickEventFromBag(
+      run?.currentAct ?? 1,
+      `${run?.seed ?? ''}-event-${run?.currentNodeId ?? ''}`,
+      run?.eventBag ?? [],
+    ),
+    // Keep the draw stable per node; eventBag changes are applied via effect below.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [run?.currentAct, run?.seed, run?.currentNodeId],
+  );
+
+  // Save on entry (from mapscreen's node change), then suspend saves until exit.
+  useEffect(() => {
+    pauseRunPersistence();
+    return () => {
+      resumeRunPersistence();
+    };
   }, []);
 
-  const ownedIds = useMemo(() => {
-    return new Set((run?.artifacts ?? []).map((a) => a.id));
-  }, [run?.artifacts]);
+  // Only commit the bag at explicit resolution points (finishChoice /
+  // handleResultContinue / handleContinue). If the player quits to the main
+  // menu or force-closes the tab mid-event, the bag stays untouched and the
+  // same event is drawn on their next visit (same seed + same candidate list).
+  const newBagRef = useRef(newBag);
+  newBagRef.current = newBag;
+  const commitBag = () => setEventBag(newBagRef.current);
 
-  const handleChoice = (choice: EventChoice) => {
-    if (choiceMade || !run) return;
-    setChoiceMade(true);
+  // Game type and shuffled rewards, stable per node.
+  const { rewards: cardRewards } = useMemo(() => {
+    const rand = createSeededRandom(`${run?.seed ?? ''}-cardgame-${run?.currentNodeId ?? ''}`);
+    const roll = rand();
+    const gameType: GameType = roll < 0.5 ? 'gold' : roll < 0.7 ? 'item' : 'health';
+    if (!run) return { gameType, rewards: [] as Reward[] };
+    const rewards = generateRewards(gameType, rand, run);
+    return { gameType, rewards: seededShuffle(rewards, rand) };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [run?.seed, run?.currentNodeId]);
 
-    let artifact: ArtifactDefinition | null = null;
-    const desperadoActive = (run.traitCounts?.desperado ?? 0) >= 2;
-    const legendaryWeight = getAscensionMutations(run.ascensionLevel).legendaryWeight;
+  // cardOrder[slot] = cardIdx currently in that visual slot.
+  const [cardOrder, setCardOrder] = useState<number[]>([0, 1, 2]);
+  const [phase, setPhase] = useState<Phase>('choose');
+  const [pickedSlot, setPickedSlot] = useState<number | null>(null);
+  const [resultText, setResultText] = useState<string>('');
+  const [postResultScreen, setPostResultScreen] = useState<Screen>('map');
+  // Abandoned Mine: current depth level (1-4). Only meaningful for that event.
+  const [mineLevel, setMineLevel] = useState(1);
 
-    switch (choice.effect) {
-      case 'gold_5':
-        gainGold(5);
-        setDisplayText('You found 5 gold.');
-        break;
-      case 'gold_10':
-        gainGold(10);
-        setDisplayText('You received 10 gold.');
-        break;
-      case 'gold_15':
-        gainGold(15);
-        setDisplayText('You pulled up 15 gold.');
-        break;
-      case 'gold_30_elite_buff':
-        gainGold(30);
-        setDisplayText('You gained 30 gold. The next elite will be tougher.');
-        break;
-      case 'merchant_normalize':
-        setDisplayText('Merchant prices return to normal.');
-        break;
-      case 'lose_hp_gain_artifact':
-        updateHealth(-10);
-        artifact = pickArtifact(ownedIds, run!.character, desperadoActive, legendaryWeight, 'antivenom');
-        setDisplayText('The bite burns, but something powerful courses through you.');
-        break;
-      case 'lose_hp_gain_gunslinger_artifact':
-        updateHealth(-15);
-        artifact = pickArtifact(ownedIds, run!.character, desperadoActive, legendaryWeight, 'gunslinger');
-        setDisplayText('You drew and fired. The preacher nods, impressed. He leaves you a gift.');
-        break;
-      case 'lose_hp_gain_artifact_consumable':
-        updateHealth(-20);
-        artifact = pickArtifact(ownedIds, run!.character, desperadoActive, legendaryWeight);
-        addConsumable({ id: 'tonic' });
-        setDisplayText('You reached in and pulled out something valuable, along with a tonic.');
-        break;
-      case 'search_saloon': {
-        const roll = Math.random();
-        if (roll < 0.5) {
-          artifact = pickArtifact(ownedIds, run!.character, desperadoActive, legendaryWeight);
-          setDisplayText('You found something hidden behind the bar.');
-        } else {
-          updateHealth(-15);
-          setDisplayText('An ambush in the back room. You barely escape.');
-        }
-        break;
-      }
-      case 'search_engine_artifact':
-        updateHealth(-10);
-        artifact = pickArtifact(ownedIds, run!.character, desperadoActive, legendaryWeight);
-        setDisplayText('You dug through the wreckage and found something worth keeping.');
-        break;
-      case 'gain_artifact_buff_elite':
-        artifact = pickArtifact(ownedIds, run!.character, desperadoActive, legendaryWeight);
-        setDisplayText('You took the dead hunter\'s gear. Something about it feels... watched.');
-        break;
-      case 'lose_artifact_full_heal': {
-        if (run.artifacts.length > 0) {
-          updateHealth(run.maxHealth - run.health);
-          setDisplayText('You feel cleansed. Fully healed, but lighter.');
-        } else {
-          updateHealth(run.maxHealth - run.health);
-          setDisplayText('Nothing to confess. You feel healed anyway.');
-        }
-        break;
-      }
-      case 'mine_delve': {
-        const roll = Math.random();
-        if (roll < 0.25) {
-          updateHealth(-3);
-          setDisplayText('You explored the first level. Found nothing useful.');
-        } else if (roll < 0.5) {
-          updateHealth(-8);
-          gainGold(20);
-          setDisplayText('You went deeper and found some gold.');
-        } else {
-          updateHealth(-15);
-          gainGold(40);
-          setDisplayText('Deep in the mine, you struck gold.');
-        }
-        break;
-      }
-      case 'help_merchant':
-        setDisplayText('The merchant thanks you. Merchants will have more stock.');
-        break;
-      case 'rob_merchant':
-        gainGold(15);
-        setDisplayText('You took what you needed. Next merchant costs more.');
-        break;
-      case 'climb_well':
-        updateHealth(-10);
-        gainGold(30);
-        setDisplayText('The climb was rough, but the payoff was worth it.');
-        break;
-      case 'gain_tnt':
-        addConsumable({ id: 'stick_of_tnt' });
-        addConsumable({ id: 'stick_of_tnt' });
-        setDisplayText('You carefully packed away two sticks of dynamite.');
-        break;
-      case 'skip_node_lose_hp':
-        updateHealth(-15);
-        setDisplayText('The explosion clears the way, but the blast catches you.');
-        break;
-      case 'block_5_next_fight':
-        setDisplayText('You walk away unscathed. Your guard is up.');
-        break;
-      case 'lose_hp_shuffle_board':
-        updateHealth(-10);
-        setDisplayText('The sand stings your eyes. Your board starts shuffled next fight.');
-        break;
-      case 'heal_20_lose_swap':
-        updateHealth(20);
-        setDisplayText('The whiskey warms you up. Your reflexes are a bit sluggish.');
-        break;
-      case 'lose_hp_gold_upgrade_tile':
-        updateHealth(-5);
-        gainGold(25);
-        setDisplayText('You dug him out. He hands you gold and shares a trick of the trade.');
-        break;
-      case 'gain_consumables_merchant_penalty':
-        addConsumable({ id: 'tonic' });
-        addConsumable({ id: 'bandage' });
-        setDisplayText('You took his gear. Merchants will charge you more this act.');
-        break;
-      case 'heal_and_intel':
-        updateHealth(15);
-        setDisplayText('A restful night. You feel healed and informed about what lies ahead.');
-        break;
-      case 'trade_consumables':
-        addConsumable({ id: 'tonic' });
-        addConsumable({ id: 'bandage' });
-        setDisplayText('A fair trade. You got some useful supplies.');
-        break;
-      case 'bonus_swap_next_fight':
-        setDisplayText('You kept walking. Your focus sharpens.');
-        break;
-      case 'loot_train':
-        gainGold(20);
-        addConsumable({ id: 'tonic' });
-        setDisplayText('You scavenged gold and a tonic from the wreckage.');
-        break;
-      case 'merchant_discount':
-        setDisplayText('The survivors are grateful. Next merchant will offer better prices.');
-        break;
-      case 'bury_heal_gold':
-        updateHealth(10);
-        gainGold(10);
-        setDisplayText('You gave him a proper burial and found some gold in his pockets.');
-        break;
-      case 'defuse_bridge': {
-        const roll = Math.random();
-        if (roll < 0.5) {
-          addConsumable({ id: 'stick_of_tnt' });
-          addConsumable({ id: 'stick_of_tnt' });
-          setDisplayText('Steady hands. You defused the charges and kept the dynamite.');
-        } else {
-          updateHealth(-10);
-          setDisplayText('The wires were tricky. You got singed, but made it across.');
-        }
-        break;
-      }
-      case 'blow_bridge_skip':
-        updateHealth(-20);
-        setDisplayText('The bridge is gone. You climbed down the hard way.');
-        break;
-      case 'buy_tonic':
-        if (run.gold >= 15) {
-          updateGold(-15);
-          updateHealth(30);
-          setDisplayText('The tonic tastes terrible but heals you well.');
-        } else {
-          setDisplayText('You can\'t afford it.');
-        }
-        break;
-      case 'buy_mystery_vial': {
-        if (run.gold >= 10) {
-          updateGold(-10);
-          const roll = Math.random();
-          if (roll < 0.33) {
-            updateHealth(20);
-            setDisplayText('The vial glows faintly. You feel much better.');
-          } else if (roll < 0.66) {
-            addConsumable({ id: 'tonic' });
-            setDisplayText('Strong stuff. You pocket the moonshine for later.');
-          } else {
-            updateHealth(-10);
-            setDisplayText('Poison. You feel terrible.');
-          }
-        } else {
-          setDisplayText('You can\'t afford it.');
-        }
-        break;
-      }
-      case 'threaten_merchant':
-        addConsumable({ id: 'tonic' });
-        addConsumable({ id: 'bandage' });
-        setDisplayText('He hands over the goods. Merchants will charge more this act.');
-        break;
-      case 'smoke_out_den':
-        gainGold(20);
-        setDisplayText('The coyotes scatter. You find cached loot inside.');
-        break;
-      case 'gain_bandage':
-        addConsumable({ id: 'bandage' });
-        setDisplayText('You crept past without a sound and found some bandages.');
-        break;
-      case 'none':
-        setDisplayText('You move on.');
-        break;
-      default:
-        setDisplayText(choice.description);
-        break;
-    }
+  // Preview -> settle -> shuffle
+  useEffect(() => {
+    if (phase !== 'preview') return;
+    const t = setTimeout(() => setPhase('settle'), PREVIEW_MS);
+    return () => clearTimeout(t);
+  }, [phase]);
 
-    if (artifact) {
-      setRewardArtifact(artifact);
-    }
-  };
+  useEffect(() => {
+    if (phase !== 'settle') return;
+    const t = setTimeout(() => setPhase('shuffle'), SETTLE_MS);
+    return () => clearTimeout(t);
+  }, [phase]);
 
-  const handleTakeArtifact = () => {
-    if (rewardArtifact) {
-      addArtifact({ id: rewardArtifact.id, tags: rewardArtifact.tags });
-    }
-    setArtifactHandled(true);
-    // Auto-continue after taking artifact
-    EventBus.emit(GameEvent.SCREEN_CHANGE, 'map' satisfies Screen);
-  };
+  // Shuffle animation
+  useEffect(() => {
+    if (phase !== 'shuffle') return;
+    const swap = setInterval(() => {
+      setCardOrder((order) => {
+        const i = Math.floor(Math.random() * 3);
+        let j = Math.floor(Math.random() * 3);
+        if (j === i) j = (j + 1) % 3;
+        const next = [...order];
+        [next[i], next[j]] = [next[j], next[i]];
+        return next;
+      });
+    }, SHUFFLE_INTERVAL_MS);
+    const stop = setTimeout(() => {
+      clearInterval(swap);
+      setPhase('pick');
+    }, SHUFFLE_MS);
+    return () => {
+      clearInterval(swap);
+      clearTimeout(stop);
+    };
+  }, [phase]);
 
-  const handleSkipArtifact = () => {
-    setArtifactHandled(true);
-  };
-
-  const handleContinue = () => {
-    EventBus.emit(GameEvent.SCREEN_CHANGE, 'map' satisfies Screen);
-  };
+  // reveal-picked -> reveal after 1s
+  useEffect(() => {
+    if (phase !== 'reveal-picked') return;
+    const t = setTimeout(() => setPhase('reveal'), 1000);
+    return () => clearTimeout(t);
+  }, [phase]);
 
   if (!run) return null;
 
-  const showArtifactPopup = rewardArtifact && !artifactHandled;
-  const showContinue = choiceMade && (!rewardArtifact || artifactHandled);
+  const finishChoice = (choice: EventChoice, nextScreen: Screen = 'map') => {
+    if (choice.resultText) {
+      setResultText(choice.resultText);
+      setPostResultScreen(nextScreen);
+      setPhase('result');
+    } else {
+      commitBag();
+      EventBus.emit(GameEvent.SCREEN_CHANGE, nextScreen);
+    }
+  };
 
-  const actBg = `${import.meta.env.BASE_URL}assets/backgrounds/act${run?.currentAct ?? 1}_bg.png`;
+  const pickRandomArtifact = (): ArtifactDefinition => pickArtifactForRun(run, Math.random);
+
+  /**
+   * Apply HP loss from an event. Returns true if the hit was lethal (run ended)
+   * so callers can early-return before granting rewards or showing result text.
+   */
+  const applyHpLoss = (amount: number): boolean => {
+    updateHealth(-amount);
+    if ((useRunStore.getState().run?.health ?? 0) <= 0) {
+      useRunStore.getState().endRun(false);
+      EventBus.emit(GameEvent.SCREEN_CHANGE, 'score');
+      return true;
+    }
+    return false;
+  };
+
+  const handleChoice = (choice: EventChoice) => {
+    switch (choice.effect) {
+      case 'play_card_game': {
+        if (run.gold < PLAY_COST) return;
+        updateGold(-PLAY_COST);
+        setPhase('preview');
+        return;
+      }
+      case 'well_climb': {
+        if (applyHpLoss(18)) return;
+        updateGold(142);
+        addGoldObtained(142);
+        const pool = CONSUMABLES.map((c) => c.id);
+        addConsumable({ id: pool[Math.floor(Math.random() * pool.length)] });
+        finishChoice(choice);
+        return;
+      }
+      case 'well_bucket': {
+        updateGold(45);
+        addGoldObtained(45);
+        finishChoice(choice);
+        return;
+      }
+      case 'train_loot': {
+        updateGold(20);
+        addGoldObtained(20);
+        const consumablePool = CONSUMABLES.map((c) => c.id);
+        addConsumable({ id: consumablePool[Math.floor(Math.random() * consumablePool.length)] });
+        const artifact = pickRandomArtifact();
+        addArtifact({ id: artifact.id, tags: artifact.tags });
+        finishChoice(choice);
+        return;
+      }
+      case 'train_engine': {
+        if (applyHpLoss(13)) return;
+        // Queue a 3-artifact pick; Continue from the result screen routes to the artifact screen.
+        useRunStore.getState().setPendingEventArtifactChoiceCount(3);
+        finishChoice(choice, 'artifact');
+        return;
+      }
+      case 'train_survivors': {
+        useRunStore.getState().setNextMerchantDiscount(0.25);
+        finishChoice(choice);
+        return;
+      }
+      case 'abandoned_mine_step': {
+        const config = MINE_LEVELS[mineLevel - 1];
+        const hpLoss = Math.max(1, Math.floor(run.maxHealth * config.hpPct));
+        if (applyHpLoss(hpLoss)) return;
+        if (Math.random() < config.chance) {
+          const artifact = pickRandomArtifact();
+          addArtifact({ id: artifact.id, tags: artifact.tags });
+          setResultText('Your hand closes on something strange in the dark. You carry it back to the light.');
+          setPostResultScreen('map');
+          setPhase('result');
+        } else if (mineLevel < MINE_LEVELS.length) {
+          // Miss: drop deeper and let the player choose again.
+          setMineLevel(mineLevel + 1);
+        }
+        return;
+      }
+      case 'vulture_take': {
+        const tiles = run.activeTileTypes;
+        if (tiles.length > 0) {
+          const pick = tiles[Math.floor(Math.random() * tiles.length)];
+          useRunStore.getState().upgradeTile(pick);
+        }
+        const pool = CONSUMABLES.map((c) => c.id);
+        for (let i = 0; i < 2; i++) {
+          addConsumable({ id: pool[Math.floor(Math.random() * pool.length)] });
+        }
+        useRunStore.getState().setPendingActBossHpBonus(0.10);
+        finishChoice(choice);
+        return;
+      }
+      case 'vulture_bury': {
+        const heal = adjustHeal(run, 16);
+        syncHealth(Math.min(run.maxHealth, run.health + heal), run.maxHealth);
+        updateGold(33);
+        addGoldObtained(33);
+        finishChoice(choice);
+        return;
+      }
+      case 'preacher_confess': {
+        if (run.gold < 66) return;
+        updateGold(-66);
+        const missing = run.maxHealth - run.health;
+        const heal = adjustHeal(run, missing);
+        syncHealth(run.health + heal, run.maxHealth);
+        useRunStore.getState().setPendingNextFightGrace(2);
+        finishChoice(choice);
+        return;
+      }
+      case 'preacher_draw': {
+        const pickByTag = (tag: TraitId) => {
+          const unowned = ARTIFACTS.filter(
+            (a) =>
+              a.tags.includes(tag) &&
+              !run.artifacts.some((owned) => owned.id === a.id) &&
+              (!a.exclusive || a.exclusive === run.character),
+          );
+          const pool = unowned.length > 0 ? unowned : ARTIFACTS.filter((a) => a.tags.includes(tag));
+          return pool.length > 0 ? pool[Math.floor(Math.random() * pool.length)] : null;
+        };
+        const corrupt = pickByTag('corrupt');
+        if (corrupt) addArtifact({ id: corrupt.id, tags: corrupt.tags });
+        const preacher = pickByTag('preacher');
+        if (preacher) addArtifact({ id: preacher.id, tags: preacher.tags });
+        finishChoice(choice);
+        return;
+      }
+      case 'campfire_sit': {
+        const heal = adjustHeal(run, 23);
+        syncHealth(Math.min(run.maxHealth, run.health + heal), run.maxHealth);
+        finishChoice(choice);
+        return;
+      }
+      case 'campfire_trade': {
+        if (run.consumables.length === 0) return;
+        const idx = Math.floor(Math.random() * run.consumables.length);
+        useRunStore.getState().removeConsumable(idx);
+        const pool = CONSUMABLES.map((c) => c.id);
+        for (let i = 0; i < 2; i++) {
+          addConsumable({ id: pool[Math.floor(Math.random() * pool.length)] });
+        }
+        finishChoice(choice);
+        return;
+      }
+      case 'campfire_walk': {
+        const current = run.pendingNextFightSwapBonus ?? 0;
+        useRunStore.getState().setPendingNextFightSwapBonus(current + 2);
+        finishChoice(choice);
+        return;
+      }
+      case 'bridge_defuse': {
+        // 50/50 split. On success, grant 2 TNT; on failure, take 21 HP.
+        if (Math.random() < 0.5) {
+          addConsumable({ id: 'stick_of_tnt' });
+          addConsumable({ id: 'stick_of_tnt' });
+          setResultText('The fuse goes still beneath your fingers. You pocket both bundles and step across the groaning planks.');
+          setPostResultScreen('map');
+          setPhase('result');
+        } else {
+          if (applyHpLoss(21)) return;
+          setResultText('The fuse burns faster than your hands. You hit the rocks hard, dust in your teeth, but still breathing.');
+          setPostResultScreen('map');
+          setPhase('result');
+        }
+        return;
+      }
+      case 'bridge_blow': {
+        if (applyHpLoss(6)) return;
+        addConsumable({ id: 'lasso' });
+        const current = run.pendingNextFightSwapBonus ?? 0;
+        useRunStore.getState().setPendingNextFightSwapBonus(current + 1);
+        finishChoice(choice);
+        return;
+      }
+      case 'snake_bite': {
+        if (applyHpLoss(10)) return;
+        const unowned = ARTIFACTS.filter(
+          (a) =>
+            a.tags.includes('rattlesnake') &&
+            !run.artifacts.some((owned) => owned.id === a.id) &&
+            (!a.exclusive || a.exclusive === run.character),
+        );
+        const pool = unowned.length > 0 ? unowned : ARTIFACTS.filter((a) => a.tags.includes('rattlesnake'));
+        if (pool.length > 0) {
+          const artifact = pool[Math.floor(Math.random() * pool.length)];
+          addArtifact({ id: artifact.id, tags: artifact.tags });
+        }
+        finishChoice(choice);
+        return;
+      }
+      case 'saloon_drink': {
+        const heal = adjustHeal(run, 20);
+        syncHealth(Math.min(run.maxHealth, run.health + heal), run.maxHealth);
+        const current = run.pendingNextFightSwapBonus ?? 0;
+        useRunStore.getState().setPendingNextFightSwapBonus(current - 1);
+        finishChoice(choice);
+        return;
+      }
+      case 'saloon_search': {
+        if (Math.random() < 0.5) {
+          const artifact = pickRandomArtifact();
+          addArtifact({ id: artifact.id, tags: artifact.tags });
+          setResultText('Dust sheets flutter as you pry open the back room cabinet. Something waits inside that has been yours since before you were born.');
+          setPostResultScreen('map');
+          setPhase('result');
+        } else {
+          useRunStore.getState().setForcedCombatEnemies(['bandit', 'bandit', 'bandit']);
+          setResultText('Three shadows detach from the back wall with a clatter of holsters. The piano stops on a sour note.');
+          setPostResultScreen('combat');
+          setPhase('result');
+        }
+        return;
+      }
+      case 'saloon_move_on': {
+        updateGold(39);
+        addGoldObtained(39);
+        finishChoice(choice);
+        return;
+      }
+      case 'coyote_den_fight': {
+        // Grant a random unowned artifact weighted by rarity.
+        const artifact = pickRandomArtifact();
+        addArtifact({ id: artifact.id, tags: artifact.tags });
+        // Queue a 3-coyote encounter; Continue from the result screen transitions to combat.
+        useRunStore.getState().setForcedCombatEnemies(['coyote', 'coyote', 'coyote']);
+        finishChoice(choice, 'combat');
+        return;
+      }
+      case 'none':
+      default: {
+        finishChoice(choice);
+      }
+    }
+  };
+
+  const handleResultContinue = () => {
+    commitBag();
+    EventBus.emit(GameEvent.SCREEN_CHANGE, postResultScreen);
+  };
+
+  const isChoiceDisabled = (choice: EventChoice): boolean => {
+    if (choice.effect === 'play_card_game') return run.gold < PLAY_COST;
+    if (choice.effect === 'preacher_confess') return run.gold < 66;
+    if (choice.effect === 'campfire_trade') return run.consumables.length === 0;
+    return false;
+  };
+
+  const applyReward = (reward: Reward) => {
+    switch (reward.kind) {
+      case 'gold':
+        if (reward.amount > 0) {
+          updateGold(reward.amount);
+          addGoldObtained(reward.amount);
+        }
+        return;
+      case 'artifact':
+        addArtifact({ id: reward.id, tags: reward.tags });
+        return;
+      case 'consumables':
+        for (const id of reward.ids) addConsumable({ id });
+        return;
+      case 'lose_hp':
+        applyHpLoss(reward.amount);
+        return;
+      case 'max_hp':
+        if (run) {
+          const heal = adjustHeal(run, reward.amount);
+          syncHealth(run.health + heal, run.maxHealth + reward.amount);
+        }
+        return;
+      case 'heal_full':
+        if (run) {
+          const missing = run.maxHealth - run.health;
+          const heal = adjustHeal(run, missing);
+          syncHealth(run.health + heal, run.maxHealth);
+        }
+        return;
+    }
+  };
+
+  const handlePick = (slot: number) => {
+    if (phase !== 'pick') return;
+    const reward = cardRewards[cardOrder[slot]];
+    if (reward) applyReward(reward);
+    setPickedSlot(slot);
+    setPhase('reveal-picked');
+  };
+
+  const renderCardFace = (reward: Reward | undefined) => {
+    if (!reward) return null;
+    switch (reward.kind) {
+      case 'gold':
+        return (
+          <span className="relative flex items-center gap-1 text-yellow-800 font-bold" style={{ fontSize: 22 }}>
+            <SpriteIcon frame={UI_FRAMES.gold} scale={1.5} />
+            {reward.amount}
+          </span>
+        );
+      case 'artifact': {
+        const frame = ARTIFACT_FRAMES[reward.id];
+        const def = ARTIFACTS.find((a) => a.id === reward.id);
+        const rarity = def?.rarity ?? 'common';
+        const c = RARITY_COLORS_DIM[rarity];
+        return frame != null ? (
+          <span
+            className="relative"
+            style={{
+              display: 'inline-flex',
+              filter: `drop-shadow(1px 0 0 ${c}) drop-shadow(-1px 0 0 ${c}) drop-shadow(0 1px 0 ${c}) drop-shadow(0 -1px 0 ${c})`,
+            }}
+          >
+            <SpriteIcon frame={frame} scale={2.5} outline={c} />
+          </span>
+        ) : null;
+      }
+      case 'consumables':
+        return (
+          <div className="relative flex items-center gap-2">
+            {reward.ids.map((id, i) => {
+              const frame = CONSUMABLE_FRAMES[id];
+              return frame != null ? <SpriteIcon key={i} frame={frame} scale={1.5} /> : null;
+            })}
+          </div>
+        );
+      case 'lose_hp':
+        return (
+          <span className="relative flex items-center gap-1 text-red-700 font-bold" style={{ fontSize: 20 }}>
+            <SpriteIcon frame={UI_FRAMES.health} scale={1.5} />
+            -{reward.amount}
+          </span>
+        );
+      case 'max_hp':
+        return (
+          <span className="relative flex items-center gap-1 text-green-800 font-bold" style={{ fontSize: 14 }}>
+            <SpriteIcon frame={UI_FRAMES.health} scale={1.5} />
+            +{reward.amount} MAX
+          </span>
+        );
+      case 'heal_full':
+        return (
+          <span className="relative flex items-center gap-1 text-green-800 font-bold" style={{ fontSize: 18 }}>
+            <SpriteIcon frame={UI_FRAMES.health} scale={1.5} />
+            FULL
+          </span>
+        );
+    }
+  };
+
+  const handleContinue = () => {
+    commitBag();
+    EventBus.emit(GameEvent.SCREEN_CHANGE, 'map' satisfies Screen);
+  };
+
+  const eventBg = `${import.meta.env.BASE_URL}assets/events/${event.background}`;
+
+  // For each cardIdx, find its current slot.
+  const slotOf = (cardIdx: number) => cardOrder.indexOf(cardIdx);
+
+  // Face-up phases for each card
+  const isFaceUp = (cardIdx: number) => {
+    if (phase === 'preview') return true;
+    if (phase === 'reveal-picked' && pickedSlot !== null && cardOrder[pickedSlot] === cardIdx) return true;
+    if (phase === 'reveal') return true;
+    return false;
+  };
+
+  const showPanel = phase === 'choose' || phase === 'result';
+
   return (
     <div
-      className="flex flex-col h-full"
+      className="relative flex flex-col h-full"
       style={{
-        backgroundImage: `linear-gradient(rgba(0,0,0,0.55), rgba(0,0,0,0.55)), url(${actBg})`,
+        backgroundImage: `url(${eventBg})`,
         backgroundSize: 'cover',
         backgroundPosition: 'center',
       }}
     >
-      <div className="flex-1 flex flex-col items-center justify-center">
-      <div className="max-w-md w-full px-4">
-        {/* Event title */}
-        <h2 className="text-xl text-amber-400 mb-3 text-center font-bold uppercase" style={{ WebkitTextStroke: '4px #000', paintOrder: 'stroke fill' }}>{event.title}</h2>
+      <div className="pt-10 px-4 flex flex-col items-center">
+        <h2
+          className="text-xl text-amber-400 text-center font-bold uppercase"
+          style={{ WebkitTextStroke: '4px #000', paintOrder: 'stroke fill' }}
+        >
+          {event.title}
+        </h2>
+      </div>
 
-        {/* Flavour text / result text */}
-        <div className="border border-stone-600 bg-stone-800/50 p-4 mb-4">
-          <p className="text-stone-300 text-sm italic leading-relaxed">
-            "{choiceMade ? displayText : event.flavourText}"
-          </p>
+      {/* Cards overlay: centered on screen once Play is pressed */}
+      {phase !== 'choose' && phase !== 'result' && (
+        <div className="pointer-events-none absolute inset-0 flex items-center justify-center select-none">
+          <div
+            className="relative pointer-events-auto"
+            style={{ width: 2 * SLOT_OFFSETS_PX[2] + CARD_W, height: CARD_H }}
+          >
+            {[0, 1, 2].map((cardIdx) => {
+              const slot = slotOf(cardIdx);
+              const offset = SLOT_OFFSETS_PX[slot];
+              const faceUp = isFaceUp(cardIdx);
+              const reward = cardRewards[cardIdx];
+              const dimmed = phase === 'reveal' && pickedSlot !== null && cardOrder[pickedSlot] !== cardIdx;
+              return (
+                <div
+                  key={cardIdx}
+                  className="absolute top-0 left-1/2"
+                  style={{
+                    transform: `translate(calc(-50% + ${offset}px), 0) scale(${dimmed ? 0.82 : 1})`,
+                    transformOrigin: 'center',
+                    transition: phase === 'reveal' ? 'transform 300ms ease, filter 300ms ease' : 'transform 60ms linear',
+                    width: CARD_W,
+                    height: CARD_H,
+                    perspective: 900,
+                    filter: dimmed ? 'brightness(0.65)' : 'none',
+                  }}
+                >
+                  <div
+                    onClick={() => handlePick(slot)}
+                    style={{
+                      position: 'relative',
+                      width: '100%',
+                      height: '100%',
+                      transformStyle: 'preserve-3d',
+                      transform: faceUp ? 'rotateY(180deg)' : 'rotateY(0deg)',
+                      transition: 'transform 350ms ease',
+                      cursor: phase === 'pick' ? 'pointer' : 'default',
+                    }}
+                    className={phase === 'pick' ? 'hover:scale-105' : ''}
+                  >
+                    {/* Card back */}
+                    <img
+                      src={`${import.meta.env.BASE_URL}assets/events/cardback.png`}
+                      alt=""
+                      draggable={false}
+                      style={{
+                        position: 'absolute',
+                        inset: 0,
+                        width: '100%',
+                        height: '100%',
+                        backfaceVisibility: 'hidden',
+                        borderRadius: 6,
+                        boxShadow: '0 6px 12px rgba(0,0,0,0.6)',
+                        imageRendering: 'pixelated',
+                      }}
+                    />
+                    {/* Card front */}
+                    <div
+                      style={{
+                        position: 'absolute',
+                        inset: 0,
+                        backfaceVisibility: 'hidden',
+                        borderRadius: 6,
+                        boxShadow: '0 6px 12px rgba(0,0,0,0.6)',
+                        transform: 'rotateY(180deg)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                      }}
+                    >
+                      <img
+                        src={`${import.meta.env.BASE_URL}assets/events/cardface.png`}
+                        alt=""
+                        draggable={false}
+                        style={{
+                          position: 'absolute',
+                          inset: 0,
+                          width: '100%',
+                          height: '100%',
+                          borderRadius: 6,
+                          imageRendering: 'pixelated',
+                        }}
+                      />
+                      {renderCardFace(reward)}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         </div>
+      )}
 
-        {/* Choices (before selection) */}
-        {!choiceMade && (
-          <div className="flex flex-col gap-2">
-            {event.choices.map((choice, i) => (
-              <button
-                key={i}
-                onClick={() => handleChoice(choice)}
-                className="flex flex-col p-3 border border-stone-600 bg-stone-800/50 hover:border-amber-600 hover:bg-stone-700/50 text-left"
+      {showPanel && (
+        <div
+          className="flex-1 flex flex-col justify-center"
+          style={{
+            alignItems: event.align === 'left' ? 'flex-start' : event.align === 'right' ? 'flex-end' : 'center',
+            paddingLeft: event.align === 'left' ? 96 : 16,
+            paddingRight: event.align === 'right' ? 96 : 16,
+          }}
+        >
+          <div className="w-full" style={{ maxWidth: 340, marginTop: -40 }}>
+            <div className="mb-3 min-h-[56px] flex items-center">
+              <p
+                className="text-stone-300 font-bold leading-relaxed text-left"
+                style={{
+                  fontSize: 10,
+                  WebkitTextStroke: '2px #000',
+                  paintOrder: 'stroke fill',
+                  whiteSpace: 'pre-line',
+                }}
               >
-                <span className="text-amber-300 text-sm font-bold">
-                  {choice.label}
-                </span>
-                <span className="text-stone-400 text-xs mt-1">
-                  {choice.description}
-                </span>
-              </button>
-            ))}
-          </div>
-        )}
-
-        {/* Artifact reward popup */}
-        {showArtifactPopup && rewardArtifact && (
-          <div className="flex flex-col items-center">
-            <div
-              className="flex flex-col items-center w-48 mb-4"
-              style={{
-                border: '2px solid #b45309',
-                backgroundColor: 'rgba(120, 53, 15, 0.3)',
-                padding: '16px 12px',
-              }}
-            >
-              <div className="w-10 h-10 rounded-sm mb-3 bg-amber-700/60 border border-amber-600" />
-              <span className="text-amber-300 text-sm font-bold text-center">
-                {rewardArtifact.name}
-              </span>
-              <span className="text-stone-400 text-center mt-2 leading-tight" style={{ fontSize: '9px' }}>
-                {rewardArtifact.description}
-              </span>
-              <span className="text-amber-600 text-center mt-2 leading-tight" style={{ fontSize: '9px' }}>
-                {rewardArtifact.effect}
-              </span>
+                {phase === 'result' ? resultText : renderEventText(event.flavourText)}
+              </p>
             </div>
-            <div className="flex gap-3">
-              <button
-                onClick={handleSkipArtifact}
-                className="px-6 py-1.5 text-xs bg-stone-800/50 text-stone-400 border border-stone-700 hover:bg-stone-700/50"
-              >
-                Skip
-              </button>
-              <button
-                onClick={handleTakeArtifact}
-                className="px-6 py-1.5 text-xs bg-amber-900/60 text-amber-300 border border-amber-700 hover:bg-amber-800/60"
-              >
-                Take It
-              </button>
-            </div>
-          </div>
-        )}
 
-        {/* Continue button (after artifact handled or non-artifact choice) */}
-        {showContinue && (
-          <div className="flex flex-col items-center">
-            <button
-              onClick={handleContinue}
-              className="px-6 py-2 bg-amber-900/60 text-amber-300 text-sm border border-amber-700 hover:bg-amber-800/60"
-            >
-              Continue
-            </button>
+            {phase === 'choose' && (() => {
+              // Abandoned Mine: choices change as the player descends.
+              const choices = event.id === 'abandoned_mine'
+                ? [
+                    {
+                      label: MINE_LEVELS[mineLevel - 1].label,
+                      description: MINE_LEVELS[mineLevel - 1].description,
+                      effect: 'abandoned_mine_step',
+                    } satisfies EventChoice,
+                    { label: 'Leave', description: '', effect: 'none' } satisfies EventChoice,
+                  ]
+                : event.choices;
+              return (
+              <div className="flex flex-col gap-2">
+                {choices.map((choice, i) => {
+                  const disabled = isChoiceDisabled(choice);
+                  return (
+                    <button
+                      key={i}
+                      onClick={() => handleChoice(choice)}
+                      disabled={disabled}
+                      style={{ fontSize: 10, boxShadow: '3px 3px 2px rgba(0,0,0,0.7)' }}
+                      className={`p-2 rounded-sm text-left transition-transform active:translate-y-0.5 ${
+                        disabled
+                          ? 'bg-stone-900 opacity-50 cursor-not-allowed'
+                          : 'bg-stone-800 hover:bg-stone-700'
+                      }`}
+                    >
+                      <span
+                        className="block text-amber-300 font-bold"
+                        style={{ textShadow: '1px 1px 1px rgba(0,0,0,0.6)' }}
+                      >
+                        {choice.label}
+                      </span>
+                      {choice.description && (
+                        <span className="block text-stone-400">{choice.description}</span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+              );
+            })()}
+
+            {phase === 'result' && (
+              <button
+                onClick={handleResultContinue}
+                style={{ fontSize: 10, boxShadow: '3px 3px 2px rgba(0,0,0,0.7)' }}
+                className="block mx-auto px-6 py-2 rounded-sm bg-amber-800 text-amber-200 hover:bg-amber-700 transition-transform active:translate-y-0.5"
+              >
+                Continue
+              </button>
+            )}
+
           </div>
-        )}
-      </div>
-      </div>
+        </div>
+      )}
+
+      {phase === 'reveal' && (
+        <div
+          className="pointer-events-none absolute inset-0 flex justify-center items-center"
+          style={{ transform: `translateY(${CARD_H / 2 + 90}px)` }}
+        >
+          <button
+            onClick={handleContinue}
+            style={{ fontSize: 10, boxShadow: '3px 3px 2px rgba(0,0,0,0.7)' }}
+            className="pointer-events-auto px-6 py-2 rounded-sm bg-amber-800 text-amber-200 hover:bg-amber-700 transition-transform active:translate-y-0.5"
+          >
+            Continue
+          </button>
+        </div>
+      )}
     </div>
   );
 });

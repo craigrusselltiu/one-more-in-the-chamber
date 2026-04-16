@@ -108,12 +108,12 @@ export const TileSelectScreen = memo(function TileSelectScreen() {
             >
               <button
                 onClick={() => setSelected(tileType)}
-                className="flex flex-col items-center w-32 transition-all"
+                className="flex flex-col items-center w-32 rounded-sm transition-all"
                 style={{
-                  border: `2px solid ${isSelected ? '#f59e0b' : '#44403c'}`,
                   backgroundColor: isSelected ? 'rgba(120, 53, 15, 0.75)' : 'rgba(28, 25, 23, 0.8)',
                   padding: '12px 10px',
                   transform: isSelected ? 'translateY(-4px)' : 'none',
+                  boxShadow: '3px 3px 2px rgba(0,0,0,0.7)',
                 }}
               >
                 <SpriteIcon frame={TILE_FRAMES[tileType]} scale={2} className="mb-1.5" />
@@ -143,10 +143,11 @@ export const TileSelectScreen = memo(function TileSelectScreen() {
       <button
         onClick={handleConfirm}
         disabled={!selected}
-        className={`mt-10 px-5 py-1.5 text-xs border ${
+        style={{ boxShadow: '3px 3px 2px rgba(0,0,0,0.7)' }}
+        className={`mt-10 px-5 py-1.5 text-xs rounded-sm transition-transform ${
           selected
-            ? 'bg-amber-900/60 text-amber-300 border-amber-700 hover:bg-amber-800/60'
-            : 'bg-stone-800/50 text-stone-600 border-stone-700 cursor-not-allowed'
+            ? 'bg-amber-800 text-amber-200 hover:bg-amber-700 active:translate-y-0.5'
+            : 'bg-stone-800 text-stone-600 cursor-not-allowed opacity-70'
         }`}
       >
         Confirm

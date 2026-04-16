@@ -53,14 +53,16 @@ export const ScoreScreen = memo(function ScoreScreen() {
 
     const ascensionMultiplier = 1.0 + 0.05 * run.ascensionLevel;
     const timeMultiplier = completed ? computeTimeMultiplier(run.playTimeSeconds ?? 0) : 1.0;
+    const completionMultiplier = completed ? 2.0 : 1.0;
 
-    const finalScore = Math.round((baseScore + bonusPoints) * ascensionMultiplier * timeMultiplier);
+    const finalScore = Math.round((baseScore + bonusPoints) * ascensionMultiplier * timeMultiplier * completionMultiplier);
 
     return {
       baseScore,
       bonusPoints,
       ascensionMultiplier,
       timeMultiplier,
+      completionMultiplier,
       finalScore,
       runDurationSeconds: run.playTimeSeconds ?? 0,
       combatsCleared,
@@ -184,6 +186,13 @@ export const ScoreScreen = memo(function ScoreScreen() {
               label="Time"
               value={`x${score.timeMultiplier.toFixed(2)}`}
               detail={formatDuration(score.runDurationSeconds)}
+              isMultiplier
+            />
+          )}
+          {score.completed && (
+            <ScoreLine
+              label="Completion"
+              value={`x${score.completionMultiplier.toFixed(2)}`}
               isMultiplier
             />
           )}

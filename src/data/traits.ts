@@ -151,4 +151,12 @@ export const TRAITS: TraitDefinition[] = [
       { threshold: 4, description: 'When you would apply Poison, apply it to ALL enemies.' },
     ],
   },
+  {
+    id: 'corrupt',
+    name: 'Corrupt',
+    description: 'Something rotten, clinging close.',
+    breakpoints: [
+      { threshold: 2, description: 'At the start of combat, add Shadow to 2 random tiles for each Corrupt artifact you own.' },
+    ],
+  },
 ];

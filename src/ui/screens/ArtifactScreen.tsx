@@ -1,7 +1,7 @@
-import { memo, useEffect, useMemo, useRef, useState } from 'react';
+import { memo, useEffect, useRef, useState } from 'react';
 import { EventBus, GameEvent } from '../../game/EventBus';
 import { useRunStore } from '../../store/runStore';
-import { ARTIFACTS, RARITY_COLORS_DIM, RARITY_LABELS, RARITY_BREATHE_CLASS } from '../../data/artifacts';
+import { RARITY_COLORS_DIM, RARITY_LABELS, RARITY_BREATHE_CLASS } from '../../data/artifacts';
 import type { ArtifactDefinition } from '../../data/artifacts';
 import { ARTIFACT_FRAMES } from '../../data/spriteConfig';
 import { SpriteIcon } from '../components/SpriteIcon';
@@ -13,19 +13,18 @@ const TRAIT_COLORS: Record<TraitId, string> = {
   outlaw: '#D04040', sheriff: '#6888A0', prospector: '#E0C880', sapper: '#D4A030',
   mustang: '#70B0D0', gunslinger: '#D06080', saloon_keeper: '#D4A870', desperado: '#B060D0',
   sniper: '#7090B8', dead_man_walking: '#808080', tracker: '#C8A040', preacher: '#A0C8FF',
-  antivenom: '#60A040', undertaker: '#606060', rattlesnake: '#80C040',
+  antivenom: '#60A040', undertaker: '#606060', rattlesnake: '#80C040', corrupt: '#8B3A9B',
 };
 const TRAIT_NAMES: Record<string, string> = {
   outlaw: 'Outlaw', sheriff: 'Sheriff', prospector: 'Prospector', sapper: 'Sapper',
   mustang: 'Mustang', gunslinger: 'Gunslinger', saloon_keeper: 'Saloon Keeper',
   desperado: 'Desperado', sniper: 'Sniper', dead_man_walking: 'Dead Man Walking',
   tracker: 'Tracker', preacher: 'Preacher', antivenom: 'Antivenom', undertaker: 'Undertaker',
-  rattlesnake: 'Rattlesnake',
+  rattlesnake: 'Rattlesnake', corrupt: 'Corrupt',
 };
 import { playTreasure } from '../../services/sfx';
 import { createSeededRandom } from '../../utils/seededRandom';
-import { weightedArtifactPick, weightedArtifactPickN } from '../../utils/weightedSelection';
-import { getAscensionMutations } from '../../data/ascension';
+import { pickArtifactForRun, pickArtifactsForRun } from '../../utils/artifactSelection';
 import type { Screen } from '../../App';
 
 export const ArtifactScreen = memo(function ArtifactScreen() {
@@ -40,29 +39,27 @@ export const ArtifactScreen = memo(function ArtifactScreen() {
   const isEliteReward = currentNode?.type === 'elite';
   const isArtifactNode = currentNode?.type === 'artifact';
   // Outlaw King defeats flag a pending legendary reward, guaranteeing a legendary pick.
-  const isLegendaryReward = run?.pendingLegendaryReward === true;
-  // Choice mode: artifact nodes and boss rewards present 2 options to pick from.
-  const isChoiceMode = isBossReward || isArtifactNode;
+  const initialLegendaryReward = run?.pendingLegendaryReward === true;
+  // Events can redirect here with a custom choice count (e.g. Train Wreck "Search the engine" -> 3).
+  const initialEventChoiceCount = run?.pendingEventArtifactChoiceCount;
 
-  const artifacts = useMemo(() => {
-    const rand = createSeededRandom(`${run?.seed ?? ''}-treasure-${run?.currentNodeId ?? ''}`);
-    const ownedIds = new Set((run?.artifacts ?? []).map((a) => a.id));
-    const character = run?.character ?? 'red_panda';
-    const available = ARTIFACTS.filter((a) => !ownedIds.has(a.id) && (!a.exclusive || a.exclusive === character));
-    let pool = available.length > 0 ? available : ARTIFACTS;
-    // Legendary-only reward (Outlaw King drop): filter pool to legendaries.
-    // Falls back to the full pool if the player already owns every legendary.
-    if (isLegendaryReward) {
-      const legendaries = pool.filter((a) => a.rarity === 'legendary');
-      if (legendaries.length > 0) pool = legendaries;
-    }
-    const desperadoActive = (run?.traitCounts?.desperado ?? 0) >= 2;
-    const legendaryWeight = getAscensionMutations(run?.ascensionLevel ?? 0).legendaryWeight;
-    if (isChoiceMode) {
-      return weightedArtifactPickN(pool, 2, rand, desperadoActive, legendaryWeight, isBossReward);
-    }
-    return [weightedArtifactPick(pool, rand, desperadoActive, false, legendaryWeight)];
-  }, [isBossReward, isLegendaryReward, isChoiceMode]);
+  // Lock the rolled artifacts AND display mode once, so clearing the reward flags
+  // on pick doesn't re-roll or change the UI before the screen transitions away.
+  const lockedRef = useRef<{ isChoiceMode: boolean; artifacts: ArtifactDefinition[] } | null>(null);
+  if (!lockedRef.current && run) {
+    const mode =
+      isBossReward ||
+      isArtifactNode ||
+      (initialEventChoiceCount != null && initialEventChoiceCount > 1);
+    const rand = createSeededRandom(`${run.seed}-treasure-${run.currentNodeId ?? ''}-${initialEventChoiceCount ?? 'x'}`);
+    const opts = { legendaryOnly: initialLegendaryReward, bossReward: isBossReward };
+    const result = mode
+      ? pickArtifactsForRun(run, initialEventChoiceCount ?? 2, rand, opts)
+      : [pickArtifactForRun(run, rand, opts)];
+    lockedRef.current = { isChoiceMode: mode, artifacts: result };
+  }
+  const isChoiceMode = lockedRef.current?.isChoiceMode ?? false;
+  const artifacts = lockedRef.current?.artifacts ?? [];
 
   const [taken, setTaken] = useState(false);
   const act = run?.currentAct ?? 1;
@@ -86,7 +83,9 @@ export const ArtifactScreen = memo(function ArtifactScreen() {
     if (isBossReward) useRunStore.getState().markBossRewardTaken();
     if (isEliteReward) useRunStore.getState().markEliteRewardTaken();
     // Clear the Outlaw King legendary flag once consumed.
-    if (isLegendaryReward) useRunStore.getState().setPendingLegendaryReward(false);
+    if (initialLegendaryReward) useRunStore.getState().setPendingLegendaryReward(false);
+    // Clear any event-driven choice count.
+    if (initialEventChoiceCount != null) useRunStore.getState().setPendingEventArtifactChoiceCount(undefined);
   };
 
   const takenRef = useRef(false);

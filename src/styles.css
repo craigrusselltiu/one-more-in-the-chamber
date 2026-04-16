@@ -4,6 +4,25 @@
   font-family: 'Inter', sans-serif;
 }
 
+/* Event text keyword effects */
+@keyframes event-wiggle {
+  0%, 100% { transform: rotate(-0.8deg); }
+  50% { transform: rotate(0.8deg); }
+}
+.event-wiggle { display: inline-block; animation: event-wiggle 0.9s ease-in-out infinite; }
+
+@keyframes event-char-jump {
+  0%, 70%, 100% { transform: translateY(0); }
+  35% { transform: translateY(-1.5px); }
+}
+.event-char-jump { display: inline-block; animation: event-char-jump 1.6s ease-in-out infinite; white-space: pre; }
+
+@keyframes event-breathe {
+  0%, 100% { opacity: 0.75; filter: brightness(0.95); }
+  50% { opacity: 1; filter: brightness(1.15); }
+}
+.event-breathe { display: inline-block; animation: event-breathe 3s ease-in-out infinite; }
+
 /* Custom scrollbar for leaderboard */
 .leaderboard-scroll::-webkit-scrollbar {
   width: 6px;

@@ -47,6 +47,8 @@ const EXTRA_DESCRIPTIONS: Record<string, { name: string; color: string; descript
   dead_man_walking: { name: 'Dead Man Walking', color: '#C8B060', description: 'Immune to debuffs. Decrease stacks by 1 at the end of the turn or whenever a debuff is applied.' },
   invulnerable: { name: 'Invulnerable', color: '#FFD700', description: 'Immune to all damage. Decrease stacks by 1 at the end of the turn.' },
   scavenger: { name: 'Scavenger', color: '#40D840', description: 'When another enemy dies, heal 6 HP.' },
+  lethargic: { name: 'Lethargic', color: '#8B3A9B', description: 'Your next swap does nothing. Cleared once consumed.' },
+  tinnitus: { name: 'Tinnitus', color: '#8B3A9B', description: 'Enemy intents are hidden this turn.' },
 };
 
 function getStatusTooltip(type: string, value: number, hideValue: boolean): ReactNode {
@@ -79,7 +81,7 @@ export const StatusEffects = memo(function StatusEffects({ effects }: StatusEffe
   return (
     <div className="flex gap-0.5 mt-0.5">
       {effects.map((effect, i) => {
-        const hideValue = effect.type === 'summoned';
+        const hideValue = effect.type === 'summoned' || effect.type === 'lethargic' || effect.type === 'tinnitus';
         const tooltipContent = getStatusTooltip(effect.type, effect.value, hideValue);
         return (
           <Tooltip key={`${effect.type}-${i}`} content={tooltipContent} position="bottom">

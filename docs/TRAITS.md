@@ -82,3 +82,7 @@ Trait level = number of artifacts held with that tag. Effects activate at breakp
 - Flavor: "I'm a slithery snake."
 - 2 -- Clearing or matching Poison tiles applies Poison to target instead.
 - 4 -- When you would apply Poison, apply it to ALL enemies.
+
+## Corrupt
+- Flavor:
+- 2 -- At the start of combat, add Shadow to 2 random tiles for each corruption you own.

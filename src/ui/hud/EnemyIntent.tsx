@@ -2,6 +2,7 @@ import { memo } from 'react';
 import type { EnemyIntent as EnemyIntentType } from '../../types/combat';
 import { SpriteIcon } from '../components/SpriteIcon';
 import { INTENT_FRAMES, INTENT_COLORS, STATUS_FRAMES, HAZARD_FRAMES } from '../../data/spriteConfig';
+import { useCombatStore } from '../../store/combatStore';
 
 /** Intent kinds that use an existing status/hazard icon. */
 const INTENT_STATUS_FRAMES: Record<string, number | undefined> = {
@@ -77,6 +78,28 @@ interface EnemyIntentProps {
  */
 export const EnemyIntent = memo(function EnemyIntent({ intent, rageful = 0 }: EnemyIntentProps) {
   const actions = intent.actions;
+  const intentsHidden = useCombatStore((s) => s.intentsHidden);
+
+  // Tinnitus: show "?" badge when intents are hidden (turn 1).
+  if (intentsHidden) {
+    return (
+      <div
+        className="flex items-center justify-center px-1 py-px"
+        style={{
+          width: 16,
+          height: 16,
+          color: '#8B3A9B',
+          fontWeight: 'bold',
+          fontSize: '14px',
+          lineHeight: 1,
+          WebkitTextStroke: '2px #000',
+          paintOrder: 'stroke fill',
+        }}
+      >
+        ?
+      </div>
+    );
+  }
 
   if (!actions || actions.length === 0) {
     return (

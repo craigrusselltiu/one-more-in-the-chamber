@@ -26,6 +26,8 @@ export class Player {
   /** Protected: while > 0, immune to tile hazard placement. Decrements at end of player turn. */
   protectedStacks = 0;
   skipNextBlockReset = false;
+  /** Block to apply at the start of the next player turn (e.g. Trailblazer's Compass). */
+  pendingBlockNextTurn = 0;
   gold = 0;
   /** Net gold change this fight (positive minus penalties). Reset between fights. */
   goldThisFight = 0;
@@ -46,8 +48,16 @@ export class Player {
   damageReduction = 0;
   /** Dead Man Walking(7): once/combat lethal → heal 20% max HP. */
   deadManWalkingAvailable = false;
+  /**
+   * Stacks-based Dead Man Walking (e.g. Death's Glare). While > 0, incoming
+   * debuff applications are absorbed and a stack is consumed instead.
+   * Decrements by 1 at the end of the player turn.
+   */
+  deadManWalkingStacks = 0;
   /** If the player owns Mirage, the type it transformed into for this combat. */
   mirageReplacementType: TileType | null = null;
+  /** Multiplier applied to all heal() amounts (e.g. Dry Atmosphere = 0.9). */
+  healMultiplier = 1.0;
 
   constructor(
     health: number,
@@ -132,9 +142,19 @@ export class Player {
     return false;
   }
 
+  /** Consume a DMW stack if any are available; returns true if a debuff should be absorbed. */
+  tryAbsorbDebuff(): boolean {
+    if (this.deadManWalkingStacks > 0) {
+      this.deadManWalkingStacks--;
+      return true;
+    }
+    return false;
+  }
+
   heal(amount: number): number {
+    const adjusted = Math.max(0, Math.round(amount * this.healMultiplier));
     const before = this.health;
-    this.health = Math.min(this.maxHealth, this.health + amount);
+    this.health = Math.min(this.maxHealth, this.health + adjusted);
     return this.health - before;
   }
 
@@ -206,6 +226,11 @@ export class Player {
     } else {
       this.block = 0;
     }
+    // Apply block queued for the next turn (e.g. Trailblazer's Compass).
+    if (this.pendingBlockNextTurn > 0) {
+      this.block += this.pendingBlockNextTurn;
+      this.pendingBlockNextTurn = 0;
+    }
     // Rageful/Sturdy: decrement stacks
     if (this.ragefulStacks > 0) this.ragefulStacks--;
     if (this.sturdyStacks > 0) this.sturdyStacks--;
@@ -230,6 +255,7 @@ export class Player {
     this.terrifiedStacks = 0;
     this.protectedStacks = 0;
     this.thorns = 0;
+    this.pendingBlockNextTurn = 0;
     this.goldThisFight = 0;
     this.goldObtainedThisFight = 0;
   }

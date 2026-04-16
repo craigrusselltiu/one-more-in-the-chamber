@@ -33,7 +33,7 @@ Bullet tiles - Bullet, .50 Cal, Buckshot, and Ricochet
 ## Positive:
 - Explosive -- 4+ match creates an explosive tile; matching it destroys surrounding tiles
 - Showdown -- special tile created from 5+ matches; enhanced effect
-- Shadow -- when creating match with this tile, shoot a shadow bolt dealing 4 damage to a random enemy
+- Shadow -- when creating match with this tile, shoot a shadow bolt dealing 10 damage to a random enemy
 
 ## Hazards:
 - Lock -- tile can't be swapped or matched until freed (match adjacent)

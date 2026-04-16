@@ -21,14 +21,14 @@ const TRAIT_COLORS: Record<TraitId, string> = {
   outlaw: '#D04040', sheriff: '#6888A0', prospector: '#E0C880', sapper: '#D4A030',
   mustang: '#70B0D0', gunslinger: '#D06080', saloon_keeper: '#D4A870', desperado: '#B060D0',
   sniper: '#7090B8', dead_man_walking: '#808080', tracker: '#C8A040', preacher: '#A0C8FF',
-  antivenom: '#60A040', undertaker: '#606060', rattlesnake: '#80C040',
+  antivenom: '#60A040', undertaker: '#606060', rattlesnake: '#80C040', corrupt: '#8B3A9B',
 };
 const TRAIT_NAMES: Record<string, string> = {
   outlaw: 'Outlaw', sheriff: 'Sheriff', prospector: 'Prospector', sapper: 'Sapper',
   mustang: 'Mustang', gunslinger: 'Gunslinger', saloon_keeper: 'Saloon Keeper',
   desperado: 'Desperado', sniper: 'Sniper', dead_man_walking: 'Dead Man Walking',
   tracker: 'Tracker', preacher: 'Preacher', antivenom: 'Antivenom', undertaker: 'Undertaker',
-  rattlesnake: 'Rattlesnake',
+  rattlesnake: 'Rattlesnake', corrupt: 'Corrupt',
 };
 
 interface MerchantItem {
@@ -81,7 +81,11 @@ export const MerchantScreen = memo(function MerchantScreen() {
   const stock = useMemo(() => {
     if (!run || !snapshot) return { consumables: [] as MerchantItem[], artifacts: [] as MerchantItem[], tiles: [] as MerchantItem[] };
     const rand = createSeededRandom(`${run.seed}-merchant-${run.currentNodeId}`);
-    const priceMult = getAscensionMutations(run.ascensionLevel).merchantPriceMultiplier;
+    const ascPriceMult = getAscensionMutations(run.ascensionLevel).merchantPriceMultiplier;
+    // One-shot discount from events (e.g. Train Wreck "Check for survivors"). Consumed on first stock computation.
+    const discount = run.nextMerchantDiscount ?? 0;
+    const priceMult = ascPriceMult * (1 - discount);
+    if (discount > 0) useRunStore.getState().setNextMerchantDiscount(undefined);
 
     const consumables: MerchantItem[] = [];
     const shuffledConsumables = seededShuffle(CONSUMABLES, rand);
@@ -98,7 +102,8 @@ export const MerchantScreen = memo(function MerchantScreen() {
 
     const artifacts: MerchantItem[] = [];
     const ownedIds = new Set(snapshot.ownedArtifactIds);
-    const availableArtifacts = ARTIFACTS.filter((a) => !ownedIds.has(a.id) && (!a.exclusive || a.exclusive === run.character));
+    // Corrupt-tagged artifacts are event-only rewards; never stocked by merchants.
+    const availableArtifacts = ARTIFACTS.filter((a) => !ownedIds.has(a.id) && !a.tags.includes('corrupt') && (!a.exclusive || a.exclusive === run.character));
     const desperadoActive = (run.traitCounts?.desperado ?? 0) >= 2;
     const legendaryWeight = getAscensionMutations(run.ascensionLevel).legendaryWeight;
     const pickedArtifacts = weightedArtifactPickN(availableArtifacts, 3, rand, desperadoActive, legendaryWeight);

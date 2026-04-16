@@ -44,6 +44,20 @@ export interface RunState {
   outlawKingEncountered?: boolean;
   /** Transient: if true, the next ArtifactScreen visit forces a legendary-rarity pick. */
   pendingLegendaryReward?: boolean;
+  /** Shuffle bag of event IDs remaining for this cycle. Refills from the current act's pool when empty. */
+  eventBag?: string[];
+  /** When set, the next combat uses these enemy type IDs instead of rolling a normal encounter. Cleared on combat start. */
+  forcedCombatEnemies?: string[];
+  /** One-shot discount (0-1, e.g. 0.25 = 25% off) applied to the next merchant's prices. Cleared after the merchant snapshot is taken. */
+  nextMerchantDiscount?: number;
+  /** When set, the next ArtifactScreen visit is an event-driven choice of this many artifacts. Cleared after pick/skip. */
+  pendingEventArtifactChoiceCount?: number;
+  /** Additive HP multiplier applied to the current act's boss (e.g. 0.1 = +10% max HP). Cleared after the boss encounter rolls. */
+  pendingActBossHpBonus?: number;
+  /** Grace stacks to grant the player at the start of the next combat (e.g. Traveling Preacher). Cleared on consume. */
+  pendingNextFightGrace?: number;
+  /** Extra swaps per turn granted at the start of the next combat (e.g. Campfire Stranger "Keep walking"). Cleared on consume. */
+  pendingNextFightSwapBonus?: number;
   status: 'active' | 'completed' | 'abandoned';
 }
 
@@ -101,7 +115,8 @@ export type TraitId =
   | 'preacher'
   | 'antivenom'
   | 'undertaker'
-  | 'rattlesnake';
+  | 'rattlesnake'
+  | 'corrupt';
 
 export interface ArtifactInstance {
   id: string;

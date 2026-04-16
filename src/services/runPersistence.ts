@@ -8,6 +8,39 @@ import { saveRun, loadActiveRun } from './localSave';
 import type { RunState, MapNodeType } from '../types/game';
 
 let unsubscribe: (() => void) | null = null;
+let paused = false;
+
+/**
+ * Pause auto-save. Used by events so that intermediate state changes
+ * (card reveals, choice resolution) do not persist mid-event.
+ */
+export function pauseRunPersistence(): void {
+  paused = true;
+}
+
+/**
+ * Resume auto-save and force an immediate save of the current run state.
+ * Call on event exit so the final, post-event state is persisted once.
+ */
+export function resumeRunPersistence(): void {
+  paused = false;
+  const state = useRunStore.getState();
+  if (state.run) {
+    saveRun(state.run).catch((err) => {
+      console.error('[persist] run save failed:', err);
+    });
+  }
+}
+
+/** Force an immediate save of the current run state (bypasses the pause flag). */
+export function forceSaveRun(): void {
+  const state = useRunStore.getState();
+  if (state.run) {
+    saveRun(state.run).catch((err) => {
+      console.error('[persist] run save failed:', err);
+    });
+  }
+}
 
 /** Migrate old node type names from before the rename. */
 const NODE_TYPE_MIGRATION: Record<string, MapNodeType> = {
@@ -59,6 +92,7 @@ export function startRunPersistence(): void {
   if (unsubscribe) return; // Already subscribed
 
   unsubscribe = useRunStore.subscribe((state) => {
+    if (paused) return;
     if (state.run) {
       saveRun(state.run).catch((err) => {
         console.error('[persist] run save failed:', err);

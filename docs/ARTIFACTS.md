@@ -237,7 +237,7 @@ Diagonal = single-trait artifacts. Off-diagonal = artifacts with both traits.
 ### Trailblazer's Compass
 - Tags: Mustang, Tracker
 - Rarity: Common
-- Effect: Unused swaps at turn end deal 3 damage each to targeted enemy.
+- Effect: Unused swaps at turn end gives you 6 block on your next turn.
 - Flavor: "Every path not taken is a bullet saved."
 
 ### Dust Devil Boots
@@ -478,7 +478,7 @@ Diagonal = single-trait artifacts. Off-diagonal = artifacts with both traits.
 ### Death's Glare
 - Tags: Undertaker, Dead Man Walking
 - Rarity: Legendary
-- Effect: On combat start, apply 3 Vulnerable and 3 Terrified to ALL enemies.
+- Effect: On combat start, gain 3 Dead Man Walking, then apply 3 Vulnerable and 3 Terrified to ALL enemies.
 - Flavor: "They saw what was coming."
 
 ### Strong Liver
@@ -494,3 +494,22 @@ Diagonal = single-trait artifacts. Off-diagonal = artifacts with both traits.
 - Effect: All gold gain is increased by 10%.
 - Flavor: "This makes no sense."
 
+## Special Artifacts
+
+### Lethargic
+- Tags: Corrupt
+- Rarity: Common
+- Effect: The first swap each combat does nothing.
+- Flavor: "Some mornings, you just aren't ready."
+
+### Dry Atmosphere
+- Tags: Corrupt
+- Rarity: Uncommon
+- Effect: All healing is reduced by 10%.
+- Flavor: "Sun bakes the blood before it can heal."
+
+### Tinnitus
+- Tags: Corrupt
+- Rarity: Rare
+- Effect: Enemy intents are hidden on the first turn of each combat.
+- Flavor: "The first shot always rings twice."

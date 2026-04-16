@@ -25,6 +25,7 @@ const TRAIT_COLORS: Record<TraitId, string> = {
   antivenom: '#60A040',
   undertaker: '#606060',
   rattlesnake: '#80C040',
+  corrupt: '#8B3A9B',
 };
 
 const TRAIT_NAMES: Record<string, string> = {
@@ -43,6 +44,7 @@ const TRAIT_NAMES: Record<string, string> = {
   antivenom: 'Antivenom',
   undertaker: 'Undertaker',
   rattlesnake: 'Rattlesnake',
+  corrupt: 'Corrupt',
 };
 
 const DEFAULT_COLOR = '#808080';

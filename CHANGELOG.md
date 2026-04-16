@@ -4,6 +4,47 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## v0.6.8
+
+### Added
+- Six new events, each with a dedicated background and colorized flavor text: The Vulture Circle, The Traveling Preacher, The Campfire Stranger, The Rigged Bridge, The Snake Charmer, The Ghost Town Saloon.
+- Animated event text effects (yellow/green wiggle, red character jump, blue breathe) driven by a `{{color:text}}` markup in event flavor strings.
+- New Corrupt trait and three curse artifacts:
+  - Lethargic (Common) — your first swap each combat does nothing. Shows as a player status icon, cleared on consume.
+  - Dry Atmosphere (Uncommon) — all healing is reduced by 10%, in combat and out.
+  - Tinnitus (Rare) — enemy intents are hidden on turn 1. Shows as a player status icon; enemy intent panels display "?" for that turn.
+  - Corrupt(2) — at fight start, add Shadow to 2 random tiles for each Corrupt artifact you own.
+- New run-state "pending" fields applied at the next relevant moment, consumed once:
+  - `pendingActBossHpBonus` — adds % max HP to the current act's boss (Vulture Circle).
+  - `pendingEventArtifactChoiceCount` — queues a 1-of-N artifact pick on the next ArtifactScreen visit (Train Wreck).
+  - `pendingNextFightGrace` — grants Grace stacks at the start of the next combat (Traveling Preacher).
+  - `pendingNextFightSwapBonus` — +/- swaps per turn on the next combat; stacks across events and clamps to min 1 (Campfire Stranger, Rigged Bridge, Ghost Town Saloon).
+  - `forcedCombatEnemies` — overrides the next combat roll with a specific enemy set (Coyote Den, Ghost Town Saloon ambush).
+  - `nextMerchantDiscount` — applies a one-shot % discount to the next merchant (Train Wreck "Check for survivors").
+- Score now includes a x2 Completion multiplier on win, on top of the existing ascension and time multipliers.
+- `healAdjust()` utility so out-of-combat heal sources (campfire rest, event heals) respect Dry Atmosphere.
+- Run persistence can be paused/resumed around non-combat screens so intermediate state (card reveals, choice resolution) doesn't persist mid-event; pair with `forceSaveRun()` to checkpoint cleanly on exit.
+- `NonCombatFloats` HUD layer so floating-number feedback works outside combat (e.g. event HP loss, gold gained, heals).
+
+### Changed
+- Shadow tile damage 4 → 10.
+- Death's Glare now also grants the player 3 Dead Man Walking on combat start (in addition to the existing 3 Vulnerable + 3 Terrified to all enemies). Player DMW absorbs incoming debuff applications (poison, vulnerable, terrified) and decrements at end of turn.
+- Trailblazer's Compass reworked: unused swaps at turn end now grant 6 block on your next turn (was 3 damage each to the targeted enemy).
+- Abandoned Mine depths rebalanced: Go deeper now costs 5% / 7% / 10% max HP (was 8% / 15% / 25%); chances unchanged.
+- Train Wreck "Search the engine" damage 10 → 13.
+- Train Wreck "Search the engine" now routes to a 3-artifact pick (via `pendingEventArtifactChoiceCount`) instead of a single roll.
+- Coyote Den choice text: "Fight a pack of wolves" → "Fight a pack of coyotes" (matches the event name and the forced encounter).
+- Event flavor text and choice descriptions converted from double-hyphen to real em dashes.
+- Event backgrounds moved under `public/assets/events/`; BootScene paths updated.
+- Character Select, Tile Select, Merchant, and Event screens have consistent button styling (rounded-sm, drop shadow, active-state translation).
+
+### Fixed
+- **Event persists through quit/return**: the event bag was previously committed the moment the screen mounted, so quitting mid-event to the main menu and returning drew a different event (same seed, smaller candidate list). The bag now commits only at explicit resolution points (direct nav, result-screen Continue, card-reveal Continue). Quitting or force-closing mid-event preserves the draw.
+- **Artifact re-roll flash on event pick**: picking from Train Wreck's 3-artifact spread used to briefly display a newly-rolled single artifact as the screen transitioned away, because clearing `pendingEventArtifactChoiceCount` flipped ArtifactScreen out of choice mode. Both the rolled artifacts and the choice-mode flag are now locked in a ref on first render.
+- **Event damage could leave the player at 0 HP without ending the run**. Old Well, Train Wreck, Abandoned Mine, and the Card Game "health" reward now trigger a game-over (navigate to the score screen with `endRun(false)`) when they would drop the player to 0.
+- **Tile-swap soft-lock prevention**: `swapsPerTurn` is clamped to a minimum of 1 so negative event effects (Saloon "Drink") can't zero out a fight.
+- Vulture Circle "Take the gear" actually applies its advertised +10% act-boss-HP penalty (consumed when the boss encounter rolls, cleared on act advance).
+
 ## v0.6.7
 
 ### Added

@@ -7,6 +7,7 @@ import { TILE_FRAMES, UI_FRAMES, NODE_FRAMES } from '../../data/spriteConfig';
 import { SpriteIcon } from '../components/SpriteIcon';
 import { Tooltip } from '../components/Tooltip';
 import { KeywordSubTooltips, getReferencedKeywords, buildUpgradePreview } from '../components/KeywordText';
+import { adjustHeal } from '../../utils/healAdjust';
 import type { TileType } from '../../types/game';
 import type { Screen } from '../../App';
 
@@ -24,7 +25,7 @@ export const CampfireScreen = memo(function CampfireScreen() {
 
   if (!run) return null;
 
-  const healAmount = Math.floor(run.maxHealth * 0.3);
+  const healAmount = adjustHeal(run, Math.floor(run.maxHealth * 0.3));
   const isFullHealth = run.health >= run.maxHealth;
 
   const handleRest = () => {

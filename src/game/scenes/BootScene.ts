@@ -85,8 +85,8 @@ export class BootScene extends Phaser.Scene {
     this.load.image('victory', `${base}assets/backgrounds/victory.png`);
     this.load.image('leaderboard', `${base}assets/backgrounds/leaderboard.png`);
     this.load.image('reputation', `${base}assets/backgrounds/reputation.png`);
-    this.load.image('event_bridge', `${base}assets/backgrounds/event_bridge.png`);
-    this.load.image('event_stranger', `${base}assets/backgrounds/event_stranger.png`);
+    this.load.image('event_bridge', `${base}assets/events/event_bridge.png`);
+    this.load.image('event_stranger', `${base}assets/events/event_stranger.png`);
     this.load.image('blur', `${base}assets/blur.png`);
     // Sprites
     this.load.spritesheet('items_sheet', `${base}assets/sprites/items_sheet.png`, {

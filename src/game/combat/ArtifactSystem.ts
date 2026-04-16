@@ -35,6 +35,8 @@ export class ArtifactSystem {
   private lastBreathTonicAvailable = false;
   /** Heliograph Shard: once/combat, on 5-match, apply Blinded. */
   private heliographShardAvailable = false;
+  /** Lethargic: first swap of the combat does nothing. Consumed on the first swap attempt. */
+  lethargicPending = false;
 
   constructor(artifacts: ArtifactInstance[]) {
     // Used artifacts (e.g. Shed Skin after triggering, Gold Tooth after pickup) stay in
@@ -128,8 +130,9 @@ export class ArtifactSystem {
       player.protectedStacks += 1;
     }
 
-    // Death's Glare: apply 3 Vulnerable + 3 Terrified to ALL enemies
+    // Death's Glare: grant 3 Dead Man Walking to player, then apply 3 Vulnerable + 3 Terrified to ALL enemies
     if (this.has('deaths_glare') && enemies) {
+      player.deadManWalkingStacks += 3;
       for (const enemy of enemies) {
         if (!enemy.state.isDead) {
           enemy.addVulnerable(3);
@@ -137,6 +140,12 @@ export class ArtifactSystem {
         }
       }
     }
+
+    // Lethargic: arm the first-swap-does-nothing flag for this combat.
+    this.lethargicPending = this.has('lethargic');
+
+    // Dry Atmosphere: reduce all healing by 10% for this combat.
+    player.healMultiplier = this.has('dry_atmosphere') ? 0.9 : 1.0;
   }
 
   /** Get number of Deadeye shots (3 default, 6 with Rust's Cylinder). */

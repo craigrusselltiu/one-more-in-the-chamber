@@ -28,6 +28,7 @@ interface CombatStore {
   vulnerableStacks: number;
   thorns: number;
   protectedStacks: number;
+  deadManWalkingStacks: number;
 
   // Ability
   abilityCharge: number;
@@ -55,6 +56,10 @@ interface CombatStore {
   comboCount: number;
   currentAct: number;
   mirageType: import('../types/game').TileType | null;
+  /** Tinnitus: when true, enemy intents are hidden (turn 1 only). */
+  intentsHidden: boolean;
+  /** Lethargic: when true, the next swap attempt will do nothing. Cleared once consumed. */
+  lethargicActive: boolean;
 
   // Actions
   syncFromCombatState: (state: CombatState) => void;
@@ -65,6 +70,8 @@ interface CombatStore {
   setTargetedEnemy: (index: number) => void;
   setCombo: (combo: number) => void;
   setAct: (act: number) => void;
+  setIntentsHidden: (hidden: boolean) => void;
+  setLethargicActive: (active: boolean) => void;
   reset: () => void;
 }
 
@@ -88,6 +95,7 @@ const initialState = {
   vulnerableStacks: 0,
   thorns: 0,
   protectedStacks: 0,
+  deadManWalkingStacks: 0,
   abilityCharge: 0,
   abilityThreshold: 10,
   isDeadeyeActive: false,
@@ -107,6 +115,8 @@ const initialState = {
   comboCount: 0,
   currentAct: 1,
   mirageType: null,
+  intentsHidden: false,
+  lethargicActive: false,
 };
 
 export const useCombatStore = create<CombatStore>((set) => ({
@@ -131,6 +141,7 @@ export const useCombatStore = create<CombatStore>((set) => ({
       vulnerableStacks: state.vulnerableStacks,
       thorns: state.thorns,
       protectedStacks: state.protectedStacks ?? 0,
+      deadManWalkingStacks: state.deadManWalkingStacks ?? 0,
       abilityCharge: state.abilityCharge,
       abilityThreshold: state.abilityThreshold,
       isDeadeyeActive: state.isDeadeyeActive,
@@ -166,6 +177,10 @@ export const useCombatStore = create<CombatStore>((set) => ({
 
   setAct: (act) => set({ currentAct: act }),
 
+  setIntentsHidden: (hidden) => set({ intentsHidden: hidden }),
+
+  setLethargicActive: (active) => set({ lethargicActive: active }),
+
   reset: () => set(initialState),
 }));
 
@@ -187,6 +202,9 @@ export function getPlayerStatusEffects(store: CombatStore): PlayerStatusEffect[]
   if (store.vulnerableStacks > 0) effects.push({ type: 'vulnerable', value: store.vulnerableStacks });
   if (store.thorns > 0) effects.push({ type: 'thorns', value: store.thorns });
   if (store.protectedStacks > 0) effects.push({ type: 'protected', value: store.protectedStacks });
+  if (store.deadManWalkingStacks > 0) effects.push({ type: 'dead_man_walking', value: store.deadManWalkingStacks });
+  if (store.lethargicActive) effects.push({ type: 'lethargic', value: 1 });
+  if (store.intentsHidden) effects.push({ type: 'tinnitus', value: 1 });
   return effects;
 }
 

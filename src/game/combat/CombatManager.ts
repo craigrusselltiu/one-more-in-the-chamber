@@ -17,6 +17,7 @@ import { chooseEnemyIntent } from './EnemyAI';
 import { BossController } from './BossController';
 import { playSwapFail, playMatch, playDeadeyeShot, playHit, playBlock, playAbilityReady } from '../../services/sfx';
 import { useRunStore } from '../../store/runStore';
+import { useCombatStore } from '../../store/combatStore';
 import { CONSUMABLES } from '../../data/consumables';
 import { getSpeedMultiplier } from '../../store/settingsStore';
 
@@ -138,9 +139,17 @@ export class CombatManager {
     // Golden Scarab: +30% gold gain
     this.goldMultiplier *= this.artifacts.getGoldGainMultiplier();
 
-    // Base swaps + trait bonus
+    // Base swaps + trait/artifact bonus + one-shot event bonus/penalty.
+    // Clamp to min 1 so events that reduce swaps (e.g. Saloon "Drink") can't soft-lock.
     const baseSwaps = config.swapsPerTurn ?? 3;
-    this.swapsPerTurn = baseSwaps + this.traits.getExtraSwapsPerTurn() + this.artifacts.getExtraSwapsPerTurn();
+    const nextFightSwapBonus = useRunStore.getState().run?.pendingNextFightSwapBonus ?? 0;
+    this.swapsPerTurn = Math.max(
+      1,
+      baseSwaps + this.traits.getExtraSwapsPerTurn() + this.artifacts.getExtraSwapsPerTurn() + nextFightSwapBonus,
+    );
+    if (nextFightSwapBonus !== 0) {
+      useRunStore.getState().setPendingNextFightSwapBonus(undefined);
+    }
 
     // Deadeye shots: 3 base, 6 with Fully Loaded, or explicit override
     this.deadeyeMaxShots = config.deadeyeShots ?? this.artifacts.getDeadeyeShots();
@@ -223,8 +232,8 @@ export class CombatManager {
           else if (action.kind === 'gain_dead_man_walking') enemy.state.deadManWalking += action.value;
           else if (action.kind === 'gain_invulnerable') enemy.state.invulnerable += action.value;
           else if (action.kind === 'gain_scavenger') enemy.state.scavenger += action.value;
-          else if (action.kind === 'apply_terrified') this.player.terrifiedStacks += action.value;
-          else if (action.kind === 'apply_vulnerable') this.player.vulnerableStacks += action.value;
+          else if (action.kind === 'apply_terrified') { if (!this.player.tryAbsorbDebuff()) this.player.terrifiedStacks += action.value; }
+          else if (action.kind === 'apply_vulnerable') { if (!this.player.tryAbsorbDebuff()) this.player.vulnerableStacks += action.value; }
           else if (action.kind === 'block') enemy.addBlock(action.value);
           else if (action.kind === 'summon' && action.summonType) this.trySummonEnemy(enemy, action.summonType, action.summonFullHp);
         }
@@ -258,6 +267,24 @@ export class CombatManager {
         if (tile) tile.setExplosive(true);
       }
     }
+
+    // Corrupt(2): at fight start, add Shadow to 2 tiles per Corrupt artifact owned.
+    if (this.traits.isActive('corrupt', 2)) {
+      const corruptCount = this.traits.getLevel('corrupt');
+      this.board.applyShadowToRandomTiles(2 * corruptCount);
+    }
+
+    // Traveling Preacher "Confess": grant queued Grace stacks on fight start.
+    const pendingGrace = useRunStore.getState().run?.pendingNextFightGrace ?? 0;
+    if (pendingGrace > 0) {
+      this.player.graceStacks += pendingGrace;
+      useRunStore.getState().setPendingNextFightGrace(undefined);
+    }
+
+    // Tinnitus: hide enemy intents on turn 1. Cleared at the start of turn 2.
+    useCombatStore.getState().setIntentsHidden(this.artifacts.has('tinnitus'));
+    // Lethargic: arm the status icon until the first swap consumes it.
+    useCombatStore.getState().setLethargicActive(this.artifacts.has('lethargic'));
 
     // Set trait-driven player flags
     this.player.damageReduction = this.traits.getDamageReduction();
@@ -436,6 +463,7 @@ export class CombatManager {
         thorns: this.player.thorns,
         shedSkinAvailable: this.player.shedSkinAvailable,
         deadManWalkingAvailable: this.player.deadManWalkingAvailable,
+        deadManWalkingStacks: this.player.deadManWalkingStacks,
         damageReduction: this.player.damageReduction,
         gold: this.player.gold,
         goldThisFight: this.player.goldThisFight,
@@ -490,6 +518,7 @@ export class CombatManager {
     this.player.sturdyStacks = sp.sturdyStacks ?? 0;
     this.player.graceStacks = sp.graceStacks ?? 0;
     this.player.poisonedStacks = sp.poisonedStacks ?? 0;
+    this.player.deadManWalkingStacks = sp.deadManWalkingStacks ?? 0;
     this.player.readyStacks = sp.readyStacks ?? 0;
     this.player.duelStacks = sp.duelStacks ?? 0;
     this.player.chainStacks = sp.chainStacks ?? 0;
@@ -591,6 +620,11 @@ export class CombatManager {
     if (this.isCombatOver()) return;
 
     this.turnNumber++;
+
+    // Tinnitus only hides intents on turn 1 -- reveal from turn 2 onward.
+    if (this.turnNumber > 1) {
+      useCombatStore.getState().setIntentsHidden(false);
+    }
 
     this.swapsRemaining = this.swapsPerTurn;
     this.nextMatchMultiplier = 1.0;
@@ -716,6 +750,22 @@ export class CombatManager {
     this.setPhase('resolving');
     EventBus.emit(GameEvent.SWAPS_CHANGE, this.swapsRemaining, this.swapsPerTurn);
 
+    // Lethargic: the first swap of the combat does nothing.
+    // The swap is still consumed (count already decremented above), but no
+    // tile movement or match resolution happens. Show feedback and return to
+    // either swap-phase or end-turn depending on remaining swaps.
+    if (this.artifacts.lethargicPending) {
+      this.artifacts.lethargicPending = false;
+      useCombatStore.getState().setLethargicActive(false);
+      playSwapFail();
+      this.floatOnPlayer('Lethargic', '#8B3A9B');
+      if (this.swapsRemaining <= 0) {
+        this.endTurn();
+      } else {
+        this.setPhase('swap-phase');
+      }
+      return;
+    }
 
     const from = { row: fromRow, col: fromCol };
     const to = { row: toRow, col: toCol };
@@ -1272,13 +1322,13 @@ export class CombatManager {
         this.floatOnPlayer(`+${match.poisonCount} POISON`, '#40ff40', 9);
       }
 
-      // Shadow tiles: each fires a shadow bolt dealing 4 damage to a random enemy
+      // Shadow tiles: each fires a shadow bolt dealing 10 damage to a random enemy
       if (match.shadowCount && match.shadowCount > 0) {
         for (let s = 0; s < match.shadowCount; s++) {
           const alive = this.aliveEnemies();
           if (alive.length === 0) break;
           const target = alive[Math.floor(Math.random() * alive.length)];
-          const { hpLost } = target.takeDamage(4);
+          const { hpLost } = target.takeDamage(10);
           this.damageDealtThisFight += hpLost;
           this.floatOnEnemy(target, `-${hpLost}`, '#6b2fa0');
           EventBus.emit(GameEvent.ENEMY_HP_CHANGE, { ...target.state });
@@ -1934,6 +1984,9 @@ export class CombatManager {
     // Player Terrified: decrement at end of player's turn
     if (this.player.terrifiedStacks > 0) this.player.terrifiedStacks--;
 
+    // Player Dead Man Walking: decrement at end of player's turn
+    if (this.player.deadManWalkingStacks > 0) this.player.deadManWalkingStacks--;
+
     // Tick cloak stacks
     for (const enemy of this.aliveEnemies()) {
       if (enemy.state.cloak > 0) enemy.state.cloak--;
@@ -2008,16 +2061,9 @@ export class CombatManager {
       }
     }
 
-    // Trailblazer's Compass: unused swaps deal 3 damage each to targeted enemy
+    // Trailblazer's Compass: unused swaps grant 6 block each at the start of the next turn
     if (this.artifacts.has('trailblazers_compass') && this.swapsRemaining > 0) {
-      const compassTarget = this.getTargetedAliveEnemy();
-      if (compassTarget) {
-        const totalDmg = this.swapsRemaining * 3;
-        const { hpLost } = compassTarget.takeDamage(totalDmg);
-        this.damageDealtThisFight += hpLost;
-        this.floatOnEnemy(compassTarget, `-${hpLost}`, '#70B0D0');
-        EventBus.emit(GameEvent.ENEMY_HP_CHANGE, { ...compassTarget.state });
-      }
+      this.player.pendingBlockNextTurn += this.swapsRemaining * 6;
     }
 
     // Tick bomb countdowns at end of turn
@@ -2263,7 +2309,7 @@ export class CombatManager {
         if (this.player.protectedStacks <= 0) this.hazardManager.placeRandomPoison(ma.value);
         break;
       case 'apply_poison':
-        if (this.player.protectedStacks <= 0) {
+        if (this.player.protectedStacks <= 0 && !this.player.tryAbsorbDebuff()) {
           this.player.poisonedStacks += ma.value;
           this.floatOnPlayer(`+${ma.value} POISON`, '#40ff40', 9);
         }
@@ -2316,13 +2362,17 @@ export class CombatManager {
         break;
       case 'apply_terrified':
         // Apply Terrified to the player (player deals 50% less damage)
-        this.player.terrifiedStacks += ma.value;
-        this.floatOnPlayer(`+${ma.value} TERRIFIED`, '#8B4789', 9);
+        if (!this.player.tryAbsorbDebuff()) {
+          this.player.terrifiedStacks += ma.value;
+          this.floatOnPlayer(`+${ma.value} TERRIFIED`, '#8B4789', 9);
+        }
         break;
       case 'apply_vulnerable':
         // Apply Vulnerable to the player (player takes 50% more damage)
-        this.player.vulnerableStacks += ma.value;
-        this.floatOnPlayer(`+${ma.value} VULNERABLE`, '#C070D0', 9);
+        if (!this.player.tryAbsorbDebuff()) {
+          this.player.vulnerableStacks += ma.value;
+          this.floatOnPlayer(`+${ma.value} VULNERABLE`, '#C070D0', 9);
+        }
         break;
       case 'gain_thorns':
         enemy.state.thorns += ma.value;
@@ -2741,6 +2791,7 @@ export class CombatManager {
       vulnerableStacks: this.player.vulnerableStacks,
       thorns: this.player.thorns,
       protectedStacks: this.player.protectedStacks,
+      deadManWalkingStacks: this.player.deadManWalkingStacks,
       enemies: this.enemies.map((e) => ({ ...e.state })),
       targetedEnemyIndex: (() => {
         const alive = this.aliveEnemies();

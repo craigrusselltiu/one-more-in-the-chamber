@@ -15,6 +15,7 @@ import { LeaderboardScreen } from './ui/screens/LeaderboardScreen';
 import { SettingsScreen } from './ui/screens/SettingsScreen';
 import { CombatHUD } from './ui/hud/CombatHUD';
 import { FloatingNumbers } from './ui/hud/FloatingNumbers';
+import { NonCombatFloats } from './ui/hud/NonCombatFloats';
 import { TopBar } from './ui/hud/TopBar';
 import { ArtifactBar } from './ui/hud/ArtifactBar';
 import { TraitRow } from './ui/hud/TraitRow';
@@ -319,9 +320,23 @@ export default function App() {
           const nodeType = currentNode?.type ?? 'combat';
           const nodeRow = currentNode?.row ?? 99;
           const outlawKingAvailable = !run.outlawKingEncountered;
-          const encounter = rollEncounter(
-            run.currentAct, nodeType, run.seed, run.currentNodeId ?? undefined, nodeRow, outlawKingAvailable,
-          );
+          // Event-driven fights (e.g. Coyote Den) override the roll with a specific enemy list.
+          const forcedIds = run.forcedCombatEnemies;
+          const encounter: EncounterInfo = forcedIds && forcedIds.length > 0
+            ? {
+                enemies: forcedIds
+                  .map((id) => ALL_ENEMIES[id])
+                  .filter((def): def is EnemyDefinition => !!def)
+                  .map((def) => ({ ...def })),
+                isElite: false,
+                isBoss: false,
+              }
+            : rollEncounter(
+                run.currentAct, nodeType, run.seed, run.currentNodeId ?? undefined, nodeRow, outlawKingAvailable,
+              );
+          if (forcedIds && forcedIds.length > 0) {
+            useRunStore.getState().setForcedCombatEnemies(undefined);
+          }
           // Once-per-run: mark Outlaw King encountered if he was rolled.
           if (encounterContainsOutlawKing(encounter.enemies)) {
             useRunStore.getState().markOutlawKingEncountered();
@@ -338,6 +353,16 @@ export default function App() {
 
           // Scale the base encounter first.
           applyAscensionToEnemies(encounter.enemies, run.ascensionLevel, category);
+
+          // Vulture Circle event penalty: apply a +HP multiplier to this act's
+          // boss on top of ascension scaling, then clear the flag.
+          const bossHpBonus = run.pendingActBossHpBonus ?? 0;
+          if (encounter.isBoss && bossHpBonus > 0) {
+            for (const e of encounter.enemies) {
+              e.health = Math.round(e.health * (1 + bossHpBonus));
+            }
+            useRunStore.getState().setPendingActBossHpBonus(undefined);
+          }
 
           // L20: the Act 3 final boss spawns with a random Act 3 elite companion,
           // scaled with elite-category modifiers (not boss).
@@ -678,7 +703,8 @@ export default function App() {
         )}
 
         {/* Floating numbers: rendered at top level so they appear above TopBar */}
-        {screen === 'combat' && <FloatingNumbers />}
+        {showTopBar && <FloatingNumbers />}
+        {showTopBar && screen !== 'combat' && <NonCombatFloats />}
 
         {/* Tutorial overlay: dark overlay with optional spotlight + tooltip */}
         <TutorialOverlay />
@@ -706,7 +732,7 @@ export default function App() {
           className="absolute right-2 bottom-1 pointer-events-none z-[60]"
           style={{ fontSize: '9px', color: 'rgba(255,255,255,0.3)' }}
         >
-          Pre-alpha v0.6.7
+          Pre-alpha v0.6.8
         </span>
       </div>
     </div>

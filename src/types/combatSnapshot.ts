@@ -57,6 +57,7 @@ export interface SerializedPlayer {
   thorns: number;
   shedSkinAvailable?: boolean;
   deadManWalkingAvailable?: boolean;
+  deadManWalkingStacks?: number;
   damageReduction?: number;
   gold: number;
   goldThisFight: number;

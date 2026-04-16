@@ -24,6 +24,8 @@ export interface CombatState {
   thorns: number;
   /** Protected: immune to tile hazard placement. Decreases by 1 at end of turn. */
   protectedStacks: number;
+  /** Dead Man Walking: each stack absorbs one debuff; decrements at end of player turn. */
+  deadManWalkingStacks: number;
   enemies: EnemyState[];
   targetedEnemyIndex: number;
   phase: CombatPhase;
@@ -117,7 +119,10 @@ export type PlayerStatusEffect =
   | { type: 'vulnerable'; value: number }
   | { type: 'crit'; value: number }
   | { type: 'thorns'; value: number }
-  | { type: 'protected'; value: number };
+  | { type: 'protected'; value: number }
+  | { type: 'lethargic'; value: number }
+  | { type: 'tinnitus'; value: number }
+  | { type: 'dead_man_walking'; value: number };
 
 export type EnemyStatusEffect =
   | { type: 'block'; value: number }
@@ -153,7 +158,7 @@ export interface MatchResult {
   foolsGoldCount?: number;
   /** Number of poison tiles in this match (each applies 1 poison stack to player). */
   poisonCount?: number;
-  /** Number of shadow tiles in this match (each fires a shadow bolt for 4 damage). */
+  /** Number of shadow tiles in this match (each fires a shadow bolt for 10 damage). */
   shadowCount?: number;
   /** Number of bomb tiles defused in this match (Blasting Pan gold). */
   bombCount?: number;
