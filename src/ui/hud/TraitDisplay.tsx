@@ -26,6 +26,7 @@ const TRAIT_LABELS: Record<TraitId, string> = {
   antivenom: 'Antivenom',
   undertaker: 'Undertaker',
   rattlesnake: 'Rattlesnake',
+  corrupt: 'Corrupt',
 };
 
 /** Descriptions for each trait at each breakpoint threshold. */
@@ -92,6 +93,9 @@ const TRAIT_DESCRIPTIONS: Record<string, Record<number, string>> = {
   rattlesnake: {
     2: 'Clearing or matching Poison tiles applies Poison to target instead.',
     4: 'When you would apply Poison, apply it to ALL enemies.',
+  },
+  corrupt: {
+    2: 'At the start of combat, add Shadow to 2 random tiles for each Corrupt artifact you own.',
   },
 };
 
