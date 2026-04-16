@@ -93,6 +93,15 @@ export class CombatManager {
   private turnNumber = 0;
   private swapsPerTurn: number;
   private swapsRemaining = 0;
+  /** One-shot swap adjustment applied to turn 1 only (e.g. Campfire Stranger "Keep walking" +2, Ghost Town Saloon "Drink" -1). */
+  private turnOneSwapAdjustment = 0;
+  /**
+   * Lethargic: while true, matches from the current swap's cascade produce
+   * no resources (empty output, no shadow/poison/chain side effects). Set at
+   * swap start when `lethargicPending` is armed; cleared when the swap fully
+   * resolves.
+   */
+  private lethargicSuppressResources = false;
   private targetedEnemyIndex = 0;
   private isDeadeyeActive = false;
   private deadeyeShotsRemaining = 0;
@@ -139,15 +148,14 @@ export class CombatManager {
     // Golden Scarab: +30% gold gain
     this.goldMultiplier *= this.artifacts.getGoldGainMultiplier();
 
-    // Base swaps + trait/artifact bonus + one-shot event bonus/penalty.
-    // Clamp to min 1 so events that reduce swaps (e.g. Saloon "Drink") can't soft-lock.
+    // Base swaps + trait/artifact bonus. The event-driven "next fight swap
+    // bonus" is applied to turn 1 only (see startTurn), matching the copy
+    // ("Start the next fight with N extra swaps") rather than giving the
+    // bonus every turn of the fight.
     const baseSwaps = config.swapsPerTurn ?? 3;
-    const nextFightSwapBonus = useRunStore.getState().run?.pendingNextFightSwapBonus ?? 0;
-    this.swapsPerTurn = Math.max(
-      1,
-      baseSwaps + this.traits.getExtraSwapsPerTurn() + this.artifacts.getExtraSwapsPerTurn() + nextFightSwapBonus,
-    );
-    if (nextFightSwapBonus !== 0) {
+    this.swapsPerTurn = baseSwaps + this.traits.getExtraSwapsPerTurn() + this.artifacts.getExtraSwapsPerTurn();
+    this.turnOneSwapAdjustment = useRunStore.getState().run?.pendingNextFightSwapBonus ?? 0;
+    if (this.turnOneSwapAdjustment !== 0) {
       useRunStore.getState().setPendingNextFightSwapBonus(undefined);
     }
 
@@ -279,6 +287,32 @@ export class CombatManager {
     if (pendingGrace > 0) {
       this.player.graceStacks += pendingGrace;
       useRunStore.getState().setPendingNextFightGrace(undefined);
+    }
+
+    // Medicine Wagon "Drink delayed potion": apply the rolled outcome at fight start.
+    const pendingPotion = useRunStore.getState().run?.pendingNextFightPotion;
+    if (pendingPotion) {
+      switch (pendingPotion) {
+        case 'heal':
+          this.player.heal(27);
+          this.floatOnPlayer('+27', '#40D840');
+          break;
+        case 'damage':
+          this.player.health = Math.max(0, this.player.health - 10);
+          this.player.tryLethalSave();
+          this.floatOnPlayer('-10', '#D04040');
+          break;
+        case 'vulnerable':
+          this.player.vulnerableStacks += 2;
+          this.floatOnPlayer('+2 VULNERABLE', '#C070D0', 9);
+          break;
+        case 'poison':
+          this.player.poisonedStacks += 5;
+          this.floatOnPlayer('+5 POISON', '#40ff40', 9);
+          break;
+      }
+      EventBus.emit(GameEvent.PLAYER_HP_CHANGE, this.player.health, this.player.maxHealth);
+      useRunStore.getState().setPendingNextFightPotion(undefined);
     }
 
     // Tinnitus: hide enemy intents on turn 1. Cleared at the start of turn 2.
@@ -627,6 +661,11 @@ export class CombatManager {
     }
 
     this.swapsRemaining = this.swapsPerTurn;
+    // Apply the one-shot event swap adjustment on turn 1 only. Clamp to >= 1
+    // so negative adjustments (Saloon "Drink") can't soft-lock the first turn.
+    if (this.turnNumber === 1 && this.turnOneSwapAdjustment !== 0) {
+      this.swapsRemaining = Math.max(1, this.swapsRemaining + this.turnOneSwapAdjustment);
+    }
     this.nextMatchMultiplier = 1.0;
     this.swapsUsedThisTurn = 0;
     this.resolver.resetTurn();
@@ -750,21 +789,14 @@ export class CombatManager {
     this.setPhase('resolving');
     EventBus.emit(GameEvent.SWAPS_CHANGE, this.swapsRemaining, this.swapsPerTurn);
 
-    // Lethargic: the first swap of the combat does nothing.
-    // The swap is still consumed (count already decremented above), but no
-    // tile movement or match resolution happens. Show feedback and return to
-    // either swap-phase or end-turn depending on remaining swaps.
+    // Lethargic: the first swap of the combat generates no resources. Tiles
+    // still swap and match visually, but processMatches sees the flag and
+    // emits empty output for every match in this swap's cascade.
     if (this.artifacts.lethargicPending) {
       this.artifacts.lethargicPending = false;
+      this.lethargicSuppressResources = true;
       useCombatStore.getState().setLethargicActive(false);
-      playSwapFail();
       this.floatOnPlayer('Lethargic', '#8B3A9B');
-      if (this.swapsRemaining <= 0) {
-        this.endTurn();
-      } else {
-        this.setPhase('swap-phase');
-      }
-      return;
     }
 
     const from = { row: fromRow, col: fromCol };
@@ -781,6 +813,7 @@ export class CombatManager {
       this.setPhase('swap-phase');
       EventBus.emit(GameEvent.SWAPS_CHANGE, this.swapsRemaining, this.swapsPerTurn);
       playSwapFail();
+      this.lethargicSuppressResources = false;
       return;
     }
 
@@ -819,6 +852,7 @@ export class CombatManager {
       this.swapsUsedThisTurn--;
       EventBus.emit(GameEvent.SWAPS_CHANGE, this.swapsRemaining, this.swapsPerTurn);
       this.setPhase('swap-phase');
+      this.lethargicSuppressResources = false;
       return;
     }
 
@@ -832,6 +866,9 @@ export class CombatManager {
         await this.processMatches(ricochetCascades);
       }
     }
+
+    // Lethargic consumed -- this swap's matches are done, clear the flag.
+    this.lethargicSuppressResources = false;
 
     // Artifact swap hook (check for Quickdraw kill refund)
     const swapResult = this.artifacts.onSwapPerformed(this.enemyDiedThisSwap);
@@ -1299,6 +1336,14 @@ export class CombatManager {
       : matches;
 
     for (const match of sorted) {
+      // Lethargic: the first swap of the combat generates no resources.
+      // Suppress output for every match in this swap's cascade (including
+      // cascades, shadow bolts, poison application, chain buff damage).
+      if (this.lethargicSuppressResources) {
+        const zero = this.resolver.emptyOutput();
+        EventBus.emit(GameEvent.MATCH_RESOLVED, match, zero);
+        continue;
+      }
       // Suppress hazard: if any tile in the match was suppressed, produce zero output.
       if (match.suppressCount && match.suppressCount > 0) {
         const zero = this.resolver.emptyOutput();

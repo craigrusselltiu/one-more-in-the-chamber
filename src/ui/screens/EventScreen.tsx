@@ -3,11 +3,11 @@ import { EventBus, GameEvent } from '../../game/EventBus';
 import { useRunStore } from '../../store/runStore';
 import { pickEventFromBag, type EventChoice } from '../../data/events';
 import { createSeededRandom, seededShuffle } from '../../utils/seededRandom';
-import { pauseRunPersistence, resumeRunPersistence } from '../../services/runPersistence';
+import { pauseRunPersistence, resumeRunPersistence, forceSaveRun } from '../../services/runPersistence';
 import { SpriteIcon } from '../components/SpriteIcon';
 import { UI_FRAMES, ARTIFACT_FRAMES, CONSUMABLE_FRAMES } from '../../data/spriteConfig';
 import { ARTIFACTS, RARITY_COLORS_DIM, type ArtifactDefinition } from '../../data/artifacts';
-import { pickArtifactForRun } from '../../utils/artifactSelection';
+import { pickArtifactForRun, pickArtifactByTag } from '../../utils/artifactSelection';
 import { adjustHeal } from '../../utils/healAdjust';
 import { CONSUMABLES } from '../../data/consumables';
 import type { RunState, TraitId } from '../../types/game';
@@ -62,17 +62,40 @@ function renderEventParagraph(text: string, baseKey: number): ReactNode[] {
         <span key={key++} className="event-breathe text-sky-400">{content}</span>,
       );
     } else {
+      // Red: per-character jump animation. Each char is an inline-block, so
+      // without word grouping the browser can break lines between any two
+      // chars (producing "cr<newline>oss"). Wrap each word in a nowrap span
+      // so words stay intact; only the spaces between them are breakable.
+      const tokens: ReactNode[] = [];
+      const segments = content.split(/(\s+)/); // preserve whitespace runs
+      let charCounter = 0;
+      for (let s = 0; s < segments.length; s++) {
+        const segment = segments[s];
+        if (/^\s+$/.test(segment)) {
+          tokens.push(segment);
+          continue;
+        }
+        if (segment.length === 0) continue;
+        const localStart = charCounter;
+        const chars = segment.split('').map((ch, i) => (
+          <span
+            key={`${s}-${i}`}
+            className="event-char-jump"
+            style={{ animationDelay: `${(localStart + i) * 0.08}s` }}
+          >
+            {ch}
+          </span>
+        ));
+        charCounter += segment.length;
+        tokens.push(
+          <span key={`w-${s}`} style={{ whiteSpace: 'nowrap' }}>
+            {chars}
+          </span>,
+        );
+      }
       parts.push(
         <span key={key++} className="text-red-400">
-          {content.split('').map((ch, i) => (
-            <span
-              key={i}
-              className="event-char-jump"
-              style={{ animationDelay: `${i * 0.08}s` }}
-            >
-              {ch}
-            </span>
-          ))}
+          {tokens}
         </span>,
       );
     }
@@ -89,7 +112,7 @@ function renderEventText(text: string): ReactNode[] {
       key={i}
       style={{
         display: 'block',
-        marginBottom: i < paragraphs.length - 1 ? 8 : 0,
+        marginBottom: i < paragraphs.length - 1 ? 16 : 0,
       }}
     >
       {renderEventParagraph(para, i * 1000)}
@@ -166,12 +189,26 @@ export const EventScreen = memo(function EventScreen() {
     [run?.currentAct, run?.seed, run?.currentNodeId],
   );
 
-  // Save on entry (from mapscreen's node change), then suspend saves until exit.
+  // Save on entry (captures the pre-choice checkpoint) and snapshot the pre-event
+  // run state in memory. Pause auto-save while the player is inside the event.
+  // On unmount, if the player did not complete the event (quit to main menu),
+  // roll the in-memory run back to the snapshot so gold/HP/artifacts/consumables
+  // spent on the now-cancelled choice don't leak into the next session.
+  const preEventRunRef = useRef<RunState | null>(null);
+  const completedRef = useRef(false);
+  const restoreRun = useRunStore((s) => s.restoreRun);
   useEffect(() => {
+    const current = useRunStore.getState().run;
+    if (current) preEventRunRef.current = structuredClone(current);
+    forceSaveRun();
     pauseRunPersistence();
     return () => {
       resumeRunPersistence();
+      if (!completedRef.current && preEventRunRef.current) {
+        restoreRun(preEventRunRef.current);
+      }
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Only commit the bag at explicit resolution points (finishChoice /
@@ -253,7 +290,9 @@ export const EventScreen = memo(function EventScreen() {
       setPostResultScreen(nextScreen);
       setPhase('result');
     } else {
+      completedRef.current = true;
       commitBag();
+      forceSaveRun();
       EventBus.emit(GameEvent.SCREEN_CHANGE, nextScreen);
     }
   };
@@ -363,24 +402,14 @@ export const EventScreen = memo(function EventScreen() {
         const missing = run.maxHealth - run.health;
         const heal = adjustHeal(run, missing);
         syncHealth(run.health + heal, run.maxHealth);
-        useRunStore.getState().setPendingNextFightGrace(2);
+        useRunStore.getState().setPendingNextFightGrace(3);
         finishChoice(choice);
         return;
       }
       case 'preacher_draw': {
-        const pickByTag = (tag: TraitId) => {
-          const unowned = ARTIFACTS.filter(
-            (a) =>
-              a.tags.includes(tag) &&
-              !run.artifacts.some((owned) => owned.id === a.id) &&
-              (!a.exclusive || a.exclusive === run.character),
-          );
-          const pool = unowned.length > 0 ? unowned : ARTIFACTS.filter((a) => a.tags.includes(tag));
-          return pool.length > 0 ? pool[Math.floor(Math.random() * pool.length)] : null;
-        };
-        const corrupt = pickByTag('corrupt');
+        const corrupt = pickArtifactByTag(run, 'corrupt', Math.random);
         if (corrupt) addArtifact({ id: corrupt.id, tags: corrupt.tags });
-        const preacher = pickByTag('preacher');
+        const preacher = pickArtifactByTag(run, 'preacher', Math.random);
         if (preacher) addArtifact({ id: preacher.id, tags: preacher.tags });
         finishChoice(choice);
         return;
@@ -432,19 +461,33 @@ export const EventScreen = memo(function EventScreen() {
         finishChoice(choice);
         return;
       }
+      case 'medicine_whiskey': {
+        if (run.gold < 30) return;
+        updateGold(-30);
+        addConsumable({ id: 'tonic' });
+        finishChoice(choice);
+        return;
+      }
+      case 'medicine_potion': {
+        const outcomes = ['heal', 'damage', 'vulnerable', 'poison'] as const;
+        const pick = outcomes[Math.floor(Math.random() * outcomes.length)];
+        useRunStore.getState().setPendingNextFightPotion(pick);
+        finishChoice(choice);
+        return;
+      }
+      case 'medicine_threaten': {
+        addConsumable({ id: 'bandage' });
+        addConsumable({ id: 'snake_oil' });
+        updateGold(129);
+        addGoldObtained(129);
+        useRunStore.getState().setActMerchantSurcharge(0.20);
+        finishChoice(choice);
+        return;
+      }
       case 'snake_bite': {
         if (applyHpLoss(10)) return;
-        const unowned = ARTIFACTS.filter(
-          (a) =>
-            a.tags.includes('rattlesnake') &&
-            !run.artifacts.some((owned) => owned.id === a.id) &&
-            (!a.exclusive || a.exclusive === run.character),
-        );
-        const pool = unowned.length > 0 ? unowned : ARTIFACTS.filter((a) => a.tags.includes('rattlesnake'));
-        if (pool.length > 0) {
-          const artifact = pool[Math.floor(Math.random() * pool.length)];
-          addArtifact({ id: artifact.id, tags: artifact.tags });
-        }
+        const artifact = pickArtifactByTag(run, 'rattlesnake', Math.random);
+        if (artifact) addArtifact({ id: artifact.id, tags: artifact.tags });
         finishChoice(choice);
         return;
       }
@@ -494,7 +537,9 @@ export const EventScreen = memo(function EventScreen() {
   };
 
   const handleResultContinue = () => {
+    completedRef.current = true;
     commitBag();
+    forceSaveRun();
     EventBus.emit(GameEvent.SCREEN_CHANGE, postResultScreen);
   };
 
@@ -502,6 +547,7 @@ export const EventScreen = memo(function EventScreen() {
     if (choice.effect === 'play_card_game') return run.gold < PLAY_COST;
     if (choice.effect === 'preacher_confess') return run.gold < 66;
     if (choice.effect === 'campfire_trade') return run.consumables.length === 0;
+    if (choice.effect === 'medicine_whiskey') return run.gold < 30;
     return false;
   };
 
@@ -607,7 +653,9 @@ export const EventScreen = memo(function EventScreen() {
   };
 
   const handleContinue = () => {
+    completedRef.current = true;
     commitBag();
+    forceSaveRun();
     EventBus.emit(GameEvent.SCREEN_CHANGE, 'map' satisfies Screen);
   };
 
@@ -747,7 +795,7 @@ export const EventScreen = memo(function EventScreen() {
           }}
         >
           <div className="w-full" style={{ maxWidth: 340, marginTop: -40 }}>
-            <div className="mb-3 min-h-[56px] flex items-center">
+            <div className="min-h-[56px] flex items-center" style={{ marginBottom: 20 }}>
               <p
                 className="text-stone-300 font-bold leading-relaxed text-left"
                 style={{

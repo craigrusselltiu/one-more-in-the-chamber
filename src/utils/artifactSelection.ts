@@ -1,7 +1,7 @@
 import { ARTIFACTS, type ArtifactDefinition } from '../data/artifacts';
 import { getAscensionMutations } from '../data/ascension';
 import { weightedArtifactPick, weightedArtifactPickN } from './weightedSelection';
-import type { RunState } from '../types/game';
+import type { RunState, TraitId } from '../types/game';
 
 interface ArtifactPickOptions {
   /** Only legendary rarities (falls back to full pool if none available). */
@@ -53,4 +53,27 @@ export function pickArtifactsForRun(
   const desperadoActive = (run.traitCounts?.desperado ?? 0) >= 2;
   const legendaryWeight = getAscensionMutations(run.ascensionLevel).legendaryWeight;
   return weightedArtifactPickN(pool, count, rand, desperadoActive, legendaryWeight, opts.bossReward ?? false);
+}
+
+/**
+ * Pick a single artifact for the given run filtered to a specific tag
+ * (e.g. 'rattlesnake', 'preacher', 'corrupt'), using weighted rarity selection.
+ * Prefers unowned; falls back to the full tagged pool if every candidate is
+ * already owned. Returns null only if no artifact carries the tag.
+ */
+export function pickArtifactByTag(
+  run: RunState,
+  tag: TraitId,
+  rand: () => number,
+): ArtifactDefinition | null {
+  const tagged = ARTIFACTS.filter(
+    (a) => a.tags.includes(tag) && (!a.exclusive || a.exclusive === run.character),
+  );
+  if (tagged.length === 0) return null;
+  const ownedIds = new Set(run.artifacts.map((a) => a.id));
+  const unowned = tagged.filter((a) => !ownedIds.has(a.id));
+  const pool = unowned.length > 0 ? unowned : tagged;
+  const desperadoActive = (run.traitCounts?.desperado ?? 0) >= 2;
+  const legendaryWeight = getAscensionMutations(run.ascensionLevel).legendaryWeight;
+  return weightedArtifactPick(pool, rand, desperadoActive, false, legendaryWeight);
 }

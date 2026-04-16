@@ -121,7 +121,7 @@ export const ARTIFACT_FRAMES: Record<string, number> = {
   strong_liver: 1214,
   golden_pickaxe: 24,
   // Corrupt (curses) -- placeholder frames; swap once art is chosen
-  lethargic: 1216,
+  lethargic: 1224,
   dry_atmosphere: 1195,
   tinnitus: 862,
 };
@@ -165,8 +165,6 @@ export const STATUS_FRAMES: Record<string, number> = {
   invulnerable: 783,
   protected: 235,
   scavenger: 1240,
-  lethargic: 370,
-  tinnitus: 857,
 };
 
 /** Map node type icons. */

@@ -7,43 +7,64 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 ## v0.6.8
 
 ### Added
-- Six new events, each with a dedicated background and colorized flavor text: The Vulture Circle, The Traveling Preacher, The Campfire Stranger, The Rigged Bridge, The Snake Charmer, The Ghost Town Saloon.
+- Seven new events, each with a dedicated background and colorized flavor text: The Vulture Circle, The Traveling Preacher, The Campfire Stranger, The Rigged Bridge, The Snake Charmer, The Ghost Town Saloon, The Medicine Wagon.
 - Animated event text effects (yellow/green wiggle, red character jump, blue breathe) driven by a `{{color:text}}` markup in event flavor strings.
 - New Corrupt trait and three curse artifacts:
-  - Lethargic (Common) — your first swap each combat does nothing. Shows as a player status icon, cleared on consume.
+  - Lethargic (Common) — the first swap each combat generates no resources. Tiles still move and matches still clear visually, but the cascade produces no damage/gold/block/heal and no shadow/poison/chain side effects. Shows as a player status icon, cleared on consume.
   - Dry Atmosphere (Uncommon) — all healing is reduced by 10%, in combat and out.
   - Tinnitus (Rare) — enemy intents are hidden on turn 1. Shows as a player status icon; enemy intent panels display "?" for that turn.
   - Corrupt(2) — at fight start, add Shadow to 2 random tiles for each Corrupt artifact you own.
-- New run-state "pending" fields applied at the next relevant moment, consumed once:
+- New run-state "pending" fields applied at the next relevant moment, consumed once (unless noted):
   - `pendingActBossHpBonus` — adds % max HP to the current act's boss (Vulture Circle).
   - `pendingEventArtifactChoiceCount` — queues a 1-of-N artifact pick on the next ArtifactScreen visit (Train Wreck).
   - `pendingNextFightGrace` — grants Grace stacks at the start of the next combat (Traveling Preacher).
-  - `pendingNextFightSwapBonus` — +/- swaps per turn on the next combat; stacks across events and clamps to min 1 (Campfire Stranger, Rigged Bridge, Ghost Town Saloon).
+  - `pendingNextFightSwapBonus` — +/- swaps on turn 1 of the next combat; stacks across events (Campfire Stranger, Rigged Bridge, Ghost Town Saloon).
+  - `pendingNextFightPotion` — queues a randomly-rolled delayed-potion outcome (heal 27 / -10 HP / +2 Vulnerable / +5 Poison) applied at the start of the next combat (Medicine Wagon).
   - `forcedCombatEnemies` — overrides the next combat roll with a specific enemy set (Coyote Den, Ghost Town Saloon ambush).
   - `nextMerchantDiscount` — applies a one-shot % discount to the next merchant (Train Wreck "Check for survivors").
+  - `actMerchantSurcharge` — additive % surcharge applied to every merchant in the current act, cleared on act advance (Medicine Wagon "Threaten him").
+  - `merchantUpgradesPurchased` — tracks upgrade-card purchases so each shop's upgrade costs +50 gold per prior buy this run.
 - Score now includes a x2 Completion multiplier on win, on top of the existing ascension and time multipliers.
+- Boot loading screen now shows a progress bar and `loaded / total` asset count, driven by a new `BOOT_PROGRESS` event.
 - `healAdjust()` utility so out-of-combat heal sources (campfire rest, event heals) respect Dry Atmosphere.
-- Run persistence can be paused/resumed around non-combat screens so intermediate state (card reveals, choice resolution) doesn't persist mid-event; pair with `forceSaveRun()` to checkpoint cleanly on exit.
+- `pickArtifactByTag()` utility for event rewards filtered by a specific tag, using the same weighted rarity selection (ascension legendary weight + Desperado(2) doubling) as the rest of the game. Used by Snake Charmer and Traveling Preacher "Draw".
+- Run persistence can be paused/resumed around non-combat screens so intermediate state doesn't persist mid-event; pair with `forceSaveRun()` to checkpoint cleanly on exit.
 - `NonCombatFloats` HUD layer so floating-number feedback works outside combat (e.g. event HP loss, gold gained, heals).
+- Stack-based Dead Man Walking on the player (separate from the once-per-combat DMW trait save). Each stack absorbs one incoming debuff (poison, vulnerable, terrified) and decrements 1 at end of turn.
+- All 11 event backgrounds (plus the two card sprites) are now preloaded in BootScene so first-visit mounts don't flash a blank background.
 
 ### Changed
 - Shadow tile damage 4 → 10.
-- Death's Glare now also grants the player 3 Dead Man Walking on combat start (in addition to the existing 3 Vulnerable + 3 Terrified to all enemies). Player DMW absorbs incoming debuff applications (poison, vulnerable, terrified) and decrements at end of turn.
+- Death's Glare now also grants the player 3 Dead Man Walking on combat start (in addition to the existing 3 Vulnerable + 3 Terrified to all enemies).
+- High Vis Jacket rarity: Rare → Legendary.
+- Traveling Preacher "Confess": grants 3 Grace next fight (was 1).
 - Trailblazer's Compass reworked: unused swaps at turn end now grant 6 block on your next turn (was 3 damage each to the targeted enemy).
 - Abandoned Mine depths rebalanced: Go deeper now costs 5% / 7% / 10% max HP (was 8% / 15% / 25%); chances unchanged.
-- Train Wreck "Search the engine" damage 10 → 13.
-- Train Wreck "Search the engine" now routes to a 3-artifact pick (via `pendingEventArtifactChoiceCount`) instead of a single roll.
+- Train Wreck "Search the engine" damage 10 → 13; now routes to a 3-artifact pick via `pendingEventArtifactChoiceCount` instead of a single roll.
 - Coyote Den choice text: "Fight a pack of wolves" → "Fight a pack of coyotes" (matches the event name and the forced encounter).
 - Event flavor text and choice descriptions converted from double-hyphen to real em dashes.
 - Event backgrounds moved under `public/assets/events/`; BootScene paths updated.
-- Character Select, Tile Select, Merchant, and Event screens have consistent button styling (rounded-sm, drop shadow, active-state translation).
+- Character Select, Tile Select, Merchant, Campfire, and Event screens share the same button styling (rounded-sm, drop shadow, active-state translation, amber-800 primary / stone-800 secondary).
+- Merchant overhaul:
+  - Shop now stocks **4 artifacts and 4 consumables** (was 3 each).
+  - Artifact pricing is rarity-tiered (pre-multiplier): Common 100–140, Uncommon 141–180, Rare 181–220, Legendary 261–300.
+  - Consumable pricing now uses each consumable's base `cost` with a uniform ±5 jitter across all 11 integer values instead of a flat 17–35 range.
+  - Tile-swap base range bumped ~40%: 77–116 (was 55–83).
+  - Upgrade card base 300 → 200, and each purchase this run raises every subsequent shop's upgrade price by 50.
+- Event swap bonuses ("Start the next fight with N extra swaps") now apply only to **turn 1** of the next combat, not every turn. Turn 1 is still clamped to at least 1 swap so Saloon "Drink" can't soft-lock the first turn.
+- Corrupt-tagged artifacts are event-only: excluded from all ArtifactScreen rolls, merchant stock, and Card Game "Item" spreads. Still granted by explicit event paths (Traveling Preacher "Draw").
+- Event text layout: paragraph gap 8 → 16px, text-to-buttons gap 20px; red per-char text keeps word boundaries intact so animated phrases no longer split mid-word.
+- "Give Up" prompt no longer shows "End this run?" — just Confirm / Cancel side-by-side.
+- `ConsumableDefinition` gained a `cost` field; all twelve consumables now carry a base cost.
 
 ### Fixed
-- **Event persists through quit/return**: the event bag was previously committed the moment the screen mounted, so quitting mid-event to the main menu and returning drew a different event (same seed, smaller candidate list). The bag now commits only at explicit resolution points (direct nav, result-screen Continue, card-reveal Continue). Quitting or force-closing mid-event preserves the draw.
-- **Artifact re-roll flash on event pick**: picking from Train Wreck's 3-artifact spread used to briefly display a newly-rolled single artifact as the screen transitioned away, because clearing `pendingEventArtifactChoiceCount` flipped ArtifactScreen out of choice mode. Both the rolled artifacts and the choice-mode flag are now locked in a ref on first render.
-- **Event damage could leave the player at 0 HP without ending the run**. Old Well, Train Wreck, Abandoned Mine, and the Card Game "health" reward now trigger a game-over (navigate to the score screen with `endRun(false)`) when they would drop the player to 0.
+- **Event persists through quit/return**: the event bag was previously committed the moment the screen mounted, so quitting mid-event to the main menu and returning drew a different event. Bag now commits only at explicit resolution points (direct nav, result-screen Continue, card-reveal Continue).
+- **Event changes aren't persisted until completion**: quitting during a result screen used to leak the choice's effects (lost gold, HP, artifacts, consumables) because the in-memory zustand store had mutated even though IDB didn't auto-save. The event screen now snapshots the pre-event run state on mount via `structuredClone` and, on any non-completing unmount, calls `restoreRun()` to roll the in-memory state back to the snapshot. Combined with the save-on-entry + save-on-completion persistence pattern, quitting mid-event truly reverts everything.
+- **Artifact re-roll flash on event pick**: picking from Train Wreck's 3-artifact spread used to briefly display a newly-rolled single artifact as the screen transitioned away. Both the rolled artifacts and the choice-mode flag are now locked in a ref on first render.
+- **Event damage could leave the player at 0 HP without ending the run**. Old Well, Train Wreck, Abandoned Mine, and the Card Game "health" reward now trigger a game-over when they would drop the player to 0.
 - **Tile-swap soft-lock prevention**: `swapsPerTurn` is clamped to a minimum of 1 so negative event effects (Saloon "Drink") can't zero out a fight.
 - Vulture Circle "Take the gear" actually applies its advertised +10% act-boss-HP penalty (consumed when the boss encounter rolls, cleared on act advance).
+- Event reward artifacts (Snake Charmer, Traveling Preacher "Draw") now respect rarity weighting — previously they picked uniformly at random across the tagged pool.
 
 ## v0.6.7
 

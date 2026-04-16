@@ -120,6 +120,7 @@ export default function App() {
   const [ready, setReady] = useState(false);
   const [bootComplete, setBootComplete] = useState(false);
   const [loadingDismissed, setLoadingDismissed] = useState(false);
+  const [bootProgress, setBootProgress] = useState<{ loaded: number; total: number }>({ loaded: 0, total: 0 });
   const prevScreenRef = useRef<Screen>('main-menu');
   const [wipePhase, setWipePhase] = useState<'none' | 'in' | 'out'>('none');
   /** Ref mirror of wipePhase so the onAnimationEnd handler always reads the latest value. */
@@ -173,6 +174,10 @@ export default function App() {
 
     // Wait for BootScene to finish loading all assets
     EventBus.on(GameEvent.BOOT_COMPLETE, () => setBootComplete(true));
+    EventBus.on(GameEvent.BOOT_PROGRESS, (...args: unknown[]) => {
+      const { loaded, total } = args[0] as { loaded: number; total: number };
+      setBootProgress({ loaded, total });
+    });
 
     const NON_COMBAT_NODE_SCREENS: Set<Screen> = new Set(['merchant', 'campfire', 'event', 'artifact']);
 
@@ -712,10 +717,30 @@ export default function App() {
         {/* Loading screen -- shown until assets are loaded, then slides left */}
         {!loadingDismissed && (
           <div
-            className={`absolute inset-0 bg-black z-[200] flex items-end justify-end p-4 ${bootComplete ? 'screen-wipe-out' : ''}`}
+            className={`absolute inset-0 bg-black z-[200] flex flex-col items-end justify-end p-4 ${bootComplete ? 'screen-wipe-out' : ''}`}
             onAnimationEnd={() => setLoadingDismissed(true)}
           >
-            {!bootComplete && <span className="text-xl text-white tracking-widest font-bold animate-loading-breathe mr-4">LOADING</span>}
+            {!bootComplete && (
+              <div className="flex flex-col items-end gap-2 mr-4">
+                <span className="text-xl text-white tracking-widest font-bold animate-loading-breathe">LOADING</span>
+                <div
+                  className="relative overflow-hidden bg-stone-800 rounded-sm"
+                  style={{ width: 240, height: 8, boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.6)' }}
+                >
+                  <div
+                    className="h-full bg-amber-600 transition-[width] duration-150 ease-linear"
+                    style={{
+                      width: bootProgress.total > 0
+                        ? `${(bootProgress.loaded / bootProgress.total) * 100}%`
+                        : '0%',
+                    }}
+                  />
+                </div>
+                <span className="text-[10px] text-stone-400 font-bold tabular-nums">
+                  {bootProgress.loaded} / {bootProgress.total || '?'}
+                </span>
+              </div>
+            )}
           </div>
         )}
 

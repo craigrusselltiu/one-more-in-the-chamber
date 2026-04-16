@@ -535,7 +535,7 @@ export const ARTIFACTS: ArtifactDefinition[] = [
     description: "They can see you coming. Doesn't matter.",
     tags: ['antivenom', 'sapper', 'tracker'],
     effect: 'At the start of combat, gain 1 Protected.',
-    rarity: 'rare',
+    rarity: 'legendary',
   },
   {
     id: 'golden_scarab',
@@ -601,7 +601,7 @@ export const ARTIFACTS: ArtifactDefinition[] = [
     name: 'Lethargic',
     description: "Some mornings, you just aren't ready.",
     tags: ['corrupt'],
-    effect: 'The first swap each combat does nothing.',
+    effect: 'The first swap each combat generates no resources.',
     rarity: 'common',
   },
   {

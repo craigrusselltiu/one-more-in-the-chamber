@@ -19,17 +19,14 @@ export function pauseRunPersistence(): void {
 }
 
 /**
- * Resume auto-save and force an immediate save of the current run state.
- * Call on event exit so the final, post-event state is persisted once.
+ * Resume auto-save. Deliberately does NOT force a save -- in-memory changes
+ * made while paused should NOT leak to disk on resume. That way, quitting
+ * mid-event leaves the on-disk state at the pre-choice checkpoint, and
+ * returning to the run re-runs the event from the start. Callers that want
+ * to checkpoint the current state should call `forceSaveRun` explicitly.
  */
 export function resumeRunPersistence(): void {
   paused = false;
-  const state = useRunStore.getState();
-  if (state.run) {
-    saveRun(state.run).catch((err) => {
-      console.error('[persist] run save failed:', err);
-    });
-  }
 }
 
 /** Force an immediate save of the current run state (bypasses the pause flag). */

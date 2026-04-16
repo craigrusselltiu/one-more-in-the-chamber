@@ -63,6 +63,9 @@ interface RunStore {
   setPendingActBossHpBonus: (amount: number | undefined) => void;
   setPendingNextFightGrace: (amount: number | undefined) => void;
   setPendingNextFightSwapBonus: (amount: number | undefined) => void;
+  incrementMerchantUpgradesPurchased: () => void;
+  setActMerchantSurcharge: (amount: number | undefined) => void;
+  setPendingNextFightPotion: (effect: 'heal' | 'damage' | 'vulnerable' | 'poison' | undefined) => void;
   advanceAct: () => void;
   setMapState: (map: MapState) => void;
   endRun: (completed: boolean) => void;
@@ -534,6 +537,25 @@ export const useRunStore = create<RunStore>((set, get) => ({
       return { run: { ...state.run, pendingNextFightSwapBonus: amount } };
     }),
 
+  incrementMerchantUpgradesPurchased: () =>
+    set((state) => {
+      if (!state.run) return state;
+      const prev = state.run.merchantUpgradesPurchased ?? 0;
+      return { run: { ...state.run, merchantUpgradesPurchased: prev + 1 } };
+    }),
+
+  setActMerchantSurcharge: (amount) =>
+    set((state) => {
+      if (!state.run) return state;
+      return { run: { ...state.run, actMerchantSurcharge: amount } };
+    }),
+
+  setPendingNextFightPotion: (effect) =>
+    set((state) => {
+      if (!state.run) return state;
+      return { run: { ...state.run, pendingNextFightPotion: effect } };
+    }),
+
   advanceAct: () =>
     set((state) => {
       if (!state.run || state.run.currentAct >= 3) return state;
@@ -552,6 +574,7 @@ export const useRunStore = create<RunStore>((set, get) => ({
           health: newHealth,
           bossRewardTaken: false,
           pendingActBossHpBonus: undefined,
+          actMerchantSurcharge: undefined,
           mapState,
         },
       };

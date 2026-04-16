@@ -58,6 +58,12 @@ export interface RunState {
   pendingNextFightGrace?: number;
   /** Extra swaps per turn granted at the start of the next combat (e.g. Campfire Stranger "Keep walking"). Cleared on consume. */
   pendingNextFightSwapBonus?: number;
+  /** Total number of merchant "Upgrade" cards purchased so far this run. Each purchase raises the upgrade price in future shops by 50 gold. */
+  merchantUpgradesPurchased?: number;
+  /** Additive surcharge (fraction, e.g. 0.2 = +20%) applied to merchant prices for the rest of the current act (Medicine Wagon "Threaten him"). Cleared on advanceAct. */
+  actMerchantSurcharge?: number;
+  /** Delayed potion effect rolled by Medicine Wagon; applied once at the start of the next combat. */
+  pendingNextFightPotion?: 'heal' | 'damage' | 'vulnerable' | 'poison';
   status: 'active' | 'completed' | 'abandoned';
 }
 

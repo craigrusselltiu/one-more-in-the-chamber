@@ -393,24 +393,21 @@ export const CombatSettingsPopup = memo(function CombatSettingsPopup({
               Give Up
             </button>
           ) : (
-            <div className="flex flex-col gap-1">
-              <p className="text-stone-300 text-center" style={{ fontSize: '9px' }}>End this run?</p>
-              <div className="flex gap-1">
-                <button
-                  onClick={onGiveUp}
-                  className="flex-1 py-1.5 text-red-400 hover:bg-red-900/30 border border-red-900/50 text-[10px]"
-                  style={{ cursor: 'pointer' }}
-                >
-                  Confirm
-                </button>
-                <button
-                  onClick={() => setConfirmGiveUp(false)}
-                  className="flex-1 py-1.5 text-stone-400 hover:bg-stone-700/50 border border-stone-600 text-[10px]"
-                  style={{ cursor: 'pointer' }}
-                >
-                  Cancel
-                </button>
-              </div>
+            <div className="flex gap-1">
+              <button
+                onClick={onGiveUp}
+                className="flex-1 py-1.5 text-red-400 hover:bg-red-900/30 border border-red-900/50 text-[10px]"
+                style={{ cursor: 'pointer' }}
+              >
+                Confirm
+              </button>
+              <button
+                onClick={() => setConfirmGiveUp(false)}
+                className="flex-1 py-1.5 text-stone-400 hover:bg-stone-700/50 border border-stone-600 text-[10px]"
+                style={{ cursor: 'pointer' }}
+              >
+                Cancel
+              </button>
             </div>
           )}
           <button

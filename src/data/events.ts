@@ -163,7 +163,7 @@ const travelingPreacher: EventDefinition = {
   choices: [
     {
       label: 'Confess',
-      description: 'Lose 66 gold, heal to full HP and start the next fight with Grace.',
+      description: 'Lose 66 gold, heal to full HP and start the next fight with 3 Grace.',
       effect: 'preacher_confess',
       resultText: 'You kneel in the dust and speak. He listens without moving, then nods once and lets you go clean.',
     },
@@ -283,11 +283,39 @@ const ghostTownSaloon: EventDefinition = {
   ],
 };
 
+const medicineWagon: EventDefinition = {
+  id: 'medicine_wagon',
+  title: 'The Medicine Wagon',
+  flavourText: "A gaudy wagon creaks to a stop on the dust road, its crooked sign proclaiming {{yellow:DOC HOPKINS' CURE-ALL}} in peeling gilt letters above shelves crowded with {{green:green glass bottles}}, herb bundles, and tins stamped with writhing serpents. The doc himself tips his bowler and smiles too wide beneath a waxed moustache, hands open in welcome, while his mule watches the horizon with the weary patience of a creature that has seen too many towns and too many funerals.\nSomething in one of the darker bottles {{red:shifts on its own}} when you step closer, and the liquid inside holds its shape a heartbeat too long, as if deciding whether to be medicine or something worse.",
+  align: 'right',
+  background: 'event_medicine.png',
+  choices: [
+    {
+      label: 'Buy Strong Whiskey',
+      description: 'Gain 1 Strong Whiskey and lose 30 gold.',
+      effect: 'medicine_whiskey',
+      resultText: "The bottle is heavier than it has any right to be. Doc pockets your coin without counting it.",
+    },
+    {
+      label: 'Drink delayed potion',
+      description: 'At the start of next combat, heal 27 HP, take 10 damage, gain 2 Vulnerable, or gain 5 Poison.',
+      effect: 'medicine_potion',
+      resultText: 'The liquid is warm and faintly alive. Doc watches you swallow and does not bother to wish you luck.',
+    },
+    {
+      label: 'Threaten him',
+      description: 'Gain 1 Bandage, 1 Snake Oil, and 129 gold. Merchants cost 20% more this act.',
+      effect: 'medicine_threaten',
+      resultText: "Doc raises his hands with the same easy smile. Word travels faster than wagons out here, and every shopkeeper this act will know your face.",
+    },
+  ],
+};
+
 export const EVENT_POOLS: Record<'general' | `act${Act}`, EventDefinition[]> = {
   general: [
     cardGame, oldWell, coyoteDen, trainWreck, abandonedMine,
     vultureCircle, travelingPreacher, campfireStranger, riggedBridge,
-    snakeCharmer, ghostTownSaloon,
+    snakeCharmer, ghostTownSaloon, medicineWagon,
   ],
   act1: [],
   act2: [],

@@ -29,6 +29,13 @@ export class BootScene extends Phaser.Scene {
 
   preload(): void {
     const base = import.meta.env.BASE_URL;
+    // Report per-file load progress so the React loading screen can render a bar.
+    this.load.on(Phaser.Loader.Events.PROGRESS, () => {
+      EventBus.emit(GameEvent.BOOT_PROGRESS, {
+        loaded: this.load.totalComplete,
+        total: this.load.totalToLoad,
+      });
+    });
     // Music
     this.load.audio('main_menu', `${base}assets/audio/main_menu.mp3`);
     this.load.audio('map_theme', `${base}assets/audio/map_theme.mp3`);
@@ -87,6 +94,18 @@ export class BootScene extends Phaser.Scene {
     this.load.image('reputation', `${base}assets/backgrounds/reputation.png`);
     this.load.image('event_bridge', `${base}assets/events/event_bridge.png`);
     this.load.image('event_stranger', `${base}assets/events/event_stranger.png`);
+    this.load.image('event_card', `${base}assets/events/event_card.png`);
+    this.load.image('event_well', `${base}assets/events/event_well.png`);
+    this.load.image('event_coyote', `${base}assets/events/event_coyote.png`);
+    this.load.image('event_train', `${base}assets/events/event_train.png`);
+    this.load.image('event_mine', `${base}assets/events/event_mine.png`);
+    this.load.image('event_vulture', `${base}assets/events/event_vulture.png`);
+    this.load.image('event_preacher', `${base}assets/events/event_preacher.png`);
+    this.load.image('event_saloon', `${base}assets/events/event_saloon.png`);
+    this.load.image('event_snake', `${base}assets/events/event_snake.png`);
+    this.load.image('event_medicine', `${base}assets/events/event_medicine.png`);
+    this.load.image('cardback', `${base}assets/events/cardback.png`);
+    this.load.image('cardface', `${base}assets/events/cardface.png`);
     this.load.image('blur', `${base}assets/blur.png`);
     // Sprites
     this.load.spritesheet('items_sheet', `${base}assets/sprites/items_sheet.png`, {

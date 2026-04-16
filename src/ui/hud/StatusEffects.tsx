@@ -2,7 +2,7 @@ import { memo, type ReactNode } from 'react';
 import type { PlayerStatusEffect, EnemyStatusEffect } from '../../types/combat';
 import { SpriteIcon } from '../components/SpriteIcon';
 import { Tooltip } from '../components/Tooltip';
-import { STATUS_FRAMES, TILE_FRAMES } from '../../data/spriteConfig';
+import { STATUS_FRAMES, TILE_FRAMES, ARTIFACT_FRAMES } from '../../data/spriteConfig';
 import { KEYWORDS } from '../../data/keywords';
 import { KeywordLine } from '../components/KeywordText';
 
@@ -47,7 +47,7 @@ const EXTRA_DESCRIPTIONS: Record<string, { name: string; color: string; descript
   dead_man_walking: { name: 'Dead Man Walking', color: '#C8B060', description: 'Immune to debuffs. Decrease stacks by 1 at the end of the turn or whenever a debuff is applied.' },
   invulnerable: { name: 'Invulnerable', color: '#FFD700', description: 'Immune to all damage. Decrease stacks by 1 at the end of the turn.' },
   scavenger: { name: 'Scavenger', color: '#40D840', description: 'When another enemy dies, heal 6 HP.' },
-  lethargic: { name: 'Lethargic', color: '#8B3A9B', description: 'Your next swap does nothing. Cleared once consumed.' },
+  lethargic: { name: 'Lethargic', color: '#8B3A9B', description: 'Your next swap generates no resources. Cleared once consumed.' },
   tinnitus: { name: 'Tinnitus', color: '#8B3A9B', description: 'Enemy intents are hidden this turn.' },
 };
 
@@ -90,7 +90,12 @@ export const StatusEffects = memo(function StatusEffects({ effects }: StatusEffe
             style={{ width: 16, height: 16 }}
           >
             <SpriteIcon
-              frame={STATUS_FRAMES[effect.type] ?? (TILE_FRAMES as Record<string, number>)[effect.type] ?? 0}
+              frame={
+                STATUS_FRAMES[effect.type]
+                ?? ARTIFACT_FRAMES[effect.type]
+                ?? (TILE_FRAMES as Record<string, number>)[effect.type]
+                ?? 0
+              }
               scale={1}
             />
             {!hideValue && (

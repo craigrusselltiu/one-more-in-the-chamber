@@ -447,7 +447,7 @@ Diagonal = single-trait artifacts. Off-diagonal = artifacts with both traits.
 
 ### High Vis Jacket
 - Tags: Antivenom, Sapper, Tracker
-- Rarity: Rare
+- Rarity: Legendary
 - Effect: At the start of combat, gain 1 Protected.
 - Flavor: "They can see you coming. Doesn't matter."
 
@@ -499,7 +499,7 @@ Diagonal = single-trait artifacts. Off-diagonal = artifacts with both traits.
 ### Lethargic
 - Tags: Corrupt
 - Rarity: Common
-- Effect: The first swap each combat does nothing.
+- Effect: The first swap each combat generates no resources.
 - Flavor: "Some mornings, you just aren't ready."
 
 ### Dry Atmosphere

@@ -62,7 +62,8 @@ export const CampfireScreen = memo(function CampfireScreen() {
         </p>
         <button
           onClick={handleLeave}
-          className="px-6 py-2 bg-amber-900/60 text-amber-300 text-sm border border-amber-700 hover:bg-amber-800/60"
+          style={{ boxShadow: '3px 3px 2px rgba(0,0,0,0.7)' }}
+          className="px-6 py-2 text-sm rounded-sm bg-amber-800 text-amber-200 hover:bg-amber-700 transition-transform active:translate-y-0.5"
         >
           Continue
         </button>
@@ -82,7 +83,8 @@ export const CampfireScreen = memo(function CampfireScreen() {
         </p>
         <button
           onClick={handleLeave}
-          className="px-6 py-2 bg-amber-900/60 text-amber-300 text-sm border border-amber-700 hover:bg-amber-800/60"
+          style={{ boxShadow: '3px 3px 2px rgba(0,0,0,0.7)' }}
+          className="px-6 py-2 text-sm rounded-sm bg-amber-800 text-amber-200 hover:bg-amber-700 transition-transform active:translate-y-0.5"
         >
           Continue
         </button>
@@ -113,21 +115,23 @@ export const CampfireScreen = memo(function CampfireScreen() {
             const hasKeywords = getReferencedKeywords(def.description).length > 0;
             const keywordTooltip = hasKeywords ? <KeywordSubTooltips text={def.description} /> : undefined;
             return (
-              <Tooltip key={tileType} content={previewTooltip} secondContent={keywordTooltip} position="bottom">
+              <Tooltip key={tileType} content={previewTooltip} secondContent={keywordTooltip} position="bottom" gap={35}>
                 <button
                   onClick={() => setSelectedTile(tileType)}
-                  className={`flex flex-col items-center p-3 w-28 border-2 transition-colors ${
-                    isSelected
-                      ? 'border-amber-400 bg-amber-900/50'
-                      : 'border-stone-600 bg-stone-800/80 hover:border-stone-400'
-                  }`}
+                  className="flex flex-col items-center w-28 rounded-sm transition-all"
+                  style={{
+                    backgroundColor: isSelected ? 'rgba(120, 53, 15, 0.75)' : 'rgba(28, 25, 23, 0.8)',
+                    padding: '12px 10px',
+                    transform: isSelected ? 'translateY(-4px)' : 'none',
+                    boxShadow: '3px 3px 2px rgba(0,0,0,0.7)',
+                  }}
                 >
                   <SpriteIcon frame={TILE_FRAMES[tileType]} scale={2} className="mb-1" />
                   <span className="text-amber-300 text-xs font-bold">{def.label}</span>
                   <span className="text-yellow-400" style={{ fontSize: '8px' }}>
                     Lv {currentLevel + 1} {'\u2192'} {currentLevel + 2}
                   </span>
-                  <span className="text-stone-500 text-center" style={{ fontSize: '9px' }}>
+                  <span className="text-stone-500 text-center mt-1" style={{ fontSize: '9px' }}>
                     {def.upgradeText}
                   </span>
                 </button>
@@ -139,17 +143,19 @@ export const CampfireScreen = memo(function CampfireScreen() {
         <div className="flex gap-3 mt-4">
           <button
             onClick={() => setChoice('none')}
-            className="px-4 py-2 bg-stone-700/80 text-stone-400 text-sm border border-stone-600 hover:bg-stone-600/50"
+            style={{ boxShadow: '3px 3px 2px rgba(0,0,0,0.7)' }}
+            className="px-4 py-2 text-sm rounded-sm bg-stone-800 text-stone-300 hover:bg-stone-700 transition-transform active:translate-y-0.5"
           >
             Back
           </button>
           <button
             onClick={handleConfirmUpgrade}
             disabled={!selectedTile}
-            className={`px-6 py-2 text-sm border ${
+            style={{ boxShadow: '3px 3px 2px rgba(0,0,0,0.7)' }}
+            className={`px-6 py-2 text-sm rounded-sm transition-transform ${
               selectedTile
-                ? 'bg-amber-900/60 text-amber-300 border-amber-700 hover:bg-amber-800/60'
-                : 'bg-stone-700/80 text-stone-500 border-stone-600 cursor-not-allowed'
+                ? 'bg-amber-800 text-amber-200 hover:bg-amber-700 active:translate-y-0.5'
+                : 'bg-stone-800 text-stone-600 cursor-not-allowed opacity-70'
             }`}
           >
             Upgrade
@@ -171,11 +177,14 @@ export const CampfireScreen = memo(function CampfireScreen() {
         <button
           onClick={handleRest}
           disabled={isFullHealth}
-          className={`flex flex-col items-center p-4 w-40 border-2 ${
-            isFullHealth
-              ? 'border-stone-700 bg-stone-800/30 opacity-50 cursor-not-allowed'
-              : 'border-stone-600 bg-stone-800/80 hover:border-green-500 hover:bg-stone-700/80'
+          className={`flex flex-col items-center w-40 rounded-sm transition-transform active:translate-y-0.5 ${
+            isFullHealth ? 'opacity-50 cursor-not-allowed' : 'hover:-translate-y-0.5'
           }`}
+          style={{
+            backgroundColor: isFullHealth ? 'rgba(28, 25, 23, 0.5)' : 'rgba(28, 25, 23, 0.8)',
+            padding: '16px 14px',
+            boxShadow: '3px 3px 2px rgba(0,0,0,0.7)',
+          }}
         >
           <SpriteIcon frame={UI_FRAMES.rest} scale={2} className="mb-1" />
           <span className="text-stone-200 text-sm font-bold">Rest</span>
@@ -186,7 +195,12 @@ export const CampfireScreen = memo(function CampfireScreen() {
 
         <button
           onClick={handleUpgrade}
-          className="flex flex-col items-center p-4 w-40 border-2 border-stone-600 bg-stone-800/80 hover:border-amber-500 hover:bg-stone-700/80"
+          className="flex flex-col items-center w-40 rounded-sm transition-transform hover:-translate-y-0.5 active:translate-y-0.5"
+          style={{
+            backgroundColor: 'rgba(28, 25, 23, 0.8)',
+            padding: '16px 14px',
+            boxShadow: '3px 3px 2px rgba(0,0,0,0.7)',
+          }}
         >
           <SpriteIcon frame={UI_FRAMES.upgrade} scale={2} className="mb-1" />
           <span className="text-stone-200 text-sm font-bold">Upgrade</span>

@@ -87,7 +87,7 @@ don't use double dashes, just single
 ## The Traveling Preacher
 - Text: "He stands in the middle of the cracked earth like he grew out of it, black coat still as stone, bible heavy in one hand and the other never far from the pistol at his hip. His wagon sags behind him with its silent bell and its perched congregation of vultures, and a crooked cross strung with rosaries leans toward him as if listening for a sermon.\nThe brim of his hat swallows his face, but you can feel him watching, weighing your soul against the weight of the lead in his holster, and deciding which he means to deliver first."
 - Choices:
-    - **Confess** — Lose 66 gold, heal to full HP and start the next fight with Grace.
+    - **Confess** — Lose 66 gold, heal to full HP and start the next fight with 3 Grace.
     - **Draw** — Gain 1 corruption and a Preacher-tagged artifact.
     - **Walk away**
 
@@ -117,6 +117,13 @@ don't use double dashes, just single
     - **Drink** — Heal 20 HP. Lose 1 swap at the start of the next fight.
     - **Search the back** — Gain a random artifact, or fight 3 bandits. (50%)
     - **Move on** — Take 39 gold from the tip jar.
+
+## The Medicine Wagon
+- Text: "A gaudy wagon creaks to a stop on the dust road, its crooked sign proclaiming DOC HOPKINS' CURE-ALL in peeling gilt letters above shelves crowded with green glass bottles, herb bundles, and tins stamped with writhing serpents. The doc himself tips his bowler and smiles too wide beneath a waxed moustache, hands open in welcome, while his mule watches the horizon with the weary patience of a creature that has seen too many towns and too many funerals.\nSomething in one of the darker bottles shifts on its own when you step closer, and the liquid inside holds its shape a heartbeat too long, as if deciding whether to be medicine or something worse."
+- Choices:
+    - **Buy Strong Whiskey** — Gain 1 Strong Whiskey and lose 30 gold.
+    - **Drink delayed potion** — At the start of next combat, heal 27 HP, take 10 damage, gain 2 Vulnerable, or gain 5 Poison.
+    - **Threaten him** — Gain 1 Bandage, 1 Snake Oil, and 129 gold. Merchants cost 20% more this act.
 
 # Event Ideas
 
@@ -150,10 +157,3 @@ don't use double dashes, just single
 - Choices:
     - **Dig him out** — -5 HP from exertion. +25 gold, upgrade a random tile.
     - **Take his gear** — +2 random consumables. Merchants cost +10% this act.
-
-## The Medicine Wagon
-- Flavor: "Painted wagon, jars of strange liquids. The seller's grin has too many teeth."
-- Choices:
-    - **Buy moonshine (-15 gold)** — Heal 30 HP.
-    - **Buy mystery vial (-10 gold)** — Random: heal 20 HP, gain 1 Moonshine, or take 10 poison damage.
-    - **Threaten him** — +1 Moonshine, +1 Bandage. Merchants cost +15% this act.

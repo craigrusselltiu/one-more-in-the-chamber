@@ -93,6 +93,7 @@ export const GameEvent = {
 
   // Boot
   BOOT_COMPLETE: 'boot:complete',
+  BOOT_PROGRESS: 'boot:progress',
 
   // Mid-combat save
   COMBAT_SAVE_REQUESTED: 'combat:save-requested',

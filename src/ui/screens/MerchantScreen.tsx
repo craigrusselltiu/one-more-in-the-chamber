@@ -84,19 +84,24 @@ export const MerchantScreen = memo(function MerchantScreen() {
     const ascPriceMult = getAscensionMutations(run.ascensionLevel).merchantPriceMultiplier;
     // One-shot discount from events (e.g. Train Wreck "Check for survivors"). Consumed on first stock computation.
     const discount = run.nextMerchantDiscount ?? 0;
-    const priceMult = ascPriceMult * (1 - discount);
+    // Act-wide surcharge from events (e.g. Medicine Wagon "Threaten him"). Cleared on act advance.
+    const surcharge = run.actMerchantSurcharge ?? 0;
+    const priceMult = ascPriceMult * (1 - discount) * (1 + surcharge);
     if (discount > 0) useRunStore.getState().setNextMerchantDiscount(undefined);
 
     const consumables: MerchantItem[] = [];
     const shuffledConsumables = seededShuffle(CONSUMABLES, rand);
-    for (let i = 0; i < Math.min(3, shuffledConsumables.length); i++) {
+    // Shop stocks 4 consumables; price fluctuates +/-5 around each consumable's base cost.
+    for (let i = 0; i < Math.min(4, shuffledConsumables.length); i++) {
       const c = shuffledConsumables[i];
+      const jitter = Math.floor(rand() * 11) - 5; // [-5, +5]
+      const basePrice = Math.max(1, c.cost + jitter);
       consumables.push({
         type: 'consumable',
         id: `cons-${c.id}`,
         name: c.name,
         description: c.effect,
-        price: Math.round((17 + Math.floor(rand() * 18)) * priceMult),
+        price: Math.round(basePrice * priceMult),
       });
     }
 
@@ -106,15 +111,28 @@ export const MerchantScreen = memo(function MerchantScreen() {
     const availableArtifacts = ARTIFACTS.filter((a) => !ownedIds.has(a.id) && !a.tags.includes('corrupt') && (!a.exclusive || a.exclusive === run.character));
     const desperadoActive = (run.traitCounts?.desperado ?? 0) >= 2;
     const legendaryWeight = getAscensionMutations(run.ascensionLevel).legendaryWeight;
-    const pickedArtifacts = weightedArtifactPickN(availableArtifacts, 3, rand, desperadoActive, legendaryWeight);
+    const pickedArtifacts = weightedArtifactPickN(availableArtifacts, 4, rand, desperadoActive, legendaryWeight);
+    // Rarity-tiered pricing (pre-ascension / pre-discount):
+    //   Common    100-140
+    //   Uncommon  141-180
+    //   Rare      181-220
+    //   Legendary 261-300
+    const RARITY_PRICE: Record<string, { min: number; range: number }> = {
+      common: { min: 100, range: 41 },
+      uncommon: { min: 141, range: 40 },
+      rare: { min: 181, range: 40 },
+      legendary: { min: 261, range: 40 },
+    };
     for (let i = 0; i < pickedArtifacts.length; i++) {
       const a = pickedArtifacts[i];
+      const tier = RARITY_PRICE[a.rarity ?? 'common'] ?? RARITY_PRICE.common;
+      const basePrice = tier.min + Math.floor(rand() * tier.range);
       artifacts.push({
         type: 'artifact',
         id: `art-${a.id}`,
         name: a.name,
         description: a.effect,
-        price: Math.round((110 + Math.floor(rand() * 84)) * priceMult),
+        price: Math.round(basePrice * priceMult),
       });
     }
 
@@ -135,14 +153,15 @@ export const MerchantScreen = memo(function MerchantScreen() {
           id: `swap-${swapTile}`,
           name: def.label,
           description: def.description,
-          price: Math.round((55 + Math.floor(rand() * 29)) * priceMult),
+          price: Math.round((77 + Math.floor(rand() * 40)) * priceMult),
           tileLevel,
         });
       }
     }
 
-    // Upgrade card (250g, once per merchant)
-    const upgradePrice = Math.round(300 * priceMult);
+    // Upgrade card (base 200, +50 per upgrade already bought this run, once per merchant).
+    const upgradesBought = run.merchantUpgradesPurchased ?? 0;
+    const upgradePrice = Math.round((200 + 50 * upgradesBought) * priceMult);
     const hasUpgradeableTiles = snapTileTypes.some((t) => TILE_DEFINITIONS[t]?.upgradeText);
     if (hasUpgradeableTiles) {
       tiles.push({
@@ -211,6 +230,7 @@ export const MerchantScreen = memo(function MerchantScreen() {
     upgradeTile(upgradeSelectedTile);
     playUpgrade();
     if (run.currentNodeId) addMerchantPurchase(run.currentNodeId, 'upgrade');
+    useRunStore.getState().incrementMerchantUpgradesPurchased();
     setUpgradePhase('upgraded');
   };
 
@@ -350,7 +370,8 @@ export const MerchantScreen = memo(function MerchantScreen() {
 
       <button
         onClick={handleLeave}
-        className="mt-4 px-6 py-2 bg-stone-700/80 text-stone-300 text-sm border border-stone-600 hover:bg-stone-600/50"
+        style={{ boxShadow: '3px 3px 2px rgba(0,0,0,0.7)' }}
+        className="mt-4 px-6 py-2 text-sm rounded-sm bg-stone-800 text-stone-300 hover:bg-stone-700 transition-transform active:translate-y-0.5"
       >
         Leave
       </button>
@@ -377,12 +398,12 @@ export const MerchantScreen = memo(function MerchantScreen() {
                       <button
                         key={tileType}
                         onClick={() => setSwapSelectedTile(tileType)}
-                        className="flex flex-col items-center w-28 transition-all"
+                        className="flex flex-col items-center w-28 rounded-sm transition-all"
                         style={{
-                          border: `2px solid ${isSelected ? '#f59e0b' : '#44403c'}`,
-                          backgroundColor: isSelected ? 'rgba(120, 53, 15, 0.4)' : 'rgba(28, 25, 23, 0.8)',
+                          backgroundColor: isSelected ? 'rgba(120, 53, 15, 0.75)' : 'rgba(28, 25, 23, 0.8)',
                           padding: '8px 6px',
                           transform: isSelected ? 'translateY(-4px)' : 'none',
+                          boxShadow: '3px 3px 2px rgba(0,0,0,0.7)',
                         }}
                       >
                         <SpriteIcon frame={TILE_FRAMES[tileType]} scale={2} className="mb-1.5" />
@@ -406,8 +427,12 @@ export const MerchantScreen = memo(function MerchantScreen() {
 
                 {/* New tile (non-interactable card, same size as left) */}
                 <div
-                  className="flex flex-col items-center w-28 border-2 border-amber-600 bg-amber-900/30 relative"
-                  style={{ padding: '8px 6px' }}
+                  className="flex flex-col items-center w-28 rounded-sm relative"
+                  style={{
+                    backgroundColor: 'rgba(120, 53, 15, 0.55)',
+                    padding: '8px 6px',
+                    boxShadow: '3px 3px 2px rgba(0,0,0,0.7)',
+                  }}
                 >
                   <span className="absolute top-1 right-1.5 text-yellow-400 font-bold" style={{ fontSize: '10px' }}>
                     {swapPending.price}g
@@ -429,17 +454,19 @@ export const MerchantScreen = memo(function MerchantScreen() {
               <div className="flex gap-3 mt-4">
                 <button
                   onClick={() => setSwapPending(null)}
-                  className="px-4 py-2 bg-stone-700/80 text-stone-400 text-sm border border-stone-600 hover:bg-stone-600/50"
+                  style={{ boxShadow: '3px 3px 2px rgba(0,0,0,0.7)' }}
+                  className="px-4 py-2 text-sm rounded-sm bg-stone-800 text-stone-300 hover:bg-stone-700 transition-transform active:translate-y-0.5"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={() => { if (swapSelectedTile) handleSwapConfirm(swapSelectedTile); }}
                   disabled={!swapSelectedTile}
-                  className={`px-6 py-2 text-sm border ${
+                  style={{ boxShadow: '3px 3px 2px rgba(0,0,0,0.7)' }}
+                  className={`px-6 py-2 text-sm rounded-sm transition-transform ${
                     swapSelectedTile
-                      ? 'bg-amber-900/60 text-amber-300 border-amber-700 hover:bg-amber-800/60'
-                      : 'bg-stone-700/80 text-stone-500 border-stone-600 cursor-not-allowed'
+                      ? 'bg-amber-800 text-amber-200 hover:bg-amber-700 active:translate-y-0.5'
+                      : 'bg-stone-800 text-stone-600 cursor-not-allowed opacity-70'
                   }`}
                 >
                   Confirm
@@ -473,11 +500,13 @@ export const MerchantScreen = memo(function MerchantScreen() {
                     <Tooltip key={tileType} content={previewTooltip} position="bottom" gap={30}>
                       <button
                         onClick={() => setUpgradeSelectedTile(tileType)}
-                        className={`flex flex-col items-center p-3 w-28 border-2 transition-colors ${
-                          isSelected
-                            ? 'border-amber-400 bg-amber-900/50'
-                            : 'border-stone-600 bg-stone-800/80 hover:border-stone-400'
-                        }`}
+                        className="flex flex-col items-center w-28 rounded-sm transition-all"
+                        style={{
+                          backgroundColor: isSelected ? 'rgba(120, 53, 15, 0.75)' : 'rgba(28, 25, 23, 0.8)',
+                          padding: '12px 10px',
+                          transform: isSelected ? 'translateY(-4px)' : 'none',
+                          boxShadow: '3px 3px 2px rgba(0,0,0,0.7)',
+                        }}
                       >
                         <SpriteIcon frame={TILE_FRAMES[tileType]} scale={2} className="mb-1" />
                         <span className="text-amber-300 text-xs font-bold">{def.label}</span>
@@ -496,17 +525,19 @@ export const MerchantScreen = memo(function MerchantScreen() {
             <div className="flex gap-3 mt-4">
               <button
                 onClick={() => setUpgradePhase('none')}
-                className="px-4 py-2 bg-stone-700/80 text-stone-400 text-sm border border-stone-600 hover:bg-stone-600/50"
+                style={{ boxShadow: '3px 3px 2px rgba(0,0,0,0.7)' }}
+                className="px-4 py-2 text-sm rounded-sm bg-stone-800 text-stone-300 hover:bg-stone-700 transition-transform active:translate-y-0.5"
               >
                 Back
               </button>
               <button
                 onClick={handleUpgradeConfirm}
                 disabled={!upgradeSelectedTile}
-                className={`px-6 py-2 text-sm border ${
+                style={{ boxShadow: '3px 3px 2px rgba(0,0,0,0.7)' }}
+                className={`px-6 py-2 text-sm rounded-sm transition-transform ${
                   upgradeSelectedTile
-                    ? 'bg-amber-900/60 text-amber-300 border-amber-700 hover:bg-amber-800/60'
-                    : 'bg-stone-700/80 text-stone-500 border-stone-600 cursor-not-allowed'
+                    ? 'bg-amber-800 text-amber-200 hover:bg-amber-700 active:translate-y-0.5'
+                    : 'bg-stone-800 text-stone-600 cursor-not-allowed opacity-70'
                 }`}
               >
                 Upgrade
@@ -529,7 +560,8 @@ export const MerchantScreen = memo(function MerchantScreen() {
               </p>
               <button
                 onClick={() => setUpgradePhase('none')}
-                className="px-6 py-2 bg-amber-900/60 text-amber-300 text-sm border border-amber-700 hover:bg-amber-800/60"
+                style={{ boxShadow: '3px 3px 2px rgba(0,0,0,0.7)' }}
+                className="px-6 py-2 text-sm rounded-sm bg-amber-800 text-amber-200 hover:bg-amber-700 transition-transform active:translate-y-0.5"
               >
                 Back to Merchant
               </button>
@@ -577,13 +609,18 @@ function MerchantCard({
     <button
       onClick={onClick}
       disabled={disabled}
-      className={`relative flex flex-col items-center justify-center p-3 w-36 h-40 border-2 text-center transition-colors ${
+      className={`relative flex flex-col items-center justify-center w-36 h-40 rounded-sm text-center transition-transform active:translate-y-0.5 ${
         sold
-          ? 'border-stone-700 bg-stone-800/30 opacity-40'
+          ? 'opacity-40 cursor-not-allowed'
           : disabled
-            ? 'border-stone-700 bg-stone-800/30 opacity-60 cursor-not-allowed'
-            : 'border-stone-600 bg-stone-800/80 hover:border-amber-600 hover:bg-stone-700/80'
+            ? 'opacity-60 cursor-not-allowed'
+            : 'hover:-translate-y-0.5'
       }`}
+      style={{
+        backgroundColor: sold || disabled ? 'rgba(28, 25, 23, 0.5)' : 'rgba(28, 25, 23, 0.8)',
+        padding: '12px 10px',
+        boxShadow: '3px 3px 2px rgba(0,0,0,0.7)',
+      }}
     >
       <span className="absolute top-1 right-1.5 text-yellow-400 font-bold" style={{ fontSize: '10px' }}>
         {sold ? 'SOLD' : `${price}g`}
