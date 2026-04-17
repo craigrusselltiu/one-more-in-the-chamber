@@ -263,10 +263,22 @@ function nameError(state: ReturnType<typeof useDisplayNameAvailability>): string
   return undefined;
 }
 
+const LAST_EMAIL_KEY = 'omitc-last-login-email';
+
+function readLastEmail(): string {
+  try { return localStorage.getItem(LAST_EMAIL_KEY) ?? ''; } catch { return ''; }
+}
+function saveLastEmail(email: string): void {
+  try {
+    if (email) localStorage.setItem(LAST_EMAIL_KEY, email);
+    else localStorage.removeItem(LAST_EMAIL_KEY);
+  } catch { /* ignore */ }
+}
+
 export const LoginScreen = memo(function LoginScreen() {
   const playerName = useMetaStore((s) => s.meta.playerName);
   const [tab, setTab] = useState<Tab>('signin');
-  const [email, setEmail] = useState('');
+  const [email, setEmail] = useState(() => readLastEmail());
   const [password, setPassword] = useState('');
   const [displayName, setDisplayName] = useState(playerName);
   const [formError, setFormError] = useState<string | null>(null);
@@ -289,12 +301,14 @@ export const LoginScreen = memo(function LoginScreen() {
     setFormError(null);
     applyStayLoggedIn();
     setSubmitting(true);
-    const { error } = await loginWithEmail(email.trim(), password);
+    const trimmedEmail = email.trim();
+    const { error } = await loginWithEmail(trimmedEmail, password);
     setSubmitting(false);
     if (error) {
       setFormError(error);
       return;
     }
+    saveLastEmail(trimmedEmail);
     EventBus.emit(GameEvent.SCREEN_CHANGE, 'main-menu' satisfies Screen);
   };
 
@@ -339,6 +353,7 @@ export const LoginScreen = memo(function LoginScreen() {
       return;
     }
     markDisplayNameSet(trimmedName);
+    saveLastEmail(email.trim());
     setSubmitting(false);
     EventBus.emit(GameEvent.SCREEN_CHANGE, 'main-menu' satisfies Screen);
   };

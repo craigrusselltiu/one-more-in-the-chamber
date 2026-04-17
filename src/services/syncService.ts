@@ -18,6 +18,8 @@ import {
 } from './localSave';
 import { useMetaStore } from '../store/metaStore';
 import { useRunStore } from '../store/runStore';
+import { SESSION_ID } from './session';
+import { notifyKicked } from './kickout';
 
 // ---------- Types ----------
 
@@ -134,16 +136,23 @@ export async function syncOnReconnect(): Promise<void> {
   return syncOnLogin();
 }
 
-/** Push current run state to remote. Call after every node. */
+/**
+ * Push current run state to remote.
+ *
+ * Ownership-aware: the runs.session_id column tracks which tab/device currently
+ * owns this run. If we detect that the server's session_id is not ours, a
+ * different device has taken over and we kick this client out.
+ *
+ * First push for a new run: INSERT with session_id = ours. Subsequent pushes:
+ * UPDATE with session_id filter; zero rows updated => we've been kicked.
+ */
 export async function pushRun(run: LocalRun): Promise<void> {
   const sb = getSupabase();
   const { userId } = getAuthState();
   if (!sb || !userId) return;
 
   const now = new Date().toISOString();
-  await sb.from('runs').upsert({
-    id: run.id,
-    player_id: userId,
+  const runsPayload = {
     character: run.character ?? 'red_panda',
     status: run.status,
     seed: run.seed,
@@ -151,8 +160,58 @@ export async function pushRun(run: LocalRun): Promise<void> {
     current_act: run.currentAct ?? 1,
     current_node_id: run.currentNodeId ?? null,
     updated_at: now,
-  });
+  };
 
+  // Try owner-filtered UPDATE first.
+  const { data: updated, error: updateErr } = await sb
+    .from('runs')
+    .update(runsPayload)
+    .eq('id', run.id)
+    .eq('session_id', SESSION_ID)
+    .select('id')
+    .maybeSingle();
+
+  if (updateErr) {
+    console.error('[sync] pushRun update failed:', updateErr);
+    return;
+  }
+
+  if (!updated) {
+    // No row matched. Either the row doesn't exist yet (new run for this id)
+    // OR it exists with a different session_id (we've been kicked).
+    const { data: existing } = await sb
+      .from('runs')
+      .select('session_id, player_id')
+      .eq('id', run.id)
+      .maybeSingle();
+
+    if (existing) {
+      if (existing.player_id === userId && existing.session_id !== SESSION_ID) {
+        notifyKicked();
+      }
+      return;
+    }
+
+    // New run: abandon any other active run this player owns, then INSERT.
+    if (run.status === 'active') {
+      await abandonOtherActiveRuns(run.id as string).catch((e) => console.error('[sync]', e));
+    }
+    const { error: insertErr } = await sb.from('runs').insert({
+      id: run.id,
+      player_id: userId,
+      session_id: SESSION_ID,
+      ...runsPayload,
+    });
+    if (insertErr) {
+      // 23505 on the partial unique index means another active run already
+      // exists for this player that we didn't know about -- treat as a kick.
+      if (insertErr.code === '23505') notifyKicked();
+      else console.error('[sync] pushRun insert failed:', insertErr);
+      return;
+    }
+  }
+
+  // Push run_state independently (single row per run_id, no session tracking).
   await sb.from('run_state').upsert({
     run_id: run.id,
     health: run.health,
@@ -168,6 +227,60 @@ export async function pushRun(run: LocalRun): Promise<void> {
     combat_state: run.combatState ?? null,
     updated_at: now,
   });
+}
+
+/**
+ * Mark every active run for the logged-in player as 'abandoned' EXCEPT
+ * optionally one id we want to keep. Called:
+ *   - before pushing a brand-new active run (so only the new one stays active)
+ *   - from runStore.clearRun when the user abandons the current run locally
+ */
+export async function abandonOtherActiveRuns(exceptId?: string): Promise<void> {
+  const sb = getSupabase();
+  const { userId } = getAuthState();
+  if (!sb || !userId) return;
+  let q = sb
+    .from('runs')
+    .update({ status: 'abandoned', updated_at: new Date().toISOString() })
+    .eq('player_id', userId)
+    .eq('status', 'active');
+  if (exceptId) q = q.neq('id', exceptId);
+  const { error } = await q;
+  if (error) console.error('[sync] abandonOtherActiveRuns failed:', error);
+}
+
+/**
+ * Claim ownership of a run we just pulled from remote: update session_id
+ * to this tab's SESSION_ID. Any other tab/device that was playing this run
+ * will detect the mismatch on its next pushRun and get kicked.
+ */
+export async function claimRunOwnership(runId: string): Promise<void> {
+  const sb = getSupabase();
+  const { userId } = getAuthState();
+  if (!sb || !userId) return;
+  const { error } = await sb
+    .from('runs')
+    .update({ session_id: SESSION_ID, updated_at: new Date().toISOString() })
+    .eq('id', runId)
+    .eq('player_id', userId);
+  if (error) console.error('[sync] claimRunOwnership failed:', error);
+}
+
+/**
+ * Claim ownership of every active run for the logged-in player. Called on
+ * passive session restore (same browser reopening) so our new SESSION_ID
+ * replaces the old tab's, preventing a false kick on the first push.
+ */
+export async function claimAllMyActiveRuns(): Promise<void> {
+  const sb = getSupabase();
+  const { userId } = getAuthState();
+  if (!sb || !userId) return;
+  const { error } = await sb
+    .from('runs')
+    .update({ session_id: SESSION_ID })
+    .eq('player_id', userId)
+    .eq('status', 'active');
+  if (error) console.error('[sync] claimAllMyActiveRuns failed:', error);
 }
 
 /** Push the current meta progression snapshot to remote. Fire-and-forget. */
@@ -335,6 +448,15 @@ async function pullRemoteRun(
 }
 
 async function syncRuns(sb: ReturnType<typeof getSupabase> & object, userId: string): Promise<void> {
+  // Claim ownership of ALL active runs for this player at the start of the sync
+  // so subsequent ownership-filtered pushes don't false-positive into a kickout.
+  // This also immediately kicks any other device that was still pushing.
+  await sb
+    .from('runs')
+    .update({ session_id: SESSION_ID, updated_at: new Date().toISOString() })
+    .eq('player_id', userId)
+    .eq('status', 'active');
+
   const localRuns = (await loadAllRuns()) as LocalRun[];
   const { data: remoteRuns } = await sb
     .from('runs')
@@ -389,6 +511,10 @@ async function syncRuns(sb: ReturnType<typeof getSupabase> & object, userId: str
   if (winningActive) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     useRunStore.getState().restoreRun(winningActive as any);
+    // Claim device ownership of the active run: any other tab/device still
+    // playing it will detect the session mismatch on its next push and get
+    // kicked out. No-op if the run is brand-new (pushRun already stamped us).
+    await claimRunOwnership(winningActive.id).catch(() => {});
   }
 }
 

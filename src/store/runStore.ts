@@ -8,6 +8,7 @@ import { CHARACTER_TILES } from '../data/tiles';
 import { getAscensionMutations } from '../data/ascension';
 import { getMaxConsumableSlots } from '../utils/consumableSlots';
 import { deleteRun as deleteRunFromDB, clearCombatSnapshot } from '../services/localSave';
+import { abandonOtherActiveRuns } from '../services/syncService';
 
 interface PendingNewGame {
   character: CharacterId;
@@ -116,6 +117,10 @@ export const useRunStore = create<RunStore>((set, get) => ({
   clearRun: async () => {
     const run = get().run;
     if (run) {
+      // Mark the server row (and any other stray actives for this player) as
+      // abandoned, so we don't end up with orphan active runs on the backend.
+      // No-op when not logged in.
+      await abandonOtherActiveRuns().catch(() => {});
       await deleteRunFromDB(run.id).catch(() => {});
       await clearCombatSnapshot(run.id).catch(() => {});
     }

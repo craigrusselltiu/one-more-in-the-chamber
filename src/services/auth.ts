@@ -8,6 +8,8 @@ import { syncOnLogin } from './syncService';
 import { getMyPlayer } from './players';
 import { useMetaStore } from '../store/metaStore';
 import { useRunStore } from '../store/runStore';
+import { clearKicked } from './kickout';
+import { abandonOtherActiveRuns, claimAllMyActiveRuns } from './syncService';
 import { EventBus, GameEvent } from '../game/EventBus';
 import type { Session, User } from '@supabase/supabase-js';
 
@@ -150,6 +152,9 @@ export async function initAuth(): Promise<void> {
     // Session restored from a previous visit -- hydrate the display name from the
     // players table. No sync needed on passive restore (data already in local IDB).
     hydrateProfile().catch(console.error);
+    // Claim ownership of our active run(s) with this tab's new SESSION_ID so
+    // the first pushRun doesn't false-kick against the old tab's session_id.
+    claimAllMyActiveRuns().catch(console.error);
   }
   notify();
 
@@ -200,27 +205,44 @@ export async function loginWithGoogle(): Promise<{ error: string | null }> {
 }
 
 export async function logout(): Promise<void> {
-  const sb = getSupabase();
-  if (sb) await sb.auth.signOut();
+  // 1. While we're still authenticated, mark any server active runs for this
+  // player as 'abandoned' so they don't linger as orphans on the backend.
+  try {
+    await abandonOtherActiveRuns();
+  } catch (err) {
+    console.error('[auth] abandonOtherActiveRuns failed:', err);
+  }
+
+  // 2. Flip all local UI state synchronously so MainMenu renders as logged-out
+  // the moment the wipe finishes -- we don't wait on async work below.
   state.isLoggedIn = false;
   state.userId = null;
   state.displayName = null;
   state.needsDisplayName = false;
-  // Drop the account's active run (zustand + IndexedDB + combat snapshot) so
-  // the user can't continue playing it as a guest after signing out. The run
-  // still lives on the server under their account and will sync back if they
-  // log in again.
-  await useRunStore.getState().clearRun();
-  // Wipe local account-scoped progression so a subsequent login on this device
-  // doesn't merge the previous account's unlocks into the new account.
+  // Wipe account-scoped progression so a subsequent login doesn't merge
+  // the previous account's unlocks into the new account.
   useMetaStore.getState().resetToDefaults();
-  // If the user had a guest name before signing in, restore it so they're not
-  // re-prompted to pick one. New accounts (no prior guest name) still get the
-  // prompt after logging out.
+  // Restore pre-login guest name (if any) so returning guests aren't
+  // re-prompted for "What is your name?".
   const priorGuestName = readGuestNameStash();
   if (priorGuestName) useMetaStore.getState().setPlayerName(priorGuestName);
+  // Drop the kickout/sync overlays and notify auth subscribers before the
+  // screen transition so MainMenu renders as logged-out.
+  clearKicked();
   notify();
   EventBus.emit(GameEvent.SCREEN_CHANGE, 'main-menu');
+
+  // 3. Async cleanup: fire-and-forget. Screen has already transitioned.
+  const sb = getSupabase();
+  if (sb) {
+    try { await sb.auth.signOut(); } catch (err) { console.error('[auth] signOut failed:', err); }
+  }
+  try {
+    // Drop the local active run (zustand + IndexedDB + combat snapshot).
+    await useRunStore.getState().clearRun();
+  } catch (err) {
+    console.error('[auth] clearRun failed:', err);
+  }
 }
 
 /** Called after a successful display-name claim so UI can advance past the pick-name screen. */

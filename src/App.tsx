@@ -27,6 +27,7 @@ import { GameNotification } from './ui/components/GameNotification';
 import { TutorialOverlay } from './ui/components/TutorialOverlay';
 import { SyncIndicator } from './ui/components/SyncIndicator';
 import { LoginSyncOverlay } from './ui/components/LoginSyncOverlay';
+import { KickoutOverlay } from './ui/components/KickoutOverlay';
 import { EventBus, GameEvent } from './game/EventBus';
 import { useRunStore } from './store/runStore';
 import { useCombatStore } from './store/combatStore';
@@ -774,6 +775,9 @@ export default function App() {
 
         {/* Blocking "Syncing data..." overlay during post-login sync. */}
         <LoginSyncOverlay />
+
+        {/* Blocking "Signed in elsewhere" overlay when another device takes over. */}
+        <KickoutOverlay />
 
         {/* Loading screen -- shown until assets are loaded, then slides left */}
         {!loadingDismissed && (
