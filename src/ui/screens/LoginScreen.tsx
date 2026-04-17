@@ -27,6 +27,7 @@ function Field({
   type,
   value,
   onChange,
+  onEnter,
   placeholder,
   autoFocus,
   disabled,
@@ -39,6 +40,7 @@ function Field({
   type: 'text' | 'email' | 'password';
   value: string;
   onChange: (v: string) => void;
+  onEnter?: () => void;
   placeholder?: string;
   autoFocus?: boolean;
   disabled?: boolean;
@@ -55,6 +57,7 @@ function Field({
         type={type}
         value={value}
         onChange={(e) => onChange(e.target.value)}
+        onKeyDown={(e) => { if (e.key === 'Enter' && onEnter && !disabled) { e.preventDefault(); onEnter(); } }}
         placeholder={placeholder}
         autoFocus={autoFocus}
         disabled={disabled}
@@ -371,6 +374,11 @@ export const LoginScreen = memo(function LoginScreen() {
     password.length > 0 &&
     (tab === 'signin' || (displayName.trim().length > 0 && nameAvail.status === 'available'));
 
+  const trySubmit = () => {
+    if (!canSubmit) return;
+    (tab === 'signin' ? handleSignIn : handleSignUp)();
+  };
+
   return (
     <div
       className="relative flex flex-col items-center justify-center h-full"
@@ -399,6 +407,7 @@ export const LoginScreen = memo(function LoginScreen() {
           type="email"
           value={email}
           onChange={setEmail}
+          onEnter={trySubmit}
           placeholder="you@example.com"
           autoFocus={!email}
           disabled={submitting}
@@ -408,6 +417,7 @@ export const LoginScreen = memo(function LoginScreen() {
           type="password"
           value={password}
           onChange={setPassword}
+          onEnter={trySubmit}
           placeholder="at least 6 characters"
           autoFocus={!!email}
           disabled={submitting}
@@ -418,6 +428,7 @@ export const LoginScreen = memo(function LoginScreen() {
             type="text"
             value={displayName}
             onChange={setDisplayName}
+            onEnter={trySubmit}
             placeholder={`Up to ${DISPLAY_NAME_MAX} characters`}
             maxLength={DISPLAY_NAME_MAX}
             disabled={submitting}
@@ -517,7 +528,9 @@ export const PickNameScreen = memo(function PickNameScreen() {
           type="text"
           value={displayName}
           onChange={setDisplayName}
-          placeholder="3-20 chars, letters/numbers/_"
+          onEnter={() => { if (canSubmit) handleClaim(); }}
+          placeholder={`Up to ${DISPLAY_NAME_MAX} characters`}
+          maxLength={DISPLAY_NAME_MAX}
           autoFocus
           disabled={submitting}
           hint={nameHint(nameAvail.status)}
