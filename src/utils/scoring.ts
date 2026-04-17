@@ -1,34 +1,43 @@
 import type { RunState } from '../types/game';
 
-/** Combo multiplier capped at 3.0x, derived from longest cascade step (step 1 = 1.0x). */
-export function comboMultiplierFromStep(step: number): number {
-  if (step <= 1) return 1.0;
-  return Math.min(3.0, 1 + (step - 1) * 0.1);
+/** Finite-number guard. Null/undefined/NaN/Infinity all fall back. */
+function n(x: unknown, fallback = 0): number {
+  return typeof x === 'number' && Number.isFinite(x) ? x : fallback;
 }
 
-/** Calculate final score for a run. Used by ScoreScreen and MainMenu (abandon). */
+/** Combo multiplier capped at 3.0x, derived from longest cascade step (step 1 = 1.0x). */
+export function comboMultiplierFromStep(step: number): number {
+  const s = n(step, 0);
+  if (s <= 1) return 1.0;
+  return Math.min(3.0, 1 + (s - 1) * 0.1);
+}
+
+/** Calculate final score for a run. Used by ScoreScreen and MainMenu (abandon).
+ *  All run fields are read through `n()` so a missing or corrupt field can
+ *  never produce NaN downstream. */
 export function calculateScore(run: RunState): number {
   const completed = run.status === 'completed';
 
-  const combatBonus = (run.combatsCleared ?? 0) * 100;
-  const eliteBonus = (run.elitesCleared ?? 0) * 250;
-  const bossBonus = (run.bossesDefeated ?? 0) * 500;
-  const flawlessBonus = (run.flawlessFights ?? 0) * 100;
+  const combatBonus = n(run.combatsCleared) * 100;
+  const eliteBonus = n(run.elitesCleared) * 250;
+  const bossBonus = n(run.bossesDefeated) * 500;
+  const flawlessBonus = n(run.flawlessFights) * 100;
   const baseScore = combatBonus + eliteBonus + bossBonus + flawlessBonus;
 
-  const goldBonus = run.goldObtained ?? 0;
-  const artifactBonus = (run.artifactsObtained ?? 0) * 50;
-  const damageBonus = Math.floor((run.totalDamageDealt ?? 0) / 5);
-  const maxCombo = comboMultiplierFromStep(run.longestCascade ?? 0);
+  const goldBonus = n(run.goldObtained);
+  const artifactBonus = n(run.artifactsObtained) * 50;
+  const damageBonus = Math.floor(n(run.totalDamageDealt) / 5);
+  const maxCombo = comboMultiplierFromStep(n(run.longestCascade));
   const comboBonus = Math.round((maxCombo - 1.0) * 1000);
   const bonusPoints = goldBonus + artifactBonus + damageBonus + comboBonus;
 
   // Ascension multiplier always applies; time + completion bonus only on a win.
-  const ascensionMultiplier = 1.0 + 0.05 * run.ascensionLevel;
-  const timeMultiplier = completed ? computeTimeMultiplier(run.playTimeSeconds ?? 0) : 1.0;
+  const ascensionMultiplier = 1.0 + 0.05 * n(run.ascensionLevel);
+  const timeMultiplier = completed ? computeTimeMultiplier(n(run.playTimeSeconds)) : 1.0;
   const completionMultiplier = completed ? 2.0 : 1.0;
 
-  return Math.round((baseScore + bonusPoints) * ascensionMultiplier * timeMultiplier * completionMultiplier);
+  const raw = (baseScore + bonusPoints) * ascensionMultiplier * timeMultiplier * completionMultiplier;
+  return Number.isFinite(raw) ? Math.round(raw) : 0;
 }
 
 /**

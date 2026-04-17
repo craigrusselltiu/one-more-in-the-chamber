@@ -100,7 +100,18 @@ const DEFAULT_META: MetaProgression = {
 function loadMeta(): MetaProgression {
   try {
     const raw = localStorage.getItem(META_STORAGE_KEY);
-    if (raw) return { ...DEFAULT_META, ...JSON.parse(raw) };
+    if (raw) {
+      const parsed = { ...DEFAULT_META, ...JSON.parse(raw) } as MetaProgression;
+      // Sanitize numeric fields: any NaN / Infinity / non-number from a
+      // previously-broken save resets to the default (0 / -1) so it can
+      // never propagate further.
+      const safeNum = (v: unknown, fallback: number): number =>
+        typeof v === 'number' && Number.isFinite(v) ? v : fallback;
+      parsed.reputation = safeNum(parsed.reputation, 0);
+      parsed.highestAscensionCleared = safeNum(parsed.highestAscensionCleared, -1);
+      parsed.lastAscensionLevel = safeNum(parsed.lastAscensionLevel, 0);
+      return parsed;
+    }
   } catch { /* ignore */ }
   return { ...DEFAULT_META };
 }
@@ -130,16 +141,22 @@ export const useMetaStore = create<MetaStore>((set, get) => ({
 
   addReputation: (amount) =>
     set((state) => {
-      const meta = { ...state.meta, reputation: state.meta.reputation + amount };
+      // Guard against NaN/Infinity from a broken score calc poisoning the
+      // persisted reputation counter. Ignore non-finite or non-positive grants.
+      const delta = Number.isFinite(amount) && amount > 0 ? Math.round(amount) : 0;
+      const current = Number.isFinite(state.meta.reputation) ? state.meta.reputation : 0;
+      const meta = { ...state.meta, reputation: current + delta };
       persistMeta(meta);
       return { meta };
     }),
 
   spendReputation: (amount) => {
     const { meta } = get();
-    if (meta.reputation < amount) return false;
+    const current = Number.isFinite(meta.reputation) ? meta.reputation : 0;
+    const cost = Number.isFinite(amount) && amount > 0 ? Math.round(amount) : 0;
+    if (current < cost) return false;
     set((state) => {
-      const next = { ...state.meta, reputation: state.meta.reputation - amount };
+      const next = { ...state.meta, reputation: current - cost };
       persistMeta(next);
       return { meta: next };
     });

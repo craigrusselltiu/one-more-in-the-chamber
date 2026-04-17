@@ -212,6 +212,9 @@ export async function pushRun(run: LocalRun): Promise<void> {
   }
 
   // Push run_state independently (single row per run_id, no session tracking).
+  // extra_state holds the entire RunState blob as JSONB so fields that don't
+  // have a dedicated column (combatsCleared, elitesCleared, bossesDefeated,
+  // flawlessFights, pending* flags, eventBag, etc.) still round-trip.
   await sb.from('run_state').upsert({
     run_id: run.id,
     health: run.health,
@@ -225,6 +228,7 @@ export async function pushRun(run: LocalRun): Promise<void> {
     ability_charge: run.abilityCharge,
     map_state: run.mapState,
     combat_state: run.combatState ?? null,
+    extra_state: run,
     updated_at: now,
   });
 }
@@ -586,6 +590,24 @@ async function pullRemoteRun(
     .select('*')
     .eq('run_id', remote.id)
     .single();
+
+  // Prefer the whole-blob extra_state if present -- it's authoritative and
+  // carries counters like combatsCleared / elitesCleared / bossesDefeated /
+  // flawlessFights / longestCascade / totalDamageDealt / playTimeSeconds
+  // that don't have dedicated columns. Fall back to the hand-picked columns
+  // for legacy rows written before the extra_state column existed.
+  const extra = runState?.extra_state as Partial<LocalRun> | null | undefined;
+  if (extra && typeof extra === 'object') {
+    return {
+      ...extra,
+      id: remote.id,
+      status: remote.status,
+      updatedAt: remote.updated_at,
+    } as LocalRun;
+  }
+
+  // Legacy path: reconstruct from structured columns with every counter
+  // defaulted to 0 so no NaN can leak into downstream scoring or reputation.
   return {
     id: remote.id,
     character: remote.character as string,
@@ -605,6 +627,18 @@ async function pullRemoteRun(
     consumables: runState?.consumables ?? [],
     abilityCharge: runState?.ability_charge ?? 0,
     mapState: runState?.map_state ?? null,
+    // Counters defaulted to 0 so score / reputation math can't produce NaN
+    // for legacy rows where these weren't persisted.
+    totalDamageDealt: 0,
+    runStartedAt: Date.now(),
+    playTimeSeconds: 0,
+    longestCascade: 0,
+    flawlessFights: 0,
+    bossesDefeated: 0,
+    combatsCleared: 0,
+    elitesCleared: 0,
+    goldObtained: 0,
+    artifactsObtained: 0,
   };
 }
 
