@@ -128,18 +128,18 @@ export const ArtifactScreen = memo(function ArtifactScreen() {
       </span>
     ) : undefined}>
       <div
-        className="flex flex-col items-center w-48"
+        className="flex flex-col items-center w-48 rounded-sm"
         style={{
-          border: '2px solid #b45309',
-          backgroundColor: 'rgba(120, 53, 15, 0.6)',
+          backgroundColor: 'rgba(28, 25, 23, 0.85)',
           padding: '16px 12px',
+          boxShadow: '3px 3px 2px rgba(0,0,0,0.7)',
         }}
       >
-        <div className="w-10 h-10 rounded-sm mb-3 bg-amber-700/60 border border-amber-600 flex items-center justify-center">
+        <div className="mb-3 flex items-center justify-center">
           {ARTIFACT_FRAMES[artifact.id] != null ? (
             <SpriteIcon frame={ARTIFACT_FRAMES[artifact.id]} scale={2} />
           ) : (
-            <span className="text-[8px] text-amber-300 font-bold">{artifact.name.slice(0, 3).toUpperCase()}</span>
+            <span className="text-[8px] text-amber-300">{artifact.name.slice(0, 3).toUpperCase()}</span>
           )}
         </div>
         <span className={`text-sm text-center ${RARITY_BREATHE_CLASS[artifact.rarity ?? 'common']}`}>{artifact.name}</span>
@@ -176,7 +176,8 @@ export const ArtifactScreen = memo(function ArtifactScreen() {
                 </div>
                 <button
                   onClick={() => handleChoose(i)}
-                  className="mt-3 px-6 py-1.5 text-xs bg-amber-900/80 text-amber-300 border border-amber-700 hover:bg-amber-800/80"
+                  style={{ boxShadow: '2px 2px 1px rgba(0,0,0,0.4)', cursor: 'pointer' }}
+                  className="mt-3 px-6 py-1.5 text-xs rounded-sm bg-amber-800 text-amber-200 hover:bg-amber-700 active:translate-y-0.5 transition-transform"
                 >
                   Choose
                 </button>
@@ -192,13 +193,15 @@ export const ArtifactScreen = memo(function ArtifactScreen() {
           <div className="flex gap-3">
             <button
               onClick={handleSkip}
-              className="px-6 py-1.5 text-xs bg-stone-800/80 text-stone-400 border border-stone-700 hover:bg-stone-700/80"
+              style={{ boxShadow: '2px 2px 1px rgba(0,0,0,0.4)', cursor: 'pointer' }}
+              className="px-6 py-1.5 text-xs rounded-sm bg-stone-800 text-stone-300 hover:bg-stone-700 active:translate-y-0.5 transition-transform"
             >
               Skip
             </button>
             <button
               onClick={() => handleChoose(0)}
-              className="px-6 py-1.5 text-xs bg-amber-900/80 text-amber-300 border border-amber-700 hover:bg-amber-800/80"
+              style={{ boxShadow: '2px 2px 1px rgba(0,0,0,0.4)', cursor: 'pointer' }}
+              className="px-6 py-1.5 text-xs rounded-sm bg-amber-800 text-amber-200 hover:bg-amber-700 active:translate-y-0.5 transition-transform"
             >
               Take It
             </button>

@@ -498,18 +498,18 @@ Diagonal = single-trait artifacts. Off-diagonal = artifacts with both traits.
 
 ### Lethargic
 - Tags: Corrupt
-- Rarity: Common
+- Rarity: Corrupt
 - Effect: The first swap each combat generates no resources.
 - Flavor: "Some mornings, you just aren't ready."
 
 ### Dry Atmosphere
 - Tags: Corrupt
-- Rarity: Uncommon
+- Rarity: Corrupt
 - Effect: All healing is reduced by 10%.
 - Flavor: "Sun bakes the blood before it can heal."
 
 ### Tinnitus
 - Tags: Corrupt
-- Rarity: Rare
+- Rarity: Corrupt
 - Effect: Enemy intents are hidden on the first turn of each combat.
 - Flavor: "The first shot always rings twice."

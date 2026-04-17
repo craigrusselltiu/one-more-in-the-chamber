@@ -1,10 +1,40 @@
-import { memo, useState } from 'react';
+import { memo, useEffect, useState } from 'react';
 import { EventBus, GameEvent } from '../../game/EventBus';
 import { useSettingsStore } from '../../store/settingsStore';
 import { useMetaStore } from '../../store/metaStore';
+import { getAuthState, subscribeAuth, logout, type AuthState } from '../../services/auth';
+import { updateDisplayName, validateDisplayName, checkDisplayNameAvailable, DISPLAY_NAME_MAX } from '../../services/players';
 import type { GameSpeed } from '../../store/settingsStore';
 import type { Screen } from '../../App';
 
+
+/** Shared row shell: compact label/description + trailing control. */
+function SettingRow({
+  label,
+  description,
+  control,
+  onClick,
+}: {
+  label: string;
+  description?: string;
+  control: React.ReactNode;
+  onClick?: () => void;
+}) {
+  const Wrapper: 'button' | 'div' = onClick ? 'button' : 'div';
+  return (
+    <Wrapper
+      onClick={onClick}
+      className="flex items-center justify-between w-full py-2 px-4 bg-transparent border-none outline-none text-left"
+      style={onClick ? { cursor: 'pointer' } : undefined}
+    >
+      <div className="flex flex-col gap-px min-w-0">
+        <span className="text-xs text-stone-200">{label}</span>
+        {description && <span className="text-[9px] text-stone-500 leading-tight">{description}</span>}
+      </div>
+      <div className="ml-3 flex-shrink-0">{control}</div>
+    </Wrapper>
+  );
+}
 
 function Toggle({
   label,
@@ -18,30 +48,31 @@ function Toggle({
   onChange: (value: boolean) => void;
 }) {
   return (
-    <button
+    <SettingRow
+      label={label}
+      description={description}
       onClick={() => onChange(!checked)}
-      className="flex items-center justify-between w-full py-1.5 px-3 bg-transparent border-none outline-none text-left group"
-      style={{ cursor: 'pointer' }}
-    >
-      <div className="flex flex-col gap-0.5">
-        <span className="text-sm text-stone-200">{label}</span>
-        <span className="text-xs text-stone-500">{description}</span>
-      </div>
-      <div
-        className="relative w-10 h-5 rounded-full transition-colors duration-200 flex-shrink-0 ml-4"
-        style={{
-          backgroundColor: checked ? '#b45309' : '#44403c',
-        }}
-      >
+      control={
         <div
-          className="absolute top-0.5 w-4 h-4 rounded-full transition-transform duration-200"
+          className="relative rounded-full transition-colors duration-200"
           style={{
-            backgroundColor: checked ? '#fbbf24' : '#78716c',
-            transform: checked ? 'translateX(22px)' : 'translateX(2px)',
+            width: 32,
+            height: 16,
+            backgroundColor: checked ? '#b45309' : '#44403c',
           }}
-        />
-      </div>
-    </button>
+        >
+          <div
+            className="absolute top-0.5 rounded-full transition-transform duration-200"
+            style={{
+              width: 12,
+              height: 12,
+              backgroundColor: checked ? '#fbbf24' : '#78716c',
+              transform: checked ? 'translateX(18px)' : 'translateX(2px)',
+            }}
+          />
+        </div>
+      }
+    />
   );
 }
 
@@ -54,29 +85,32 @@ function SpeedSelector({
 }) {
   const speeds: GameSpeed[] = [1, 2, 3];
   return (
-    <div className="flex items-center justify-between w-full py-1.5 px-3">
-      <div className="flex flex-col gap-0.5">
-        <span className="text-sm text-stone-200">Game Speed</span>
-        <span className="text-xs text-stone-500">Animation speed multiplier</span>
-      </div>
-      <div className="flex gap-1">
-        {speeds.map((s) => (
-          <button
-            key={s}
-            onClick={() => onChange(s)}
-            className="w-8 h-6 flex items-center justify-center text-xs border"
-            style={{
-              backgroundColor: value === s ? 'rgba(180, 83, 9, 0.6)' : 'rgba(28, 25, 23, 0.6)',
-              borderColor: value === s ? '#b45309' : '#44403c',
-              color: value === s ? '#fbbf24' : '#78716c',
-              cursor: 'pointer',
-            }}
-          >
-            {s}x
-          </button>
-        ))}
-      </div>
-    </div>
+    <SettingRow
+      label="Game Speed"
+      description="Animation speed multiplier"
+      control={
+        <div className="flex gap-0.5">
+          {speeds.map((s) => (
+            <button
+              key={s}
+              onClick={() => onChange(s)}
+              className="flex items-center justify-center rounded-sm transition-transform active:translate-y-px"
+              style={{
+                width: 22,
+                height: 20,
+                fontSize: '10px',
+                backgroundColor: value === s ? 'rgba(120, 53, 15, 0.85)' : 'rgba(28, 25, 23, 0.8)',
+                color: value === s ? '#fcd34d' : '#a8a29e',
+                boxShadow: value === s ? '2px 2px 1px rgba(0,0,0,0.4)' : 'none',
+                cursor: 'pointer',
+              }}
+            >
+              {s}x
+            </button>
+          ))}
+        </div>
+      }
+    />
   );
 }
 
@@ -90,20 +124,89 @@ function VolumeSlider({
   onChange: (volume: number) => void;
 }) {
   return (
-    <div className="flex items-center justify-between w-full py-1.5 px-3">
-      <div className="flex flex-col gap-0.5" style={{ minWidth: 120 }}>
-        <span className="text-sm text-stone-200">{label}</span>
-        <span className="text-xs text-stone-500" style={{ minWidth: 32 }}>{Math.round(value * 100)}%</span>
-      </div>
-      <input
-        type="range"
-        min="0"
-        max="100"
-        value={Math.round(value * 100)}
-        onChange={(e) => onChange(Number(e.target.value) / 100)}
-        className="w-24 h-1 accent-amber-600 cursor-pointer"
-      />
-    </div>
+    <SettingRow
+      label={label}
+      description={`${Math.round(value * 100)}%`}
+      control={
+        <input
+          type="range"
+          min="0"
+          max="100"
+          value={Math.round(value * 100)}
+          onChange={(e) => onChange(Number(e.target.value) / 100)}
+          className="accent-amber-600 cursor-pointer"
+          style={{ width: 100, height: 4 }}
+        />
+      }
+    />
+  );
+}
+
+/** Amber primary button, matching the tile-select / merchant idiom. */
+function AmberButton({
+  children,
+  onClick,
+  disabled,
+  small,
+}: {
+  children: React.ReactNode;
+  onClick: () => void;
+  disabled?: boolean;
+  small?: boolean;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      disabled={disabled}
+      style={{ boxShadow: disabled ? 'none' : '2px 2px 1px rgba(0,0,0,0.4)' }}
+      className={`${small ? 'px-3 py-1 text-[10px]' : 'px-5 py-1.5 text-xs'} rounded-sm transition-transform ${
+        disabled
+          ? 'bg-stone-800 text-stone-600 cursor-not-allowed opacity-70'
+          : 'bg-amber-800 text-amber-200 hover:bg-amber-700 active:translate-y-0.5'
+      }`}
+    >
+      {children}
+    </button>
+  );
+}
+
+function StoneButton({
+  children,
+  onClick,
+  small,
+}: {
+  children: React.ReactNode;
+  onClick: () => void;
+  small?: boolean;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      style={{ boxShadow: '2px 2px 1px rgba(0,0,0,0.4)', cursor: 'pointer' }}
+      className={`${small ? 'px-3 py-1 text-[10px]' : 'px-5 py-1.5 text-xs'} rounded-sm bg-stone-800 text-stone-300 hover:bg-stone-700 active:translate-y-0.5 transition-transform`}
+    >
+      {children}
+    </button>
+  );
+}
+
+function RedButton({
+  children,
+  onClick,
+  small,
+}: {
+  children: React.ReactNode;
+  onClick: () => void;
+  small?: boolean;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      style={{ boxShadow: '2px 2px 1px rgba(0,0,0,0.4)', cursor: 'pointer' }}
+      className={`${small ? 'px-3 py-1 text-[10px]' : 'px-5 py-1.5 text-xs'} rounded-sm bg-red-900 text-red-200 hover:bg-red-800 active:translate-y-0.5 transition-transform`}
+    >
+      {children}
+    </button>
   );
 }
 
@@ -125,18 +228,62 @@ export const SettingsScreen = memo(function SettingsScreen() {
   const setPlayerName = useMetaStore((s) => s.setPlayerName);
   const [editingName, setEditingName] = useState(false);
   const [nameInput, setNameInput] = useState(playerName);
+  const [nameError, setNameError] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
 
-  const confirmName = () => {
-    if (nameInput.trim()) {
-      setPlayerName(nameInput.trim());
-    } else {
+  const [auth, setAuth] = useState<AuthState>(() => ({ ...getAuthState() }));
+  useEffect(() => subscribeAuth(setAuth), []);
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+
+  const confirmName = async () => {
+    const trimmed = nameInput.trim();
+    if (!trimmed) {
       setNameInput(playerName);
+      setEditingName(false);
+      return;
     }
+    // Guest rename: local only, no server round-trip.
+    if (!auth.isLoggedIn) {
+      setPlayerName(trimmed);
+      setEditingName(false);
+      return;
+    }
+    // Logged-in rename: validate + uniqueness check + server update.
+    const validation = validateDisplayName(trimmed);
+    if (!validation.ok) {
+      setNameError(validation.message);
+      return;
+    }
+    setSaving(true);
+    setNameError(null);
+    const available = await checkDisplayNameAvailable(trimmed);
+    if (!available && trimmed.toLowerCase() !== playerName.toLowerCase()) {
+      setNameError('That name is taken.');
+      setSaving(false);
+      return;
+    }
+    const result = await updateDisplayName(trimmed);
+    setSaving(false);
+    if (!result.ok) {
+      setNameError(
+        result.reason === 'taken'
+          ? 'That name is taken.'
+          : result.message ?? 'Could not save. Try again.',
+      );
+      return;
+    }
+    setPlayerName(trimmed);
     setEditingName(false);
   };
 
   const handleBack = () => {
     EventBus.emit(GameEvent.SCREEN_CHANGE, 'main-menu' satisfies Screen);
+  };
+
+  const handleLogout = async () => {
+    setShowLogoutConfirm(false);
+    await logout();
+    // logout() already routes to main-menu.
   };
 
   return (
@@ -149,51 +296,60 @@ export const SettingsScreen = memo(function SettingsScreen() {
       }}
     >
       {/* Header */}
-      <div className="mt-6 mb-4 text-center">
+      <div className="mt-5 mb-3 text-center">
         <h2
-          className="text-xl text-amber-400"
-          style={{ letterSpacing: '1px' }}
+          className="text-xl text-amber-400 font-bold uppercase"
+          style={{ WebkitTextStroke: '4px #000', paintOrder: 'stroke fill', letterSpacing: '1px' }}
         >
           Settings
         </h2>
       </div>
 
       {/* Settings list */}
-      <div className="w-full max-w-[400px] px-4">
-        <div className="border border-stone-700 bg-stone-800/30 divide-y divide-stone-700/50">
+      <div className="w-full max-w-[360px] px-3">
+        <div
+          className="rounded-sm divide-y divide-stone-700/60"
+          style={{ backgroundColor: 'rgba(28, 25, 23, 0.7)', boxShadow: '3px 3px 2px rgba(0,0,0,0.6)' }}
+        >
           {/* Change Name */}
-          <div className="flex items-center justify-between w-full py-1.5 px-3">
-            <div className="flex flex-col gap-0.5">
-              <span className="text-sm text-stone-200">Name</span>
-              <span className="text-xs text-stone-500">Your display name</span>
-            </div>
-            {editingName ? (
-              <div className="flex gap-1 items-center ml-4">
-                <input
-                  type="text"
-                  value={nameInput}
-                  onChange={(e) => setNameInput(e.target.value)}
-                  onKeyDown={(e) => { if (e.key === 'Enter') confirmName(); if (e.key === 'Escape') { setNameInput(playerName); setEditingName(false); } }}
-                  maxLength={20}
-                  autoFocus
-                  className="w-28 bg-stone-800/60 border border-stone-600 text-stone-200 text-xs px-2 py-1 outline-none focus:border-amber-600"
-                />
-                <button
-                  onClick={confirmName}
-                  className="px-2 py-1 text-xs border border-amber-700 bg-amber-900/60 text-amber-300 hover:bg-amber-800/60"
-                  style={{ cursor: 'pointer' }}
-                >
-                  OK
-                </button>
+          <div className="flex flex-col px-4 py-2 gap-0.5">
+            <div className="flex items-center justify-between w-full">
+              <div className="flex flex-col gap-px min-w-0">
+                <span className="text-xs text-stone-200">Name</span>
+                <span className="text-[9px] text-stone-500 leading-tight">
+                  {auth.isLoggedIn ? 'Your account display name' : 'Your display name'}
+                </span>
               </div>
-            ) : (
-              <button
-                onClick={() => { setNameInput(playerName); setEditingName(true); }}
-                className="text-xs text-red-400 px-2 py-1 border border-stone-600 bg-stone-700/40 hover:bg-stone-600/40 ml-4"
-                style={{ cursor: 'pointer' }}
-              >
-                Change
-              </button>
+              {editingName ? (
+                <div className="flex gap-1 items-center ml-3">
+                  <input
+                    type="text"
+                    value={nameInput}
+                    onChange={(e) => { setNameInput(e.target.value); setNameError(null); }}
+                    onKeyDown={(e) => { if (e.key === 'Enter') confirmName(); if (e.key === 'Escape') { setNameInput(playerName); setNameError(null); setEditingName(false); } }}
+                    maxLength={DISPLAY_NAME_MAX}
+                    autoFocus
+                    disabled={saving}
+                    className="bg-stone-900/70 text-stone-100 text-[11px] px-2 py-0.5 rounded-sm outline-none disabled:opacity-60"
+                    style={{ width: 150, boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.5)' }}
+                  />
+                  <AmberButton small onClick={confirmName} disabled={saving}>
+                    {saving ? '...' : 'OK'}
+                  </AmberButton>
+                </div>
+              ) : (
+                <div className="flex items-center gap-2 ml-3">
+                  {playerName && (
+                    <span className="text-[11px] text-amber-300 truncate max-w-[120px]">{playerName}</span>
+                  )}
+                  <StoneButton small onClick={() => { setNameInput(playerName); setNameError(null); setEditingName(true); }}>
+                    Change
+                  </StoneButton>
+                </div>
+              )}
+            </div>
+            {nameError && (
+              <span className="text-[10px] text-red-400">{nameError}</span>
             )}
           </div>
 
@@ -208,7 +364,7 @@ export const SettingsScreen = memo(function SettingsScreen() {
           />
           <Toggle
             label="Juice Animations"
-            description="Tile pop, bounce, particles, and flash effects"
+            description="Tile pop, bounce, particles, flashes"
             checked={juiceAnimationsEnabled}
             onChange={setJuiceAnimations}
           />
@@ -221,19 +377,49 @@ export const SettingsScreen = memo(function SettingsScreen() {
         </div>
       </div>
 
+      {/* Account section */}
+      {auth.isLoggedIn && (
+        <div className="w-full max-w-[360px] px-3 mt-3">
+          <div
+            className="rounded-sm flex items-center justify-between px-4 py-2"
+            style={{ backgroundColor: 'rgba(28, 25, 23, 0.7)', boxShadow: '3px 3px 2px rgba(0,0,0,0.6)' }}
+          >
+            <div className="flex flex-col gap-px min-w-0">
+              <span className="text-xs text-stone-200">Account</span>
+              <span className="text-[9px] text-stone-500 leading-tight">
+                Signed in as <span className="text-amber-300">{auth.displayName ?? '...'}</span>
+              </span>
+            </div>
+            <RedButton small onClick={() => setShowLogoutConfirm(true)}>Sign Out</RedButton>
+          </div>
+        </div>
+      )}
+
       {/* Spacer */}
       <div className="flex-1" />
 
       {/* Back button */}
       <div className="py-3">
-        <button
-          onClick={handleBack}
-          className="px-6 py-2 bg-stone-700/50 text-stone-300 text-sm border border-stone-600 hover:bg-stone-600/50"
-          style={{ cursor: 'pointer' }}
-        >
-          Back
-        </button>
+        <StoneButton onClick={handleBack}>Back</StoneButton>
       </div>
+
+      {/* Sign-out confirmation */}
+      {showLogoutConfirm && (
+        <div className="absolute inset-0 flex items-center justify-center bg-black/70 z-10">
+          <div
+            className="rounded-sm p-5 max-w-xs text-center"
+            style={{ backgroundColor: 'rgba(28, 25, 23, 0.95)', boxShadow: '3px 3px 2px rgba(0,0,0,0.7)' }}
+          >
+            <p className="text-stone-300 text-xs mb-4 leading-snug">
+              Sign out? Your account progress is safe on the server; local guest data on this device will be reset.
+            </p>
+            <div className="flex gap-3 justify-center">
+              <RedButton onClick={handleLogout}>Sign Out</RedButton>
+              <StoneButton onClick={() => setShowLogoutConfirm(false)}>Cancel</StoneButton>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 });
@@ -270,153 +456,54 @@ export const CombatSettingsPopup = memo(function CombatSettingsPopup({
       className="absolute inset-0 flex items-center justify-center bg-black/60 z-50 pointer-events-auto"
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
-      <div className="w-64 border border-stone-600 bg-stone-900 p-4">
-        <h3 className="text-amber-400 text-sm font-bold text-center mb-3">Settings</h3>
+      <div
+        className="rounded-sm p-3 flex flex-col gap-2"
+        style={{ width: 280, backgroundColor: 'rgba(28, 25, 23, 0.95)', boxShadow: '3px 3px 2px rgba(0,0,0,0.7)' }}
+      >
+        <h3
+          className="text-[11px] text-amber-400 text-center font-bold uppercase"
+          style={{ WebkitTextStroke: '2px #000', paintOrder: 'stroke fill', letterSpacing: '1px' }}
+        >
+          Settings
+        </h3>
 
-        <div className="flex flex-col gap-2 text-[9px]">
-          {/* Music Volume */}
-          <div className="flex items-center gap-2">
-            <span className="text-stone-300" style={{ width: 40 }}>Music</span>
-            <input
-              type="range"
-              min="0"
-              max="100"
-              value={Math.round(musicVolume * 100)}
-              onChange={(e) => setMusicVolume(Number(e.target.value) / 100)}
-              className="flex-1 h-1 accent-amber-600 cursor-pointer"
-            />
-            <span className="text-stone-500 text-right" style={{ width: 28 }}>{Math.round(musicVolume * 100)}%</span>
-          </div>
-
-          {/* SFX Volume */}
-          <div className="flex items-center gap-2">
-            <span className="text-stone-300" style={{ width: 40 }}>SFX</span>
-            <input
-              type="range"
-              min="0"
-              max="100"
-              value={Math.round(sfxVolume * 100)}
-              onChange={(e) => setSfxVolume(Number(e.target.value) / 100)}
-              className="flex-1 h-1 accent-amber-600 cursor-pointer"
-            />
-            <span className="text-stone-500 text-right" style={{ width: 28 }}>{Math.round(sfxVolume * 100)}%</span>
-          </div>
-
-          {/* Game Speed */}
-          <div className="flex items-center justify-between">
-            <span className="text-stone-300">Speed</span>
-            <div className="flex gap-1">
-              {([1, 2, 3] as GameSpeed[]).map((s) => (
-                <button
-                  key={s}
-                  onClick={() => setGameSpeed(s)}
-                  className="w-7 h-5 flex items-center justify-center border"
-                  style={{
-                    backgroundColor: gameSpeed === s ? 'rgba(180, 83, 9, 0.6)' : 'rgba(28, 25, 23, 0.6)',
-                    borderColor: gameSpeed === s ? '#b45309' : '#44403c',
-                    color: gameSpeed === s ? '#fbbf24' : '#78716c',
-                    fontSize: '9px',
-                    cursor: 'pointer',
-                  }}
-                >
-                  {s}x
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Toggles */}
-          <div className="flex items-center justify-between">
-            <span className="text-stone-300">Screen Shake</span>
-            <button
-              onClick={() => setScreenShake(!screenShakeEnabled)}
-              className="text-[9px] px-2 py-0.5 border"
-              style={{
-                backgroundColor: screenShakeEnabled ? 'rgba(180, 83, 9, 0.4)' : 'rgba(28, 25, 23, 0.4)',
-                borderColor: screenShakeEnabled ? '#b45309' : '#44403c',
-                color: screenShakeEnabled ? '#fbbf24' : '#78716c',
-                cursor: 'pointer',
-              }}
-            >
-              {screenShakeEnabled ? 'ON' : 'OFF'}
-            </button>
-          </div>
-
-          <div className="flex items-center justify-between">
-            <span className="text-stone-300">Animations</span>
-            <button
-              onClick={() => setJuiceAnimations(!juiceAnimationsEnabled)}
-              className="text-[9px] px-2 py-0.5 border"
-              style={{
-                backgroundColor: juiceAnimationsEnabled ? 'rgba(180, 83, 9, 0.4)' : 'rgba(28, 25, 23, 0.4)',
-                borderColor: juiceAnimationsEnabled ? '#b45309' : '#44403c',
-                color: juiceAnimationsEnabled ? '#fbbf24' : '#78716c',
-                cursor: 'pointer',
-              }}
-            >
-              {juiceAnimationsEnabled ? 'ON' : 'OFF'}
-            </button>
-          </div>
-
-          <div className="flex items-center justify-between">
-            <span className="text-stone-300">Tutorials</span>
-            <button
-              onClick={() => setTutorialsEnabled(!tutorialsEnabled)}
-              className="text-[9px] px-2 py-0.5 border"
-              style={{
-                backgroundColor: tutorialsEnabled ? 'rgba(180, 83, 9, 0.4)' : 'rgba(28, 25, 23, 0.4)',
-                borderColor: tutorialsEnabled ? '#b45309' : '#44403c',
-                color: tutorialsEnabled ? '#fbbf24' : '#78716c',
-                cursor: 'pointer',
-              }}
-            >
-              {tutorialsEnabled ? 'ON' : 'OFF'}
-            </button>
-          </div>
+        {/* Same options controls as the main Settings screen */}
+        <div className="rounded-sm divide-y divide-stone-700/60" style={{ backgroundColor: 'rgba(28, 25, 23, 0.6)' }}>
+          <VolumeSlider label="Music" value={musicVolume} onChange={setMusicVolume} />
+          <VolumeSlider label="SFX" value={sfxVolume} onChange={setSfxVolume} />
+          <SpeedSelector value={gameSpeed} onChange={setGameSpeed} />
+          <Toggle
+            label="Screen Shake"
+            description="Camera shake on big hits"
+            checked={screenShakeEnabled}
+            onChange={setScreenShake}
+          />
+          <Toggle
+            label="Animations"
+            description="Tile pop, particles, flashes"
+            checked={juiceAnimationsEnabled}
+            onChange={setJuiceAnimations}
+          />
+          <Toggle
+            label="Tutorials"
+            description="Popups for new mechanics"
+            checked={tutorialsEnabled}
+            onChange={setTutorialsEnabled}
+          />
         </div>
 
-        {/* Divider + Main Menu / Give Up */}
-        <div className="border-t border-stone-700 mt-3 pt-3 flex flex-col gap-2">
-          <button
-            onClick={onMainMenu}
-            className="w-full py-1.5 text-stone-300 hover:bg-stone-700/50 border border-stone-600 text-[10px]"
-            style={{ cursor: 'pointer' }}
-          >
-            Main Menu
-          </button>
+        {/* Main Menu / Give Up / Close */}
+        <div className="mt-1 flex flex-col gap-1.5">
+          <StoneButton small onClick={onMainMenu}>Main Menu</StoneButton>
           {!confirmGiveUp ? (
-            <button
-              onClick={() => setConfirmGiveUp(true)}
-              className="w-full py-1.5 text-red-400 hover:bg-red-900/30 border border-red-900/50 text-[10px]"
-              style={{ cursor: 'pointer' }}
-            >
-              Give Up
-            </button>
+            <RedButton small onClick={() => setConfirmGiveUp(true)}>Give Up</RedButton>
           ) : (
-            <div className="flex gap-1">
-              <button
-                onClick={onGiveUp}
-                className="flex-1 py-1.5 text-red-400 hover:bg-red-900/30 border border-red-900/50 text-[10px]"
-                style={{ cursor: 'pointer' }}
-              >
-                Confirm
-              </button>
-              <button
-                onClick={() => setConfirmGiveUp(false)}
-                className="flex-1 py-1.5 text-stone-400 hover:bg-stone-700/50 border border-stone-600 text-[10px]"
-                style={{ cursor: 'pointer' }}
-              >
-                Cancel
-              </button>
+            <div className="grid grid-cols-2 gap-1.5">
+              <RedButton small onClick={onGiveUp}>Confirm</RedButton>
+              <StoneButton small onClick={() => setConfirmGiveUp(false)}>Cancel</StoneButton>
             </div>
           )}
-          <button
-            onClick={onClose}
-            className="w-full py-1.5 text-stone-400 hover:bg-stone-800 border border-stone-700 text-[10px]"
-            style={{ cursor: 'pointer' }}
-          >
-            Close
-          </button>
+          <StoneButton small onClick={onClose}>Close</StoneButton>
         </div>
       </div>
     </div>

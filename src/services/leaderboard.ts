@@ -4,6 +4,7 @@
  */
 
 import { getSupabase } from './supabase';
+import { withSyncIndicator } from './syncService';
 
 export type LeaderboardPeriod = 'daily' | 'weekly' | 'all-time';
 
@@ -15,6 +16,8 @@ export interface LeaderboardTile {
 export interface LeaderboardEntry {
   rank: number;
   playerName: string;
+  /** True when the score was posted by a guest (no authenticated account). */
+  isGuest: boolean;
   score: number;
   ascensionLevel: number;
   runCompleted: boolean;
@@ -46,23 +49,30 @@ export async function fetchLeaderboard(period: LeaderboardPeriod): Promise<Leade
   const sb = getSupabase();
   if (!sb) return [];
 
-  let query = sb
-    .from('scores')
-    .select('final_score, ascension_level, run_completed, run_duration_seconds, character, created_at, player_name, tiles, artifacts')
-    .order('final_score', { ascending: false })
-    .limit(100);
+  return withSyncIndicator(async () => {
+    let query = sb
+      .from('scores')
+      .select('final_score, ascension_level, run_completed, run_duration_seconds, character, created_at, player_id, player_name, tiles, artifacts')
+      .order('final_score', { ascending: false })
+      .limit(100);
 
-  const start = periodStart(period);
-  if (start) {
-    query = query.gte('created_at', start);
-  }
+    const start = periodStart(period);
+    if (start) {
+      query = query.gte('created_at', start);
+    }
 
-  const { data, error } = await query;
-  if (error || !data) return [];
+    const { data, error } = await query;
+    if (error || !data) return [];
+    return mapLeaderboardRows(data);
+  });
+}
+
+function mapLeaderboardRows(data: Array<Record<string, unknown>>): LeaderboardEntry[] {
 
   return data.map((row: Record<string, unknown>, i: number) => ({
     rank: i + 1,
     playerName: (row.player_name as string) ?? 'Anonymous',
+    isGuest: row.player_id == null,
     score: (row.final_score as number) ?? 0,
     ascensionLevel: (row.ascension_level as number) ?? 0,
     runCompleted: (row.run_completed as boolean) ?? false,

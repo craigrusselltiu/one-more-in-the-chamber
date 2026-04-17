@@ -2168,6 +2168,10 @@ export class CombatManager {
 
     await new Promise(r => setTimeout(r, Math.round(1000 / speed)));
 
+    // Artifact post-enemy-turn hooks (Sheriff's Domino) -- must run while the
+    // damage-tracking flags still reflect this turn, i.e. before resetTurnEffects.
+    this.artifacts.onAfterEnemyTurn();
+
     // Player block expires after the enemy turn so it absorbs incoming attacks
     this.player.resetTurnEffects();
     this.emitFullState();

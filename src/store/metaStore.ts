@@ -1,7 +1,28 @@
 import { create } from 'zustand';
 import type { ShopCategory } from '../data/shopItems';
+import { pushMeta } from '../services/syncService';
 
 const META_STORAGE_KEY = 'omitc-meta';
+
+/** Fire-and-forget push to Supabase, debounced so a burst of shop purchases
+ *  or reputation grants only fires once. No-op when logged out. */
+const REMOTE_PUSH_DELAY_MS = 1200;
+let pushTimer: ReturnType<typeof setTimeout> | null = null;
+function pushMetaDebounced(meta: MetaProgression): void {
+  if (pushTimer) clearTimeout(pushTimer);
+  pushTimer = setTimeout(() => {
+    pushTimer = null;
+    pushMeta({
+      reputation: meta.reputation,
+      unlockedArtifacts: meta.unlockedArtifacts,
+      unlockedEvents: meta.unlockedEvents,
+      unlockedCosmetics: meta.unlockedCosmetics,
+      unlockedLoadouts: meta.unlockedLoadouts,
+      unlockedCharacters: meta.unlockedCharacters,
+      highestAscensionCleared: meta.highestAscensionCleared,
+    }).catch((err) => console.error('[sync] pushMeta failed:', err));
+  }, REMOTE_PUSH_DELAY_MS);
+}
 
 interface MetaProgression {
   reputation: number;
@@ -35,6 +56,12 @@ interface MetaStore {
   setPlayerName: (name: string) => void;
   markTutorialComplete: (id: string) => void;
   isTutorialComplete: (id: string) => boolean;
+  /** Clear all account-scoped progression back to first-launch defaults. Used on sign-out
+   *  so a subsequent login doesn't merge the previous account's unlocks into the new one. */
+  resetToDefaults: () => void;
+  /** Apply a merged snapshot pulled from Supabase. Updates zustand + localStorage but
+   *  does NOT re-push to remote (preserves the just-pulled source of truth). */
+  hydrateFromRemote: (meta: Partial<MetaProgression>) => void;
 }
 
 const CATEGORY_KEY: Record<ShopCategory, keyof Pick<MetaProgression, 'unlockedArtifacts' | 'unlockedEvents' | 'unlockedCosmetics' | 'unlockedLoadouts' | 'unlockedCharacters'>> = {
@@ -67,10 +94,15 @@ function loadMeta(): MetaProgression {
   return { ...DEFAULT_META };
 }
 
-function persistMeta(meta: MetaProgression): void {
+function persistLocal(meta: MetaProgression): void {
   try {
     localStorage.setItem(META_STORAGE_KEY, JSON.stringify(meta));
   } catch { /* ignore */ }
+}
+
+function persistMeta(meta: MetaProgression): void {
+  persistLocal(meta);
+  pushMetaDebounced(meta);
 }
 
 export const useMetaStore = create<MetaStore>((set, get) => ({
@@ -192,4 +224,18 @@ export const useMetaStore = create<MetaStore>((set, get) => ({
   isTutorialComplete: (id) => {
     return get().meta.completedTutorials.includes(id);
   },
+
+  resetToDefaults: () =>
+    set(() => {
+      const meta: MetaProgression = { ...DEFAULT_META };
+      persistMeta(meta);
+      return { meta };
+    }),
+
+  hydrateFromRemote: (incoming) =>
+    set((state) => {
+      const meta: MetaProgression = { ...state.meta, ...incoming };
+      persistLocal(meta);
+      return { meta };
+    }),
 }));

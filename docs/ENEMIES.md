@@ -114,7 +114,7 @@ I want just the text prompt that I can copy straight into Gemini. No formatting,
 ## Early Normal Encounters
 - 1 Coyote
 - 1 Bandit
-- 2 Vultures
+- 2 Vultures (randomly make one of them have Summoned)
 
 ## Late Normal Encounters
 - 2 Coyote, 1 Summoned Coyotes

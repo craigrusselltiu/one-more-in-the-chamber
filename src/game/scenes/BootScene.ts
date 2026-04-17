@@ -107,11 +107,25 @@ export class BootScene extends Phaser.Scene {
     this.load.image('cardback', `${base}assets/events/cardback.png`);
     this.load.image('cardface', `${base}assets/events/cardface.png`);
     this.load.image('blur', `${base}assets/blur.png`);
-    // Sprites
+    // Sprites -- items sheet used directly by canvas-based SpriteIcon.
     this.load.spritesheet('items_sheet', `${base}assets/sprites/items_sheet.png`, {
       frameWidth: 16,
       frameHeight: 16,
     });
+    // Character/enemy sprites rendered by React <img> tags. Preloading here
+    // warms the browser HTTP cache so first-render on combat screens is instant
+    // and the loading bar reflects their download progress.
+    const SPRITE_IMAGES = [
+      'bandit', 'canary', 'canary_alt', 'card_shark', 'copperhead', 'corrupt_deputy',
+      'coyote', 'dust_devil', 'dusty', 'guard_dog', 'hangman', 'hellfire_preacher',
+      'ironeye', 'ironeye_alt', 'mad_prospector', 'minecart', 'mining_foreman',
+      'ore_golem', 'outlaw_king', 'pack_mule', 'powder_monkey', 'rattlesnake',
+      'reno', 'reno_attack', 'rust', 'rust_attack', 'saloon_brawler', 'shadow',
+      'sheriffs_shadow', 'train_guard', 'tumbleweed_golem', 'tunnel_rat', 'vulture',
+    ];
+    for (const name of SPRITE_IMAGES) {
+      this.load.image(`sprite_${name}`, `${base}assets/sprites/${name}.png`);
+    }
   }
 
   create(): void {

@@ -263,11 +263,19 @@ export class ArtifactSystem {
 
   onTurnEnd(_swapsRemaining?: number, player?: Player): void {
     // Iron Will: at or below 20% HP, gain 4 block
+    // Must run BEFORE the enemy turn so the block absorbs incoming damage.
     if (this.has('iron_will') && player && player.health <= player.maxHealth * 0.2) {
       player.addBlock(4);
     }
+  }
 
-    // Sheriff's Domino: if all enemy damage was blocked this turn, gain 7 block next turn
+  /**
+   * Called after the enemy turn resolves (and before the player's block resets),
+   * so that damage-tracking artifacts can inspect what happened.
+   */
+  onAfterEnemyTurn(): void {
+    // Sheriff's Domino: if every point of enemy damage was blocked this turn
+    // (and at least one enemy actually attacked), queue 7 block for next turn.
     if (this.has('sheriffs_domino') && this.enemyAttackedThisTurn && this.allDamageBlockedThisTurn) {
       this.dominoBonusBlock = 7;
     }

@@ -220,13 +220,22 @@ function TilesPopup({
       className="absolute inset-0 z-50 flex items-center justify-center bg-black/60 pointer-events-auto"
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
-      <div className="bg-stone-900 border border-stone-600 p-3" style={{ minWidth: 140 }} onClick={(e) => e.stopPropagation()}>
+      <div
+        className="rounded-sm p-3"
+        style={{ minWidth: 180, backgroundColor: 'rgba(28, 25, 23, 0.95)', boxShadow: '3px 3px 2px rgba(0,0,0,0.7)' }}
+        onClick={(e) => e.stopPropagation()}
+      >
         <div className="relative flex items-center justify-center mb-3">
-          <span className="text-white text-sm font-bold">Tiles</span>
+          <span
+            className="text-[11px] text-amber-400 font-bold uppercase"
+            style={{ WebkitTextStroke: '2px #000', paintOrder: 'stroke fill', letterSpacing: '1px' }}
+          >
+            Tiles
+          </span>
           <button
             onClick={onClose}
-            className="absolute right-0 w-4 h-4 flex items-center justify-center bg-stone-800/80 text-red-400 font-bold border border-red-900/50 hover:bg-red-900/40"
-            style={{ fontSize: '8px' }}
+            className="absolute right-0 w-4 h-4 flex items-center justify-center rounded-sm bg-red-900 text-red-200 hover:bg-red-800 active:translate-y-px transition-transform"
+            style={{ fontSize: '8px', boxShadow: '2px 2px 1px rgba(0,0,0,0.4)', cursor: 'pointer' }}
           >
             X
           </button>
