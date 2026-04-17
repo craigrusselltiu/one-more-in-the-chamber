@@ -494,8 +494,11 @@ export class Board {
       return { valid: false, matches: [] };
     }
 
-    // Valid swap: resolve all cascades (pass swap target for special tile placement)
-    const allMatches = await this.cascadeResolver.resolve(this, onCascadeStep, to);
+    // Valid swap: resolve all cascades. Pass BOTH swap endpoints so special
+    // tiles spawn at the player's intended position regardless of which end
+    // of the swap ended up in the forming match. Prefer `to` (destination)
+    // when both are in the match.
+    const allMatches = await this.cascadeResolver.resolve(this, onCascadeStep, [to, from]);
 
     // After cascade: check for no valid moves
     if (!this.hasValidMoves()) {

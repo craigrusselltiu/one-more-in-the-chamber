@@ -287,7 +287,7 @@ const medicineWagon: EventDefinition = {
   id: 'medicine_wagon',
   title: 'The Medicine Wagon',
   flavourText: "A gaudy wagon creaks to a stop on the dust road, its crooked sign proclaiming {{yellow:DOC HOPKINS' CURE-ALL}} in peeling gilt letters above shelves crowded with {{green:green glass bottles}}, herb bundles, and tins stamped with writhing serpents. The doc himself tips his bowler and smiles too wide beneath a waxed moustache, hands open in welcome, while his mule watches the horizon with the weary patience of a creature that has seen too many towns and too many funerals.\nSomething in one of the darker bottles {{red:shifts on its own}} when you step closer, and the liquid inside holds its shape a heartbeat too long, as if deciding whether to be medicine or something worse.",
-  align: 'right',
+  align: 'left',
   background: 'event_medicine.png',
   choices: [
     {

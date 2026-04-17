@@ -43,8 +43,11 @@ export class CascadeResolver {
   async resolve(
     board: Board,
     onStep?: (matches: MatchResult[]) => void | Promise<void>,
-    swapTarget?: GridPosition,
+    swapTarget?: GridPosition | GridPosition[],
   ): Promise<MatchResult[]> {
+    const swapTargets = swapTarget
+      ? (Array.isArray(swapTarget) ? swapTarget : [swapTarget])
+      : undefined;
     const allMatches: MatchResult[] = [];
     let matches = board.findMatches();
     let isFirstStep = true;
@@ -100,7 +103,7 @@ export class CascadeResolver {
       }
 
       // Step 2: Spawn special tiles at cleared positions
-      this.spawnSpecials(board, matches, isFirstStep ? swapTarget : undefined);
+      this.spawnSpecials(board, matches, isFirstStep ? swapTargets : undefined);
       isFirstStep = false;
 
       // Step 3: Apply gravity with animation
@@ -197,26 +200,32 @@ export class CascadeResolver {
    */
   /**
    * Choose where to spawn a special tile within a match.
-   * If swapTarget is set and is part of this match, spawn there (player swap).
+   * If any swapTarget position is part of this match, spawn there (player swap).
    * Otherwise pick a random position in the match (cascade).
    */
-  private pickSpawnPosition(tiles: GridPosition[], swapTarget?: GridPosition): GridPosition {
-    if (swapTarget) {
-      const atSwap = tiles.find(t => t.row === swapTarget.row && t.col === swapTarget.col);
-      if (atSwap) return atSwap;
+  private pickSpawnPosition(tiles: GridPosition[], swapTargets?: GridPosition[]): GridPosition {
+    if (swapTargets) {
+      for (const target of swapTargets) {
+        const atSwap = tiles.find(t => t.row === target.row && t.col === target.col);
+        if (atSwap) return atSwap;
+      }
     }
     return tiles[Math.floor(Math.random() * tiles.length)];
   }
 
-  private spawnSpecials(board: Board, matches: MatchResult[], swapTarget?: GridPosition): void {
+  private spawnSpecials(board: Board, matches: MatchResult[], swapTargets?: GridPosition[]): void {
     for (const match of matches) {
       if (match.isCross) {
         if (match.crossIntersections.length > 0) {
-          const inter = swapTarget
-            ? (match.crossIntersections.find(
-                i => i.row === swapTarget.row && i.col === swapTarget.col,
-              ) ?? match.crossIntersections[0])
-            : match.crossIntersections[0];
+          let inter: GridPosition = match.crossIntersections[0];
+          if (swapTargets) {
+            for (const target of swapTargets) {
+              const found = match.crossIntersections.find(
+                i => i.row === target.row && i.col === target.col,
+              );
+              if (found) { inter = found; break; }
+            }
+          }
           if (match.isShowdown) {
             // 5+ line AND a cross/L/T shape -> spawn BOTH a showdown (at the
             // intersection) and an explosive (at a non-intersection tile).
@@ -228,7 +237,7 @@ export class CascadeResolver {
               t => !intersectionKeys.has(`${t.row},${t.col}`),
             );
             if (nonIntersection.length > 0) {
-              const exPos = this.pickSpawnPosition(nonIntersection, swapTarget);
+              const exPos = this.pickSpawnPosition(nonIntersection, swapTargets);
               board.spawnSpecialTile(exPos.row, exPos.col, match.tileType, 'explosive');
             }
           } else {
@@ -239,14 +248,14 @@ export class CascadeResolver {
       }
 
       if (match.isShowdown && match.tiles.length > 0) {
-        const pos = this.pickSpawnPosition(match.tiles, swapTarget);
+        const pos = this.pickSpawnPosition(match.tiles, swapTargets);
         board.spawnSpecialTile(pos.row, pos.col, 'showdown', 'showdown');
       } else if (match.isExplosive && match.tiles.length > 0) {
-        const pos = this.pickSpawnPosition(match.tiles, swapTarget);
+        const pos = this.pickSpawnPosition(match.tiles, swapTargets);
         board.spawnSpecialTile(pos.row, pos.col, match.tileType, 'explosive');
-      } else if (this.threeMatchSpawnsExplosive && !this.threeMatchExplosiveUsed && match.length === 3 && match.tiles.length > 0 && swapTarget) {
+      } else if (this.threeMatchSpawnsExplosive && !this.threeMatchExplosiveUsed && match.length === 3 && match.tiles.length > 0 && swapTargets) {
         // Tinker's Wrench: first non-cascade 3-match each turn spawns an explosive tile
-        const pos = this.pickSpawnPosition(match.tiles, swapTarget);
+        const pos = this.pickSpawnPosition(match.tiles, swapTargets);
         board.spawnSpecialTile(pos.row, pos.col, match.tileType, 'explosive');
         this.threeMatchExplosiveUsed = true;
       }
