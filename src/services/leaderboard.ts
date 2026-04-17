@@ -15,6 +15,8 @@ export interface LeaderboardTile {
 export interface LeaderboardEntry {
   rank: number;
   playerName: string;
+  /** True when the score was posted by a guest (no authenticated account). */
+  isGuest: boolean;
   score: number;
   ascensionLevel: number;
   runCompleted: boolean;
@@ -48,7 +50,7 @@ export async function fetchLeaderboard(period: LeaderboardPeriod): Promise<Leade
 
   let query = sb
     .from('scores')
-    .select('final_score, ascension_level, run_completed, run_duration_seconds, character, created_at, player_name, tiles, artifacts')
+    .select('final_score, ascension_level, run_completed, run_duration_seconds, character, created_at, player_id, player_name, tiles, artifacts')
     .order('final_score', { ascending: false })
     .limit(100);
 
@@ -63,6 +65,7 @@ export async function fetchLeaderboard(period: LeaderboardPeriod): Promise<Leade
   return data.map((row: Record<string, unknown>, i: number) => ({
     rank: i + 1,
     playerName: (row.player_name as string) ?? 'Anonymous',
+    isGuest: row.player_id == null,
     score: (row.final_score as number) ?? 0,
     ascensionLevel: (row.ascension_level as number) ?? 0,
     runCompleted: (row.run_completed as boolean) ?? false,

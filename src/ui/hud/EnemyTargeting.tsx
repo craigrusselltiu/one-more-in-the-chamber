@@ -58,6 +58,7 @@ const ENEMY_SPRITE_SCALE: Record<string, number> = {
   ore_golem: 2.0,
   dusty_dan: 1.5,
   copperhead_cassidy: 1.5,
+  sheriffs_shadow: 1.5,
   outlaw_king: 1.5,
   outlaw_king_act1: 1.5,
   outlaw_king_act2: 1.5,

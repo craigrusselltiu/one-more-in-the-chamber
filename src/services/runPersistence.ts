@@ -5,10 +5,33 @@
 
 import { useRunStore } from '../store/runStore';
 import { saveRun, loadActiveRun } from './localSave';
+import { pushRun } from './syncService';
+import { getAuthState } from './auth';
 import type { RunState, MapNodeType } from '../types/game';
 
 let unsubscribe: (() => void) | null = null;
 let paused = false;
+
+/** Debounced remote push -- the run store mutates many times per turn during
+ *  combat; coalesce into at most one request per PUSH_INTERVAL_MS. */
+const PUSH_INTERVAL_MS = 1500;
+let pushTimer: ReturnType<typeof setTimeout> | null = null;
+let pendingPush: RunState | null = null;
+
+function schedulePush(run: RunState): void {
+  if (!getAuthState().isLoggedIn) return;
+  pendingPush = run;
+  if (pushTimer) return;
+  pushTimer = setTimeout(() => {
+    const snapshot = pendingPush;
+    pushTimer = null;
+    pendingPush = null;
+    if (snapshot) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      pushRun(snapshot as any).catch((err) => console.error('[sync] pushRun failed:', err));
+    }
+  }, PUSH_INTERVAL_MS);
+}
 
 /**
  * Pause auto-save. Used by events so that intermediate state changes
@@ -36,6 +59,7 @@ export function forceSaveRun(): void {
     saveRun(state.run).catch((err) => {
       console.error('[persist] run save failed:', err);
     });
+    schedulePush(state.run);
   }
 }
 
@@ -94,6 +118,7 @@ export function startRunPersistence(): void {
       saveRun(state.run).catch((err) => {
         console.error('[persist] run save failed:', err);
       });
+      schedulePush(state.run);
     }
   });
 }

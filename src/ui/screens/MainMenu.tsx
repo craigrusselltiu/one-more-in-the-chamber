@@ -1,10 +1,11 @@
-import { memo, useState } from 'react';
+import { memo, useEffect, useState } from 'react';
 import { EventBus, GameEvent } from '../../game/EventBus';
 import { useRunStore } from '../../store/runStore';
 import { useMetaStore } from '../../store/metaStore';
 import { checkForCombatResume } from '../../services/combatResume';
 import { calculateScore } from '../../utils/scoring';
 import { playHover } from '../../services/sfx';
+import { getAuthState, subscribeAuth, type AuthState } from '../../services/auth';
 import changelogRaw from '../../../CHANGELOG.md?raw';
 
 import type { Screen } from '../../App';
@@ -75,6 +76,8 @@ export const MainMenu = memo(function MainMenu() {
   const playerName = useMetaStore((s) => s.meta.playerName);
   const setPlayerName = useMetaStore((s) => s.setPlayerName);
   const [nameInput, setNameInput] = useState('');
+  const [auth, setAuth] = useState<AuthState>(() => ({ ...getAuthState() }));
+  useEffect(() => subscribeAuth(setAuth), []);
 
   const handleNewGame = () => {
 
@@ -176,6 +179,10 @@ export const MainMenu = memo(function MainMenu() {
     EventBus.emit(GameEvent.SCREEN_CHANGE, 'settings' satisfies Screen);
   };
 
+  const handleLogin = () => {
+    EventBus.emit(GameEvent.SCREEN_CHANGE, 'login' satisfies Screen);
+  };
+
   return (
     <div
       className="relative"
@@ -222,6 +229,42 @@ export const MainMenu = memo(function MainMenu() {
         <MenuButton label="Leaderboard" onClick={handleLeaderboard} />
         <MenuButton label="Changelog" onClick={() => setShowChangelog(true)} />
         <MenuButton label="Settings" onClick={handleSettings} />
+      </div>
+
+      {/* Account indicator -- bottom right: shows login button when logged out,
+          "signed in as" label when logged in. */}
+      <div className="absolute right-6 bottom-6">
+        {auth.isLoggedIn && auth.displayName ? (
+          <span
+            style={{
+              fontSize: '10px',
+              color: 'rgba(231, 229, 228, 0.7)',
+              WebkitTextStroke: '2px #000',
+              paintOrder: 'stroke fill',
+            }}
+          >
+            Signed in as <span style={{ color: '#fcd34d' }}>{auth.displayName}</span>
+          </span>
+        ) : (
+          <button
+            onClick={handleLogin}
+            onMouseEnter={playHover}
+            style={{
+              fontSize: '10px',
+              color: '#fcd34d',
+              WebkitTextStroke: '2px #000',
+              paintOrder: 'stroke fill',
+              letterSpacing: '1px',
+              cursor: 'pointer',
+              background: 'transparent',
+              border: 'none',
+              padding: 0,
+            }}
+            className="hover:brightness-125"
+          >
+            Log In / Sign Up
+          </button>
+        )}
       </div>
 
       {/* Confirmation dialog */}
@@ -283,8 +326,9 @@ export const MainMenu = memo(function MainMenu() {
         </div>
       )}
 
-      {/* Name prompt -- shown once on first visit */}
-      {!playerName && (
+      {/* Name prompt -- shown once on first visit (guest mode only; signed-in users
+          get their name from public.players via hydrateProfile). */}
+      {!playerName && !auth.isLoggedIn && (
         <div className="absolute inset-0 flex items-center justify-center bg-black/80 z-20">
           <div className="border border-stone-600 bg-stone-900 p-6 text-center" style={{ width: 280 }}>
             <h2 className="text-amber-400 text-sm font-bold mb-3">What is your name?</h2>

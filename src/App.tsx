@@ -13,6 +13,7 @@ import { ArtifactScreen } from './ui/screens/ArtifactScreen';
 import { ReputationShopScreen } from './ui/screens/ReputationShopScreen';
 import { LeaderboardScreen } from './ui/screens/LeaderboardScreen';
 import { SettingsScreen } from './ui/screens/SettingsScreen';
+import { LoginScreen, PickNameScreen } from './ui/screens/LoginScreen';
 import { CombatHUD } from './ui/hud/CombatHUD';
 import { FloatingNumbers } from './ui/hud/FloatingNumbers';
 import { NonCombatFloats } from './ui/hud/NonCombatFloats';
@@ -26,6 +27,7 @@ import { EventBus, GameEvent } from './game/EventBus';
 import { useRunStore } from './store/runStore';
 import { useCombatStore } from './store/combatStore';
 import { useGameScale, UI_WIDTH, UI_HEIGHT } from './ui/hooks/useGameScale';
+import { subscribeAuth } from './services/auth';
 import type { CombatConfig, CombatResult } from './game/combat/CombatManager';
 import type { CombatSnapshot } from './types/combatSnapshot';
 import { saveCombatSnapshot, clearCombatSnapshot, purgeCorruptSnapshots } from './services/localSave';
@@ -65,7 +67,9 @@ export type Screen =
   | 'artifact'
   | 'reputation-shop'
   | 'leaderboard'
-  | 'settings';
+  | 'settings'
+  | 'login'
+  | 'pick-name';
 
 const ENCOUNTER_ROLLERS: Record<Act, {
   regular: (r: () => number, nodeIndex?: number, outlawKingAvailable?: boolean) => EnemyDefinition[];
@@ -282,8 +286,18 @@ export default function App() {
 
     EventBus.on(GameEvent.SCREEN_CHANGE, handleScreenChange);
 
+    // Force OAuth first-time signers to pick a display name before anything else.
+    // Skip while the user is on the login screen -- LoginScreen handles its own
+    // claim flow and a redirect here would interrupt signup mid-submit.
+    const unsubscribeAuth = subscribeAuth((s) => {
+      if (!s.isLoggedIn || !s.needsDisplayName) return;
+      if (lastAppliedScreen === 'login' || lastAppliedScreen === 'pick-name') return;
+      EventBus.emit(GameEvent.SCREEN_CHANGE, 'pick-name' satisfies Screen);
+    });
+
     return () => {
       EventBus.off(GameEvent.SCREEN_CHANGE, handleScreenChange);
+      unsubscribeAuth();
       gameRef.current?.destroy(true);
       gameRef.current = null;
     };
@@ -645,6 +659,25 @@ export default function App() {
             <feFlood floodColor="white" result="white" />
             <feComposite in="white" in2="ring" operator="in" />
           </filter>
+          {/* Per-rarity artifact outline filters. Same dilate+subtract pattern as
+              the enemy target outline, just with rarity-dim colors flooded in.
+              Used by ArtifactBar to draw the HUD rarity ring. */}
+          {(
+            [
+              ['common', '#9a9a9a'],
+              ['uncommon', '#4a9a4a'],
+              ['rare', '#4070b0'],
+              ['legendary', '#b09830'],
+              ['corrupt', '#a82020'],
+            ] as const
+          ).map(([name, color]) => (
+            <filter key={name} id={`artifact-outline-${name}`} x="-20%" y="-20%" width="140%" height="140%">
+              <feMorphology in="SourceAlpha" operator="dilate" radius="1.25" result="dilated" />
+              <feComposite in="dilated" in2="SourceAlpha" operator="out" result="ring" />
+              <feFlood floodColor={color} result="color" />
+              <feComposite in="color" in2="ring" operator="in" />
+            </filter>
+          ))}
         </defs>
       </svg>
 
@@ -704,6 +737,8 @@ export default function App() {
             {screen === 'reputation-shop' && <ReputationShopScreen />}
             {screen === 'leaderboard' && <LeaderboardScreen />}
             {screen === 'settings' && <SettingsScreen />}
+            {screen === 'login' && <LoginScreen />}
+            {screen === 'pick-name' && <PickNameScreen />}
           </div>
         )}
 

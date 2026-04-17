@@ -93,6 +93,9 @@ export class CombatScene extends Phaser.Scene {
       bg.setDisplaySize(GAME_WIDTH, GAME_HEIGHT);
       bg.setDepth(-10);
       bg.setAlpha(0.4);
+      // Photographic backgrounds look aliased under nearest-neighbor sampling
+      // (pixelArt is scene-global); force LINEAR for this sprite only.
+      bg.texture.setFilter(Phaser.Textures.FilterMode.LINEAR);
     } else {
       // Fallback: solid color rectangle if no background texture loaded
       const fallback = this.add.rectangle(GAME_WIDTH / 2, GAME_HEIGHT / 2, GAME_WIDTH, GAME_HEIGHT, 0x3a2a1e);

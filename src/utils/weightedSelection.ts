@@ -6,6 +6,7 @@ const BASE_RARITY_WEIGHTS: Record<ArtifactRarity, number> = {
   uncommon: 25,
   rare: 12,
   legendary: 3,
+  corrupt: 0,
 };
 
 /** Boss reward weights -- bosses only drop Rare or Legendary. */
@@ -14,6 +15,7 @@ const BASE_BOSS_RARITY_WEIGHTS: Record<ArtifactRarity, number> = {
   uncommon: 0,
   rare: 25,
   legendary: 75,
+  corrupt: 0,
 };
 
 /**

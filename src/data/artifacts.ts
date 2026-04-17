@@ -1,12 +1,13 @@
 import type { TraitId, CharacterId } from '../types/game';
 
-export type ArtifactRarity = 'common' | 'uncommon' | 'rare' | 'legendary';
+export type ArtifactRarity = 'common' | 'uncommon' | 'rare' | 'legendary' | 'corrupt';
 
 export const RARITY_COLORS: Record<ArtifactRarity, string> = {
   common: '#e8e8e8',
   uncommon: '#6ee76e',
   rare: '#5b9bf5',
   legendary: '#f5d442',
+  corrupt: '#e84545',
 };
 
 export const RARITY_COLORS_DIM: Record<ArtifactRarity, string> = {
@@ -14,6 +15,7 @@ export const RARITY_COLORS_DIM: Record<ArtifactRarity, string> = {
   uncommon: '#4a9a4a',
   rare: '#4070b0',
   legendary: '#b09830',
+  corrupt: '#a82020',
 };
 
 export const RARITY_BREATHE_CLASS: Record<ArtifactRarity, string> = {
@@ -21,6 +23,7 @@ export const RARITY_BREATHE_CLASS: Record<ArtifactRarity, string> = {
   uncommon: 'rarity-uncommon-breathe',
   rare: 'rarity-rare-breathe',
   legendary: 'rarity-legendary-breathe',
+  corrupt: 'rarity-corrupt-breathe',
 };
 
 export const RARITY_LABELS: Record<ArtifactRarity, string> = {
@@ -28,6 +31,7 @@ export const RARITY_LABELS: Record<ArtifactRarity, string> = {
   uncommon: 'Uncommon',
   rare: 'Rare',
   legendary: 'Legendary',
+  corrupt: 'Corrupt',
 };
 
 export interface ArtifactDefinition {
@@ -602,7 +606,7 @@ export const ARTIFACTS: ArtifactDefinition[] = [
     description: "Some mornings, you just aren't ready.",
     tags: ['corrupt'],
     effect: 'The first swap each combat generates no resources.',
-    rarity: 'common',
+    rarity: 'corrupt',
   },
   {
     id: 'dry_atmosphere',
@@ -610,7 +614,7 @@ export const ARTIFACTS: ArtifactDefinition[] = [
     description: 'Sun bakes the blood before it can heal.',
     tags: ['corrupt'],
     effect: 'All healing is reduced by 10%.',
-    rarity: 'uncommon',
+    rarity: 'corrupt',
   },
   {
     id: 'tinnitus',
@@ -618,6 +622,6 @@ export const ARTIFACTS: ArtifactDefinition[] = [
     description: 'The first shot always rings twice.',
     tags: ['corrupt'],
     effect: 'Enemy intents are hidden on the first turn of each combat.',
-    rarity: 'rare',
+    rarity: 'corrupt',
   },
 ];

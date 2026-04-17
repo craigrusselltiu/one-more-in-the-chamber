@@ -31,8 +31,10 @@ interface SpriteIconProps {
   tint?: string;
   /** Alpha for the tint overlay (0-1). Default 0.3. */
   tintAlpha?: number;
-  /** Hex color for a 1px outline that follows the sprite shape. */
+  /** Hex color for an outline that follows the sprite shape. */
   outline?: string;
+  /** Outline thickness in pixels (default 1). */
+  outlineWidth?: number;
 }
 
 /**
@@ -48,6 +50,7 @@ export const SpriteIcon = memo(function SpriteIcon({
   tint,
   tintAlpha = 0.3,
   outline,
+  outlineWidth = 1,
 }: SpriteIconProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
@@ -72,9 +75,32 @@ export const SpriteIcon = memo(function SpriteIcon({
       const sy = row * FRAME_SIZE;
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      // Outline: draw sprite shifted in 4 cardinal directions, color-fill, then draw original on top
+      // Outline: draw sprite shifted, color-fill, then draw original on top.
+      //   width 1   -> 4 cardinal offsets at d=1 (thin)
+      //   width 1.5 -> 8 neighbors at d=1 (cardinal + diagonal; fills diagonal gaps)
+      //   width >=2 -> full square ring out to that Chebyshev radius
       if (outline) {
-        for (const [dx, dy] of [[0, -1], [0, 1], [-1, 0], [1, 0]]) {
+        const w = Math.max(1, outlineWidth);
+        let offsets: [number, number][];
+        if (w <= 1) {
+          offsets = [[0, -1], [0, 1], [-1, 0], [1, 0]];
+        } else if (w < 2) {
+          offsets = [
+            [-1, -1], [0, -1], [1, -1],
+            [-1, 0],           [1, 0],
+            [-1, 1],  [0, 1],  [1, 1],
+          ];
+        } else {
+          offsets = [];
+          const r = Math.floor(w);
+          for (let dy = -r; dy <= r; dy++) {
+            for (let dx = -r; dx <= r; dx++) {
+              if (dx === 0 && dy === 0) continue;
+              offsets.push([dx, dy]);
+            }
+          }
+        }
+        for (const [dx, dy] of offsets) {
           ctx.drawImage(img, sx, sy, FRAME_SIZE, FRAME_SIZE, dx, dy, canvasSize, canvasSize);
         }
         ctx.globalCompositeOperation = 'source-atop';
@@ -95,7 +121,7 @@ export const SpriteIcon = memo(function SpriteIcon({
         ctx.globalCompositeOperation = 'source-over';
       }
     });
-  }, [frame, intScale, canvasSize, tint, tintAlpha, outline]);
+  }, [frame, intScale, canvasSize, tint, tintAlpha, outline, outlineWidth]);
 
   return (
     <canvas

@@ -5,18 +5,39 @@
 
 import { getSupabase } from './supabase';
 import { syncOnLogin } from './syncService';
+import { getMyPlayer } from './players';
+import { useMetaStore } from '../store/metaStore';
+import { EventBus, GameEvent } from '../game/EventBus';
 import type { Session, User } from '@supabase/supabase-js';
 
 export interface AuthState {
   isLoggedIn: boolean;
   userId: string | null;
   displayName: string | null;
+  /** True when the user is authenticated but has no players row yet (OAuth first sign-in). */
+  needsDisplayName: boolean;
+}
+
+/** Listeners notified whenever auth state changes (login/logout/display-name set). */
+type Listener = (state: AuthState) => void;
+const listeners = new Set<Listener>();
+
+export function subscribeAuth(fn: Listener): () => void {
+  listeners.add(fn);
+  return () => { listeners.delete(fn); };
+}
+
+function notify(): void {
+  for (const l of listeners) {
+    try { l({ ...state }); } catch { /* ignore */ }
+  }
 }
 
 const state: AuthState = {
   isLoggedIn: false,
   userId: null,
   displayName: null,
+  needsDisplayName: false,
 };
 
 let initialized = false;
@@ -30,11 +51,37 @@ function applySession(session: Session | null): void {
       session.user.user_metadata?.full_name ??
       session.user.email ??
       null;
+    state.needsDisplayName = false;
   } else {
     state.isLoggedIn = false;
     state.userId = null;
     state.displayName = null;
+    state.needsDisplayName = false;
   }
+}
+
+/** Fetch the authoritative display name from the players table and push it into metaStore.
+ *  If the user has no players row yet (OAuth first sign-in), flag needsDisplayName. */
+async function hydrateProfile(): Promise<void> {
+  const profile = await getMyPlayer();
+  if (profile) {
+    state.displayName = profile.displayName;
+    state.needsDisplayName = false;
+    useMetaStore.getState().setPlayerName(profile.displayName);
+  } else {
+    state.needsDisplayName = true;
+  }
+  notify();
+}
+
+/** Post-login flow: sync progression, then pull the display name into the local store. */
+async function onLogin(): Promise<void> {
+  try {
+    await syncOnLogin();
+  } catch (err) {
+    console.error('[auth] syncOnLogin failed:', err);
+  }
+  await hydrateProfile();
 }
 
 /** Initialize auth listener. Call once at app startup. */
@@ -48,13 +95,21 @@ export async function initAuth(): Promise<void> {
   // Restore existing session
   const { data } = await sb.auth.getSession();
   applySession(data.session);
+  if (state.isLoggedIn) {
+    // Session restored from a previous visit -- hydrate the display name from the
+    // players table. No sync needed on passive restore (data already in local IDB).
+    hydrateProfile().catch(console.error);
+  }
+  notify();
 
   // Listen for auth changes (login, logout, token refresh)
   sb.auth.onAuthStateChange((_event, session) => {
     const wasLoggedIn = state.isLoggedIn;
     applySession(session);
     if (!wasLoggedIn && state.isLoggedIn) {
-      syncOnLogin().catch(console.error);
+      onLogin().catch(console.error);
+    } else {
+      notify();
     }
   });
 }
@@ -99,6 +154,20 @@ export async function logout(): Promise<void> {
   state.isLoggedIn = false;
   state.userId = null;
   state.displayName = null;
+  state.needsDisplayName = false;
+  // Wipe local account-scoped progression so a subsequent login on this device
+  // doesn't merge the previous account's unlocks into the new account.
+  useMetaStore.getState().resetToDefaults();
+  notify();
+  EventBus.emit(GameEvent.SCREEN_CHANGE, 'main-menu');
+}
+
+/** Called after a successful display-name claim so UI can advance past the pick-name screen. */
+export function markDisplayNameSet(name: string): void {
+  state.displayName = name;
+  state.needsDisplayName = false;
+  useMetaStore.getState().setPlayerName(name);
+  notify();
 }
 
 /** Get the current Supabase User, if any. */

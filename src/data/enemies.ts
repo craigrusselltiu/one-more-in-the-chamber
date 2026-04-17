@@ -168,7 +168,7 @@ export const ACT1_ENEMIES: Record<string, EnemyDefinition> = { ...ACT1_NORMAL, .
 export const ACT1_EARLY_ENCOUNTERS: string[][] = [
   ['coyote'],
   ['bandit'],
-  ['vulture', 'vulture'],
+  ['vulture:rsummoned', 'vulture:rsummoned'],
 ];
 
 export const ACT1_LATE_ENCOUNTERS: string[][] = [

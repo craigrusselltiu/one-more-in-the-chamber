@@ -148,6 +148,15 @@
   animation: rarity-sweep 5s linear infinite;
   font-weight: bold;
 }
+.rarity-corrupt-breathe {
+  background: linear-gradient(90deg, #7a1818, #e84545, #ff9a9a, #e84545, #7a1818, #e84545, #ff9a9a, #e84545, #7a1818);
+  background-size: 300% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: rarity-sweep 5s linear infinite;
+  font-weight: bold;
+}
 
 /* Screen transition: black wipe left-to-right */
 @keyframes wipe-in {

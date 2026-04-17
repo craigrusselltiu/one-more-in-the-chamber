@@ -118,6 +118,9 @@ export const LeaderboardScreen = memo(function LeaderboardScreen() {
                 <div className="w-36 min-w-0">
                   <span className="text-stone-200 text-sm truncate block">
                     {entry.playerName}
+                    {entry.isGuest && (
+                      <span className="text-stone-500 text-xs ml-1">(Guest)</span>
+                    )}
                   </span>
                 </div>
                 <div className="flex-1 flex items-center gap-0.5 flex-wrap">

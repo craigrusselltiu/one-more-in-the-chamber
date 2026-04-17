@@ -1,6 +1,6 @@
 import { memo } from 'react';
 import { useRunStore } from '../../store/runStore';
-import { ARTIFACTS, RARITY_BREATHE_CLASS, RARITY_COLORS_DIM } from '../../data/artifacts';
+import { ARTIFACTS, RARITY_BREATHE_CLASS } from '../../data/artifacts';
 import { ARTIFACT_FRAMES } from '../../data/spriteConfig';
 import { SpriteIcon } from '../components/SpriteIcon';
 import { Tooltip } from '../components/Tooltip';
@@ -117,11 +117,16 @@ export const ArtifactBar = memo(function ArtifactBar() {
           ) : undefined} text={def ? undefined : inst.id}>
             <div style={inst.used ? { filter: 'grayscale(1) brightness(0.55)' } : undefined}>
               {ARTIFACT_FRAMES[inst.id] != null ? (
-                <SpriteIcon
-                  frame={ARTIFACT_FRAMES[inst.id]}
-                  scale={1}
-                  outline={RARITY_COLORS_DIM[def?.rarity ?? 'common']}
-                />
+                <div className="relative" style={{ width: 16, height: 16 }}>
+                  <SpriteIcon frame={ARTIFACT_FRAMES[inst.id]} scale={1} />
+                  {/* Duplicate rendered through the rarity filter: only the dilated ring is visible. */}
+                  <div
+                    className="absolute top-0 left-0 pointer-events-none"
+                    style={{ filter: `url(#artifact-outline-${def?.rarity ?? 'common'})` }}
+                  >
+                    <SpriteIcon frame={ARTIFACT_FRAMES[inst.id]} scale={1} />
+                  </div>
+                </div>
               ) : (
                 <div
                   className="flex items-center justify-center text-[6px] text-white font-bold"
