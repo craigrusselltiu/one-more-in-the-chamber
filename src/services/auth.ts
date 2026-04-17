@@ -9,7 +9,12 @@ import { getMyPlayer } from './players';
 import { useMetaStore } from '../store/metaStore';
 import { useRunStore } from '../store/runStore';
 import { clearKicked } from './kickout';
-import { abandonOtherActiveRuns, claimAllMyActiveRuns } from './syncService';
+import {
+  abandonOtherActiveRuns,
+  claimAllMyActiveRuns,
+  startOwnershipWatcher,
+  stopOwnershipWatcher,
+} from './syncService';
 import { EventBus, GameEvent } from '../game/EventBus';
 import type { Session, User } from '@supabase/supabase-js';
 
@@ -135,6 +140,9 @@ async function onLogin(): Promise<void> {
     loginSyncing = false;
     notifyLoginSync();
   }
+  // Start polling the server for ownership changes so takeovers mid-idle
+  // (e.g. while on the main menu) still trigger the kickout overlay.
+  startOwnershipWatcher();
 }
 
 /** Initialize auth listener. Call once at app startup. */
@@ -155,6 +163,9 @@ export async function initAuth(): Promise<void> {
     // Claim ownership of our active run(s) with this tab's new SESSION_ID so
     // the first pushRun doesn't false-kick against the old tab's session_id.
     claimAllMyActiveRuns().catch(console.error);
+    // Start the periodic ownership watcher so takeovers from another device
+    // trigger the kickout overlay even if we're idle on the main menu.
+    startOwnershipWatcher();
   }
   notify();
 
@@ -205,44 +216,35 @@ export async function loginWithGoogle(): Promise<{ error: string | null }> {
 }
 
 export async function logout(): Promise<void> {
-  // 1. While we're still authenticated, mark any server active runs for this
-  // player as 'abandoned' so they don't linger as orphans on the backend.
-  try {
-    await abandonOtherActiveRuns();
-  } catch (err) {
-    console.error('[auth] abandonOtherActiveRuns failed:', err);
-  }
-
-  // 2. Flip all local UI state synchronously so MainMenu renders as logged-out
-  // the moment the wipe finishes -- we don't wait on async work below.
+  // --- Step 1: ALL synchronous UI updates first so the overlay and screen
+  // change happen immediately, regardless of how slow network cleanup is. ---
   state.isLoggedIn = false;
   state.userId = null;
   state.displayName = null;
   state.needsDisplayName = false;
-  // Wipe account-scoped progression so a subsequent login doesn't merge
-  // the previous account's unlocks into the new account.
   useMetaStore.getState().resetToDefaults();
-  // Restore pre-login guest name (if any) so returning guests aren't
-  // re-prompted for "What is your name?".
   const priorGuestName = readGuestNameStash();
   if (priorGuestName) useMetaStore.getState().setPlayerName(priorGuestName);
-  // Drop the kickout/sync overlays and notify auth subscribers before the
-  // screen transition so MainMenu renders as logged-out.
   clearKicked();
+  stopOwnershipWatcher();
   notify();
   EventBus.emit(GameEvent.SCREEN_CHANGE, 'main-menu');
 
-  // 3. Async cleanup: fire-and-forget. Screen has already transitioned.
-  const sb = getSupabase();
-  if (sb) {
-    try { await sb.auth.signOut(); } catch (err) { console.error('[auth] signOut failed:', err); }
-  }
-  try {
-    // Drop the local active run (zustand + IndexedDB + combat snapshot).
-    await useRunStore.getState().clearRun();
-  } catch (err) {
-    console.error('[auth] clearRun failed:', err);
-  }
+  // --- Step 2: fire-and-forget cleanup. Supabase's JWT stays valid in the
+  // client's storage until signOut completes, so abandon can still authorize
+  // against RLS even though our local auth state flipped above. ---
+  (async () => {
+    try {
+      await abandonOtherActiveRuns();
+    } catch (err) { console.error('[auth] abandonOtherActiveRuns failed:', err); }
+    const sb = getSupabase();
+    if (sb) {
+      try { await sb.auth.signOut(); } catch (err) { console.error('[auth] signOut failed:', err); }
+    }
+    try {
+      await useRunStore.getState().clearRun();
+    } catch (err) { console.error('[auth] clearRun failed:', err); }
+  })();
 }
 
 /** Called after a successful display-name claim so UI can advance past the pick-name screen. */

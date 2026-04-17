@@ -283,6 +283,61 @@ export async function claimAllMyActiveRuns(): Promise<void> {
   if (error) console.error('[sync] claimAllMyActiveRuns failed:', error);
 }
 
+// ---------- Ownership watcher (periodic kick detection) ----------
+//
+// pushRun is our primary write path, and it detects session_id mismatches
+// on write. But a user idling on the main menu or any non-combat screen
+// wouldn't push anything, so a takeover from another device would be
+// invisible until they started a run again. The watcher polls every
+// WATCH_INTERVAL_MS and on tab-visible; mismatch -> notifyKicked.
+
+const WATCH_INTERVAL_MS = 20_000;
+let watchTimer: ReturnType<typeof setInterval> | null = null;
+let watchVisibilityHandler: (() => void) | null = null;
+
+async function checkOwnership(): Promise<void> {
+  const sb = getSupabase();
+  const { userId, isLoggedIn } = getAuthState();
+  if (!sb || !userId || !isLoggedIn) return;
+  const { data, error } = await sb
+    .from('runs')
+    .select('session_id')
+    .eq('player_id', userId)
+    .eq('status', 'active');
+  if (error || !data) return;
+  for (const row of data as Array<{ session_id: string | null }>) {
+    if (row.session_id && row.session_id !== SESSION_ID) {
+      notifyKicked();
+      return;
+    }
+  }
+}
+
+export function startOwnershipWatcher(): void {
+  stopOwnershipWatcher();
+  watchTimer = setInterval(() => { checkOwnership().catch(() => {}); }, WATCH_INTERVAL_MS);
+  watchVisibilityHandler = () => {
+    if (document.visibilityState === 'visible') {
+      checkOwnership().catch(() => {});
+    }
+  };
+  document.addEventListener('visibilitychange', watchVisibilityHandler);
+  // Fire one immediately so a tab that was backgrounded during a takeover
+  // discovers the kick as soon as the watcher starts.
+  checkOwnership().catch(() => {});
+}
+
+export function stopOwnershipWatcher(): void {
+  if (watchTimer) {
+    clearInterval(watchTimer);
+    watchTimer = null;
+  }
+  if (watchVisibilityHandler) {
+    document.removeEventListener('visibilitychange', watchVisibilityHandler);
+    watchVisibilityHandler = null;
+  }
+}
+
 /** Push the current meta progression snapshot to remote. Fire-and-forget. */
 export async function pushMeta(meta: {
   reputation: number;

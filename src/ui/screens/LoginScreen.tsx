@@ -400,7 +400,7 @@ export const LoginScreen = memo(function LoginScreen() {
           value={email}
           onChange={setEmail}
           placeholder="you@example.com"
-          autoFocus
+          autoFocus={!email}
           disabled={submitting}
         />
         <Field
@@ -409,6 +409,7 @@ export const LoginScreen = memo(function LoginScreen() {
           value={password}
           onChange={setPassword}
           placeholder="at least 6 characters"
+          autoFocus={!!email}
           disabled={submitting}
         />
         {tab === 'signup' && (
