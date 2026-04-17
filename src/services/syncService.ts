@@ -283,6 +283,74 @@ export async function claimAllMyActiveRuns(): Promise<void> {
   if (error) console.error('[sync] claimAllMyActiveRuns failed:', error);
 }
 
+/**
+ * Pull remote meta + runs into local, unconditionally. No merge, no push-back.
+ *
+ * Used on passive session restore (tab reopen) so manual DB edits in Supabase
+ * reliably take effect on the next page load. Tradeoff: if the user has local
+ * meta changes that haven't been pushed yet (still inside the 1.2s debounce),
+ * those are lost. Acceptable because persistMeta writes the local cache
+ * immediately and the debounced push fires on the NEXT mutation anyway.
+ */
+export async function pullRemoteStateOverwriteLocal(): Promise<void> {
+  const sb = getSupabase();
+  const { userId } = getAuthState();
+  if (!sb || !userId) return;
+
+  return withSyncIndicator(async () => {
+    // --- Meta ---
+    try {
+      const { data: remote } = await sb
+        .from('meta_progression')
+        .select('*')
+        .eq('player_id', userId)
+        .maybeSingle();
+      if (remote) {
+        const r = remote as MetaRow & { updated_at?: string | null };
+        useMetaStore.getState().hydrateFromRemote({
+          reputation: r.reputation,
+          unlockedArtifacts: r.unlocked_artifacts,
+          unlockedEvents: r.unlocked_events,
+          unlockedCosmetics: r.unlocked_cosmetics,
+          unlockedLoadouts: r.unlocked_loadouts,
+          unlockedCharacters: r.unlocked_characters,
+          highestAscensionCleared: r.highest_ascension_cleared,
+        });
+        await saveMeta('progression', {
+          reputation: r.reputation,
+          unlockedArtifacts: r.unlocked_artifacts,
+          unlockedEvents: r.unlocked_events,
+          unlockedCosmetics: r.unlocked_cosmetics,
+          unlockedLoadouts: r.unlocked_loadouts,
+          unlockedCharacters: r.unlocked_characters,
+          highestAscensionCleared: r.highest_ascension_cleared,
+        });
+        if (r.updated_at) markLocalMetaSynced(r.updated_at);
+      }
+    } catch (err) {
+      console.error('[sync] pullRemoteStateOverwriteLocal meta failed:', err);
+    }
+
+    // --- Active run ---
+    try {
+      const { data: remoteRuns } = await sb
+        .from('runs')
+        .select('*')
+        .eq('player_id', userId)
+        .eq('status', 'active');
+      if (remoteRuns && remoteRuns.length > 0) {
+        const active = remoteRuns[0] as RunRow;
+        const pulled = await pullRemoteRun(sb, active);
+        await saveRun(pulled);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        useRunStore.getState().restoreRun(pulled as any);
+      }
+    } catch (err) {
+      console.error('[sync] pullRemoteStateOverwriteLocal runs failed:', err);
+    }
+  });
+}
+
 // ---------- Ownership watcher (periodic kick detection) ----------
 //
 // pushRun is our primary write path, and it detects session_id mismatches

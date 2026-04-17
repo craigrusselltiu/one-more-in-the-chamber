@@ -14,6 +14,7 @@ import {
   startOwnershipWatcher,
   stopOwnershipWatcher,
   syncOnLogin,
+  pullRemoteStateOverwriteLocal,
 } from './syncService';
 import { EventBus, GameEvent } from '../game/EventBus';
 import type { Session, User } from '@supabase/supabase-js';
@@ -162,12 +163,13 @@ export async function initAuth(): Promise<void> {
     hydrateProfile().catch(console.error);
     // 2. Claim ownership before anything else reads session_id, so the
     //    watcher's first poll and the first pushRun don't false-kick us.
-    // 3. Pull remote state (meta, runs, scores) so Supabase edits (e.g.
-    //    dev changes to reputation or run gold) take effect on reopen.
+    // 3. Pull-only: overwrite local with whatever's on the server, no
+    //    merge and no push-back. This makes DB edits unambiguously take
+    //    effect without the merge logic second-guessing the dev.
     // 4. THEN start the periodic ownership watcher.
     claimAllMyActiveRuns()
       .catch(console.error)
-      .then(() => syncOnLogin())
+      .then(() => pullRemoteStateOverwriteLocal())
       .catch(console.error)
       .finally(() => startOwnershipWatcher());
   }
