@@ -822,7 +822,7 @@ export default function App() {
           className="absolute right-2 bottom-1 pointer-events-none z-[60]"
           style={{ fontSize: '9px', color: 'rgba(255,255,255,0.3)' }}
         >
-          Pre-alpha v0.6.8
+          Pre-alpha v0.6.9
         </span>
       </div>
     </div>

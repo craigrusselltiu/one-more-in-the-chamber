@@ -4,23 +4,14 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
-## v0.6.10
-
-### Added
-- One-active-run-per-player enforcement. New Supabase migration `20260418_one_active_run.sql` cleans up any existing duplicate active rows, adds a `runs.session_id uuid` column, and a partial unique index `(player_id) WHERE status = 'active'` so the server rejects a second active run.
-- Device-ownership tracking via a per-tab `SESSION_ID`. On login sync the current tab claims ownership of the active run; every subsequent `pushRun` updates with an ownership filter and detects a stolen session. Mismatch -> kickout overlay.
-- Kickout overlay ("Signed In Elsewhere") that blocks interaction when another tab/device has taken over, with a single "Back to Main Menu" button that signs out and restores the pre-login guest name.
-- Login screen remembers the last successfully-used email in localStorage and prefills it on next visit (`omitc-last-login-email`).
-
-### Changed
-- `clearRun` (Main Menu "Delete & Start New", logout) now marks the server row as `abandoned` via `abandonOtherActiveRuns()` in addition to deleting locally. No more orphan server-side active runs.
-- `logout` restructured so the screen change + overlay dismiss happen synchronously before any async Supabase work, so clicking "Back to Main Menu" from the kickout overlay no longer leaves the user staring at a blurred screen.
-- On passive session restore (same browser/tab reopening), `initAuth` now calls `claimAllMyActiveRuns()` so the new tab's `SESSION_ID` replaces the prior tab's before any push fires. Fixes a false self-kick on quit-and-return within the same browser.
-
 ## v0.6.9
 
 ### Added
 - Accounts: email/password + Google OAuth via Supabase, with a new tabbed Log In / Sign Up screen, Pick-Name screen for OAuth first-timers, and Sign Out in Settings. Logout clears local meta progression and the active run so a subsequent login on a shared device can't leak unlocks or let someone continue another account's run as a guest.
+- One-active-run-per-player enforcement. New Supabase migration `20260418_one_active_run.sql` cleans up any existing duplicate active rows, adds a `runs.session_id uuid` column, and a partial unique index `(player_id) WHERE status = 'active'` so the server rejects a second active run.
+- Device-ownership tracking via a per-tab `SESSION_ID`. On login sync the current tab claims ownership of the active run; every subsequent `pushRun` updates with an ownership filter and detects a stolen session. Mismatch -> kickout overlay.
+- Kickout overlay ("Signed In Elsewhere") that blocks interaction when another tab/device has taken over, with a single "Back to Main Menu" button that signs out and restores the pre-login guest name.
+- Login screen remembers the last successfully-used email in localStorage and prefills it on next visit (`omitc-last-login-email`).
 - Display names stored in a new `public.players` table with a case-insensitive unique index and a 1-32 char check constraint. Client-side validation is minimal (non-empty, max 32) -- the DB is the source of truth.
 - First-visit gate: brand-new visitors (no local name, no auth session) see a Welcome screen with "Log In / Sign Up" vs "Continue as Guest". Returning guests / signed-in users skip it.
 - "Stay signed in" checkbox on the login screen (default on). Unchecked routes the Supabase session to `sessionStorage` via a custom storage adapter, so the session ends when the tab closes.
@@ -40,6 +31,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 - Main menu welcome text now reads "Welcome back, <name>!" when signed in and "Welcome back, <name or Challenger>! (Guest)" otherwise. Log In button moved to bottom-right; flips to a compact "Signed In" label when authenticated.
 - Display-name validation loosened from `[A-Za-z0-9_]{3,20}` to 1-32 chars, any characters.
 - Leaderboard Player column widened (`w-36` → `w-52`) at the expense of the Tiles column.
+- `clearRun` (Main Menu "Delete & Start New", logout) now marks the server row as `abandoned` via `abandonOtherActiveRuns()` in addition to deleting locally. No more orphan server-side active runs.
+- `logout` restructured so the screen change + overlay dismiss happen synchronously before any async Supabase work, so clicking "Back to Main Menu" from the kickout overlay no longer leaves the user staring at a blurred screen.
+- On passive session restore (same browser/tab reopening), `initAuth` now calls `claimAllMyActiveRuns()` so the new tab's `SESSION_ID` replaces the prior tab's before any push fires. Fixes a false self-kick on quit-and-return within the same browser.
 
 ### Fixed
 - Sheriff's Domino never triggered -- the "all damage blocked" check ran before `executeEnemyTurn`. Split into a new `onAfterEnemyTurn` hook that runs after enemies attack but before block resets.
