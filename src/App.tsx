@@ -14,6 +14,8 @@ import { ReputationShopScreen } from './ui/screens/ReputationShopScreen';
 import { LeaderboardScreen } from './ui/screens/LeaderboardScreen';
 import { SettingsScreen } from './ui/screens/SettingsScreen';
 import { LoginScreen, PickNameScreen } from './ui/screens/LoginScreen';
+import { WelcomeScreen } from './ui/screens/WelcomeScreen';
+import { useMetaStore } from './store/metaStore';
 import { CombatHUD } from './ui/hud/CombatHUD';
 import { FloatingNumbers } from './ui/hud/FloatingNumbers';
 import { NonCombatFloats } from './ui/hud/NonCombatFloats';
@@ -23,11 +25,13 @@ import { TraitRow } from './ui/hud/TraitRow';
 import { OfflineIndicator } from './ui/components/OfflineIndicator';
 import { GameNotification } from './ui/components/GameNotification';
 import { TutorialOverlay } from './ui/components/TutorialOverlay';
+import { SyncIndicator } from './ui/components/SyncIndicator';
+import { LoginSyncOverlay } from './ui/components/LoginSyncOverlay';
 import { EventBus, GameEvent } from './game/EventBus';
 import { useRunStore } from './store/runStore';
 import { useCombatStore } from './store/combatStore';
 import { useGameScale, UI_WIDTH, UI_HEIGHT } from './ui/hooks/useGameScale';
-import { subscribeAuth } from './services/auth';
+import { subscribeAuth, getAuthState } from './services/auth';
 import type { CombatConfig, CombatResult } from './game/combat/CombatManager';
 import type { CombatSnapshot } from './types/combatSnapshot';
 import { saveCombatSnapshot, clearCombatSnapshot, purgeCorruptSnapshots } from './services/localSave';
@@ -69,7 +73,8 @@ export type Screen =
   | 'leaderboard'
   | 'settings'
   | 'login'
-  | 'pick-name';
+  | 'pick-name'
+  | 'welcome';
 
 const ENCOUNTER_ROLLERS: Record<Act, {
   regular: (r: () => number, nodeIndex?: number, outlawKingAvailable?: boolean) => EnemyDefinition[];
@@ -120,7 +125,15 @@ function rollEncounter(
 export default function App() {
   const gameContainerRef = useRef<HTMLDivElement>(null);
   const gameRef = useRef<Phaser.Game | null>(null);
-  const [screen, setScreen] = useState<Screen>('main-menu');
+  // First-visit gate: if there's no local player name AND no authenticated
+  // session, drop the user onto the welcome screen where they pick Login vs
+  // Continue as Guest. Returning users (guest with a name OR a restored auth
+  // session) skip straight to the main menu.
+  const [screen, setScreen] = useState<Screen>(() => {
+    const { playerName } = useMetaStore.getState().meta;
+    if (!playerName && !getAuthState().isLoggedIn) return 'welcome';
+    return 'main-menu';
+  });
   const [ready, setReady] = useState(false);
   const [bootComplete, setBootComplete] = useState(false);
   const [loadingDismissed, setLoadingDismissed] = useState(false);
@@ -290,6 +303,12 @@ export default function App() {
     // Skip while the user is on the login screen -- LoginScreen handles its own
     // claim flow and a redirect here would interrupt signup mid-submit.
     const unsubscribeAuth = subscribeAuth((s) => {
+      // If a late auth restore happens while we're still on the welcome gate,
+      // auto-dismiss to main-menu so signed-in users never see the gate.
+      if (lastAppliedScreen === 'welcome' && s.isLoggedIn) {
+        EventBus.emit(GameEvent.SCREEN_CHANGE, 'main-menu' satisfies Screen);
+        return;
+      }
       if (!s.isLoggedIn || !s.needsDisplayName) return;
       if (lastAppliedScreen === 'login' || lastAppliedScreen === 'pick-name') return;
       EventBus.emit(GameEvent.SCREEN_CHANGE, 'pick-name' satisfies Screen);
@@ -739,6 +758,7 @@ export default function App() {
             {screen === 'settings' && <SettingsScreen />}
             {screen === 'login' && <LoginScreen />}
             {screen === 'pick-name' && <PickNameScreen />}
+            {screen === 'welcome' && <WelcomeScreen />}
           </div>
         )}
 
@@ -748,6 +768,12 @@ export default function App() {
 
         {/* Tutorial overlay: dark overlay with optional spotlight + tooltip */}
         <TutorialOverlay />
+
+        {/* "Retrieving data..." badge during long-running Supabase pulls. */}
+        <SyncIndicator />
+
+        {/* Blocking "Syncing data..." overlay during post-login sync. */}
+        <LoginSyncOverlay />
 
         {/* Loading screen -- shown until assets are loaded, then slides left */}
         {!loadingDismissed && (

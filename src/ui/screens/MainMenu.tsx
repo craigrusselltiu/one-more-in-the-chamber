@@ -203,8 +203,12 @@ export const MainMenu = memo(function MainMenu() {
         draggable={false}
       />
 
-      {/* Welcome text -- just under the title image */}
-      {playerName && (
+      {/* Welcome text -- just under the title image.
+          Logged in: account display name.
+          Guest with a local name: that name, with a dimmed "(Guest)" tag.
+          Guest with no name yet: "Challenger" fallback (they'll be prompted
+          for a name anyway by the modal below). */}
+      {(auth.isLoggedIn ? playerName : true) && (
         <div className="absolute left-13 animate-welcome-breathe" style={{ top: 175, transformOrigin: 'left center' }}>
           <span
             style={{
@@ -214,7 +218,14 @@ export const MainMenu = memo(function MainMenu() {
               paintOrder: 'stroke fill',
             }}
           >
-            Welcome back, {playerName}!
+            {auth.isLoggedIn ? (
+              <>Welcome back, {playerName}!</>
+            ) : (
+              <>
+                Welcome back, {playerName || 'Challenger'}!{' '}
+                <span style={{ color: 'rgba(255,255,255,0.35)' }}>(Guest)</span>
+              </>
+            )}
           </span>
         </div>
       )}
@@ -234,7 +245,7 @@ export const MainMenu = memo(function MainMenu() {
       {/* Account indicator -- bottom right: shows login button when logged out,
           "signed in as" label when logged in. */}
       <div className="absolute right-6 bottom-6">
-        {auth.isLoggedIn && auth.displayName ? (
+        {auth.isLoggedIn ? (
           <span
             style={{
               fontSize: '10px',
@@ -243,26 +254,16 @@ export const MainMenu = memo(function MainMenu() {
               paintOrder: 'stroke fill',
             }}
           >
-            Signed in as <span style={{ color: '#fcd34d' }}>{auth.displayName}</span>
+            Signed In
           </span>
         ) : (
           <button
             onClick={handleLogin}
             onMouseEnter={playHover}
-            style={{
-              fontSize: '10px',
-              color: '#fcd34d',
-              WebkitTextStroke: '2px #000',
-              paintOrder: 'stroke fill',
-              letterSpacing: '1px',
-              cursor: 'pointer',
-              background: 'transparent',
-              border: 'none',
-              padding: 0,
-            }}
-            className="hover:brightness-125"
+            style={{ boxShadow: '2px 2px 1px rgba(0,0,0,0.4)', cursor: 'pointer' }}
+            className="px-4 py-1.5 text-[11px] rounded-sm bg-amber-800 text-amber-200 hover:bg-amber-700 active:translate-y-0.5 transition-transform"
           >
-            Log In / Sign Up
+            Login
           </button>
         )}
       </div>
@@ -270,20 +271,25 @@ export const MainMenu = memo(function MainMenu() {
       {/* Confirmation dialog */}
       {showConfirm && (
         <div className="absolute inset-0 flex items-center justify-center bg-black/70 z-10">
-          <div className="border border-stone-600 bg-stone-900 p-6 max-w-xs text-center">
-            <p className="text-stone-300 text-sm mb-4">
+          <div
+            className="rounded-sm p-5 max-w-xs text-center"
+            style={{ backgroundColor: 'rgba(28, 25, 23, 0.95)', boxShadow: '3px 3px 2px rgba(0,0,0,0.7)' }}
+          >
+            <p className="text-stone-300 text-xs mb-4 leading-snug">
               Starting a new game will delete your current saved run. Continue?
             </p>
             <div className="flex gap-3 justify-center">
               <button
                 onClick={handleConfirmNewGame}
-                className="px-4 py-1.5 text-xs bg-red-900/60 text-red-300 border border-red-700 hover:bg-red-800/60"
+                style={{ boxShadow: '2px 2px 1px rgba(0,0,0,0.4)', cursor: 'pointer' }}
+                className="px-4 py-1.5 text-[11px] rounded-sm bg-red-900 text-red-200 hover:bg-red-800 active:translate-y-0.5 transition-transform"
               >
-                Delete & Start New
+                Delete &amp; Start New
               </button>
               <button
                 onClick={handleCancelNewGame}
-                className="px-4 py-1.5 text-xs bg-stone-800/60 text-stone-300 border border-stone-600 hover:bg-stone-700/60"
+                style={{ boxShadow: '2px 2px 1px rgba(0,0,0,0.4)', cursor: 'pointer' }}
+                className="px-4 py-1.5 text-[11px] rounded-sm bg-stone-800 text-stone-300 hover:bg-stone-700 active:translate-y-0.5 transition-transform"
               >
                 Cancel
               </button>
@@ -330,8 +336,16 @@ export const MainMenu = memo(function MainMenu() {
           get their name from public.players via hydrateProfile). */}
       {!playerName && !auth.isLoggedIn && (
         <div className="absolute inset-0 flex items-center justify-center bg-black/80 z-20">
-          <div className="border border-stone-600 bg-stone-900 p-6 text-center" style={{ width: 280 }}>
-            <h2 className="text-amber-400 text-sm font-bold mb-3">What is your name?</h2>
+          <div
+            className="rounded-sm p-6 text-center"
+            style={{ width: 300, backgroundColor: 'rgba(28, 25, 23, 0.95)', boxShadow: '3px 3px 2px rgba(0,0,0,0.7)' }}
+          >
+            <h2
+              className="text-amber-400 text-sm font-bold uppercase mb-4"
+              style={{ WebkitTextStroke: '3px #000', paintOrder: 'stroke fill', letterSpacing: '1px' }}
+            >
+              What is your name?
+            </h2>
             <input
               type="text"
               value={nameInput}
@@ -340,15 +354,17 @@ export const MainMenu = memo(function MainMenu() {
               placeholder="Enter your name"
               maxLength={20}
               autoFocus
-              className="w-full bg-stone-800/60 border border-stone-600 text-stone-200 text-sm px-3 py-2 outline-none focus:border-amber-600 text-center mb-3"
+              className="w-full bg-stone-900/70 text-stone-100 text-sm px-3 py-2 rounded-sm outline-none text-center mb-4"
+              style={{ boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.5)' }}
             />
             <button
               onClick={() => { if (nameInput.trim()) setPlayerName(nameInput.trim()); }}
               disabled={!nameInput.trim()}
-              className={`px-6 py-1.5 text-xs border ${
+              style={{ boxShadow: nameInput.trim() ? '2px 2px 1px rgba(0,0,0,0.4)' : 'none', cursor: nameInput.trim() ? 'pointer' : 'not-allowed' }}
+              className={`px-6 py-1.5 text-xs rounded-sm transition-transform ${
                 nameInput.trim()
-                  ? 'bg-amber-900/60 text-amber-300 border-amber-700 hover:bg-amber-800/60'
-                  : 'bg-stone-700/50 text-stone-500 border-stone-600 cursor-not-allowed'
+                  ? 'bg-amber-800 text-amber-200 hover:bg-amber-700 active:translate-y-0.5'
+                  : 'bg-stone-800 text-stone-600 opacity-70'
               }`}
             >
               Confirm

@@ -7,6 +7,7 @@ import { getSupabase } from './supabase';
 import { syncOnLogin } from './syncService';
 import { getMyPlayer } from './players';
 import { useMetaStore } from '../store/metaStore';
+import { useRunStore } from '../store/runStore';
 import { EventBus, GameEvent } from '../game/EventBus';
 import type { Session, User } from '@supabase/supabase-js';
 
@@ -22,8 +23,29 @@ export interface AuthState {
 type Listener = (state: AuthState) => void;
 const listeners = new Set<Listener>();
 
+/** Separate pub/sub flagged during the post-login sync + profile hydrate, so
+ *  the UI can show a blocking "Syncing data..." overlay just for that window. */
+type BoolListener = (active: boolean) => void;
+const loginSyncListeners = new Set<BoolListener>();
+let loginSyncing = false;
+
+export function subscribeLoginSync(fn: BoolListener): () => void {
+  loginSyncListeners.add(fn);
+  try { fn(loginSyncing); } catch { /* ignore */ }
+  return () => { loginSyncListeners.delete(fn); };
+}
+
+function notifyLoginSync(): void {
+  for (const l of loginSyncListeners) {
+    try { l(loginSyncing); } catch { /* ignore */ }
+  }
+}
+
 export function subscribeAuth(fn: Listener): () => void {
   listeners.add(fn);
+  // Fire immediately with current state so subscribers never miss updates that
+  // occurred between their useState() lazy init and the useEffect that subscribes.
+  try { fn({ ...state }); } catch { /* ignore */ }
   return () => { listeners.delete(fn); };
 }
 
@@ -41,6 +63,22 @@ const state: AuthState = {
 };
 
 let initialized = false;
+
+/** localStorage key for the guest display name captured at the moment of sign-in.
+ *  Used to restore the pre-login name on sign-out so returning guests aren't
+ *  re-prompted for "What is your name?" every time they log out. */
+const GUEST_NAME_STASH_KEY = 'omitc-pre-login-guest-name';
+
+function stashGuestName(name: string): void {
+  try {
+    if (name) localStorage.setItem(GUEST_NAME_STASH_KEY, name);
+    else localStorage.removeItem(GUEST_NAME_STASH_KEY);
+  } catch { /* ignore */ }
+}
+
+function readGuestNameStash(): string {
+  try { return localStorage.getItem(GUEST_NAME_STASH_KEY) ?? ''; } catch { return ''; }
+}
 
 function applySession(session: Session | null): void {
   if (session?.user) {
@@ -76,12 +114,25 @@ async function hydrateProfile(): Promise<void> {
 
 /** Post-login flow: sync progression, then pull the display name into the local store. */
 async function onLogin(): Promise<void> {
+  // Stash the current local guest name (if any) before hydrateProfile overwrites
+  // it with the account display name. Restored on sign-out so returning guests
+  // don't get re-prompted for "What is your name?".
+  const currentGuestName = useMetaStore.getState().meta.playerName;
+  if (currentGuestName) stashGuestName(currentGuestName);
+
+  loginSyncing = true;
+  notifyLoginSync();
   try {
     await syncOnLogin();
   } catch (err) {
     console.error('[auth] syncOnLogin failed:', err);
   }
-  await hydrateProfile();
+  try {
+    await hydrateProfile();
+  } finally {
+    loginSyncing = false;
+    notifyLoginSync();
+  }
 }
 
 /** Initialize auth listener. Call once at app startup. */
@@ -155,9 +206,19 @@ export async function logout(): Promise<void> {
   state.userId = null;
   state.displayName = null;
   state.needsDisplayName = false;
+  // Drop the account's active run (zustand + IndexedDB + combat snapshot) so
+  // the user can't continue playing it as a guest after signing out. The run
+  // still lives on the server under their account and will sync back if they
+  // log in again.
+  await useRunStore.getState().clearRun();
   // Wipe local account-scoped progression so a subsequent login on this device
   // doesn't merge the previous account's unlocks into the new account.
   useMetaStore.getState().resetToDefaults();
+  // If the user had a guest name before signing in, restore it so they're not
+  // re-prompted to pick one. New accounts (no prior guest name) still get the
+  // prompt after logging out.
+  const priorGuestName = readGuestNameStash();
+  if (priorGuestName) useMetaStore.getState().setPlayerName(priorGuestName);
   notify();
   EventBus.emit(GameEvent.SCREEN_CHANGE, 'main-menu');
 }

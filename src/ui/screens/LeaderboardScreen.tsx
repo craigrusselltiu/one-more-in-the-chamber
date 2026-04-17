@@ -57,26 +57,37 @@ export const LeaderboardScreen = memo(function LeaderboardScreen() {
       }}
     >
       {/* Header */}
-      <div className="mt-6 mb-2 text-center">
-        <h2 className="text-xl text-amber-400 font-bold uppercase" style={{ WebkitTextStroke: '3px #000', paintOrder: 'stroke fill' }}>Leaderboard</h2>
-        <p className="text-xs text-stone-400 mt-1">Top gunslingers of the West</p>
+      <div className="mt-5 mb-3 text-center">
+        <h2
+          className="text-xl text-amber-400 font-bold uppercase"
+          style={{ WebkitTextStroke: '4px #000', paintOrder: 'stroke fill', letterSpacing: '1px' }}
+        >
+          Leaderboard
+        </h2>
+        <p className="text-[11px] text-stone-400 mt-1">Top gunslingers of the West</p>
       </div>
 
       {/* Period tabs */}
-      <div className="flex gap-1 mb-3 px-4">
-        {TABS.map((tab) => (
-          <button
-            key={tab.key}
-            onClick={() => handleTabChange(tab.key)}
-            className={`px-3 py-1 text-xs border transition-colors ${
-              period === tab.key
-                ? 'border-amber-600 bg-amber-900/40 text-amber-300'
-                : 'border-stone-700 bg-stone-800/30 text-stone-400 hover:border-stone-500'
-            }`}
-          >
-            {tab.label}
-          </button>
-        ))}
+      <div className="flex gap-2 mb-3 px-4">
+        {TABS.map((tab) => {
+          const active = period === tab.key;
+          return (
+            <button
+              key={tab.key}
+              onClick={() => handleTabChange(tab.key)}
+              className="px-5 py-1.5 text-[11px] rounded-sm transition-transform"
+              style={{
+                backgroundColor: active ? 'rgba(120, 53, 15, 0.85)' : 'rgba(28, 25, 23, 0.8)',
+                color: active ? '#fcd34d' : '#a8a29e',
+                boxShadow: active ? '2px 2px 1px rgba(0,0,0,0.4)' : 'none',
+                transform: active ? 'translateY(-2px)' : 'none',
+                cursor: 'pointer',
+              }}
+            >
+              {tab.label}
+            </button>
+          );
+        })}
       </div>
 
       {/* Table */}
@@ -90,32 +101,38 @@ export const LeaderboardScreen = memo(function LeaderboardScreen() {
         )}
 
         {!loading && entries.length > 0 && (
-          <div className="border border-stone-600 bg-stone-900/80">
+          <div
+            className="rounded-sm divide-y divide-stone-700/60 overflow-hidden"
+            style={{ backgroundColor: 'rgba(28, 25, 23, 0.75)', boxShadow: '3px 3px 2px rgba(0,0,0,0.6)' }}
+          >
             {/* Table header */}
-            <div className="flex items-center px-3 py-2 border-b border-stone-600 bg-stone-700/30">
-              <span className="w-8 text-stone-400 text-xs">#</span>
-              <span className="w-36 text-stone-400 text-xs">Player</span>
-              <span className="flex-1 text-stone-400 text-xs">Tiles</span>
-              <span className="w-10 text-center text-stone-400 text-xs">Arts</span>
-              <span className="w-10 text-center text-stone-400 text-xs">Won</span>
-              <span className="w-12 text-center text-stone-400 text-xs">Char</span>
-              <span className="w-10 text-right text-stone-400 text-xs">Asc</span>
-              <span className="w-16 text-right text-stone-400 text-xs">Time</span>
-              <span className="w-20 text-right text-stone-400 text-xs">Score</span>
+            <div
+              className="flex items-center px-3 py-1.5"
+              style={{ backgroundColor: 'rgba(28, 25, 23, 0.6)' }}
+            >
+              <span className="w-8 text-stone-500 text-[10px] uppercase tracking-wider">#</span>
+              <span className="w-52 text-stone-500 text-[10px] uppercase tracking-wider">Player</span>
+              <span className="flex-1 text-stone-500 text-[10px] uppercase tracking-wider">Tiles</span>
+              <span className="w-10 text-center text-stone-500 text-[10px] uppercase tracking-wider">Arts</span>
+              <span className="w-10 text-center text-stone-500 text-[10px] uppercase tracking-wider">Won</span>
+              <span className="w-12 text-center text-stone-500 text-[10px] uppercase tracking-wider">Char</span>
+              <span className="w-10 text-right text-stone-500 text-[10px] uppercase tracking-wider">Asc</span>
+              <span className="w-16 text-right text-stone-500 text-[10px] uppercase tracking-wider">Time</span>
+              <span className="w-20 text-right text-stone-500 text-[10px] uppercase tracking-wider">Score</span>
             </div>
 
             {/* Rows */}
             {entries.map((entry) => (
               <div
                 key={`${entry.rank}-${entry.createdAt}`}
-                className={`flex items-center px-3 py-2 border-b border-stone-700/50 ${
+                className={`flex items-center px-3 py-2 ${
                   entry.rank <= 3 ? 'bg-amber-900/10' : ''
                 }`}
               >
                 <span className={`w-8 text-xs font-bold ${rankColor(entry.rank)}`}>
                   {entry.rank}
                 </span>
-                <div className="w-36 min-w-0">
+                <div className="w-52 min-w-0">
                   <span className="text-stone-200 text-sm truncate block">
                     {entry.playerName}
                     {entry.isGuest && (
@@ -161,7 +178,16 @@ export const LeaderboardScreen = memo(function LeaderboardScreen() {
                         })}
                       </div>
                     }>
-                      <span className="text-xs text-stone-300">{entry.artifacts.length}</span>
+                      <span
+                        className="text-xs text-amber-300 hover:text-amber-200 transition-colors"
+                        style={{
+                          cursor: 'help',
+                          borderBottom: '1px dashed rgba(251, 191, 36, 0.5)',
+                          paddingBottom: 1,
+                        }}
+                      >
+                        {entry.artifacts.length}
+                      </span>
                     </Tooltip>
                   ) : (
                     <span className="text-xs text-stone-600">0</span>
@@ -192,7 +218,8 @@ export const LeaderboardScreen = memo(function LeaderboardScreen() {
       <div className="py-3">
         <button
           onClick={handleBack}
-          className="px-6 py-2 bg-stone-700/50 text-stone-300 text-sm border border-stone-600 hover:bg-stone-600/50"
+          style={{ boxShadow: '2px 2px 1px rgba(0,0,0,0.4)', cursor: 'pointer' }}
+          className="px-5 py-1.5 text-xs rounded-sm bg-stone-800 text-stone-300 hover:bg-stone-700 active:translate-y-0.5 transition-transform"
         >
           Back
         </button>

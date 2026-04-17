@@ -6,6 +6,7 @@ import {
   loginWithGoogle,
   markDisplayNameSet,
 } from '../../services/auth';
+import { setAuthStorageMode } from '../../services/supabase';
 import {
   checkDisplayNameAvailable,
   claimDisplayName,
@@ -19,6 +20,7 @@ type Tab = 'signin' | 'signup';
 
 const CARD_BG = 'rgba(28, 25, 23, 0.85)';
 const CARD_SHADOW = '3px 3px 2px rgba(0,0,0,0.7)';
+const BUTTON_SHADOW = '2px 2px 1px rgba(0,0,0,0.4)';
 
 function Field({
   label,
@@ -45,9 +47,10 @@ function Field({
   success?: string;
   maxLength?: number;
 }) {
+  const status = error ?? success ?? hint;
   return (
-    <div className="flex flex-col gap-1">
-      <label className="text-[10px] text-stone-500 uppercase tracking-wider">{label}</label>
+    <div className="flex flex-col gap-0.5">
+      <label className="text-[9px] text-stone-500 uppercase tracking-wider">{label}</label>
       <input
         type={type}
         value={value}
@@ -56,17 +59,17 @@ function Field({
         autoFocus={autoFocus}
         disabled={disabled}
         maxLength={maxLength}
-        className="bg-stone-900/70 border border-stone-700 text-stone-100 text-sm px-3 py-2 rounded-sm outline-none focus:border-amber-600 disabled:opacity-60"
+        className="bg-stone-900/70 text-stone-100 text-[11px] px-2.5 py-1 rounded-sm outline-none disabled:opacity-60"
         style={{ boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.5)' }}
       />
-      {error ? (
-        <span className="text-[10px] text-red-400">{error}</span>
-      ) : success ? (
-        <span className="text-[11px] text-emerald-400 font-bold">{'\u2713'} {success}</span>
-      ) : hint ? (
-        <span className="text-[10px] text-stone-500">{hint}</span>
-      ) : (
-        <span className="text-[10px]">&nbsp;</span>
+      {status && (
+        error ? (
+          <span className="text-[9px] text-red-400">{error}</span>
+        ) : success ? (
+          <span className="text-[10px] text-emerald-400 font-bold">{'\u2713'} {success}</span>
+        ) : (
+          <span className="text-[9px] text-stone-500">{hint}</span>
+        )
       )}
     </div>
   );
@@ -87,8 +90,8 @@ function AmberButton({
     <button
       onClick={onClick}
       disabled={disabled}
-      style={{ boxShadow: disabled ? 'none' : CARD_SHADOW }}
-      className={`px-5 py-2 text-xs font-bold uppercase tracking-wider rounded-sm transition-transform ${
+      style={{ boxShadow: disabled ? 'none' : BUTTON_SHADOW }}
+      className={`px-4 py-1.5 text-[11px] rounded-sm transition-transform ${
         disabled
           ? 'bg-stone-800 text-stone-600 cursor-not-allowed opacity-70'
           : 'bg-amber-800 text-amber-200 hover:bg-amber-700 active:translate-y-0.5'
@@ -111,8 +114,8 @@ function StoneButton({
   return (
     <button
       onClick={onClick}
-      style={{ boxShadow: CARD_SHADOW, cursor: 'pointer' }}
-      className={`px-5 py-2 text-xs font-bold uppercase tracking-wider rounded-sm bg-stone-800 text-stone-300 border border-stone-700 hover:bg-stone-700 active:translate-y-0.5 transition-transform ${
+      style={{ boxShadow: BUTTON_SHADOW, cursor: 'pointer' }}
+      className={`px-4 py-1.5 text-[11px] rounded-sm bg-stone-800 text-stone-300 hover:bg-stone-700 active:translate-y-0.5 transition-transform ${
         full ? 'w-full' : ''
       }`}
     >
@@ -133,12 +136,11 @@ function TabButton({
   return (
     <button
       onClick={onClick}
-      className="px-6 py-2 text-xs font-bold uppercase tracking-wider rounded-sm transition-transform"
+      className="px-5 py-1.5 text-[11px] rounded-sm transition-transform"
       style={{
         backgroundColor: active ? 'rgba(120, 53, 15, 0.85)' : 'rgba(28, 25, 23, 0.8)',
         color: active ? '#fcd34d' : '#a8a29e',
-        border: active ? '1px solid #b45309' : '1px solid #44403c',
-        boxShadow: active ? CARD_SHADOW : 'none',
+        boxShadow: active ? BUTTON_SHADOW : 'none',
         transform: active ? 'translateY(-2px)' : 'none',
         cursor: 'pointer',
       }}
@@ -192,17 +194,16 @@ function AuthCard({
 }) {
   return (
     <div
-      className="rounded-sm p-6 flex flex-col gap-4"
+      className="rounded-sm p-4 flex flex-col gap-2.5"
       style={{
-        width: 360,
+        width: 280,
         backgroundColor: CARD_BG,
         boxShadow: CARD_SHADOW,
-        border: '1px solid #44403c',
       }}
     >
       <div className="text-center">
         <h2
-          className="text-lg text-amber-400 font-bold uppercase"
+          className="text-sm text-amber-400 font-bold uppercase"
           style={{ WebkitTextStroke: '3px #000', paintOrder: 'stroke fill', letterSpacing: '1px' }}
         >
           {title}
@@ -211,6 +212,38 @@ function AuthCard({
       </div>
       {children}
     </div>
+  );
+}
+
+function StaySignedInToggle({
+  checked,
+  onChange,
+}: {
+  checked: boolean;
+  onChange: (v: boolean) => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={() => onChange(!checked)}
+      className="flex items-center gap-2 text-[10px] text-stone-300 bg-transparent outline-none"
+      style={{ cursor: 'pointer' }}
+    >
+      <span
+        className="inline-flex items-center justify-center rounded-sm"
+        style={{
+          width: 14,
+          height: 14,
+          backgroundColor: checked ? 'rgba(120, 53, 15, 0.85)' : 'rgba(28, 25, 23, 0.9)',
+          boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.5)',
+        }}
+      >
+        {checked && (
+          <span style={{ color: '#fcd34d', fontSize: '10px', lineHeight: 1 }}>{'\u2713'}</span>
+        )}
+      </span>
+      Stay signed in
+    </button>
   );
 }
 
@@ -238,8 +271,15 @@ export const LoginScreen = memo(function LoginScreen() {
   const [displayName, setDisplayName] = useState(playerName);
   const [formError, setFormError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [stayLoggedIn, setStayLoggedIn] = useState(true);
 
   const nameAvail = useDisplayNameAvailability(displayName, tab === 'signup');
+
+  /** Apply the user's persistence choice before any auth call so the new
+   *  session lands in localStorage (stay) or sessionStorage (tab-only). */
+  const applyStayLoggedIn = () => {
+    setAuthStorageMode(stayLoggedIn ? 'local' : 'session');
+  };
 
   const handleBack = () => {
     EventBus.emit(GameEvent.SCREEN_CHANGE, 'main-menu' satisfies Screen);
@@ -247,6 +287,7 @@ export const LoginScreen = memo(function LoginScreen() {
 
   const handleSignIn = async () => {
     setFormError(null);
+    applyStayLoggedIn();
     setSubmitting(true);
     const { error } = await loginWithEmail(email.trim(), password);
     setSubmitting(false);
@@ -269,6 +310,7 @@ export const LoginScreen = memo(function LoginScreen() {
       setFormError('That name is taken -- choose another.');
       return;
     }
+    applyStayLoggedIn();
     setSubmitting(true);
     const stillAvailable = await checkDisplayNameAvailable(trimmedName);
     if (!stillAvailable) {
@@ -303,6 +345,7 @@ export const LoginScreen = memo(function LoginScreen() {
 
   const handleGoogle = async () => {
     setFormError(null);
+    applyStayLoggedIn();
     const { error } = await loginWithGoogle();
     if (error) setFormError(error);
   };
@@ -374,6 +417,8 @@ export const LoginScreen = memo(function LoginScreen() {
           </div>
         )}
 
+        <StaySignedInToggle checked={stayLoggedIn} onChange={setStayLoggedIn} />
+
         <div className="flex justify-between items-center gap-2 mt-1">
           <StoneButton onClick={handleBack}>Back</StoneButton>
           <AmberButton
@@ -392,8 +437,8 @@ export const LoginScreen = memo(function LoginScreen() {
 
         <button
           onClick={handleGoogle}
-          style={{ boxShadow: CARD_SHADOW, cursor: 'pointer' }}
-          className="w-full flex items-center justify-center gap-2 px-4 py-2 text-xs font-bold uppercase tracking-wider rounded-sm bg-stone-900 text-stone-200 border border-stone-700 hover:bg-stone-800 active:translate-y-0.5 transition-transform"
+          style={{ boxShadow: BUTTON_SHADOW, cursor: 'pointer' }}
+          className="w-full flex items-center justify-center gap-2 px-4 py-1.5 text-[11px] rounded-sm bg-stone-900 text-stone-200 hover:bg-stone-800 active:translate-y-0.5 transition-transform"
         >
           <GoogleMark />
           Continue with Google

@@ -4,6 +4,7 @@
  */
 
 import { getSupabase } from './supabase';
+import { withSyncIndicator } from './syncService';
 
 export type LeaderboardPeriod = 'daily' | 'weekly' | 'all-time';
 
@@ -48,19 +49,25 @@ export async function fetchLeaderboard(period: LeaderboardPeriod): Promise<Leade
   const sb = getSupabase();
   if (!sb) return [];
 
-  let query = sb
-    .from('scores')
-    .select('final_score, ascension_level, run_completed, run_duration_seconds, character, created_at, player_id, player_name, tiles, artifacts')
-    .order('final_score', { ascending: false })
-    .limit(100);
+  return withSyncIndicator(async () => {
+    let query = sb
+      .from('scores')
+      .select('final_score, ascension_level, run_completed, run_duration_seconds, character, created_at, player_id, player_name, tiles, artifacts')
+      .order('final_score', { ascending: false })
+      .limit(100);
 
-  const start = periodStart(period);
-  if (start) {
-    query = query.gte('created_at', start);
-  }
+    const start = periodStart(period);
+    if (start) {
+      query = query.gte('created_at', start);
+    }
 
-  const { data, error } = await query;
-  if (error || !data) return [];
+    const { data, error } = await query;
+    if (error || !data) return [];
+    return mapLeaderboardRows(data);
+  });
+}
+
+function mapLeaderboardRows(data: Array<Record<string, unknown>>): LeaderboardEntry[] {
 
   return data.map((row: Record<string, unknown>, i: number) => ({
     rank: i + 1,

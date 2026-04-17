@@ -73,6 +73,43 @@ interface LocalScore {
   [k: string]: unknown;
 }
 
+// ---------- Sync status pub/sub ----------
+//
+// UI consumers subscribe via subscribeSync() to show a "Retrieving data..."
+// indicator while a long-running pull is in flight (login sync, leaderboard
+// fetch). Debounced background pushes do NOT register here since they finish
+// in tens of ms and would just flicker the badge.
+
+type SyncListener = (active: boolean) => void;
+const syncListeners = new Set<SyncListener>();
+let activeSyncs = 0;
+
+function notifySync(): void {
+  const active = activeSyncs > 0;
+  for (const l of syncListeners) {
+    try { l(active); } catch { /* ignore */ }
+  }
+}
+
+export function subscribeSync(fn: SyncListener): () => void {
+  syncListeners.add(fn);
+  // Fire immediately with current state so mount-time consumers don't wait.
+  try { fn(activeSyncs > 0); } catch { /* ignore */ }
+  return () => { syncListeners.delete(fn); };
+}
+
+/** Wrap an async operation so subscribers see active === true while it runs. */
+export async function withSyncIndicator<T>(fn: () => Promise<T>): Promise<T> {
+  activeSyncs++;
+  notifySync();
+  try {
+    return await fn();
+  } finally {
+    activeSyncs = Math.max(0, activeSyncs - 1);
+    notifySync();
+  }
+}
+
 // ---------- Public API ----------
 
 /** Sync local <-> remote on login or reconnect. */
@@ -81,13 +118,15 @@ export async function syncOnLogin(): Promise<void> {
   const { userId } = getAuthState();
   if (!sb || !userId) return;
 
-  try {
-    await syncMeta(sb, userId);
-    await syncRuns(sb, userId);
-    await syncScores(sb, userId);
-  } catch (err) {
-    console.error('[sync] sync failed:', err);
-  }
+  await withSyncIndicator(async () => {
+    try {
+      await syncMeta(sb, userId);
+      await syncRuns(sb, userId);
+      await syncScores(sb, userId);
+    } catch (err) {
+      console.error('[sync] sync failed:', err);
+    }
+  });
 }
 
 /** Alias -- same merge logic on reconnect. */

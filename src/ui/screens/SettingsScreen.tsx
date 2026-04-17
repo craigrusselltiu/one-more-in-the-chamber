@@ -24,7 +24,7 @@ function SettingRow({
   return (
     <Wrapper
       onClick={onClick}
-      className="flex items-center justify-between w-full py-1 px-2.5 bg-transparent border-none outline-none text-left"
+      className="flex items-center justify-between w-full py-2 px-4 bg-transparent border-none outline-none text-left"
       style={onClick ? { cursor: 'pointer' } : undefined}
     >
       <div className="flex flex-col gap-px min-w-0">
@@ -100,9 +100,8 @@ function SpeedSelector({
                 height: 20,
                 fontSize: '10px',
                 backgroundColor: value === s ? 'rgba(120, 53, 15, 0.85)' : 'rgba(28, 25, 23, 0.8)',
-                border: value === s ? '1px solid #b45309' : '1px solid #44403c',
                 color: value === s ? '#fcd34d' : '#a8a29e',
-                boxShadow: value === s ? '2px 2px 2px rgba(0,0,0,0.6)' : 'none',
+                boxShadow: value === s ? '2px 2px 1px rgba(0,0,0,0.4)' : 'none',
                 cursor: 'pointer',
               }}
             >
@@ -159,8 +158,8 @@ function AmberButton({
     <button
       onClick={onClick}
       disabled={disabled}
-      style={{ boxShadow: disabled ? 'none' : '3px 3px 2px rgba(0,0,0,0.7)' }}
-      className={`${small ? 'px-3 py-1 text-[10px]' : 'px-5 py-1.5 text-xs'} font-bold uppercase tracking-wider rounded-sm transition-transform ${
+      style={{ boxShadow: disabled ? 'none' : '2px 2px 1px rgba(0,0,0,0.4)' }}
+      className={`${small ? 'px-3 py-1 text-[10px]' : 'px-5 py-1.5 text-xs'} rounded-sm transition-transform ${
         disabled
           ? 'bg-stone-800 text-stone-600 cursor-not-allowed opacity-70'
           : 'bg-amber-800 text-amber-200 hover:bg-amber-700 active:translate-y-0.5'
@@ -183,8 +182,8 @@ function StoneButton({
   return (
     <button
       onClick={onClick}
-      style={{ boxShadow: '3px 3px 2px rgba(0,0,0,0.7)', cursor: 'pointer' }}
-      className={`${small ? 'px-3 py-1 text-[10px]' : 'px-5 py-1.5 text-xs'} font-bold uppercase tracking-wider rounded-sm bg-stone-800 text-stone-300 border border-stone-700 hover:bg-stone-700 active:translate-y-0.5 transition-transform`}
+      style={{ boxShadow: '2px 2px 1px rgba(0,0,0,0.4)', cursor: 'pointer' }}
+      className={`${small ? 'px-3 py-1 text-[10px]' : 'px-5 py-1.5 text-xs'} rounded-sm bg-stone-800 text-stone-300 hover:bg-stone-700 active:translate-y-0.5 transition-transform`}
     >
       {children}
     </button>
@@ -203,8 +202,8 @@ function RedButton({
   return (
     <button
       onClick={onClick}
-      style={{ boxShadow: '3px 3px 2px rgba(0,0,0,0.7)', cursor: 'pointer' }}
-      className={`${small ? 'px-3 py-1 text-[10px]' : 'px-5 py-1.5 text-xs'} font-bold uppercase tracking-wider rounded-sm bg-red-900 text-red-200 border border-red-700 hover:bg-red-800 active:translate-y-0.5 transition-transform`}
+      style={{ boxShadow: '2px 2px 1px rgba(0,0,0,0.4)', cursor: 'pointer' }}
+      className={`${small ? 'px-3 py-1 text-[10px]' : 'px-5 py-1.5 text-xs'} rounded-sm bg-red-900 text-red-200 hover:bg-red-800 active:translate-y-0.5 transition-transform`}
     >
       {children}
     </button>
@@ -309,11 +308,11 @@ export const SettingsScreen = memo(function SettingsScreen() {
       {/* Settings list */}
       <div className="w-full max-w-[360px] px-3">
         <div
-          className="rounded-sm border border-stone-700 divide-y divide-stone-700/60"
+          className="rounded-sm divide-y divide-stone-700/60"
           style={{ backgroundColor: 'rgba(28, 25, 23, 0.7)', boxShadow: '3px 3px 2px rgba(0,0,0,0.6)' }}
         >
           {/* Change Name */}
-          <div className="flex flex-col px-2.5 py-1 gap-0.5">
+          <div className="flex flex-col px-4 py-2 gap-0.5">
             <div className="flex items-center justify-between w-full">
               <div className="flex flex-col gap-px min-w-0">
                 <span className="text-xs text-stone-200">Name</span>
@@ -331,7 +330,7 @@ export const SettingsScreen = memo(function SettingsScreen() {
                     maxLength={DISPLAY_NAME_MAX}
                     autoFocus
                     disabled={saving}
-                    className="bg-stone-900/70 border border-stone-700 text-stone-100 text-[11px] px-2 py-0.5 rounded-sm outline-none focus:border-amber-600 disabled:opacity-60"
+                    className="bg-stone-900/70 text-stone-100 text-[11px] px-2 py-0.5 rounded-sm outline-none disabled:opacity-60"
                     style={{ width: 150, boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.5)' }}
                   />
                   <AmberButton small onClick={confirmName} disabled={saving}>
@@ -382,7 +381,7 @@ export const SettingsScreen = memo(function SettingsScreen() {
       {auth.isLoggedIn && (
         <div className="w-full max-w-[360px] px-3 mt-3">
           <div
-            className="rounded-sm border border-stone-700 flex items-center justify-between px-2.5 py-1"
+            className="rounded-sm flex items-center justify-between px-4 py-2"
             style={{ backgroundColor: 'rgba(28, 25, 23, 0.7)', boxShadow: '3px 3px 2px rgba(0,0,0,0.6)' }}
           >
             <div className="flex flex-col gap-px min-w-0">
@@ -408,7 +407,7 @@ export const SettingsScreen = memo(function SettingsScreen() {
       {showLogoutConfirm && (
         <div className="absolute inset-0 flex items-center justify-center bg-black/70 z-10">
           <div
-            className="rounded-sm border border-stone-700 p-5 max-w-xs text-center"
+            className="rounded-sm p-5 max-w-xs text-center"
             style={{ backgroundColor: 'rgba(28, 25, 23, 0.95)', boxShadow: '3px 3px 2px rgba(0,0,0,0.7)' }}
           >
             <p className="text-stone-300 text-xs mb-4 leading-snug">
@@ -457,153 +456,54 @@ export const CombatSettingsPopup = memo(function CombatSettingsPopup({
       className="absolute inset-0 flex items-center justify-center bg-black/60 z-50 pointer-events-auto"
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
-      <div className="w-64 border border-stone-600 bg-stone-900 p-4">
-        <h3 className="text-amber-400 text-sm font-bold text-center mb-3">Settings</h3>
+      <div
+        className="rounded-sm p-3 flex flex-col gap-2"
+        style={{ width: 280, backgroundColor: 'rgba(28, 25, 23, 0.95)', boxShadow: '3px 3px 2px rgba(0,0,0,0.7)' }}
+      >
+        <h3
+          className="text-[11px] text-amber-400 text-center font-bold uppercase"
+          style={{ WebkitTextStroke: '2px #000', paintOrder: 'stroke fill', letterSpacing: '1px' }}
+        >
+          Settings
+        </h3>
 
-        <div className="flex flex-col gap-2 text-[9px]">
-          {/* Music Volume */}
-          <div className="flex items-center gap-2">
-            <span className="text-stone-300" style={{ width: 40 }}>Music</span>
-            <input
-              type="range"
-              min="0"
-              max="100"
-              value={Math.round(musicVolume * 100)}
-              onChange={(e) => setMusicVolume(Number(e.target.value) / 100)}
-              className="flex-1 h-1 accent-amber-600 cursor-pointer"
-            />
-            <span className="text-stone-500 text-right" style={{ width: 28 }}>{Math.round(musicVolume * 100)}%</span>
-          </div>
-
-          {/* SFX Volume */}
-          <div className="flex items-center gap-2">
-            <span className="text-stone-300" style={{ width: 40 }}>SFX</span>
-            <input
-              type="range"
-              min="0"
-              max="100"
-              value={Math.round(sfxVolume * 100)}
-              onChange={(e) => setSfxVolume(Number(e.target.value) / 100)}
-              className="flex-1 h-1 accent-amber-600 cursor-pointer"
-            />
-            <span className="text-stone-500 text-right" style={{ width: 28 }}>{Math.round(sfxVolume * 100)}%</span>
-          </div>
-
-          {/* Game Speed */}
-          <div className="flex items-center justify-between">
-            <span className="text-stone-300">Speed</span>
-            <div className="flex gap-1">
-              {([1, 2, 3] as GameSpeed[]).map((s) => (
-                <button
-                  key={s}
-                  onClick={() => setGameSpeed(s)}
-                  className="w-7 h-5 flex items-center justify-center border"
-                  style={{
-                    backgroundColor: gameSpeed === s ? 'rgba(180, 83, 9, 0.6)' : 'rgba(28, 25, 23, 0.6)',
-                    borderColor: gameSpeed === s ? '#b45309' : '#44403c',
-                    color: gameSpeed === s ? '#fbbf24' : '#78716c',
-                    fontSize: '9px',
-                    cursor: 'pointer',
-                  }}
-                >
-                  {s}x
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Toggles */}
-          <div className="flex items-center justify-between">
-            <span className="text-stone-300">Screen Shake</span>
-            <button
-              onClick={() => setScreenShake(!screenShakeEnabled)}
-              className="text-[9px] px-2 py-0.5 border"
-              style={{
-                backgroundColor: screenShakeEnabled ? 'rgba(180, 83, 9, 0.4)' : 'rgba(28, 25, 23, 0.4)',
-                borderColor: screenShakeEnabled ? '#b45309' : '#44403c',
-                color: screenShakeEnabled ? '#fbbf24' : '#78716c',
-                cursor: 'pointer',
-              }}
-            >
-              {screenShakeEnabled ? 'ON' : 'OFF'}
-            </button>
-          </div>
-
-          <div className="flex items-center justify-between">
-            <span className="text-stone-300">Animations</span>
-            <button
-              onClick={() => setJuiceAnimations(!juiceAnimationsEnabled)}
-              className="text-[9px] px-2 py-0.5 border"
-              style={{
-                backgroundColor: juiceAnimationsEnabled ? 'rgba(180, 83, 9, 0.4)' : 'rgba(28, 25, 23, 0.4)',
-                borderColor: juiceAnimationsEnabled ? '#b45309' : '#44403c',
-                color: juiceAnimationsEnabled ? '#fbbf24' : '#78716c',
-                cursor: 'pointer',
-              }}
-            >
-              {juiceAnimationsEnabled ? 'ON' : 'OFF'}
-            </button>
-          </div>
-
-          <div className="flex items-center justify-between">
-            <span className="text-stone-300">Tutorials</span>
-            <button
-              onClick={() => setTutorialsEnabled(!tutorialsEnabled)}
-              className="text-[9px] px-2 py-0.5 border"
-              style={{
-                backgroundColor: tutorialsEnabled ? 'rgba(180, 83, 9, 0.4)' : 'rgba(28, 25, 23, 0.4)',
-                borderColor: tutorialsEnabled ? '#b45309' : '#44403c',
-                color: tutorialsEnabled ? '#fbbf24' : '#78716c',
-                cursor: 'pointer',
-              }}
-            >
-              {tutorialsEnabled ? 'ON' : 'OFF'}
-            </button>
-          </div>
+        {/* Same options controls as the main Settings screen */}
+        <div className="rounded-sm divide-y divide-stone-700/60" style={{ backgroundColor: 'rgba(28, 25, 23, 0.6)' }}>
+          <VolumeSlider label="Music" value={musicVolume} onChange={setMusicVolume} />
+          <VolumeSlider label="SFX" value={sfxVolume} onChange={setSfxVolume} />
+          <SpeedSelector value={gameSpeed} onChange={setGameSpeed} />
+          <Toggle
+            label="Screen Shake"
+            description="Camera shake on big hits"
+            checked={screenShakeEnabled}
+            onChange={setScreenShake}
+          />
+          <Toggle
+            label="Animations"
+            description="Tile pop, particles, flashes"
+            checked={juiceAnimationsEnabled}
+            onChange={setJuiceAnimations}
+          />
+          <Toggle
+            label="Tutorials"
+            description="Popups for new mechanics"
+            checked={tutorialsEnabled}
+            onChange={setTutorialsEnabled}
+          />
         </div>
 
-        {/* Divider + Main Menu / Give Up */}
-        <div className="border-t border-stone-700 mt-3 pt-3 flex flex-col gap-2">
-          <button
-            onClick={onMainMenu}
-            className="w-full py-1.5 text-stone-300 hover:bg-stone-700/50 border border-stone-600 text-[10px]"
-            style={{ cursor: 'pointer' }}
-          >
-            Main Menu
-          </button>
+        {/* Main Menu / Give Up / Close */}
+        <div className="mt-1 flex flex-col gap-1.5">
+          <StoneButton small onClick={onMainMenu}>Main Menu</StoneButton>
           {!confirmGiveUp ? (
-            <button
-              onClick={() => setConfirmGiveUp(true)}
-              className="w-full py-1.5 text-red-400 hover:bg-red-900/30 border border-red-900/50 text-[10px]"
-              style={{ cursor: 'pointer' }}
-            >
-              Give Up
-            </button>
+            <RedButton small onClick={() => setConfirmGiveUp(true)}>Give Up</RedButton>
           ) : (
-            <div className="flex gap-1">
-              <button
-                onClick={onGiveUp}
-                className="flex-1 py-1.5 text-red-400 hover:bg-red-900/30 border border-red-900/50 text-[10px]"
-                style={{ cursor: 'pointer' }}
-              >
-                Confirm
-              </button>
-              <button
-                onClick={() => setConfirmGiveUp(false)}
-                className="flex-1 py-1.5 text-stone-400 hover:bg-stone-700/50 border border-stone-600 text-[10px]"
-                style={{ cursor: 'pointer' }}
-              >
-                Cancel
-              </button>
+            <div className="grid grid-cols-2 gap-1.5">
+              <RedButton small onClick={onGiveUp}>Confirm</RedButton>
+              <StoneButton small onClick={() => setConfirmGiveUp(false)}>Cancel</StoneButton>
             </div>
           )}
-          <button
-            onClick={onClose}
-            className="w-full py-1.5 text-stone-400 hover:bg-stone-800 border border-stone-700 text-[10px]"
-            style={{ cursor: 'pointer' }}
-          >
-            Close
-          </button>
+          <StoneButton small onClick={onClose}>Close</StoneButton>
         </div>
       </div>
     </div>
