@@ -16,7 +16,7 @@ import {
   loadAllScores,
   saveScore,
 } from './localSave';
-import { useMetaStore } from '../store/metaStore';
+import { useMetaStore, readLocalMetaUpdatedAt, markLocalMetaSynced } from '../store/metaStore';
 import { useRunStore } from '../store/runStore';
 import { SESSION_ID } from './session';
 import { notifyKicked } from './kickout';
@@ -411,8 +411,11 @@ async function syncMeta(sb: ReturnType<typeof getSupabase> & object, userId: str
     highestAscensionCleared: zustand.highestAscensionCleared,
   };
   const { data: remote } = await sb.from('meta_progression').select('*').eq('player_id', userId).single();
+  const remoteRow = remote as (MetaRow & { updated_at?: string | null }) | null;
 
-  const merged = mergeMeta(local, remote as MetaRow | null);
+  const localUpdatedAt = readLocalMetaUpdatedAt();
+  const remoteUpdatedAt = remoteRow?.updated_at ?? null;
+  const merged = mergeMeta(local, remoteRow, localUpdatedAt, remoteUpdatedAt);
 
   // Hydrate merged state into the zustand store (updates localStorage too).
   useMetaStore.getState().hydrateFromRemote(merged);
@@ -420,7 +423,9 @@ async function syncMeta(sb: ReturnType<typeof getSupabase> & object, userId: str
   // Save merged to IndexedDB (redundant shadow).
   await saveMeta('progression', merged);
 
-  // Save merged to remote.
+  // Save merged back to remote with a NEW timestamp, then mark local synced to
+  // the same timestamp so the next syncMeta sees them as equal (no churn).
+  const now = new Date().toISOString();
   await sb.from('meta_progression').upsert({
     player_id: userId,
     reputation: merged.reputation,
@@ -430,11 +435,28 @@ async function syncMeta(sb: ReturnType<typeof getSupabase> & object, userId: str
     unlocked_loadouts: merged.unlockedLoadouts,
     unlocked_characters: merged.unlockedCharacters,
     highest_ascension_cleared: merged.highestAscensionCleared,
-    updated_at: new Date().toISOString(),
+    updated_at: now,
   });
+  markLocalMetaSynced(now);
 }
 
-function mergeMeta(local: LocalMeta | null, remote: MetaRow | null): Omit<LocalMeta, 'key'> {
+/**
+ * Merge local and remote meta progression.
+ *
+ * - Unlocks (arrays): always union -- additive merges are safe for array fields.
+ * - Numeric fields (reputation, highestAscensionCleared): if a side has a
+ *   STRICTLY newer updated_at timestamp, that side's values win entirely.
+ *   This lets devs/admins edit values in Supabase (bumping updated_at) and
+ *   have those edits take effect -- including decreases. If timestamps are
+ *   equal or missing, fall back to max-merge for multi-device concurrent
+ *   play safety.
+ */
+function mergeMeta(
+  local: LocalMeta | null,
+  remote: MetaRow | null,
+  localUpdatedAt: string | null,
+  remoteUpdatedAt: string | null,
+): Omit<LocalMeta, 'key'> {
   const l = local ?? {
     reputation: 0,
     unlockedArtifacts: [],
@@ -454,14 +476,30 @@ function mergeMeta(local: LocalMeta | null, remote: MetaRow | null): Omit<LocalM
     highest_ascension_cleared: 0,
   };
 
+  // Decide the "winner" for numeric fields by timestamp comparison.
+  const lt = localUpdatedAt ? new Date(localUpdatedAt).getTime() : 0;
+  const rt = remoteUpdatedAt ? new Date(remoteUpdatedAt).getTime() : 0;
+  let reputation: number;
+  let highestAscensionCleared: number;
+  if (rt > lt) {
+    reputation = r.reputation;
+    highestAscensionCleared = r.highest_ascension_cleared;
+  } else if (lt > rt) {
+    reputation = l.reputation;
+    highestAscensionCleared = l.highestAscensionCleared;
+  } else {
+    reputation = Math.max(l.reputation, r.reputation);
+    highestAscensionCleared = Math.max(l.highestAscensionCleared, r.highest_ascension_cleared);
+  }
+
   return {
-    reputation: Math.max(l.reputation, r.reputation),
+    reputation,
     unlockedArtifacts: union(l.unlockedArtifacts, r.unlocked_artifacts),
     unlockedEvents: union(l.unlockedEvents, r.unlocked_events),
     unlockedCosmetics: union(l.unlockedCosmetics, r.unlocked_cosmetics),
     unlockedLoadouts: union(l.unlockedLoadouts, r.unlocked_loadouts),
     unlockedCharacters: union(l.unlockedCharacters, r.unlocked_characters),
-    highestAscensionCleared: Math.max(l.highestAscensionCleared, r.highest_ascension_cleared),
+    highestAscensionCleared,
   };
 }
 

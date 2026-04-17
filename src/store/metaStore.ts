@@ -3,6 +3,17 @@ import type { ShopCategory } from '../data/shopItems';
 import { pushMeta } from '../services/syncService';
 
 const META_STORAGE_KEY = 'omitc-meta';
+/** ISO timestamp of the last local meta write. Used by syncMeta to decide
+ *  whether the local or remote row is newer. */
+const META_UPDATED_AT_KEY = 'omitc-meta-updated-at';
+
+export function readLocalMetaUpdatedAt(): string | null {
+  try { return localStorage.getItem(META_UPDATED_AT_KEY); } catch { return null; }
+}
+
+function writeLocalMetaUpdatedAt(iso: string): void {
+  try { localStorage.setItem(META_UPDATED_AT_KEY, iso); } catch { /* ignore */ }
+}
 
 /** Fire-and-forget push to Supabase, debounced so a burst of shop purchases
  *  or reputation grants only fires once. No-op when logged out. */
@@ -102,7 +113,16 @@ function persistLocal(meta: MetaProgression): void {
 
 function persistMeta(meta: MetaProgression): void {
   persistLocal(meta);
+  // Stamp the "last local write" time BEFORE the remote push, so if syncMeta
+  // races against a recent change it can see that local is fresh.
+  writeLocalMetaUpdatedAt(new Date().toISOString());
   pushMetaDebounced(meta);
+}
+
+/** Called by syncMeta after pulling remote, so local "lastUpdatedAt" reflects
+ *  the same timestamp the server row carries. */
+export function markLocalMetaSynced(iso: string): void {
+  writeLocalMetaUpdatedAt(iso);
 }
 
 export const useMetaStore = create<MetaStore>((set, get) => ({

@@ -4,7 +4,6 @@
  */
 
 import { getSupabase } from './supabase';
-import { syncOnLogin } from './syncService';
 import { getMyPlayer } from './players';
 import { useMetaStore } from '../store/metaStore';
 import { useRunStore } from '../store/runStore';
@@ -14,6 +13,7 @@ import {
   claimAllMyActiveRuns,
   startOwnershipWatcher,
   stopOwnershipWatcher,
+  syncOnLogin,
 } from './syncService';
 import { EventBus, GameEvent } from '../game/EventBus';
 import type { Session, User } from '@supabase/supabase-js';
@@ -157,13 +157,17 @@ export async function initAuth(): Promise<void> {
   const { data } = await sb.auth.getSession();
   applySession(data.session);
   if (state.isLoggedIn) {
-    // Session restored from a previous visit -- hydrate the display name from the
-    // players table. No sync needed on passive restore (data already in local IDB).
+    // Session restored from a previous visit.
+    // 1. Hydrate display name from the players table.
     hydrateProfile().catch(console.error);
-    // Claim ownership of our active run(s) FIRST, then start the watcher.
-    // If we started the watcher before the claim landed, its initial
-    // check would see the previous tab's session_id and false-kick us.
+    // 2. Claim ownership before anything else reads session_id, so the
+    //    watcher's first poll and the first pushRun don't false-kick us.
+    // 3. Pull remote state (meta, runs, scores) so Supabase edits (e.g.
+    //    dev changes to reputation or run gold) take effect on reopen.
+    // 4. THEN start the periodic ownership watcher.
     claimAllMyActiveRuns()
+      .catch(console.error)
+      .then(() => syncOnLogin())
       .catch(console.error)
       .finally(() => startOwnershipWatcher());
   }
