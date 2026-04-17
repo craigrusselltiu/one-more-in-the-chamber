@@ -394,9 +394,11 @@ export function startOwnershipWatcher(): void {
     }
   };
   document.addEventListener('visibilitychange', watchVisibilityHandler);
-  // Fire one immediately so a tab that was backgrounded during a takeover
-  // discovers the kick as soon as the watcher starts.
-  checkOwnership().catch(() => {});
+  // No immediate check on start. On fresh app load, claimAllMyActiveRuns has
+  // just run and we don't want a read-after-write race to look like a kick.
+  // First check fires after WATCH_INTERVAL_MS; visibilitychange still fires
+  // checks on tab focus, which is when a real cross-device takeover would be
+  // detected anyway.
 }
 
 export function stopOwnershipWatcher(): void {
