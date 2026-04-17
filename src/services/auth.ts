@@ -160,12 +160,12 @@ export async function initAuth(): Promise<void> {
     // Session restored from a previous visit -- hydrate the display name from the
     // players table. No sync needed on passive restore (data already in local IDB).
     hydrateProfile().catch(console.error);
-    // Claim ownership of our active run(s) with this tab's new SESSION_ID so
-    // the first pushRun doesn't false-kick against the old tab's session_id.
-    claimAllMyActiveRuns().catch(console.error);
-    // Start the periodic ownership watcher so takeovers from another device
-    // trigger the kickout overlay even if we're idle on the main menu.
-    startOwnershipWatcher();
+    // Claim ownership of our active run(s) FIRST, then start the watcher.
+    // If we started the watcher before the claim landed, its initial
+    // check would see the previous tab's session_id and false-kick us.
+    claimAllMyActiveRuns()
+      .catch(console.error)
+      .finally(() => startOwnershipWatcher());
   }
   notify();
 
