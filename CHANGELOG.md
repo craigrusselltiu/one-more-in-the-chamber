@@ -4,6 +4,34 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## v0.6.9
+
+### Added
+- Accounts: email/password + Google OAuth via Supabase, with a new tabbed Log In / Sign Up screen, Pick-Name screen for OAuth first-timers, and Sign Out in Settings. Logout clears local meta progression and the active run so a subsequent login on a shared device can't leak unlocks or let someone continue another account's run as a guest.
+- Display names stored in a new `public.players` table with a case-insensitive unique index and a 1-32 char check constraint. Client-side validation is minimal (non-empty, max 32) -- the DB is the source of truth.
+- First-visit gate: brand-new visitors (no local name, no auth session) see a Welcome screen with "Log In / Sign Up" vs "Continue as Guest". Returning guests / signed-in users skip it.
+- "Stay signed in" checkbox on the login screen (default on). Unchecked routes the Supabase session to `sessionStorage` via a custom storage adapter, so the session ends when the tab closes.
+- Cross-device progression sync: meta progression and active runs now push to Supabase continuously (debounced ~1.2s / 1.5s). `syncOnLogin` also hydrates the in-memory zustand stores with the merged result, so reputation, unlocks, and the current run appear immediately after login without a reload.
+- Blocking "Syncing data..." overlay during `syncOnLogin + hydrateProfile`, plus a small "Retrieving data..." badge (250ms grace) for wrapped pulls like `fetchLeaderboard`.
+- Leaderboard: `(Guest)` suffix on rows where `player_id IS NULL`; dashed-underline + `cursor: help` on the Arts count to signal the artifact tooltip.
+- New Corrupt rarity for corrupt artifacts (red dim outline + breathe sweep).
+- Sheriff's Shadow and Corrupt Deputy sprites now render at 1.5x like other elites/bosses.
+- Early 2-Vulture encounter randomly promotes exactly one to Summoned via the existing `:rsummoned` preset marker.
+- BootScene preloads all 33 enemy/character sprite PNGs so first combat entry is instant and the loading bar reflects their download.
+- Supabase migrations checked in under `supabase/migrations/` for the players constraints and the four sync tables (meta_progression, runs, run_state, scores) with RLS.
+
+### Changed
+- Artifact rarity outline on the HUD switched to per-rarity SVG `feMorphology` filters (radius 1.25), matching the enemy target outline technique.
+- Combat background sprite now uses `LINEAR` filtering so the 1920x1080 → 640x360 downscale no longer shimmers under the scene-global pixel-art mode.
+- Settings screen, in-combat settings popup, Login / Pick-Name screens, Artifact screen, Tiles popup, name prompt, new-game confirm, and leaderboard restyled to a consistent borderless rounded-card aesthetic with uppercase stroked titles and softer button shadows.
+- Main menu welcome text now reads "Welcome back, <name>!" when signed in and "Welcome back, <name or Challenger>! (Guest)" otherwise. Log In button moved to bottom-right; flips to a compact "Signed In" label when authenticated.
+- Display-name validation loosened from `[A-Za-z0-9_]{3,20}` to 1-32 chars, any characters.
+- Leaderboard Player column widened (`w-36` → `w-52`) at the expense of the Tiles column.
+
+### Fixed
+- Sheriff's Domino never triggered -- the "all damage blocked" check ran before `executeEnemyTurn`. Split into a new `onAfterEnemyTurn` hook that runs after enemies attack but before block resets.
+- `subscribeAuth` now fires the listener immediately with current state on subscribe, closing a gap where React subscribers could miss auth updates that happened between their `useState` lazy init and their `useEffect` subscribe.
+
 ## v0.6.8
 
 ### Added
