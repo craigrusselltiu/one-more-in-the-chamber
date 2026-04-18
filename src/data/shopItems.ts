@@ -196,4 +196,35 @@ export const SHOP_ITEMS: ShopItemDefinition[] = [
     category: 'title',
     unlockId: 'title_john_chamber',
   },
+
+  // --- Trait-themed titles (3,000 each) ---
+  { id: 'shop_title_outlaw',           name: 'Outlaw',           description: '"Outlaw" appears beneath your name.',           cost: 3000, category: 'title', unlockId: 'title_outlaw' },
+  { id: 'shop_title_sheriff',          name: 'Sheriff',          description: '"Sheriff" appears beneath your name.',          cost: 3000, category: 'title', unlockId: 'title_sheriff' },
+  { id: 'shop_title_prospector',       name: 'Prospector',       description: '"Prospector" appears beneath your name.',       cost: 3000, category: 'title', unlockId: 'title_prospector' },
+  { id: 'shop_title_sapper',           name: 'Sapper',           description: '"Sapper" appears beneath your name.',           cost: 3000, category: 'title', unlockId: 'title_sapper' },
+  { id: 'shop_title_mustang',          name: 'Mustang',          description: '"Mustang" appears beneath your name.',          cost: 3000, category: 'title', unlockId: 'title_mustang' },
+  { id: 'shop_title_gunslinger',       name: 'Gunslinger',       description: '"Gunslinger" appears beneath your name.',       cost: 3000, category: 'title', unlockId: 'title_gunslinger' },
+  { id: 'shop_title_saloon_keeper',    name: 'Saloon Keeper',    description: '"Saloon Keeper" appears beneath your name.',    cost: 3000, category: 'title', unlockId: 'title_saloon_keeper' },
+  { id: 'shop_title_desperado',        name: 'Desperado',        description: '"Desperado" appears beneath your name.',        cost: 3000, category: 'title', unlockId: 'title_desperado' },
+  { id: 'shop_title_sniper',           name: 'Sniper',           description: '"Sniper" appears beneath your name.',           cost: 3000, category: 'title', unlockId: 'title_sniper' },
+  { id: 'shop_title_dead_man_walking', name: 'Dead Man Walking', description: '"Dead Man Walking" appears beneath your name.', cost: 3000, category: 'title', unlockId: 'title_dead_man_walking' },
+  { id: 'shop_title_tracker',          name: 'Tracker',          description: '"Tracker" appears beneath your name.',          cost: 3000, category: 'title', unlockId: 'title_tracker' },
+  { id: 'shop_title_preacher',         name: 'Preacher',         description: '"Preacher" appears beneath your name.',         cost: 3000, category: 'title', unlockId: 'title_preacher' },
+  { id: 'shop_title_antivenom',        name: 'Antivenom',        description: '"Antivenom" appears beneath your name.',        cost: 3000, category: 'title', unlockId: 'title_antivenom' },
+  { id: 'shop_title_undertaker',       name: 'Undertaker',       description: '"Undertaker" appears beneath your name.',       cost: 3000, category: 'title', unlockId: 'title_undertaker' },
+  { id: 'shop_title_rattlesnake',      name: 'Rattlesnake',      description: '"Rattlesnake" appears beneath your name.',      cost: 3000, category: 'title', unlockId: 'title_rattlesnake' },
+  { id: 'shop_title_corrupt',          name: 'Corrupt',          description: '"Corrupt" appears beneath your name.',          cost: 3000, category: 'title', unlockId: 'title_corrupt' },
+
+  // --- Ominous / flavour titles (5,000 each) ---
+  { id: 'shop_title_six_feet_under',           name: 'Six Feet Under',           description: '"Six Feet Under" appears beneath your name.',           cost: 5000, category: 'title', unlockId: 'title_six_feet_under' },
+  { id: 'shop_title_dead_or_alive',            name: 'Dead Or Alive',            description: '"Dead Or Alive" appears beneath your name.',            cost: 5000, category: 'title', unlockId: 'title_dead_or_alive' },
+  { id: 'shop_title_nine_lives',               name: 'Nine Lives',               description: '"Nine Lives" appears beneath your name.',               cost: 5000, category: 'title', unlockId: 'title_nine_lives' },
+  { id: 'shop_title_wanted_in_three_counties', name: 'Wanted In Three Counties', description: '"Wanted In Three Counties" appears beneath your name.', cost: 5000, category: 'title', unlockId: 'title_wanted_in_three_counties' },
+
+  // --- Prestige titles (10,000 each) ---
+  { id: 'shop_title_legend_of_the_west', name: 'Legend Of The West', description: '"Legend Of The West" appears beneath your name.', cost: 10000, category: 'title', unlockId: 'title_legend_of_the_west' },
+  { id: 'shop_title_the_one_they_fear',  name: 'The One They Fear',  description: '"The One They Fear" appears beneath your name.',  cost: 10000, category: 'title', unlockId: 'title_the_one_they_fear' },
+  { id: 'shop_title_still_kicking',      name: 'Still Kicking',      description: '"Still Kicking" appears beneath your name.',      cost: 10000, category: 'title', unlockId: 'title_still_kicking' },
+  { id: 'shop_title_not_guilty',         name: 'Not Guilty',         description: '"Not Guilty" appears beneath your name.',         cost: 10000, category: 'title', unlockId: 'title_not_guilty' },
+  { id: 'shop_title_fuck_it_we_ball',    name: 'Fuck It We Ball',    description: '"Fuck It We Ball" appears beneath your name.',    cost: 10000, category: 'title', unlockId: 'title_fuck_it_we_ball' },
 ];

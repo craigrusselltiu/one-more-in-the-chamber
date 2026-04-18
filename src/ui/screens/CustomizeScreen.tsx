@@ -273,7 +273,7 @@ function CustomizeCard({
     <button
       onClick={onSelect}
       onMouseEnter={playHover}
-      className="relative flex flex-col items-center justify-center w-36 h-40 rounded-sm text-center transition-transform hover:-translate-y-0.5 active:translate-y-0.5"
+      className="relative flex flex-col items-center justify-center w-36 h-36 rounded-sm text-center transition-transform hover:-translate-y-0.5 active:translate-y-0.5"
       style={{
         backgroundColor: selected ? 'rgba(120, 53, 15, 0.75)' : 'rgba(28, 25, 23, 0.8)',
         padding: '12px 10px',

@@ -51,11 +51,18 @@ export const ScoreScreen = memo(function ScoreScreen() {
     const comboBonus = Math.round((maxComboMultiplier - 1.0) * 1000);
     const bonusPoints = goldObtained + artifactBonus + damageBonus + comboBonus;
 
-    const wantedLevelMultiplier = 1.0 + 0.05 * run.wantedLevel;
-    const timeMultiplier = completed ? computeTimeMultiplier(run.playTimeSeconds ?? 0) : 1.0;
+    // Guard every numeric against NaN/undefined so we never push NaN through
+    // to Supabase (Postgres stores NaN as NULL on numeric columns, silently
+    // losing the score on a downstream leaderboard read).
+    const safeNum = (v: unknown, d: number): number =>
+      typeof v === 'number' && Number.isFinite(v) ? v : d;
+    const wantedLevelSafe = safeNum(run.wantedLevel, 0);
+    const wantedLevelMultiplier = 1.0 + 0.05 * wantedLevelSafe;
+    const timeMultiplier = completed ? computeTimeMultiplier(safeNum(run.playTimeSeconds, 0)) : 1.0;
     const completionMultiplier = completed ? 2.0 : 1.0;
 
-    const finalScore = Math.round((baseScore + bonusPoints) * wantedLevelMultiplier * timeMultiplier * completionMultiplier);
+    const rawFinal = (baseScore + bonusPoints) * wantedLevelMultiplier * timeMultiplier * completionMultiplier;
+    const finalScore = Number.isFinite(rawFinal) ? Math.round(rawFinal) : 0;
 
     return {
       baseScore,

@@ -10,8 +10,17 @@ import type { Screen } from '../../App';
 
 /** Shared drop-shadow values so every row column stays legible over any
  *  equipped nameplate art. Light enough not to overpower the type. */
-const ROW_TEXT_SHADOW = '2px 2px 2px rgba(0, 0, 0, 1)';
-const ROW_ICON_SHADOW = 'drop-shadow(2px 2px 2px rgba(0, 0, 0, 1))';
+/** Stacked shadows: crisp 1px layer keeps the shadow attached to the glyph,
+ *  larger blurred layer adds weight without pulling it away from the text. */
+const ROW_TEXT_SHADOW = '1px 1px 0 rgba(0, 0, 0, 1), 2px 2px 2px rgba(0, 0, 0, 1)';
+const ROW_ICON_SHADOW = 'drop-shadow(1px 1px 0 rgba(0, 0, 0, 1)) drop-shadow(2px 2px 2px rgba(0, 0, 0, 1))';
+
+/** 1px black outline around glyphs; `paintOrder: 'stroke fill'` draws the
+ *  stroke behind the fill so the color (or shimmer gradient) sits on top. */
+const ROW_OUTLINE = {
+  WebkitTextStroke: '1px #000',
+  paintOrder: 'stroke fill',
+} as const;
 
 const TABS: { key: LeaderboardPeriod; label: string }[] = [
   { key: 'daily', label: 'Daily' },
@@ -122,7 +131,7 @@ export const LeaderboardScreen = memo(function LeaderboardScreen() {
               <span className="w-10 text-center text-stone-500 text-[10px] uppercase tracking-wider">Arts</span>
               <span className="w-10 text-center text-stone-500 text-[10px] uppercase tracking-wider">Won</span>
               <span className="w-12 text-center text-stone-500 text-[10px] uppercase tracking-wider">Char</span>
-              <span className="w-10 text-right text-stone-500 text-[10px] uppercase tracking-wider">Asc</span>
+              <span className="w-10 text-right text-stone-500 text-[10px] uppercase tracking-wider">Wanted</span>
               <span className="w-16 text-right text-stone-500 text-[10px] uppercase tracking-wider">Time</span>
               <span className="w-20 text-right text-stone-500 text-[10px] uppercase tracking-wider">Score</span>
             </div>
@@ -237,42 +246,43 @@ export const LeaderboardScreen = memo(function LeaderboardScreen() {
                           borderBottom: '1px dashed rgba(251, 191, 36, 0.5)',
                           paddingBottom: 1,
                           textShadow: ROW_TEXT_SHADOW,
+                          ...ROW_OUTLINE,
                         }}
                       >
                         {entry.artifacts.length}
                       </span>
                     </Tooltip>
                   ) : (
-                    <span className="text-xs text-stone-600" style={{ textShadow: ROW_TEXT_SHADOW }}>0</span>
+                    <span className="text-xs text-stone-600" style={{ textShadow: ROW_TEXT_SHADOW, ...ROW_OUTLINE }}>0</span>
                   )}
                 </span>
                 <span
                   className="w-10 text-center text-xs text-amber-300"
-                  style={{ textShadow: ROW_TEXT_SHADOW }}
+                  style={{ textShadow: ROW_TEXT_SHADOW, ...ROW_OUTLINE }}
                 >
                   {entry.runCompleted ? '\u2714' : ''}
                 </span>
                 <span
                   className="w-12 text-center text-stone-400 text-xs"
-                  style={{ textShadow: ROW_TEXT_SHADOW }}
+                  style={{ textShadow: ROW_TEXT_SHADOW, ...ROW_OUTLINE }}
                 >
                   {entry.character === 'reno' ? 'Reno' : 'Rust'}
                 </span>
                 <span
                   className="w-10 text-right text-stone-400 text-xs"
-                  style={{ textShadow: ROW_TEXT_SHADOW }}
+                  style={{ textShadow: ROW_TEXT_SHADOW, ...ROW_OUTLINE }}
                 >
                   {entry.wantedLevel > 0 ? `W${entry.wantedLevel}` : '-'}
                 </span>
                 <span
                   className="w-16 text-right text-stone-400 text-xs"
-                  style={{ textShadow: ROW_TEXT_SHADOW }}
+                  style={{ textShadow: ROW_TEXT_SHADOW, ...ROW_OUTLINE }}
                 >
                   {formatDuration(entry.runDurationSeconds)}
                 </span>
                 <span
                   className="w-20 text-right text-amber-300 text-sm font-bold"
-                  style={{ textShadow: ROW_TEXT_SHADOW }}
+                  style={{ textShadow: ROW_TEXT_SHADOW, ...ROW_OUTLINE }}
                 >
                   {entry.score.toLocaleString()}
                 </span>

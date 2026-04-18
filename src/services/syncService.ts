@@ -608,21 +608,28 @@ export async function pushScore(score: LocalScore, playerName?: string): Promise
 
   const { userId } = getAuthState();
 
+  // Finite-number guard: `?? fallback` does NOT catch NaN (because NaN is
+  // neither null nor undefined), but Postgres silently stores NaN as NULL in
+  // numeric columns. Use a stricter check so a corrupted score payload can't
+  // push a null final_score / multiplier.
+  const fin = (v: unknown, d: number): number =>
+    typeof v === 'number' && Number.isFinite(v) ? v : d;
+
   await sb.from('scores').upsert({
     id: score.id,
     player_id: userId ?? null,
     player_name: playerName ?? 'Anonymous',
     run_id: score.runId,
     character: score.character ?? 'red_panda',
-    wanted_level: score.wantedLevel ?? 0,
-    base_score: score.baseScore ?? 0,
-    bonus_points: score.bonusPoints ?? 0,
-    wanted_level_multiplier: score.wantedLevelMultiplier ?? 1,
-    time_bonus: score.timeBonus ?? 0,
-    final_score: score.finalScore ?? 0,
-    run_duration_seconds: score.runDurationSeconds ?? 0,
-    nodes_cleared: score.nodesCleared ?? 0,
-    bosses_defeated: score.bossesDefeated ?? 0,
+    wanted_level: fin(score.wantedLevel, 0),
+    base_score: fin(score.baseScore, 0),
+    bonus_points: fin(score.bonusPoints, 0),
+    wanted_level_multiplier: fin(score.wantedLevelMultiplier, 1),
+    time_bonus: fin(score.timeBonus, 0),
+    final_score: fin(score.finalScore, 0),
+    run_duration_seconds: fin(score.runDurationSeconds, 0),
+    nodes_cleared: fin(score.nodesCleared, 0),
+    bosses_defeated: fin(score.bossesDefeated, 0),
     run_completed: score.runCompleted ?? false,
     tiles: score.tiles ?? null,
     artifacts: score.artifacts ?? null,

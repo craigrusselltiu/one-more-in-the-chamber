@@ -71,6 +71,17 @@ const NODE_TYPE_MIGRATION: Record<string, MapNodeType> = {
 
 /** Migrate a persisted run to handle schema changes. */
 function migrateRun(run: RunState): RunState {
+  // Rename: ascensionLevel -> wantedLevel. Old runs persisted before the
+  // Ascension -> Wanted Level rename (Apr 2026) have no wantedLevel key;
+  // without this copy, scoring.ts reads undefined and the final score comes
+  // out NaN, which silently stores as NULL in scores.wanted_level_multiplier
+  // and scores.final_score on upsert.
+  const legacy = run as unknown as { ascensionLevel?: number };
+  if (legacy.ascensionLevel != null && run.wantedLevel == null) {
+    run.wantedLevel = legacy.ascensionLevel;
+    console.info('[persist] migrated run: ascensionLevel -> wantedLevel');
+  }
+
   if (!run.mapState) return run;
   let migrated = false;
   for (const node of run.mapState.nodes) {

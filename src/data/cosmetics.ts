@@ -145,6 +145,38 @@ export const TITLES: TitleDef[] = [
   { id: 'title_rust_main',     name: 'Rust Main',     text: 'Rust Main' },
   { id: 'title_reno_main',     name: 'Reno Main',     text: 'Reno Main' },
   { id: 'title_john_chamber',  name: 'John Chamber',  text: 'John Chamber' },
+
+  // Trait-themed (3,000 each).
+  { id: 'title_outlaw',            name: 'Outlaw',            text: 'Outlaw' },
+  { id: 'title_sheriff',           name: 'Sheriff',           text: 'Sheriff' },
+  { id: 'title_prospector',        name: 'Prospector',        text: 'Prospector' },
+  { id: 'title_sapper',            name: 'Sapper',            text: 'Sapper' },
+  { id: 'title_mustang',           name: 'Mustang',           text: 'Mustang' },
+  { id: 'title_gunslinger',        name: 'Gunslinger',        text: 'Gunslinger' },
+  { id: 'title_saloon_keeper',     name: 'Saloon Keeper',     text: 'Saloon Keeper' },
+  { id: 'title_desperado',         name: 'Desperado',         text: 'Desperado' },
+  { id: 'title_sniper',            name: 'Sniper',            text: 'Sniper' },
+  { id: 'title_dead_man_walking',  name: 'Dead Man Walking',  text: 'Dead Man Walking' },
+  { id: 'title_tracker',           name: 'Tracker',           text: 'Tracker' },
+  { id: 'title_preacher',          name: 'Preacher',          text: 'Preacher' },
+  { id: 'title_antivenom',         name: 'Antivenom',         text: 'Antivenom' },
+  { id: 'title_undertaker',        name: 'Undertaker',        text: 'Undertaker' },
+  { id: 'title_rattlesnake',       name: 'Rattlesnake',       text: 'Rattlesnake' },
+  { id: 'title_corrupt',           name: 'Corrupt',           text: 'Corrupt' },
+
+  // Ominous / flavour (5,000 each).
+  { id: 'title_six_feet_under',           name: 'Six Feet Under',           text: 'Six Feet Under' },
+  { id: 'title_dead_or_alive',            name: 'Dead Or Alive',            text: 'Dead Or Alive' },
+  { id: 'title_nine_lives',               name: 'Nine Lives',               text: 'Nine Lives' },
+  { id: 'title_wanted_in_three_counties', name: 'Wanted In Three Counties', text: 'Wanted In Three Counties' },
+
+  // Prestige (10,000 each).
+  { id: 'title_legend_of_the_west', name: 'Legend Of The West', text: 'Legend Of The West' },
+  { id: 'title_the_one_they_fear',  name: 'The One They Fear',  text: 'The One They Fear' },
+  { id: 'title_still_kicking',      name: 'Still Kicking',      text: 'Still Kicking' },
+  { id: 'title_not_guilty',         name: 'Not Guilty',         text: 'Not Guilty' },
+  { id: 'title_fuck_it_we_ball',    name: 'Fuck It We Ball',    text: 'Fuck It We Ball' },
+
   // Creator-only. Not in the shop; surfaces on Customize for the dev account
   // regardless of unlocked_titles state.
   { id: 'title_one_above_all', name: 'One Above All', text: 'One Above All', devOnly: true },

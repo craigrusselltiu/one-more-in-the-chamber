@@ -84,6 +84,14 @@ export const useRunStore = create<RunStore>((set, get) => ({
     // Migrations for legacy saves
     const migrated = { ...run };
 
+    // Rename: ascensionLevel -> wantedLevel. Old persisted/remote-pulled runs
+    // from before the rename only carry ascensionLevel, so scoring.ts reads
+    // undefined and the final_score computes to NaN -> stored as NULL.
+    const legacy = migrated as unknown as { ascensionLevel?: number };
+    if (legacy.ascensionLevel != null && migrated.wantedLevel == null) {
+      migrated.wantedLevel = legacy.ascensionLevel;
+    }
+
     // Rename 'venom' tile type to 'waste'
     migrated.activeTileTypes = run.activeTileTypes.map(t => t === 'venom' as string ? 'waste' : t) as typeof run.activeTileTypes;
     if (run.tileUpgrades && ('venom' as string) in run.tileUpgrades) {

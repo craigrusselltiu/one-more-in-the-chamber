@@ -19,20 +19,29 @@ const TABS: { key: TabKey; label: string }[] = [
   { key: 'title', label: 'Titles' },
 ];
 
-/** Curated Featured-tab layout. Top row is small cards (colours + titles);
- *  bottom row is full-width nameplates. All items still live in their own
+/** Curated Featured-tab layout. Two small-card rows (colours, titles) above
+ *  a stack of full-width nameplate rows. All items still live in their own
  *  category tabs; Featured just resurfaces a picked subset. */
-const FEATURED_TOP_IDS: string[] = [
+const FEATURED_COLOUR_IDS: string[] = [
   'shop_colour_rainbow',
   'shop_colour_shadow',
   'shop_colour_bubblegum',
+  'shop_colour_red',
+  'shop_colour_gold',
+];
+const FEATURED_TITLE_IDS: string[] = [
+  'shop_title_john_chamber',
+  'shop_title_dead_man_walking',
   'shop_title_rust_main',
   'shop_title_reno_main',
+  'shop_title_fuck_it_we_ball',
 ];
-const FEATURED_BOTTOM_IDS: string[] = [
-  'shop_nameplate_rust',
-  'shop_nameplate_reno',
-  'shop_nameplate_wanted',
+const FEATURED_NAMEPLATE_IDS: string[] = [
+  'shop_nameplate_blood_moon',
+  'shop_nameplate_void',
+  'shop_nameplate_cherry',
+  'shop_nameplate_golden_laurels',
+  'shop_nameplate_bubble_tea',
 ];
 
 export const ReputationShopScreen = memo(function ReputationShopScreen() {
@@ -45,7 +54,7 @@ export const ReputationShopScreen = memo(function ReputationShopScreen() {
 
   const visibleItems = useMemo<ShopItemDefinition[]>(() => {
     if (tab === 'featured') {
-      return [...FEATURED_TOP_IDS, ...FEATURED_BOTTOM_IDS]
+      return [...FEATURED_COLOUR_IDS, ...FEATURED_TITLE_IDS, ...FEATURED_NAMEPLATE_IDS]
         .map((id) => SHOP_ITEMS.find((i) => i.id === id))
         .filter((x): x is ShopItemDefinition => !!x);
     }
@@ -130,17 +139,17 @@ export const ReputationShopScreen = memo(function ReputationShopScreen() {
           <p className="text-stone-500 text-xs text-center mt-12">No items in this category yet.</p>
         ) : tab === 'featured' ? (
           (() => {
-            const topItems = FEATURED_TOP_IDS
+            const resolve = (ids: string[]) => ids
               .map((id) => SHOP_ITEMS.find((i) => i.id === id))
               .filter((x): x is ShopItemDefinition => !!x);
-            const bottomItems = FEATURED_BOTTOM_IDS
-              .map((id) => SHOP_ITEMS.find((i) => i.id === id))
-              .filter((x): x is ShopItemDefinition => !!x);
+            const colourItems = resolve(FEATURED_COLOUR_IDS);
+            const titleItems = resolve(FEATURED_TITLE_IDS);
+            const nameplateItems = resolve(FEATURED_NAMEPLATE_IDS);
             return (
               <div className="flex flex-col gap-3 pt-2 pb-2 w-full">
-                {topItems.length > 0 && (
+                {colourItems.length > 0 && (
                   <div className="flex flex-wrap gap-2 justify-center">
-                    {topItems.map((item) => (
+                    {colourItems.map((item) => (
                       <ShopCard
                         key={item.id}
                         item={item}
@@ -152,9 +161,23 @@ export const ReputationShopScreen = memo(function ReputationShopScreen() {
                     ))}
                   </div>
                 )}
-                {bottomItems.length > 0 && (
+                {titleItems.length > 0 && (
+                  <div className="flex flex-wrap gap-2 justify-center">
+                    {titleItems.map((item) => (
+                      <ShopCard
+                        key={item.id}
+                        item={item}
+                        owned={isUnlocked(item.unlockId, item.category)}
+                        affordable={reputation >= item.cost}
+                        selected={selectedId === item.id}
+                        onSelect={() => setSelectedId(item.id)}
+                      />
+                    ))}
+                  </div>
+                )}
+                {nameplateItems.length > 0 && (
                   <div className="flex flex-col gap-2">
-                    {bottomItems.map((item) => (
+                    {nameplateItems.map((item) => (
                       <NameplateShopCard
                         key={item.id}
                         item={item}
@@ -248,7 +271,7 @@ function ShopCard({
       onClick={onSelect}
       onMouseEnter={playHover}
       disabled={disabled}
-      className={`relative flex flex-col items-center justify-center w-36 h-40 rounded-sm text-center transition-transform ${
+      className={`relative flex flex-col items-center justify-center w-36 h-36 rounded-sm text-center transition-transform ${
         owned
           ? 'opacity-60 cursor-not-allowed'
           : affordable
