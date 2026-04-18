@@ -139,8 +139,8 @@ export const useRunStore = create<RunStore>((set, get) => ({
     const mapState = generateMap(seed, 1, ascMods.eliteCountBonus);
     const loadouts = useMetaStore.getState().meta.unlockedLoadouts;
 
-    // Apply loadout bonuses
-    let gold = 100;
+    // Apply loadout bonuses. L10: ascension override drops base starting gold.
+    let gold = ascMods.startingGoldOverride ?? 100;
     const consumables: ConsumableInstance[] = [];
     const artifacts: ArtifactInstance[] = [];
     const traitCounts: Partial<Record<string, number>> = {};
@@ -170,14 +170,24 @@ export const useRunStore = create<RunStore>((set, get) => ({
       for (const tag of startDef.tags) traitCounts[tag] = (traitCounts[tag] ?? 0) + 1;
     }
 
+    // L25: start with a random corrupt-tagged artifact.
+    if (ascMods.startWithRandomCorruption) {
+      const corruptPool = ARTIFACTS.filter((a) => a.rarity === 'corrupt');
+      if (corruptPool.length > 0) {
+        const pick = corruptPool[Math.floor(Math.random() * corruptPool.length)];
+        artifacts.push({ id: pick.id, tags: pick.tags });
+        for (const tag of pick.tags) traitCounts[tag] = (traitCounts[tag] ?? 0) + 1;
+      }
+    }
+
     // Character-specific starting tiles (5th tile chosen after 3rd node)
     const coreTiles: TileType[] = [...CHARACTER_TILES[character]];
 
-    // L14: max HP ×0.95
+    // L14 / L26: max HP multiplier (0.95 / 0.9 cumulative).
     const maxHealth = Math.round(100 * ascMods.maxHealthMultiplier);
     // L6: start at 90% of max HP
     const startingHealth = Math.max(1, Math.round(maxHealth * ascMods.startingHealthFraction));
-    // L10: inject an extra Charcoal tile into the active deck
+    // L30: inject an extra Charcoal tile into the active deck
     if (ascMods.extraCharcoalTile && !coreTiles.includes('charcoal')) {
       coreTiles.push('charcoal');
     }

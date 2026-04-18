@@ -71,7 +71,7 @@ export const CharacterSelectScreen = memo(function CharacterSelectScreen() {
   const [customSeed, setCustomSeed] = useState('');
 
   // Ascension caps at 20. Scaling beyond 20 is disabled.
-  const maxSelectable = Math.min(20, highestCleared + 1);
+  const maxSelectable = Math.min(30, highestCleared + 1);
   const char = CHARACTERS.find((c) => c.id === selectedCharacter) ?? CHARACTERS[0];
 
   useEffect(() => {
@@ -335,17 +335,27 @@ const ASCENSION_EFFECTS: string[] = [
   'Normal enemies are tougher.',
   'Elites are tougher.',
   'Bosses are tougher.',
-  'Start each run with an extra Charcoal tile.',
+  'Start with less gold.',
   'Start each run with 1 less consumable slot.',
   'Upgraded tiles appear less often.',
   'All enemies drop less gold.',
   'Start with less max HP.',
   'Legendary artifacts are less common.',
   'Shops cost more.',
-  'Normal enemies gain an additional 10% HP and 10% damage.',
-  'Elites gain an additional 10% HP and 10% damage.',
-  'Bosses gain an additional 10% HP and 10% damage.',
+  'Normal enemies gain an additional 5% HP and 5% damage.',
+  'Elites gain an additional 5% HP and 5% damage.',
+  'Bosses gain an additional 5% HP and 5% damage.',
   'At the end of Act 3, the final boss spawns with a random Act 3 elite.',
+  'Merchants no longer have sales.',
+  'Normal enemies gain an additional 5% HP.',
+  'Elites gain an additional 5% HP.',
+  'Bosses gain an additional 5% HP.',
+  'Start each run with a random corruption.',
+  'Start with even less max HP.',
+  'Normal enemies gain an additional 5% damage.',
+  'Elites gain an additional 5% damage.',
+  'Bosses gain an additional 5% damage.',
+  'Start each run with an extra Charcoal tile.',
 ];
 
 function AscensionSelector({

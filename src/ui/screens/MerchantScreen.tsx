@@ -37,6 +37,9 @@ interface MerchantItem {
   name: string;
   description: string;
   price: number;
+  /** Set when the item is on sale. `price` holds the discounted cost; this
+   *  field holds the pre-discount price so the card can strikethrough it. */
+  originalPrice?: number;
   tileLevel?: number;
 }
 
@@ -91,8 +94,8 @@ export const MerchantScreen = memo(function MerchantScreen() {
 
     const consumables: MerchantItem[] = [];
     const shuffledConsumables = seededShuffle(CONSUMABLES, rand);
-    // Shop stocks 4 consumables; price fluctuates +/-5 around each consumable's base cost.
-    for (let i = 0; i < Math.min(4, shuffledConsumables.length); i++) {
+    // Shop stocks 3 consumables; price fluctuates +/-5 around each consumable's base cost.
+    for (let i = 0; i < Math.min(3, shuffledConsumables.length); i++) {
       const c = shuffledConsumables[i];
       const jitter = Math.floor(rand() * 11) - 5; // [-5, +5]
       const basePrice = Math.max(1, c.cost + jitter);
@@ -123,16 +126,25 @@ export const MerchantScreen = memo(function MerchantScreen() {
       rare: { min: 181, range: 40 },
       legendary: { min: 261, range: 40 },
     };
+    // One random artifact in the stock gets a 50%-off SALE tag. L21 disables
+    // sales entirely for the rest of the run.
+    const salesDisabled = getAscensionMutations(run.ascensionLevel).disableMerchantSales;
+    const saleIndex = !salesDisabled && pickedArtifacts.length > 0
+      ? Math.floor(rand() * pickedArtifacts.length)
+      : -1;
     for (let i = 0; i < pickedArtifacts.length; i++) {
       const a = pickedArtifacts[i];
       const tier = RARITY_PRICE[a.rarity ?? 'common'] ?? RARITY_PRICE.common;
       const basePrice = tier.min + Math.floor(rand() * tier.range);
+      const fullPrice = Math.round(basePrice * priceMult);
+      const onSale = i === saleIndex;
       artifacts.push({
         type: 'artifact',
         id: `art-${a.id}`,
         name: a.name,
         description: a.effect,
-        price: Math.round(basePrice * priceMult),
+        price: onSale ? Math.max(1, Math.round(fullPrice * 0.5)) : fullPrice,
+        originalPrice: onSale ? fullPrice : undefined,
       });
     }
 
@@ -142,10 +154,11 @@ export const MerchantScreen = memo(function MerchantScreen() {
       (t) => t !== 'tumbleweed' && t !== 'showdown' && t !== 'fools_gold' && t !== 'charcoal',
     );
     if (swappableTiles.length > 0) {
-      const tilePool = run.currentAct === 1 ? STARTER_POOL : [...STARTER_POOL, ...ADDITIONAL_POOL];
+      const tilePool = [...STARTER_POOL, ...ADDITIONAL_POOL];
       const available = tilePool.filter((t) => !snapTileTypes.includes(t));
-      if (available.length > 0) {
-        const swapTile = seededShuffle(available, rand)[0];
+      // Offer up to 2 distinct swap tiles.
+      const picks = seededShuffle(available, rand).slice(0, 2);
+      for (const swapTile of picks) {
         const def = TILE_DEFINITIONS[swapTile];
         const tileLevel = rollTileRewardLevel(run.currentAct, run.ascensionLevel, rand);
         tiles.push({
@@ -247,7 +260,7 @@ export const MerchantScreen = memo(function MerchantScreen() {
       <h2 className="text-xl text-amber-400 mb-4 font-bold uppercase" style={{ WebkitTextStroke: '4px #000', paintOrder: 'stroke fill' }}>General Merchant</h2>
 
       <div className="flex flex-col gap-4 px-2">
-        {/* Row 1: Artifacts | Tile */}
+        {/* Row 1: Artifacts | Upgrade */}
         <div className="flex gap-2">
           <Section title="Artifacts">
             {stock.artifacts.map((item) => {
@@ -279,6 +292,7 @@ export const MerchantScreen = memo(function MerchantScreen() {
                     subtitleColor={RARITY_COLORS_DIM[artDef?.rarity ?? 'common']}
                     description={<>{colorizeKeywords(item.description)}</>}
                     price={item.price}
+                    originalPrice={item.originalPrice}
                     sold={isSold}
                     disabled={isSold || !canAfford}
                     onClick={() => handleBuy(item)}
@@ -288,41 +302,28 @@ export const MerchantScreen = memo(function MerchantScreen() {
             })}
           </Section>
 
-          <Section title="Tile">
+          <Section title="Upgrade">
             {(() => {
-              const tileItem = stock.tiles.find((t) => t.type === 'tile_swap');
-              if (!tileItem) return null;
-              const isSold = purchased.has(tileItem.id);
-              const canAfford = run.gold >= tileItem.price;
-              const tileType = tileItem.id.replace('swap-', '') as TileType;
-              const def = TILE_DEFINITIONS[tileType];
-              const level = tileItem.tileLevel ?? 0;
-              const upgradeTooltip = def.upgradeText ? (
-                <div className="whitespace-nowrap" style={{ fontSize: '8px', lineHeight: 1.3 }}>
-                  <span className="text-stone-400 font-bold">Upgrade</span>
-                  <span className="text-stone-400"> - </span>
-                  <span className="text-amber-300">{def.upgradeText}</span>
-                </div>
-              ) : undefined;
+              const upgradeItem = stock.tiles.find((t) => t.type === 'upgrade');
+              if (!upgradeItem) return null;
+              const isSold = purchased.has(upgradeItem.id);
+              const canAfford = run.gold >= upgradeItem.price;
               return (
-                <Tooltip content={upgradeTooltip} position="bottom" gap={30}>
-                  <MerchantCard
-                    icon={<SpriteIcon frame={TILE_FRAMES[tileType]} scale={2} />}
-                    name={tileItem.name}
-                    subtitle={level > 0 ? `Lv ${level + 1}` : undefined}
-                    description={<>{buildTileDescription(tileType, level)}</>}
-                    price={tileItem.price}
+                <MerchantCard
+                  icon={<SpriteIcon frame={UI_FRAMES.upgrade} scale={2} />}
+                  name={upgradeItem.name}
+                  description={upgradeItem.description}
+                  price={upgradeItem.price}
                   sold={isSold}
                   disabled={isSold || !canAfford}
-                    onClick={() => handleBuy(tileItem)}
-                  />
-                </Tooltip>
+                  onClick={() => handleBuy(upgradeItem)}
+                />
               );
             })()}
           </Section>
         </div>
 
-        {/* Row 2: Consumables | Upgrade */}
+        {/* Row 2: Consumables | Tiles */}
         <div className="flex gap-2">
           <Section title="Consumables">
             {stock.consumables.map((item) => {
@@ -346,24 +347,35 @@ export const MerchantScreen = memo(function MerchantScreen() {
             })}
           </Section>
 
-          <Section title="Upgrade">
-            {(() => {
-              const upgradeItem = stock.tiles.find((t) => t.type === 'upgrade');
-              if (!upgradeItem) return null;
-              const isSold = purchased.has(upgradeItem.id);
-              const canAfford = run.gold >= upgradeItem.price;
+          <Section title="Tiles">
+            {stock.tiles.filter((t) => t.type === 'tile_swap').map((tileItem) => {
+              const isSold = purchased.has(tileItem.id);
+              const canAfford = run.gold >= tileItem.price;
+              const tileType = tileItem.id.replace('swap-', '') as TileType;
+              const def = TILE_DEFINITIONS[tileType];
+              const level = tileItem.tileLevel ?? 0;
+              const upgradeTooltip = def.upgradeText ? (
+                <div className="whitespace-nowrap" style={{ fontSize: '8px', lineHeight: 1.3 }}>
+                  <span className="text-stone-400 font-bold">Upgrade</span>
+                  <span className="text-stone-400"> - </span>
+                  <span className="text-amber-300">{def.upgradeText}</span>
+                </div>
+              ) : undefined;
               return (
-                <MerchantCard
-                  icon={<SpriteIcon frame={UI_FRAMES.upgrade} scale={2} />}
-                  name={upgradeItem.name}
-                  description={upgradeItem.description}
-                  price={upgradeItem.price}
-                  sold={isSold}
-                  disabled={isSold || !canAfford}
-                  onClick={() => handleBuy(upgradeItem)}
-                />
+                <Tooltip key={tileItem.id} content={upgradeTooltip} position="bottom" gap={30}>
+                  <MerchantCard
+                    icon={<SpriteIcon frame={TILE_FRAMES[tileType]} scale={2} />}
+                    name={tileItem.name}
+                    subtitle={level > 0 ? `Lv ${level + 1}` : undefined}
+                    description={<>{buildTileDescription(tileType, level)}</>}
+                    price={tileItem.price}
+                    sold={isSold}
+                    disabled={isSold || !canAfford}
+                    onClick={() => handleBuy(tileItem)}
+                  />
+                </Tooltip>
               );
-            })()}
+            })}
           </Section>
         </div>
       </div>
@@ -590,6 +602,7 @@ function MerchantCard({
   subtitleColor,
   description,
   price,
+  originalPrice,
   sold,
   disabled,
   onClick,
@@ -601,10 +614,13 @@ function MerchantCard({
   subtitleColor?: string;
   description: React.ReactNode;
   price: number;
+  /** When set, the card shows a strikethrough original + discounted price + SALE badge. */
+  originalPrice?: number;
   sold: boolean;
   disabled: boolean;
   onClick: () => void;
 }) {
+  const onSale = !sold && originalPrice != null && originalPrice > price;
   return (
     <button
       onClick={onClick}
@@ -622,8 +638,33 @@ function MerchantCard({
         boxShadow: '3px 3px 2px rgba(0,0,0,0.7)',
       }}
     >
-      <span className="absolute top-1 right-1.5 text-yellow-400 font-bold" style={{ fontSize: '10px' }}>
-        {sold ? 'SOLD' : `${price}g`}
+      {onSale && (
+        <span
+          className="absolute top-1 left-1.5 font-bold"
+          style={{
+            fontSize: '9px',
+            color: '#f87171',
+            WebkitTextStroke: '2px #000',
+            paintOrder: 'stroke fill',
+            letterSpacing: '0.5px',
+          }}
+        >
+          SALE
+        </span>
+      )}
+      <span className="absolute top-1 right-1.5 font-bold flex flex-col items-end leading-none" style={{ fontSize: '10px' }}>
+        {sold ? (
+          <span className="text-yellow-400">SOLD</span>
+        ) : onSale ? (
+          <>
+            <span className="text-stone-500 line-through" style={{ fontSize: '8px' }}>
+              {originalPrice}g
+            </span>
+            <span className="text-yellow-400 mt-px">{price}g</span>
+          </>
+        ) : (
+          <span className="text-yellow-400">{price}g</span>
+        )}
       </span>
       <div className="mb-1.5">{icon}</div>
       <span className={nameClass ?? 'text-amber-300 text-xs font-bold'}>{name}</span>

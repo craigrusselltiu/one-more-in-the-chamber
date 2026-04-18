@@ -28,10 +28,7 @@ future ideas:
 
 artifact ideas:
 - free cookie at start of boss fight
-- trailblazer's compass - unused swaps give you block next turn
 
 todo:
-- red blood around screen on damage
 - store run data for guests
-- do we even need the whole extra_state? i think since we're only using that for scoring then we should probably just have score_state or something
 - flagellation items, self damage

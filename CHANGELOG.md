@@ -4,6 +4,27 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## v0.6.10
+
+### Added
+- Ascension capped raised to L30. New mutations on top of the existing L1-L20:
+  - L21 - Merchants no longer stock a discounted SALE artifact.
+  - L22 / L23 / L24 - Normals / elites / bosses gain an additional +5% HP.
+  - L25 - Start each run with a random corruption artifact.
+  - L26 - Max HP multiplier drops to 0.9 (cumulative -10% with L14).
+  - L27 / L28 / L29 - Normals / elites / bosses gain an additional +5% damage.
+  - L30 - Start each run with an extra Charcoal tile (moved from the old L10).
+- New `AscensionMutations` fields wired through `runStore.startRun` and `MerchantScreen`: `startingGoldOverride`, `disableMerchantSales`, `startWithRandomCorruption` (existing `extraCharcoalTile` flag repurposed for L30).
+- Merchant stocks one random artifact at 50% off per visit. The sale is seeded by the run + node id so it stays stable if the player leaves and comes back. `MerchantItem.originalPrice` carries the pre-discount cost; the card shows a red SALE badge top-left and stacks the strikethrough original over the discounted price in the top-right cluster.
+- Cherry nameplate (15,000 reputation) appended to the Nameplates tab.
+
+### Changed
+- L10 ascension mutation rewritten from "extra Charcoal tile" to "Start with less gold (50g)". `startingGoldOverride` replaces the base 100g; loadouts (e.g. outlaw's stash +15) still stack on top.
+- L17 / L18 / L19 ascension mutations dropped from +10% to +5% HP + damage per category, giving room for the additional L22-L24 / L27-L29 stacking bumps.
+- Merchant shop layout reorganised: Row 1 is now 4 Artifacts + 1 Upgrade (was Artifacts + Tile); Row 2 is 3 Consumables + 2 Tiles (was 4 Consumables + Upgrade). Stock builder rolls two distinct `tile_swap` entries via `seededShuffle(available, rand).slice(0, 2)` when available.
+- Act 1 merchants can now offer tiles from the full `STARTER_POOL + ADDITIONAL_POOL` union, not just starter tiles.
+- Ascension max-selectable cap raised from 20 to 30 (`CharacterSelectScreen.tsx`). `ASCENSION_EFFECTS` string table extended with the L21-L30 blurbs.
+
 ## v0.6.9
 
 ### Added

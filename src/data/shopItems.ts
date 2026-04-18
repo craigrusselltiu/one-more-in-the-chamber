@@ -64,6 +64,14 @@ export const SHOP_ITEMS: ShopItemDefinition[] = [
     category: 'nameplate',
     unlockId: 'nameplate_train',
   },
+  {
+    id: 'shop_nameplate_cherry',
+    name: 'Cherry',
+    description: '',
+    cost: 15000,
+    category: 'nameplate',
+    unlockId: 'nameplate_cherry',
+  },
 
   // --- Colours (shimmering name tint on the leaderboard) ---
   {

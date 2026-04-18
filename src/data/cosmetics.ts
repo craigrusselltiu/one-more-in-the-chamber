@@ -64,6 +64,11 @@ export const NAMEPLATES: NameplateDef[] = [
     name: 'Train',
     imagePath: 'assets/nameplates/train.png',
   },
+  {
+    id: 'nameplate_cherry',
+    name: 'Cherry',
+    imagePath: 'assets/nameplates/cherry.png',
+  },
 ];
 
 export const COLOURS: ColourDef[] = [
