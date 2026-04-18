@@ -178,6 +178,26 @@ export async function clearCombatSnapshot(runId: string): Promise<void> {
   });
 }
 
+/**
+ * Wipe all IndexedDB stores -- runs, meta, scores, combat snapshots.
+ * Used by the kickout exit path so the kicked device doesn't keep a copy
+ * of the account's run state after being signed out of that run.
+ */
+export async function clearAllLocalData(): Promise<void> {
+  try {
+    const db = await openDB();
+    const tx = db.transaction(REQUIRED_STORES, 'readwrite');
+    for (const name of REQUIRED_STORES) {
+      tx.objectStore(name).clear();
+    }
+    await new Promise<void>((resolve) => {
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => resolve();
+      tx.onabort = () => resolve();
+    });
+  } catch { /* ignore */ }
+}
+
 /** Remove all combat snapshots with empty boards (corrupt saves). */
 export async function purgeCorruptSnapshots(): Promise<number> {
   try {

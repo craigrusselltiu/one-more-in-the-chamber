@@ -3,7 +3,10 @@ import { useRunStore } from '../../store/runStore';
 import { SpriteIcon } from '../components/SpriteIcon';
 import { Tooltip } from '../components/Tooltip';
 import { TRAIT_FRAMES, TRAIT_BREAKPOINTS } from '../../data/spriteConfig';
-import type { TraitId } from '../../types/game';
+import type { ArtifactInstance, TraitId } from '../../types/game';
+
+const EMPTY_ARTIFACTS: ArtifactInstance[] = [];
+const EMPTY_TRAIT_COUNTS: Partial<Record<TraitId, number>> = {};
 
 const OUTLINE_STYLE: React.CSSProperties = {
   WebkitTextStroke: '2px #000',
@@ -104,8 +107,8 @@ const TRAIT_DESCRIPTIONS: Record<string, Record<number, string>> = {
  * Only appears if the player has at least 1 artifact.
  */
 export const TraitDisplay = memo(function TraitDisplay() {
-  const artifacts = useRunStore((s) => s.run?.artifacts ?? []);
-  const traitCounts = useRunStore((s) => s.run?.traitCounts ?? {});
+  const artifacts = useRunStore((s) => s.run?.artifacts ?? EMPTY_ARTIFACTS);
+  const traitCounts = useRunStore((s) => s.run?.traitCounts ?? EMPTY_TRAIT_COUNTS);
 
   if (artifacts.length === 0) return null;
 

@@ -14,7 +14,9 @@ export const KickoutOverlay = memo(function KickoutOverlay() {
   if (!kicked) return null;
 
   const handleReturn = () => {
-    // logout() clears the kicked flag, wipes local run/meta, and navigates to main menu.
+    // Same flow as Settings -> Sign Out: flips auth state, restores the
+    // pre-login guest name if any, clears the active run, and navigates to
+    // the main menu. No page reload.
     logout().catch(console.error);
   };
 

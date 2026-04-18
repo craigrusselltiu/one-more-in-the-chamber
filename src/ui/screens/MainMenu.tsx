@@ -6,6 +6,7 @@ import { checkForCombatResume } from '../../services/combatResume';
 import { calculateScore } from '../../utils/scoring';
 import { playHover } from '../../services/sfx';
 import { getAuthState, subscribeAuth, type AuthState } from '../../services/auth';
+import { Tooltip } from '../components/Tooltip';
 import changelogRaw from '../../../CHANGELOG.md?raw';
 
 import type { Screen } from '../../App';
@@ -15,13 +16,16 @@ function MenuButton({
   label,
   onClick,
   disabled,
+  disabledTooltip,
 }: {
   label: string;
   onClick?: () => void;
   disabled?: boolean;
+  /** Optional hover hint shown on the disabled state (e.g. a log-in prompt). */
+  disabledTooltip?: string;
 }) {
   if (disabled) {
-    return (
+    const body = (
       <div
         className="py-1 px-3 text-left"
         style={{
@@ -30,11 +34,15 @@ function MenuButton({
           color: '#5a3a3a',
           WebkitTextStroke: '3px #000',
           paintOrder: 'stroke fill',
+          cursor: disabledTooltip ? 'help' : 'default',
         }}
       >
         {label}
       </div>
     );
+    return disabledTooltip
+      ? <Tooltip text={disabledTooltip} position="top">{body}</Tooltip>
+      : body;
   }
 
   return (
@@ -170,6 +178,10 @@ export const MainMenu = memo(function MainMenu() {
     EventBus.emit(GameEvent.SCREEN_CHANGE, 'reputation-shop' satisfies Screen);
   };
 
+  const handleCustomize = () => {
+    EventBus.emit(GameEvent.SCREEN_CHANGE, 'customize' satisfies Screen);
+  };
+
   const handleLeaderboard = () => {
     EventBus.emit(GameEvent.SCREEN_CHANGE, 'leaderboard' satisfies Screen);
   };
@@ -236,7 +248,18 @@ export const MainMenu = memo(function MainMenu() {
           <MenuButton label="Continue" onClick={handleContinue} />
         )}
         <MenuButton label="New Game" onClick={handleNewGame} />
-        <MenuButton label="Reputation Shop" onClick={handleReputationShop} />
+        <MenuButton
+          label="Reputation Shop"
+          onClick={handleReputationShop}
+          disabled={!auth.isLoggedIn}
+          disabledTooltip={!auth.isLoggedIn ? 'Log in to spend reputation.' : undefined}
+        />
+        <MenuButton
+          label="Customize"
+          onClick={handleCustomize}
+          disabled={!auth.isLoggedIn}
+          disabledTooltip={!auth.isLoggedIn ? 'Log in to customize your look.' : undefined}
+        />
         <MenuButton label="Leaderboard" onClick={handleLeaderboard} />
         <MenuButton label="Changelog" onClick={() => setShowChangelog(true)} />
         <MenuButton label="Settings" onClick={handleSettings} />

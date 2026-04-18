@@ -111,6 +111,7 @@ export const ScoreScreen = memo(function ScoreScreen() {
       runCompleted: score.completed,
       tiles,
       artifacts: artifactIds,
+      killedBy: score.completed ? null : (run.deathCause ?? null),
       createdAt: new Date().toISOString(),
     };
 

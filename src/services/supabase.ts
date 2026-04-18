@@ -2,49 +2,72 @@
  * Supabase client singleton.
  * Lazily initialized -- returns null when env vars are missing (offline mode).
  *
- * Session persistence:
- *   A custom storage adapter routes auth tokens to localStorage ("stay signed in")
- *   or sessionStorage (session ends when the tab closes). The mode is toggled via
- *   setAuthStorageMode() before calling signIn / signUp / OAuth redirect.
+ * Session persistence: the Supabase client always stores its auth token in
+ * localStorage, so tab reopens restore the session reliably. The "Stay signed
+ * in" off option is implemented separately via a beforeunload handler that
+ * explicitly signs out when the tab closes -- see installUnloadSignOut().
  */
 
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 
-const AUTH_STORAGE_MODE_KEY = 'omitc-auth-storage-mode';
+const STAY_SIGNED_IN_KEY = 'omitc-stay-signed-in';
 
 export type AuthStorageMode = 'local' | 'session';
 
-/** Persist the user's "Stay signed in" choice. Call BEFORE sign-in flows. */
+/** Record the user's "Stay signed in" choice BEFORE the sign-in call. On true
+ *  (default), session persists normally. On false, beforeunload signs the user
+ *  out so the next tab open is a clean slate. */
 export function setAuthStorageMode(mode: AuthStorageMode): void {
-  try { localStorage.setItem(AUTH_STORAGE_MODE_KEY, mode); } catch { /* ignore */ }
+  try {
+    if (mode === 'session') {
+      localStorage.setItem(STAY_SIGNED_IN_KEY, 'false');
+      installUnloadSignOut();
+    } else {
+      localStorage.removeItem(STAY_SIGNED_IN_KEY);
+      removeUnloadSignOut();
+    }
+  } catch { /* ignore */ }
 }
 
 export function getAuthStorageMode(): AuthStorageMode {
   try {
-    const v = localStorage.getItem(AUTH_STORAGE_MODE_KEY);
-    return v === 'session' ? 'session' : 'local';
+    return localStorage.getItem(STAY_SIGNED_IN_KEY) === 'false' ? 'session' : 'local';
   } catch {
     return 'local';
   }
 }
 
-/** Dynamic storage: reads mode at call time so the user's choice for the current
- *  sign-in determines where the new tokens land without recreating the client. */
-const dynamicStorage = {
-  getItem: (key: string): string | null => {
-    const storage = getAuthStorageMode() === 'session' ? sessionStorage : localStorage;
-    try { return storage.getItem(key); } catch { return null; }
-  },
-  setItem: (key: string, value: string): void => {
-    const storage = getAuthStorageMode() === 'session' ? sessionStorage : localStorage;
-    try { storage.setItem(key, value); } catch { /* ignore */ }
-  },
-  removeItem: (key: string): void => {
-    // Clear from both so sign-out wipes any stale token from either bucket.
-    try { localStorage.removeItem(key); } catch { /* ignore */ }
-    try { sessionStorage.removeItem(key); } catch { /* ignore */ }
-  },
-};
+// beforeunload sign-out: only armed when the user explicitly unchecked Stay
+// Signed In at login time. Fires best-effort (no guarantees on mobile / crash).
+
+let unloadHandler: (() => void) | null = null;
+
+function installUnloadSignOut(): void {
+  if (unloadHandler) return;
+  unloadHandler = () => {
+    try { void client?.auth.signOut({ scope: 'local' }); } catch { /* ignore */ }
+  };
+  try { window.addEventListener('beforeunload', unloadHandler); } catch { /* ignore */ }
+  try { window.addEventListener('pagehide', unloadHandler); } catch { /* ignore */ }
+}
+
+function removeUnloadSignOut(): void {
+  if (!unloadHandler) return;
+  try { window.removeEventListener('beforeunload', unloadHandler); } catch { /* ignore */ }
+  try { window.removeEventListener('pagehide', unloadHandler); } catch { /* ignore */ }
+  unloadHandler = null;
+}
+
+// On module load, restore the unload handler if the user previously chose
+// "Stay signed in: off" -- the flag lives in localStorage and we want the
+// behavior to persist across tab reloads within the same authenticated period.
+if (typeof window !== 'undefined' && typeof localStorage !== 'undefined') {
+  try {
+    if (localStorage.getItem(STAY_SIGNED_IN_KEY) === 'false') {
+      installUnloadSignOut();
+    }
+  } catch { /* ignore */ }
+}
 
 let client: SupabaseClient | null = null;
 
@@ -58,7 +81,7 @@ export function getSupabase(): SupabaseClient | null {
 
   client = createClient(url, key, {
     auth: {
-      storage: dynamicStorage,
+      // Default localStorage-based persistence. Simple, reliable across reloads.
       persistSession: true,
       autoRefreshToken: true,
       detectSessionInUrl: true,

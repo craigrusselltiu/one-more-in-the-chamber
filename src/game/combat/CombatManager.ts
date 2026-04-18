@@ -59,6 +59,8 @@ export interface CombatResult {
   playerDamageTaken: boolean;
   /** True on victory if this fight was the Outlaw King encounter. */
   defeatedOutlawKing: boolean;
+  /** Name of the enemy / source that dealt the killing blow. Null on victory. */
+  deathCause: string | null;
 }
 
 /**
@@ -125,6 +127,10 @@ export class CombatManager {
   private longestCascadeThisFight = 0;
   /** Whether the player took any HP damage this fight (for flawless tracking). */
   private playerTookDamageThisFight = false;
+  /** Last source that dealt HP damage to the player (enemy name or a generic
+   *  tag like "Poison" / "Bomb"). Used to attribute the killing blow when
+   *  endCombat fires in defeat. */
+  private lastDamageSource: string | null = null;
   /** Gold multiplier from ascension level (1.0 = normal, <1.0 = reduced). */
   private goldMultiplier: number;
 
@@ -679,6 +685,7 @@ export class CombatManager {
       const rawDmg = this.player.poisonedStacks;
       const poisonDmg = Math.max(1, Math.round(rawDmg * this.artifacts.getPoisonDamageMultiplier()));
       this.player.health = Math.max(0, this.player.health - poisonDmg);
+      this.lastDamageSource = 'Poison';
       this.player.poisonedStacks--;
       // Lethal poison must still trigger Shed Skin / Dead Man Walking, and if the
       // player dies here we must end combat — otherwise they sit at 0 HP until
@@ -1279,7 +1286,10 @@ export class CombatManager {
       this.player.addGold(Math.max(1, Math.round(10 * this.goldMultiplier)));
     } else {
       // Poison: small self-damage
-      if (this.player.takeDamage(8).hpLost > 0) this.playerTookDamageThisFight = true;
+      if (this.player.takeDamage(8).hpLost > 0) {
+        this.playerTookDamageThisFight = true;
+        this.lastDamageSource = 'Snake Oil';
+      }
     }
   }
 
@@ -2116,7 +2126,7 @@ export class CombatManager {
       const bombResult = this.hazardManager.tickBombs();
       if (bombResult.totalDamage > 0) {
         const bombDmg = this.player.takeDamage(bombResult.totalDamage);
-        if (bombDmg.hpLost > 0) { playHit(); this.playerTookDamageThisFight = true; }
+        if (bombDmg.hpLost > 0) { playHit(); this.playerTookDamageThisFight = true; this.lastDamageSource = 'Bomb'; }
         if (bombDmg.blocked > 0) { playBlock(); }
         EventBus.emit(GameEvent.PLAYER_HP_CHANGE, this.player.health, this.player.maxHealth);
         EventBus.emit(GameEvent.SCREEN_SHAKE, bombResult.detonations.length > 1 ? 'heavy' : 'medium');
@@ -2134,7 +2144,10 @@ export class CombatManager {
           if (enemy.state.fuse === 0) {
             const fuseDamage = enemy.getDefinition().fuseDamage ?? 0;
             if (fuseDamage > 0) {
-              if (this.player.takeDamage(fuseDamage).hpLost > 0) this.playerTookDamageThisFight = true;
+              if (this.player.takeDamage(fuseDamage).hpLost > 0) {
+                this.playerTookDamageThisFight = true;
+                this.lastDamageSource = enemy.getDefinition().name;
+              }
               EventBus.emit(GameEvent.PLAYER_HP_CHANGE, this.player.health, this.player.maxHealth);
               EventBus.emit(GameEvent.SCREEN_SHAKE, 'heavy');
             }
@@ -2547,7 +2560,7 @@ export class CombatManager {
     const preacherReduction = this.traits.getPreacherDamageReduction(enemy.state.health, this.player.health);
     if (preacherReduction > 0) adjustedDamage = Math.round(adjustedDamage * (1 - preacherReduction));
     const { hpLost, blocked, thornsDamage } = this.player.takeDamage(adjustedDamage);
-    if (hpLost > 0) { playHit(); this.playerTookDamageThisFight = true; }
+    if (hpLost > 0) { playHit(); this.playerTookDamageThisFight = true; this.lastDamageSource = enemy.getDefinition().name; }
     if (blocked > 0) { playBlock(); this.floatOnPlayer(`-${blocked}`, '#6888A0'); }
     if (hpLost > 0) this.floatOnPlayer(`-${hpLost}`, '#ff4444');
 
@@ -2695,6 +2708,7 @@ export class CombatManager {
       longestCascade: this.longestCascadeThisFight,
       playerDamageTaken: this.playerTookDamageThisFight,
       defeatedOutlawKing: victory && this.isOutlawKing,
+      deathCause: victory ? null : (this.lastDamageSource ?? 'Unknown'),
     };
 
     EventBus.emit(GameEvent.COMBAT_END, result);

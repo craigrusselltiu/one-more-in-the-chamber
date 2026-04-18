@@ -64,6 +64,8 @@ export interface RunState {
   actMerchantSurcharge?: number;
   /** Delayed potion effect rolled by Medicine Wagon; applied once at the start of the next combat. */
   pendingNextFightPotion?: 'heal' | 'damage' | 'vulnerable' | 'poison';
+  /** What killed the player on defeat -- enemy name, event title, or a generic tag like "Poison". Populated when endRun(false) is called; null/undefined for victories. */
+  deathCause?: string;
   status: 'active' | 'completed' | 'abandoned';
 }
 

@@ -10,7 +10,7 @@ import { useRunStore } from '../store/runStore';
 import { clearKicked } from './kickout';
 import {
   abandonOtherActiveRuns,
-  claimAllMyActiveRuns,
+  checkOwnershipAndKick,
   startOwnershipWatcher,
   stopOwnershipWatcher,
   syncOnLogin,
@@ -25,7 +25,20 @@ export interface AuthState {
   displayName: string | null;
   /** True when the user is authenticated but has no players row yet (OAuth first sign-in). */
   needsDisplayName: boolean;
+  /** True when the signed-in account is a creator/dev -- unlocks hidden-only
+   *  content (e.g. the "One Above All" title). Client-side gate; treat as a
+   *  cosmetic indicator, not a security boundary. */
+  isDev: boolean;
 }
+
+/** Supabase auth.users.id values that count as creator/dev accounts. UUIDs
+ *  aren't personally identifying the way an email is, so safe to commit.
+ *  Replace the placeholder below with your own player ID (found in the
+ *  Supabase dashboard: Authentication -> Users -> your row -> UID). */
+const DEV_USER_IDS: string[] = [
+  // 'paste-your-uuid-here',
+  '0a4e7520-a94a-4003-8873-f5c5fca6da7d',
+];
 
 /** Listeners notified whenever auth state changes (login/logout/display-name set). */
 type Listener = (state: AuthState) => void;
@@ -68,6 +81,7 @@ const state: AuthState = {
   userId: null,
   displayName: null,
   needsDisplayName: false,
+  isDev: false,
 };
 
 let initialized = false;
@@ -98,11 +112,13 @@ function applySession(session: Session | null): void {
       session.user.email ??
       null;
     state.needsDisplayName = false;
+    state.isDev = DEV_USER_IDS.includes(session.user.id);
   } else {
     state.isLoggedIn = false;
     state.userId = null;
     state.displayName = null;
     state.needsDisplayName = false;
+    state.isDev = false;
   }
 }
 
@@ -158,20 +174,15 @@ export async function initAuth(): Promise<void> {
   const { data } = await sb.auth.getSession();
   applySession(data.session);
   if (state.isLoggedIn) {
-    // Session restored from a previous visit.
-    // 1. Hydrate display name from the players table.
+    // Session restored from a previous visit. Do NOT unconditionally claim
+    // ownership here -- that would steal the active run from any other device
+    // that's currently playing. Instead, check ownership up-front: if another
+    // device owns it, show the kickout overlay immediately rather than
+    // letting the user play stale state for up to WATCH_INTERVAL_MS.
+    checkOwnershipAndKick().catch(console.error);
     hydrateProfile().catch(console.error);
-    // 2. Claim ownership before anything else reads session_id, so the
-    //    watcher's first poll and the first pushRun don't false-kick us.
-    // 3. Pull-only: overwrite local with whatever's on the server, no
-    //    merge and no push-back. This makes DB edits unambiguously take
-    //    effect without the merge logic second-guessing the dev.
-    // 4. THEN start the periodic ownership watcher.
-    claimAllMyActiveRuns()
-      .catch(console.error)
-      .then(() => pullRemoteStateOverwriteLocal())
-      .catch(console.error)
-      .finally(() => startOwnershipWatcher());
+    pullRemoteStateOverwriteLocal().catch(console.error);
+    startOwnershipWatcher();
   }
   notify();
 

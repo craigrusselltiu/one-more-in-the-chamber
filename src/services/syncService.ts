@@ -13,10 +13,13 @@ import {
   saveMeta,
   loadAllRuns,
   saveRun,
+  deleteRun,
   loadAllScores,
   saveScore,
+  saveCombatSnapshot as saveCombatSnapshotLocal,
+  clearCombatSnapshot as clearCombatSnapshotLocal,
 } from './localSave';
-import { useMetaStore, readLocalMetaUpdatedAt, markLocalMetaSynced } from '../store/metaStore';
+import { useMetaStore, markLocalMetaSynced } from '../store/metaStore';
 import { useRunStore } from '../store/runStore';
 import { SESSION_ID } from './session';
 import { notifyKicked } from './kickout';
@@ -31,6 +34,14 @@ interface MetaRow {
   unlocked_cosmetics: string[];
   unlocked_loadouts: string[];
   unlocked_characters: string[];
+  unlocked_skins: string[];
+  unlocked_nameplates: string[];
+  unlocked_colours: string[];
+  unlocked_titles: string[];
+  equipped_skin: string | null;
+  equipped_nameplate: string | null;
+  equipped_colour: string | null;
+  equipped_title: string | null;
   highest_ascension_cleared: number;
 }
 
@@ -42,6 +53,14 @@ interface LocalMeta {
   unlockedCosmetics: string[];
   unlockedLoadouts: string[];
   unlockedCharacters: string[];
+  unlockedSkins: string[];
+  unlockedNameplates: string[];
+  unlockedColours: string[];
+  unlockedTitles: string[];
+  equippedSkin: string | null;
+  equippedNameplate: string | null;
+  equippedColour: string | null;
+  equippedTitle: string | null;
   highestAscensionCleared: number;
 }
 
@@ -187,6 +206,10 @@ export async function pushRun(run: LocalRun): Promise<void> {
 
     if (existing) {
       if (existing.player_id === userId && existing.session_id !== SESSION_ID) {
+        // Another device owns this run. Don't re-claim -- that's the behavior
+        // that caused the ping-pong where neither device could actually push.
+        // Trust the mismatch, kick ourselves, and stop writing stale state.
+        console.warn('[sync] pushRun ownership mismatch; kicking');
         notifyKicked();
       }
       return;
@@ -211,10 +234,15 @@ export async function pushRun(run: LocalRun): Promise<void> {
     }
   }
 
-  // Push run_state independently (single row per run_id, no session tracking).
-  // extra_state holds the entire RunState blob as JSONB so fields that don't
-  // have a dedicated column (combatsCleared, elitesCleared, bossesDefeated,
-  // flawlessFights, pending* flags, eventBag, etc.) still round-trip.
+  // Push run_state. extra_state holds only the non-duplicated residual fields
+  // (counters, pending flags, eventBag, etc.); everything that has a dedicated
+  // column (or lives on the runs table) is omitted to keep the payload small
+  // and avoid two sources of truth. traitCounts is derived from artifacts on
+  // pull, so we don't persist it either.
+  //
+  // IMPORTANT: we do NOT touch the combat_state column here. That column is
+  // owned by pushCombatSnapshot / clearRemoteCombatSnapshot so a background
+  // run-state push doesn't clobber a live mid-combat save.
   await sb.from('run_state').upsert({
     run_id: run.id,
     health: run.health,
@@ -223,14 +251,74 @@ export async function pushRun(run: LocalRun): Promise<void> {
     active_tile_types: run.activeTileTypes,
     tile_upgrades: run.tileUpgrades,
     artifacts: run.artifacts,
-    trait_counts: run.traitCounts,
     consumables: run.consumables,
     ability_charge: run.abilityCharge,
     map_state: run.mapState,
-    combat_state: run.combatState ?? null,
-    extra_state: run,
+    extra_state: buildExtraState(run),
     updated_at: now,
   });
+}
+
+/** Fields that are stored in dedicated columns (runs table or run_state
+ *  columns) and therefore do not need to be duplicated inside extra_state.
+ *  traitCounts is derived from artifacts so it's also excluded. */
+const EXTRA_STATE_OMIT_KEYS = new Set<string>([
+  // runs table
+  'id', 'character', 'status', 'seed', 'ascensionLevel', 'currentAct', 'currentNodeId',
+  'updatedAt',
+  // run_state columns
+  'health', 'maxHealth', 'gold', 'activeTileTypes', 'tileUpgrades', 'artifacts',
+  'consumables', 'abilityCharge', 'mapState',
+  // derived
+  'traitCounts',
+]);
+
+function buildExtraState(run: LocalRun): Record<string, unknown> {
+  const out: Record<string, unknown> = {};
+  for (const k of Object.keys(run)) {
+    if (!EXTRA_STATE_OMIT_KEYS.has(k)) {
+      out[k] = (run as Record<string, unknown>)[k];
+    }
+  }
+  return out;
+}
+
+/** Sum artifact tags to produce the traitCounts map. Keeps a single source
+ *  of truth: an artifact's trait contribution is defined by its tags. */
+function computeTraitCounts(
+  artifacts: Array<{ tags?: string[] }> | null | undefined,
+): Record<string, number> {
+  const counts: Record<string, number> = {};
+  for (const a of artifacts ?? []) {
+    for (const tag of a.tags ?? []) {
+      counts[tag] = (counts[tag] ?? 0) + 1;
+    }
+  }
+  return counts;
+}
+
+/** Push a mid-combat snapshot to the run_state.combat_state column. */
+export async function pushCombatSnapshot(snapshot: { runId: string }): Promise<void> {
+  const sb = getSupabase();
+  const { userId } = getAuthState();
+  if (!sb || !userId) return;
+  const { error } = await sb
+    .from('run_state')
+    .update({ combat_state: snapshot, updated_at: new Date().toISOString() })
+    .eq('run_id', snapshot.runId);
+  if (error) console.error('[sync] pushCombatSnapshot failed:', error);
+}
+
+/** Clear the remote combat snapshot (combat ended, fresh combat starting, or run cleared). */
+export async function clearRemoteCombatSnapshot(runId: string): Promise<void> {
+  const sb = getSupabase();
+  const { userId } = getAuthState();
+  if (!sb || !userId) return;
+  const { error } = await sb
+    .from('run_state')
+    .update({ combat_state: null, updated_at: new Date().toISOString() })
+    .eq('run_id', runId);
+  if (error) console.error('[sync] clearRemoteCombatSnapshot failed:', error);
 }
 
 /**
@@ -288,13 +376,18 @@ export async function claimAllMyActiveRuns(): Promise<void> {
 }
 
 /**
- * Pull remote meta + runs into local, unconditionally. No merge, no push-back.
+ * Merge remote state into local on passive session restore.
  *
- * Used on passive session restore (tab reopen) so manual DB edits in Supabase
- * reliably take effect on the next page load. Tradeoff: if the user has local
- * meta changes that haven't been pushed yet (still inside the 1.2s debounce),
- * those are lost. Acceptable because persistMeta writes the local cache
- * immediately and the debounced push fires on the NEXT mutation anyway.
+ * For meta: numeric fields use max-merge (never lower a counter via a pull,
+ * so a corrupted / zeroed remote value can't wipe legitimate local progress).
+ * Array fields union. This is the SAFE default.
+ *
+ * For the active run: take whichever side has the newer `updated_at`. This
+ * lets manual Supabase edits take effect (DB triggers bump updated_at) while
+ * preserving local state when the user has more recent local activity.
+ *
+ * Name kept as-is for import compatibility; the "overwrite" semantic is now
+ * only for runs-with-newer-remote-updated_at.
  */
 export async function pullRemoteStateOverwriteLocal(): Promise<void> {
   const sb = getSupabase();
@@ -302,7 +395,7 @@ export async function pullRemoteStateOverwriteLocal(): Promise<void> {
   if (!sb || !userId) return;
 
   return withSyncIndicator(async () => {
-    // --- Meta ---
+    // --- Meta (safe merge: max for numeric, union for arrays) ---
     try {
       const { data: remote } = await sb
         .from('meta_progression')
@@ -311,31 +404,39 @@ export async function pullRemoteStateOverwriteLocal(): Promise<void> {
         .maybeSingle();
       if (remote) {
         const r = remote as MetaRow & { updated_at?: string | null };
-        useMetaStore.getState().hydrateFromRemote({
-          reputation: r.reputation,
-          unlockedArtifacts: r.unlocked_artifacts,
-          unlockedEvents: r.unlocked_events,
-          unlockedCosmetics: r.unlocked_cosmetics,
-          unlockedLoadouts: r.unlocked_loadouts,
-          unlockedCharacters: r.unlocked_characters,
-          highestAscensionCleared: r.highest_ascension_cleared,
-        });
-        await saveMeta('progression', {
-          reputation: r.reputation,
-          unlockedArtifacts: r.unlocked_artifacts,
-          unlockedEvents: r.unlocked_events,
-          unlockedCosmetics: r.unlocked_cosmetics,
-          unlockedLoadouts: r.unlocked_loadouts,
-          unlockedCharacters: r.unlocked_characters,
-          highestAscensionCleared: r.highest_ascension_cleared,
-        });
+        const z = useMetaStore.getState().meta;
+        // n() guards against NaN / null / undefined on either side.
+        const n = (v: unknown, d = 0) => (typeof v === 'number' && Number.isFinite(v) ? v : d);
+        const merged = {
+          reputation: Math.max(n(z.reputation), n(r.reputation)),
+          unlockedArtifacts: [...new Set([...(z.unlockedArtifacts ?? []), ...(r.unlocked_artifacts ?? [])])],
+          unlockedEvents: [...new Set([...(z.unlockedEvents ?? []), ...(r.unlocked_events ?? [])])],
+          unlockedCosmetics: [...new Set([...(z.unlockedCosmetics ?? []), ...(r.unlocked_cosmetics ?? [])])],
+          unlockedLoadouts: [...new Set([...(z.unlockedLoadouts ?? []), ...(r.unlocked_loadouts ?? [])])],
+          unlockedCharacters: [...new Set([...(z.unlockedCharacters ?? []), ...(r.unlocked_characters ?? [])])],
+          unlockedSkins: [...new Set([...(z.unlockedSkins ?? []), ...(r.unlocked_skins ?? [])])],
+          unlockedNameplates: [...new Set([...(z.unlockedNameplates ?? []), ...(r.unlocked_nameplates ?? [])])],
+          unlockedColours: [...new Set([...(z.unlockedColours ?? []), ...(r.unlocked_colours ?? [])])],
+          unlockedTitles: [...new Set([...(z.unlockedTitles ?? []), ...(r.unlocked_titles ?? [])])],
+          // Equipped singletons: prefer remote (authoritative per account).
+          equippedSkin: r.equipped_skin ?? z.equippedSkin ?? null,
+          equippedNameplate: r.equipped_nameplate ?? z.equippedNameplate ?? null,
+          equippedColour: r.equipped_colour ?? z.equippedColour ?? null,
+          equippedTitle: r.equipped_title ?? z.equippedTitle ?? null,
+          highestAscensionCleared: Math.max(n(z.highestAscensionCleared, -1), n(r.highest_ascension_cleared, -1)),
+        };
+        useMetaStore.getState().hydrateFromRemote(merged);
+        await saveMeta('progression', merged);
         if (r.updated_at) markLocalMetaSynced(r.updated_at);
       }
     } catch (err) {
       console.error('[sync] pullRemoteStateOverwriteLocal meta failed:', err);
     }
 
-    // --- Active run ---
+    // --- Active run: if remote has one and this device still owns it, pull
+    // and mirror locally. If we don't own it, checkOwnershipAndKick handles
+    // the kick separately; don't overwrite local state in that case because
+    // logout() will wipe it shortly anyway. ---
     try {
       const { data: remoteRuns } = await sb
         .from('runs')
@@ -343,11 +444,32 @@ export async function pullRemoteStateOverwriteLocal(): Promise<void> {
         .eq('player_id', userId)
         .eq('status', 'active');
       if (remoteRuns && remoteRuns.length > 0) {
-        const active = remoteRuns[0] as RunRow;
-        const pulled = await pullRemoteRun(sb, active);
-        await saveRun(pulled);
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        useRunStore.getState().restoreRun(pulled as any);
+        const remoteRun = remoteRuns[0] as RunRow & { session_id?: string | null };
+        const ownedByUs = remoteRun.session_id === SESSION_ID;
+        if (ownedByUs) {
+          const localRun = useRunStore.getState().run;
+          // Clean up any stray local active run with a different id so
+          // loadActiveRun can't resurrect it at next startup.
+          const allLocal = (await loadAllRuns()) as LocalRun[];
+          for (const l of allLocal) {
+            if (l.status === 'active' && l.id !== remoteRun.id) {
+              await deleteRun(l.id).catch(() => {});
+            }
+          }
+          const pulled = await pullRemoteRun(sb, remoteRun);
+          await saveRun(pulled);
+          // Only update the in-memory store if we don't already have this run
+          // or the pulled state is newer -- avoids clobbering in-flight local
+          // progress that hasn't pushed yet.
+          const localUpdatedIso = (localRun as unknown as { updatedAt?: string })?.updatedAt;
+          const localUpdated = localUpdatedIso ? new Date(localUpdatedIso).getTime() : 0;
+          const remoteUpdated = new Date(remoteRun.updated_at).getTime();
+          const shouldRestore = !localRun || localRun.id !== remoteRun.id || remoteUpdated > localUpdated;
+          if (shouldRestore) {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            useRunStore.getState().restoreRun(pulled as any);
+          }
+        }
       }
     } catch (err) {
       console.error('[sync] pullRemoteStateOverwriteLocal runs failed:', err);
@@ -367,21 +489,46 @@ const WATCH_INTERVAL_MS = 20_000;
 let watchTimer: ReturnType<typeof setInterval> | null = null;
 let watchVisibilityHandler: (() => void) | null = null;
 
-async function checkOwnership(): Promise<void> {
+/** Read current active-run session_id values for the logged-in player.
+ *  Returns null on error (treat as "don't know, skip kick"). */
+async function readActiveRunSessionIds(): Promise<string[] | null> {
   const sb = getSupabase();
   const { userId, isLoggedIn } = getAuthState();
-  if (!sb || !userId || !isLoggedIn) return;
+  if (!sb || !userId || !isLoggedIn) return null;
   const { data, error } = await sb
     .from('runs')
     .select('session_id')
     .eq('player_id', userId)
     .eq('status', 'active');
-  if (error || !data) return;
-  for (const row of data as Array<{ session_id: string | null }>) {
-    if (row.session_id && row.session_id !== SESSION_ID) {
-      notifyKicked();
-      return;
-    }
+  if (error || !data) return null;
+  return (data as Array<{ session_id: string | null }>)
+    .map((r) => r.session_id)
+    .filter((s): s is string => !!s);
+}
+
+/** Two-read kick detection: a single mismatch could be a transient read-after-
+ *  write race, so we wait briefly and re-read. If the mismatch is still there,
+ *  the other device really does own the run -- kick. We do NOT re-claim here;
+ *  that was the defensive behavior that caused cross-device ping-pong where
+ *  neither side could actually push state. Ownership only changes on an
+ *  explicit login (syncRuns -> claimAllMyActiveRuns). */
+export async function checkOwnershipAndKick(): Promise<void> {
+  return checkOwnership();
+}
+
+async function checkOwnership(): Promise<void> {
+  const first = await readActiveRunSessionIds();
+  if (!first || first.length === 0) return;
+  const firstMismatch = first.some((s) => s !== SESSION_ID);
+  if (!firstMismatch) return;
+
+  await new Promise((r) => setTimeout(r, 2000));
+
+  const second = await readActiveRunSessionIds();
+  if (!second) return;
+  if (second.some((s) => s !== SESSION_ID)) {
+    console.warn('[sync] ownership mismatch confirmed; kicking');
+    notifyKicked();
   }
 }
 
@@ -394,11 +541,10 @@ export function startOwnershipWatcher(): void {
     }
   };
   document.addEventListener('visibilitychange', watchVisibilityHandler);
-  // No immediate check on start. On fresh app load, claimAllMyActiveRuns has
-  // just run and we don't want a read-after-write race to look like a kick.
-  // First check fires after WATCH_INTERVAL_MS; visibilitychange still fires
-  // checks on tab focus, which is when a real cross-device takeover would be
-  // detected anyway.
+  // initAuth calls checkOwnershipAndKick up-front on session restore, and
+  // onLogin has just claimed ownership, so we don't need an immediate check
+  // here. First poll fires after WATCH_INTERVAL_MS; visibilitychange catches
+  // mid-session takeovers when the user re-focuses the tab.
 }
 
 export function stopOwnershipWatcher(): void {
@@ -420,6 +566,14 @@ export async function pushMeta(meta: {
   unlockedCosmetics: string[];
   unlockedLoadouts: string[];
   unlockedCharacters: string[];
+  unlockedSkins: string[];
+  unlockedNameplates: string[];
+  unlockedColours: string[];
+  unlockedTitles: string[];
+  equippedSkin: string | null;
+  equippedNameplate: string | null;
+  equippedColour: string | null;
+  equippedTitle: string | null;
   highestAscensionCleared: number;
 }): Promise<void> {
   const sb = getSupabase();
@@ -434,6 +588,14 @@ export async function pushMeta(meta: {
     unlocked_cosmetics: meta.unlockedCosmetics,
     unlocked_loadouts: meta.unlockedLoadouts,
     unlocked_characters: meta.unlockedCharacters,
+    unlocked_skins: meta.unlockedSkins,
+    unlocked_nameplates: meta.unlockedNameplates,
+    unlocked_colours: meta.unlockedColours,
+    unlocked_titles: meta.unlockedTitles,
+    equipped_skin: meta.equippedSkin,
+    equipped_nameplate: meta.equippedNameplate,
+    equipped_colour: meta.equippedColour,
+    equipped_title: meta.equippedTitle,
     highest_ascension_cleared: meta.highestAscensionCleared,
     updated_at: new Date().toISOString(),
   });
@@ -464,6 +626,7 @@ export async function pushScore(score: LocalScore, playerName?: string): Promise
     run_completed: score.runCompleted ?? false,
     tiles: score.tiles ?? null,
     artifacts: score.artifacts ?? null,
+    killed_by: score.killedBy ?? null,
     created_at: score.createdAt ?? new Date().toISOString(),
   });
 }
@@ -482,14 +645,24 @@ async function syncMeta(sb: ReturnType<typeof getSupabase> & object, userId: str
     unlockedCosmetics: zustand.unlockedCosmetics,
     unlockedLoadouts: zustand.unlockedLoadouts,
     unlockedCharacters: zustand.unlockedCharacters,
+    unlockedSkins: zustand.unlockedSkins,
+    unlockedNameplates: zustand.unlockedNameplates,
+    unlockedColours: zustand.unlockedColours,
+    unlockedTitles: zustand.unlockedTitles,
+    equippedSkin: zustand.equippedSkin,
+    equippedNameplate: zustand.equippedNameplate,
+    equippedColour: zustand.equippedColour,
+    equippedTitle: zustand.equippedTitle,
     highestAscensionCleared: zustand.highestAscensionCleared,
   };
-  const { data: remote } = await sb.from('meta_progression').select('*').eq('player_id', userId).single();
+  // maybeSingle() returns null (not an error) when the account has no
+  // meta_progression row yet -- i.e. first-time account creation. In that
+  // case mergeMeta falls through to local values, effectively seeding the
+  // new account from this device's guest progression.
+  const { data: remote } = await sb.from('meta_progression').select('*').eq('player_id', userId).maybeSingle();
   const remoteRow = remote as (MetaRow & { updated_at?: string | null }) | null;
 
-  const localUpdatedAt = readLocalMetaUpdatedAt();
-  const remoteUpdatedAt = remoteRow?.updated_at ?? null;
-  const merged = mergeMeta(local, remoteRow, localUpdatedAt, remoteUpdatedAt);
+  const merged = mergeMeta(local, remoteRow);
 
   // Hydrate merged state into the zustand store (updates localStorage too).
   useMetaStore.getState().hydrateFromRemote(merged);
@@ -508,6 +681,14 @@ async function syncMeta(sb: ReturnType<typeof getSupabase> & object, userId: str
     unlocked_cosmetics: merged.unlockedCosmetics,
     unlocked_loadouts: merged.unlockedLoadouts,
     unlocked_characters: merged.unlockedCharacters,
+    unlocked_skins: merged.unlockedSkins,
+    unlocked_nameplates: merged.unlockedNameplates,
+    unlocked_colours: merged.unlockedColours,
+    unlocked_titles: merged.unlockedTitles,
+    equipped_skin: merged.equippedSkin,
+    equipped_nameplate: merged.equippedNameplate,
+    equipped_colour: merged.equippedColour,
+    equipped_title: merged.equippedTitle,
     highest_ascension_cleared: merged.highestAscensionCleared,
     updated_at: now,
   });
@@ -515,21 +696,20 @@ async function syncMeta(sb: ReturnType<typeof getSupabase> & object, userId: str
 }
 
 /**
- * Merge local and remote meta progression.
+ * Merge local and remote meta progression on login.
  *
- * - Unlocks (arrays): always union -- additive merges are safe for array fields.
- * - Numeric fields (reputation, highestAscensionCleared): if a side has a
- *   STRICTLY newer updated_at timestamp, that side's values win entirely.
- *   This lets devs/admins edit values in Supabase (bumping updated_at) and
- *   have those edits take effect -- including decreases. If timestamps are
- *   equal or missing, fall back to max-merge for multi-device concurrent
- *   play safety.
+ * Remote is authoritative for numeric fields (reputation, highestAscensionCleared)
+ * whenever a remote row exists: logging into an account should load *that
+ * account's* progression, and guest / stale-local data must never clobber it.
+ * Arrays still union so any guest-earned unlocks on this device are preserved.
+ *
+ * Timestamps are intentionally ignored here. The dev-edit workflow (manual
+ * Supabase changes taking effect on next sync) is handled by the session-
+ * restore path in pullRemoteStateOverwriteLocal, which max-merges.
  */
 function mergeMeta(
   local: LocalMeta | null,
   remote: MetaRow | null,
-  localUpdatedAt: string | null,
-  remoteUpdatedAt: string | null,
 ): Omit<LocalMeta, 'key'> {
   const l = local ?? {
     reputation: 0,
@@ -538,6 +718,14 @@ function mergeMeta(
     unlockedCosmetics: [],
     unlockedLoadouts: [],
     unlockedCharacters: ['red_panda'],
+    unlockedSkins: [],
+    unlockedNameplates: [],
+    unlockedColours: [],
+    unlockedTitles: [],
+    equippedSkin: null,
+    equippedNameplate: null,
+    equippedColour: null,
+    equippedTitle: null,
     highestAscensionCleared: 0,
   };
   const r = remote ?? {
@@ -547,24 +735,29 @@ function mergeMeta(
     unlocked_cosmetics: [] as string[],
     unlocked_loadouts: [] as string[],
     unlocked_characters: ['red_panda'],
+    unlocked_skins: [] as string[],
+    unlocked_nameplates: [] as string[],
+    unlocked_colours: [] as string[],
+    unlocked_titles: [] as string[],
+    equipped_skin: null,
+    equipped_nameplate: null,
+    equipped_colour: null,
+    equipped_title: null,
     highest_ascension_cleared: 0,
   };
 
-  // Decide the "winner" for numeric fields by timestamp comparison.
-  const lt = localUpdatedAt ? new Date(localUpdatedAt).getTime() : 0;
-  const rt = remoteUpdatedAt ? new Date(remoteUpdatedAt).getTime() : 0;
-  let reputation: number;
-  let highestAscensionCleared: number;
-  if (rt > lt) {
-    reputation = r.reputation;
-    highestAscensionCleared = r.highest_ascension_cleared;
-  } else if (lt > rt) {
-    reputation = l.reputation;
-    highestAscensionCleared = l.highestAscensionCleared;
-  } else {
-    reputation = Math.max(l.reputation, r.reputation);
-    highestAscensionCleared = Math.max(l.highestAscensionCleared, r.highest_ascension_cleared);
-  }
+  const n = (v: unknown, d = 0) => (typeof v === 'number' && Number.isFinite(v) ? v : d);
+  const reputation = remote ? n(r.reputation) : n(l.reputation);
+  const highestAscensionCleared = remote
+    ? n(r.highest_ascension_cleared, -1)
+    : n(l.highestAscensionCleared, -1);
+
+  // Equipped fields are singletons: remote wins when a remote row exists
+  // (account is source of truth on login), otherwise keep local.
+  const equippedSkin = remote ? r.equipped_skin : l.equippedSkin;
+  const equippedNameplate = remote ? r.equipped_nameplate : l.equippedNameplate;
+  const equippedColour = remote ? r.equipped_colour : l.equippedColour;
+  const equippedTitle = remote ? r.equipped_title : l.equippedTitle;
 
   return {
     reputation,
@@ -573,6 +766,14 @@ function mergeMeta(
     unlockedCosmetics: union(l.unlockedCosmetics, r.unlocked_cosmetics),
     unlockedLoadouts: union(l.unlockedLoadouts, r.unlocked_loadouts),
     unlockedCharacters: union(l.unlockedCharacters, r.unlocked_characters),
+    unlockedSkins: union(l.unlockedSkins, r.unlocked_skins),
+    unlockedNameplates: union(l.unlockedNameplates, r.unlocked_nameplates),
+    unlockedColours: union(l.unlockedColours, r.unlocked_colours),
+    unlockedTitles: union(l.unlockedTitles, r.unlocked_titles),
+    equippedSkin,
+    equippedNameplate,
+    equippedColour,
+    equippedTitle,
     highestAscensionCleared,
   };
 }
@@ -591,26 +792,31 @@ async function pullRemoteRun(
     .from('run_state')
     .select('*')
     .eq('run_id', remote.id)
-    .single();
+    .maybeSingle();
 
-  // Prefer the whole-blob extra_state if present -- it's authoritative and
-  // carries counters like combatsCleared / elitesCleared / bossesDefeated /
-  // flawlessFights / longestCascade / totalDamageDealt / playTimeSeconds
-  // that don't have dedicated columns. Fall back to the hand-picked columns
-  // for legacy rows written before the extra_state column existed.
-  const extra = runState?.extra_state as Partial<LocalRun> | null | undefined;
-  if (extra && typeof extra === 'object') {
-    return {
-      ...extra,
-      id: remote.id,
-      status: remote.status,
-      updatedAt: remote.updated_at,
-    } as LocalRun;
+  // Mid-combat snapshot lives in run_state.combat_state. If one is present,
+  // mirror it into local IndexedDB so checkForCombatResume can find it and
+  // the enemies / board / stacks restore correctly on combat entry.
+  const combatSnapshot = runState?.combat_state as { runId?: string } | null | undefined;
+  if (combatSnapshot && typeof combatSnapshot === 'object') {
+    try {
+      await saveCombatSnapshotLocal({ ...combatSnapshot, runId: remote.id });
+    } catch (err) {
+      console.error('[sync] saveCombatSnapshot (pull) failed:', err);
+    }
+  } else {
+    // No remote snapshot -- clear any stale local one for this run.
+    try { await clearCombatSnapshotLocal(remote.id); } catch { /* ignore */ }
   }
 
-  // Legacy path: reconstruct from structured columns with every counter
-  // defaulted to 0 so no NaN can leak into downstream scoring or reputation.
+  const artifacts = (runState?.artifacts ?? []) as Array<{ tags?: string[] }>;
+  const extra = (runState?.extra_state ?? {}) as Partial<LocalRun> & Record<string, unknown>;
+
+  // Dedicated columns are the source of truth for fields they cover; extra_state
+  // contributes only non-duplicated residual fields (counters, pending flags,
+  // eventBag, etc.). traitCounts is derived from artifacts.
   return {
+    ...extra,
     id: remote.id,
     character: remote.character as string,
     seed: remote.seed as string,
@@ -619,29 +825,29 @@ async function pullRemoteRun(
     currentNodeId: remote.current_node_id as string | null,
     status: remote.status,
     updatedAt: remote.updated_at,
-    health: runState?.health ?? 100,
-    maxHealth: runState?.max_health ?? 100,
-    gold: runState?.gold ?? 0,
-    activeTileTypes: runState?.active_tile_types ?? ['bullet', 'iron', 'gold'],
-    tileUpgrades: runState?.tile_upgrades ?? {},
-    artifacts: runState?.artifacts ?? [],
-    traitCounts: runState?.trait_counts ?? {},
-    consumables: runState?.consumables ?? [],
-    abilityCharge: runState?.ability_charge ?? 0,
-    mapState: runState?.map_state ?? null,
-    // Counters defaulted to 0 so score / reputation math can't produce NaN
-    // for legacy rows where these weren't persisted.
-    totalDamageDealt: 0,
-    runStartedAt: Date.now(),
-    playTimeSeconds: 0,
-    longestCascade: 0,
-    flawlessFights: 0,
-    bossesDefeated: 0,
-    combatsCleared: 0,
-    elitesCleared: 0,
-    goldObtained: 0,
-    artifactsObtained: 0,
-  };
+    health: runState?.health ?? (extra.health as number | undefined) ?? 100,
+    maxHealth: runState?.max_health ?? (extra.maxHealth as number | undefined) ?? 100,
+    gold: runState?.gold ?? (extra.gold as number | undefined) ?? 0,
+    activeTileTypes: runState?.active_tile_types ?? extra.activeTileTypes ?? ['bullet', 'iron', 'gold'],
+    tileUpgrades: runState?.tile_upgrades ?? extra.tileUpgrades ?? {},
+    artifacts: runState?.artifacts ?? extra.artifacts ?? [],
+    consumables: runState?.consumables ?? extra.consumables ?? [],
+    abilityCharge: runState?.ability_charge ?? (extra.abilityCharge as number | undefined) ?? 0,
+    mapState: runState?.map_state ?? extra.mapState ?? null,
+    traitCounts: computeTraitCounts(artifacts),
+    // Legacy counters -- default to 0 if missing from both extra_state and
+    // legacy runs that predate these fields.
+    totalDamageDealt: (extra.totalDamageDealt as number | undefined) ?? 0,
+    runStartedAt: (extra.runStartedAt as number | undefined) ?? Date.now(),
+    playTimeSeconds: (extra.playTimeSeconds as number | undefined) ?? 0,
+    longestCascade: (extra.longestCascade as number | undefined) ?? 0,
+    flawlessFights: (extra.flawlessFights as number | undefined) ?? 0,
+    bossesDefeated: (extra.bossesDefeated as number | undefined) ?? 0,
+    combatsCleared: (extra.combatsCleared as number | undefined) ?? 0,
+    elitesCleared: (extra.elitesCleared as number | undefined) ?? 0,
+    goldObtained: (extra.goldObtained as number | undefined) ?? 0,
+    artifactsObtained: (extra.artifactsObtained as number | undefined) ?? 0,
+  } as LocalRun;
 }
 
 async function syncRuns(sb: ReturnType<typeof getSupabase> & object, userId: string): Promise<void> {
@@ -668,39 +874,38 @@ async function syncRuns(sb: ReturnType<typeof getSupabase> & object, userId: str
   /** The winning active run after merge, to be injected into the zustand runStore. */
   let winningActive: LocalRun | null = null;
 
-  for (const local of localRuns) {
-    const remote = remoteMap.get(local.id);
-    if (!remote) {
-      // Local-only run -- push to remote
-      await pushRun(local);
-      if (local.status === 'active') winningActive = local;
-    } else if (local.status === 'active' && remote.status === 'active') {
-      // Both active -- keep the more recent
-      const localTime = local.updatedAt ? new Date(local.updatedAt).getTime() : 0;
-      const remoteTime = new Date(remote.updated_at).getTime();
-      if (localTime >= remoteTime) {
-        await pushRun(local);
-        winningActive = local;
-      } else {
-        // Remote is newer: pull run_state and overwrite local.
-        const pulled = await pullRemoteRun(sb, remote);
-        await saveRun(pulled);
-        winningActive = pulled;
+  // Remote is authoritative on login: if the account has any active run on the
+  // server, that's the run the user continues. Local (possibly guest) runs are
+  // only promoted to the account when the account has no active run on the
+  // server -- the first-time-login seeding case.
+  const remoteActive = [...remoteMap.values()].find((r) => r.status === 'active') ?? null;
+
+  if (remoteActive) {
+    // Delete any local active runs with a different id so loadActiveRun()
+    // can't pick the leftover guest run at next startup.
+    for (const local of localRuns) {
+      if (local.status === 'active' && local.id !== remoteActive.id) {
+        await deleteRun(local.id).catch(() => {});
       }
-    } else if (remote.status === 'active' && local.status !== 'active') {
-      // Remote has an active run we don't know about locally -- pull it.
-      const pulled = await pullRemoteRun(sb, remote);
-      await saveRun(pulled);
-      winningActive = pulled;
     }
-    remoteMap.delete(local.id);
+    const pulled = await pullRemoteRun(sb, remoteActive);
+    await saveRun(pulled);
+    winningActive = pulled;
+  } else {
+    const localActive = localRuns.find((l) => l.status === 'active');
+    if (localActive) {
+      await pushRun(localActive);
+      winningActive = localActive;
+    }
   }
 
-  // Remote-only runs (no matching local id at all) -- pull to local
+  // Pull any remote-only finished runs into local for history continuity.
+  const localIds = new Set(localRuns.map((l) => l.id));
   for (const remote of remoteMap.values()) {
+    if (remote.id === remoteActive?.id) continue;
+    if (localIds.has(remote.id)) continue;
     const pulled = await pullRemoteRun(sb, remote);
     await saveRun(pulled);
-    if (pulled.status === 'active') winningActive = pulled;
   }
 
   // Hydrate the in-memory runStore with the winning active run so the UI
@@ -751,6 +956,7 @@ async function syncScores(sb: ReturnType<typeof getSupabase> & object, userId: s
         nodesCleared: remote.nodes_cleared,
         bossesDefeated: remote.bosses_defeated,
         runCompleted: remote.run_completed,
+        killedBy: remote.killed_by ?? null,
         createdAt: remote.created_at,
       };
       await saveScore(localScore);

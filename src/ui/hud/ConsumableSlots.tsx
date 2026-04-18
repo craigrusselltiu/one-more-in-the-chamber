@@ -8,6 +8,12 @@ import { Tooltip } from '../components/Tooltip';
 import { CONSUMABLE_FRAMES } from '../../data/spriteConfig';
 import { colorizeKeywords, getReferencedKeywords, KeywordSubTooltips } from '../components/KeywordText';
 import { getMaxConsumableSlots } from '../../utils/consumableSlots';
+import type { ConsumableInstance } from '../../types/game';
+
+/** Stable empty-array reference for the null-run fallback. Returning a fresh
+ *  [] from a zustand selector on every render triggers useSyncExternalStore's
+ *  "getSnapshot should be cached" guard and an infinite re-render loop. */
+const EMPTY_CONSUMABLES: ConsumableInstance[] = [];
 
 /** Use a map-usable consumable outside of combat. Returns true if handled. */
 function useConsumableOnMap(consumableId: string): boolean {
@@ -42,7 +48,7 @@ function useConsumableOnMap(consumableId: string): boolean {
  * Empty slots show as visible outlines. Click to use during consumable window.
  */
 export const ConsumableSlots = memo(function ConsumableSlots() {
-  const consumables = useRunStore((s) => s.run?.consumables ?? []);
+  const consumables = useRunStore((s) => s.run?.consumables ?? EMPTY_CONSUMABLES);
   const run = useRunStore((s) => s.run);
   const removeConsumable = useRunStore((s) => s.removeConsumable);
   const phase = useCombatStore((s) => s.phase);

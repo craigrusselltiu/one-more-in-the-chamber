@@ -39,7 +39,7 @@ const MINE_LEVELS: Array<{ label: string; description: string; hpPct: number; ch
   { label: 'Investigate', description: 'Lose 3% max HP for artifact chance. (10%)', hpPct: 0.03, chance: 0.10 },
   { label: 'Go deeper', description: 'Lose 5% max HP for artifact chance. (25%)', hpPct: 0.05, chance: 0.25 },
   { label: 'Go deeper', description: 'Lose 7% max HP for artifact chance. (50%)', hpPct: 0.07, chance: 0.50 },
-  { label: 'Go deeper', description: 'Lose 10% max HP for artifact.', hpPct: 0.10, chance: 1.00 },
+  { label: 'Go deeper', description: 'Lose 10% max HP for artifact. (100%)', hpPct: 0.10, chance: 1.00 },
 ];
 
 function renderEventParagraph(text: string, baseKey: number): ReactNode[] {
@@ -306,6 +306,7 @@ export const EventScreen = memo(function EventScreen() {
   const applyHpLoss = (amount: number): boolean => {
     updateHealth(-amount);
     if ((useRunStore.getState().run?.health ?? 0) <= 0) {
+      useRunStore.getState().setDeathCause(event.title);
       useRunStore.getState().endRun(false);
       EventBus.emit(GameEvent.SCREEN_CHANGE, 'score');
       return true;

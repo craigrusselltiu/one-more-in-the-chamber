@@ -6,7 +6,9 @@ import { SpriteIcon } from '../components/SpriteIcon';
 import { Tooltip } from '../components/Tooltip';
 import { colorizeKeywords } from '../components/KeywordText';
 import { KEYWORDS } from '../../data/keywords';
-import type { TraitId } from '../../types/game';
+import type { ArtifactInstance, TraitId } from '../../types/game';
+
+const EMPTY_ARTIFACTS: ArtifactInstance[] = [];
 
 /** Primary color for each trait tag. */
 const TRAIT_COLORS: Record<TraitId, string> = {
@@ -66,7 +68,7 @@ function extractKeywords(text: string): string[] {
  * Directly under the top bar per SPEC layout.
  */
 export const ArtifactBar = memo(function ArtifactBar() {
-  const artifacts = useRunStore((s) => s.run?.artifacts ?? []);
+  const artifacts = useRunStore((s) => s.run?.artifacts ?? EMPTY_ARTIFACTS);
 
   if (artifacts.length === 0) return null;
 

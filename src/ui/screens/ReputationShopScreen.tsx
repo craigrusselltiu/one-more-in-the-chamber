@@ -1,13 +1,80 @@
-import { memo } from 'react';
+import { memo, useMemo, useState } from 'react';
 import { EventBus, GameEvent } from '../../game/EventBus';
 import { useMetaStore } from '../../store/metaStore';
+import { SHOP_ITEMS, type ShopCategory, type ShopItemDefinition } from '../../data/shopItems';
+import { NAMEPLATE_BY_ID, COLOUR_BY_ID } from '../../data/cosmetics';
+import { playHover } from '../../services/sfx';
 import type { Screen } from '../../App';
+
+type TabKey = 'featured' | ShopCategory;
+
+const TABS: { key: TabKey; label: string }[] = [
+  { key: 'featured', label: 'Featured' },
+  { key: 'character', label: 'Characters' },
+  { key: 'skin', label: 'Skins' },
+  { key: 'artifact', label: 'Artifacts' },
+  { key: 'event', label: 'Events' },
+  { key: 'nameplate', label: 'Nameplates' },
+  { key: 'colour', label: 'Colours' },
+  { key: 'title', label: 'Titles' },
+];
+
+/** Curated Featured-tab layout. Top row is small cards (colours + titles);
+ *  bottom row is full-width nameplates. All items still live in their own
+ *  category tabs; Featured just resurfaces a picked subset. */
+const FEATURED_TOP_IDS: string[] = [
+  'shop_colour_rainbow',
+  'shop_colour_shadow',
+  'shop_colour_bubblegum',
+  'shop_title_rust_main',
+  'shop_title_reno_main',
+];
+const FEATURED_BOTTOM_IDS: string[] = [
+  'shop_nameplate_rust',
+  'shop_nameplate_reno',
+  'shop_nameplate_wanted',
+];
 
 export const ReputationShopScreen = memo(function ReputationShopScreen() {
   const reputation = useMetaStore((s) => s.meta.reputation);
+  const isUnlocked = useMetaStore((s) => s.isUnlocked);
+  const purchaseShopItem = useMetaStore((s) => s.purchaseShopItem);
+
+  const [tab, setTab] = useState<TabKey>('featured');
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+
+  const visibleItems = useMemo<ShopItemDefinition[]>(() => {
+    if (tab === 'featured') {
+      return [...FEATURED_TOP_IDS, ...FEATURED_BOTTOM_IDS]
+        .map((id) => SHOP_ITEMS.find((i) => i.id === id))
+        .filter((x): x is ShopItemDefinition => !!x);
+    }
+    return SHOP_ITEMS.filter((i) => i.category === tab);
+  }, [tab]);
+
+  const selectedItem = useMemo(
+    () => visibleItems.find((i) => i.id === selectedId) ?? null,
+    [visibleItems, selectedId],
+  );
+
+  const selectedOwned = selectedItem
+    ? isUnlocked(selectedItem.unlockId, selectedItem.category)
+    : false;
+  const canAfford = selectedItem ? reputation >= selectedItem.cost : false;
+  const canPurchase = !!selectedItem && !selectedOwned && canAfford;
 
   const handleBack = () => {
     EventBus.emit(GameEvent.SCREEN_CHANGE, 'main-menu' satisfies Screen);
+  };
+
+  const handlePurchase = () => {
+    if (!canPurchase || !selectedItem) return;
+    purchaseShopItem(selectedItem.unlockId, selectedItem.cost, selectedItem.category);
+  };
+
+  const handleTabChange = (key: TabKey) => {
+    setTab(key);
+    setSelectedId(null);
   };
 
   return (
@@ -22,38 +89,285 @@ export const ReputationShopScreen = memo(function ReputationShopScreen() {
       }}
     >
       {/* Header */}
-      <div className="mt-6 mb-2 text-center">
+      <div className="mt-4 mb-2 text-center">
         <h2 className="text-xl text-amber-400 font-bold uppercase" style={{ WebkitTextStroke: '4px #000', paintOrder: 'stroke fill' }}>Reputation Shop</h2>
         <p className="text-xs text-stone-400 mt-1" style={{ WebkitTextStroke: '2px #000', paintOrder: 'stroke fill' }}>
           Reputation: <span className="text-amber-300 font-bold">{reputation.toLocaleString()}</span>
         </p>
       </div>
 
-      {/* Empty content area */}
-      <div className="flex-1 flex items-center justify-center">
-        <span
-          className="text-white font-bold uppercase"
-          style={{
-            fontSize: '64px',
-            lineHeight: 1,
-            letterSpacing: '0.05em',
-            WebkitTextStroke: '8px #000',
-            paintOrder: 'stroke fill',
-          }}
-        >
-          Coming Soon
-        </span>
+      {/* Tabs */}
+      <div className="flex gap-1.5 mb-3 px-4 flex-wrap justify-center" style={{ maxWidth: 820 }}>
+        {TABS.map((t) => {
+          const active = tab === t.key;
+          return (
+            <button
+              key={t.key}
+              onClick={() => handleTabChange(t.key)}
+              onMouseEnter={playHover}
+              className="px-3 py-1 text-[10px] rounded-sm transition-transform"
+              style={{
+                backgroundColor: active ? 'rgba(120, 53, 15, 0.85)' : 'rgba(28, 25, 23, 0.8)',
+                color: active ? '#fcd34d' : '#a8a29e',
+                boxShadow: active ? '2px 2px 1px rgba(0,0,0,0.4)' : 'none',
+                transform: active ? 'translateY(-2px)' : 'none',
+                cursor: 'pointer',
+              }}
+            >
+              {t.label}
+            </button>
+          );
+        })}
       </div>
 
-      {/* Back button */}
-      <div className="py-3">
+      {/* Card grid -- pt-2 / pb-2 leave room for hover/select translateY so
+          cards don't clip behind the tab row or the footer on transform. */}
+      <div
+        className="flex-1 overflow-y-auto w-full px-6"
+        style={{ maxWidth: 860 }}
+      >
+        {visibleItems.length === 0 ? (
+          <p className="text-stone-500 text-xs text-center mt-12">No items in this category yet.</p>
+        ) : tab === 'featured' ? (
+          (() => {
+            const topItems = FEATURED_TOP_IDS
+              .map((id) => SHOP_ITEMS.find((i) => i.id === id))
+              .filter((x): x is ShopItemDefinition => !!x);
+            const bottomItems = FEATURED_BOTTOM_IDS
+              .map((id) => SHOP_ITEMS.find((i) => i.id === id))
+              .filter((x): x is ShopItemDefinition => !!x);
+            return (
+              <div className="flex flex-col gap-3 pt-2 pb-2 w-full">
+                {topItems.length > 0 && (
+                  <div className="flex flex-wrap gap-2 justify-center">
+                    {topItems.map((item) => (
+                      <ShopCard
+                        key={item.id}
+                        item={item}
+                        owned={isUnlocked(item.unlockId, item.category)}
+                        affordable={reputation >= item.cost}
+                        selected={selectedId === item.id}
+                        onSelect={() => setSelectedId(item.id)}
+                      />
+                    ))}
+                  </div>
+                )}
+                {bottomItems.length > 0 && (
+                  <div className="flex flex-col gap-2">
+                    {bottomItems.map((item) => (
+                      <NameplateShopCard
+                        key={item.id}
+                        item={item}
+                        owned={isUnlocked(item.unlockId, item.category)}
+                        affordable={reputation >= item.cost}
+                        selected={selectedId === item.id}
+                        onSelect={() => setSelectedId(item.id)}
+                      />
+                    ))}
+                  </div>
+                )}
+              </div>
+            );
+          })()
+        ) : tab === 'nameplate' ? (
+          <div className="flex flex-col gap-2 pt-2 pb-2 w-full">
+            {visibleItems.map((item) => (
+              <NameplateShopCard
+                key={item.id}
+                item={item}
+                owned={isUnlocked(item.unlockId, item.category)}
+                affordable={reputation >= item.cost}
+                selected={selectedId === item.id}
+                onSelect={() => setSelectedId(item.id)}
+              />
+            ))}
+          </div>
+        ) : (
+          <div className="flex flex-wrap gap-2 justify-center pt-2 pb-2">
+            {visibleItems.map((item) => (
+              <ShopCard
+                key={item.id}
+                item={item}
+                owned={isUnlocked(item.unlockId, item.category)}
+                affordable={reputation >= item.cost}
+                selected={selectedId === item.id}
+                onSelect={() => setSelectedId(item.id)}
+              />
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Footer */}
+      <div className="py-3 flex gap-3">
         <button
           onClick={handleBack}
-          className="px-6 py-2 bg-stone-700/50 text-stone-300 text-sm border border-stone-600 hover:bg-stone-600/50"
+          onMouseEnter={playHover}
+          style={{ boxShadow: '2px 2px 1px rgba(0,0,0,0.4)', cursor: 'pointer' }}
+          className="px-6 py-1.5 text-xs rounded-sm bg-stone-800 text-stone-300 hover:bg-stone-700 active:translate-y-0.5 transition-transform"
         >
           Back
+        </button>
+        <button
+          onClick={handlePurchase}
+          onMouseEnter={playHover}
+          disabled={!canPurchase}
+          style={{
+            boxShadow: canPurchase ? '2px 2px 1px rgba(0,0,0,0.4)' : 'none',
+            cursor: canPurchase ? 'pointer' : 'not-allowed',
+          }}
+          className={`px-6 py-1.5 text-xs rounded-sm transition-transform ${
+            canPurchase
+              ? 'bg-amber-800 text-amber-200 hover:bg-amber-700 active:translate-y-0.5'
+              : 'bg-stone-900 text-stone-600'
+          }`}
+        >
+          Purchase
         </button>
       </div>
     </div>
   );
 });
+
+function ShopCard({
+  item,
+  owned,
+  affordable,
+  selected,
+  onSelect,
+}: {
+  item: ShopItemDefinition;
+  owned: boolean;
+  affordable: boolean;
+  selected: boolean;
+  onSelect: () => void;
+}) {
+  const disabled = owned;
+  return (
+    <button
+      onClick={onSelect}
+      onMouseEnter={playHover}
+      disabled={disabled}
+      className={`relative flex flex-col items-center justify-center w-36 h-40 rounded-sm text-center transition-transform ${
+        owned
+          ? 'opacity-60 cursor-not-allowed'
+          : affordable
+            ? 'hover:-translate-y-0.5 active:translate-y-0.5 cursor-pointer'
+            : 'opacity-70 cursor-pointer'
+      }`}
+      style={{
+        backgroundColor: selected
+          ? 'rgba(120, 53, 15, 0.75)'
+          : owned
+            ? 'rgba(28, 25, 23, 0.5)'
+            : 'rgba(28, 25, 23, 0.8)',
+        padding: '12px 10px',
+        boxShadow: '3px 3px 2px rgba(0,0,0,0.7)',
+        transform: selected ? 'translateY(-4px)' : undefined,
+      }}
+    >
+      <span
+        className="absolute top-1 right-1.5 font-bold"
+        style={{
+          fontSize: '10px',
+          color: owned ? '#78716c' : affordable ? '#fcd34d' : '#a8a29e',
+        }}
+      >
+        {owned ? 'OWNED' : `${item.cost.toLocaleString()} Reputation`}
+      </span>
+      {(() => {
+        // Colour shop items render their name in the shimmer class so the
+        // buyer sees exactly what they're getting before they spend rep.
+        const colour = item.category === 'colour' ? COLOUR_BY_ID[item.unlockId] : null;
+        if (colour?.shimmerClass) {
+          return (
+            <span className={`text-sm leading-tight ${colour.shimmerClass}`}>{item.name}</span>
+          );
+        }
+        return <span className="text-amber-300 text-xs font-bold leading-tight">{item.name}</span>;
+      })()}
+      <span className="text-stone-400 text-center mt-1 leading-tight" style={{ fontSize: '9px' }}>
+        {item.description}
+      </span>
+      <span
+        className="absolute bottom-1 left-1.5 text-stone-500 uppercase tracking-wide"
+        style={{ fontSize: '7px' }}
+      >
+        {item.category}
+      </span>
+    </button>
+  );
+}
+
+/**
+ * Full-width nameplate card: shows the nameplate image as the card background
+ * (a live preview of what the leaderboard row will look like) with the name
+ * on the left and the cost on the right.
+ */
+function NameplateShopCard({
+  item,
+  owned,
+  affordable,
+  selected,
+  onSelect,
+}: {
+  item: ShopItemDefinition;
+  owned: boolean;
+  affordable: boolean;
+  selected: boolean;
+  onSelect: () => void;
+}) {
+  const nameplate = NAMEPLATE_BY_ID[item.unlockId];
+  const base = import.meta.env.BASE_URL;
+  const bgImage = nameplate?.imagePath
+    ? `url(${base}${nameplate.imagePath})`
+    : undefined;
+  const bgFallback = nameplate?.cssBackground ?? 'rgba(28, 25, 23, 0.8)';
+
+  return (
+    <button
+      onClick={onSelect}
+      onMouseEnter={playHover}
+      disabled={owned}
+      className={`relative flex items-center w-full rounded-sm transition-transform ${
+        owned
+          ? 'opacity-60 cursor-not-allowed'
+          : 'hover:-translate-y-0.5 active:translate-y-0.5 cursor-pointer'
+      }`}
+      style={{
+        height: 40,
+        backgroundImage: bgImage,
+        backgroundColor: bgImage ? undefined : bgFallback,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundRepeat: 'no-repeat',
+        boxShadow: '3px 3px 2px rgba(0,0,0,0.7)',
+        outline: selected ? '2px solid #fcd34d' : '1px solid rgba(0,0,0,0.5)',
+        outlineOffset: selected ? '1px' : undefined,
+        transform: selected ? 'translateY(-2px)' : undefined,
+      }}
+    >
+      <span
+        className="pl-3 text-sm font-bold"
+        style={{
+          color: '#e7e5e4',
+          WebkitTextStroke: '2px #000',
+          paintOrder: 'stroke fill',
+        }}
+      >
+        {item.name}
+      </span>
+      <span
+        className="ml-auto pr-3 font-bold"
+        style={{
+          fontSize: '11px',
+          color: owned ? '#d6d3d1' : affordable ? '#fcd34d' : '#e7e5e4',
+          WebkitTextStroke: '2px #000',
+          paintOrder: 'stroke fill',
+        }}
+      >
+        {owned ? 'OWNED' : `${item.cost.toLocaleString()} Reputation`}
+      </span>
+    </button>
+  );
+}

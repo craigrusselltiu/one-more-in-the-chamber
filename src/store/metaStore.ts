@@ -30,6 +30,14 @@ function pushMetaDebounced(meta: MetaProgression): void {
       unlockedCosmetics: meta.unlockedCosmetics,
       unlockedLoadouts: meta.unlockedLoadouts,
       unlockedCharacters: meta.unlockedCharacters,
+      unlockedSkins: meta.unlockedSkins,
+      unlockedNameplates: meta.unlockedNameplates,
+      unlockedColours: meta.unlockedColours,
+      unlockedTitles: meta.unlockedTitles,
+      equippedSkin: meta.equippedSkin,
+      equippedNameplate: meta.equippedNameplate,
+      equippedColour: meta.equippedColour,
+      equippedTitle: meta.equippedTitle,
       highestAscensionCleared: meta.highestAscensionCleared,
     }).catch((err) => console.error('[sync] pushMeta failed:', err));
   }, REMOTE_PUSH_DELAY_MS);
@@ -42,6 +50,14 @@ interface MetaProgression {
   unlockedCosmetics: string[];
   unlockedLoadouts: string[];
   unlockedCharacters: string[];
+  unlockedSkins: string[];
+  unlockedNameplates: string[];
+  unlockedColours: string[];
+  unlockedTitles: string[];
+  equippedSkin: string | null;
+  equippedNameplate: string | null;
+  equippedColour: string | null;
+  equippedTitle: string | null;
   highestAscensionCleared: number;
   lastAscensionLevel: number;
   lastCharacter: string;
@@ -65,6 +81,10 @@ interface MetaStore {
   setLastAscensionLevel: (level: number) => void;
   setLastCharacter: (id: string) => void;
   setPlayerName: (name: string) => void;
+  setEquippedSkin: (id: string | null) => void;
+  setEquippedNameplate: (id: string | null) => void;
+  setEquippedColour: (id: string | null) => void;
+  setEquippedTitle: (id: string | null) => void;
   markTutorialComplete: (id: string) => void;
   isTutorialComplete: (id: string) => boolean;
   /** Clear all account-scoped progression back to first-launch defaults. Used on sign-out
@@ -75,12 +95,27 @@ interface MetaStore {
   hydrateFromRemote: (meta: Partial<MetaProgression>) => void;
 }
 
-const CATEGORY_KEY: Record<ShopCategory, keyof Pick<MetaProgression, 'unlockedArtifacts' | 'unlockedEvents' | 'unlockedCosmetics' | 'unlockedLoadouts' | 'unlockedCharacters'>> = {
+type UnlockArrayKey =
+  | 'unlockedArtifacts'
+  | 'unlockedEvents'
+  | 'unlockedCosmetics'
+  | 'unlockedLoadouts'
+  | 'unlockedCharacters'
+  | 'unlockedSkins'
+  | 'unlockedNameplates'
+  | 'unlockedColours'
+  | 'unlockedTitles';
+
+const CATEGORY_KEY: Record<ShopCategory, UnlockArrayKey> = {
   artifact: 'unlockedArtifacts',
   event: 'unlockedEvents',
   cosmetic: 'unlockedCosmetics',
   loadout: 'unlockedLoadouts',
   character: 'unlockedCharacters',
+  skin: 'unlockedSkins',
+  nameplate: 'unlockedNameplates',
+  colour: 'unlockedColours',
+  title: 'unlockedTitles',
 };
 
 const DEFAULT_META: MetaProgression = {
@@ -90,6 +125,14 @@ const DEFAULT_META: MetaProgression = {
   unlockedCosmetics: [],
   unlockedLoadouts: [],
   unlockedCharacters: ['red_panda'],
+  unlockedSkins: [],
+  unlockedNameplates: [],
+  unlockedColours: [],
+  unlockedTitles: [],
+  equippedSkin: null,
+  equippedNameplate: null,
+  equippedColour: null,
+  equippedTitle: null,
   highestAscensionCleared: -1,
   lastAscensionLevel: 0,
   lastCharacter: 'red_panda',
@@ -246,6 +289,34 @@ export const useMetaStore = create<MetaStore>((set, get) => ({
   setPlayerName: (name) =>
     set((state) => {
       const meta = { ...state.meta, playerName: name };
+      persistMeta(meta);
+      return { meta };
+    }),
+
+  setEquippedSkin: (id) =>
+    set((state) => {
+      const meta = { ...state.meta, equippedSkin: id };
+      persistMeta(meta);
+      return { meta };
+    }),
+
+  setEquippedNameplate: (id) =>
+    set((state) => {
+      const meta = { ...state.meta, equippedNameplate: id };
+      persistMeta(meta);
+      return { meta };
+    }),
+
+  setEquippedColour: (id) =>
+    set((state) => {
+      const meta = { ...state.meta, equippedColour: id };
+      persistMeta(meta);
+      return { meta };
+    }),
+
+  setEquippedTitle: (id) =>
+    set((state) => {
+      const meta = { ...state.meta, equippedTitle: id };
       persistMeta(meta);
       return { meta };
     }),

@@ -8,7 +8,7 @@ import { CHARACTER_TILES } from '../data/tiles';
 import { getAscensionMutations } from '../data/ascension';
 import { getMaxConsumableSlots } from '../utils/consumableSlots';
 import { deleteRun as deleteRunFromDB, clearCombatSnapshot } from '../services/localSave';
-import { abandonOtherActiveRuns } from '../services/syncService';
+import { abandonOtherActiveRuns, clearRemoteCombatSnapshot } from '../services/syncService';
 
 interface PendingNewGame {
   character: CharacterId;
@@ -70,6 +70,7 @@ interface RunStore {
   advanceAct: () => void;
   setMapState: (map: MapState) => void;
   endRun: (completed: boolean) => void;
+  setDeathCause: (cause: string) => void;
 }
 
 export const useRunStore = create<RunStore>((set, get) => ({
@@ -123,6 +124,7 @@ export const useRunStore = create<RunStore>((set, get) => ({
       await abandonOtherActiveRuns().catch(() => {});
       await deleteRunFromDB(run.id).catch(() => {});
       await clearCombatSnapshot(run.id).catch(() => {});
+      await clearRemoteCombatSnapshot(run.id).catch(() => {});
     }
     set({ run: null });
   },
@@ -595,5 +597,11 @@ export const useRunStore = create<RunStore>((set, get) => ({
     set((state) => {
       if (!state.run) return state;
       return { run: { ...state.run, status: completed ? 'completed' : 'abandoned' } };
+    }),
+
+  setDeathCause: (cause) =>
+    set((state) => {
+      if (!state.run) return state;
+      return { run: { ...state.run, deathCause: cause } };
     }),
 }));

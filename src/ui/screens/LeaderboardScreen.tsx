@@ -4,8 +4,14 @@ import { fetchLeaderboard, type LeaderboardEntry, type LeaderboardPeriod } from 
 import { SpriteIcon } from '../components/SpriteIcon';
 import { Tooltip } from '../components/Tooltip';
 import { TILE_FRAMES, ARTIFACT_FRAMES } from '../../data/spriteConfig';
+import { NAMEPLATE_BY_ID, COLOUR_BY_ID, TITLE_BY_ID } from '../../data/cosmetics';
 import type { TileType } from '../../types/game';
 import type { Screen } from '../../App';
+
+/** Shared drop-shadow values so every row column stays legible over any
+ *  equipped nameplate art. Light enough not to overpower the type. */
+const ROW_TEXT_SHADOW = '1px 1px 1px rgba(0, 0, 0, 0.85)';
+const ROW_ICON_SHADOW = 'drop-shadow(1px 1px 1px rgba(0, 0, 0, 0.85))';
 
 const TABS: { key: LeaderboardPeriod; label: string }[] = [
   { key: 'daily', label: 'Daily' },
@@ -122,30 +128,76 @@ export const LeaderboardScreen = memo(function LeaderboardScreen() {
             </div>
 
             {/* Rows */}
-            {entries.map((entry) => (
+            {entries.map((entry) => {
+              const nameplate = entry.equippedNameplate ? NAMEPLATE_BY_ID[entry.equippedNameplate] : null;
+              const colour = entry.equippedColour ? COLOUR_BY_ID[entry.equippedColour] : null;
+              const title = entry.equippedTitle ? TITLE_BY_ID[entry.equippedTitle] : null;
+              const topThreeBg = entry.rank <= 3 && !nameplate;
+              const nameplateStyle: React.CSSProperties | undefined = nameplate
+                ? nameplate.imagePath
+                  ? {
+                      backgroundImage: `url(${import.meta.env.BASE_URL}${nameplate.imagePath})`,
+                      backgroundSize: 'cover',
+                      backgroundPosition: 'center',
+                      backgroundRepeat: 'no-repeat',
+                    }
+                  : nameplate.cssBackground
+                    ? { background: nameplate.cssBackground }
+                    : undefined
+                : undefined;
+              return (
               <div
                 key={`${entry.rank}-${entry.createdAt}`}
-                className={`flex items-center px-3 py-2 ${
-                  entry.rank <= 3 ? 'bg-amber-900/10' : ''
-                }`}
+                className={`flex items-center px-3 py-2 ${topThreeBg ? 'bg-amber-900/10' : ''}`}
+                style={nameplateStyle}
               >
-                <span className={`w-8 text-xs font-bold ${rankColor(entry.rank)}`}>
+                <span
+                  className={`w-8 text-xs font-bold ${rankColor(entry.rank)}`}
+                  style={{ textShadow: ROW_TEXT_SHADOW }}
+                >
                   {entry.rank}
                 </span>
                 <div className="w-52 min-w-0">
-                  <span className="text-stone-200 text-sm truncate block">
+                  <span
+                    className={`text-sm truncate block ${colour?.shimmerClass ?? ''}`}
+                    style={{
+                      color: colour?.shimmerClass
+                        ? undefined
+                        : (colour?.hex ?? '#e7e5e4' /* stone-200 */),
+                      // Shimmer text uses transparent fill (-webkit-text-fill-color)
+                      // with a gradient clipped to the glyph, so a text-shadow
+                      // bleeds through the see-through text. Use drop-shadow
+                      // (which wraps the visible pixels) for shimmer, regular
+                      // text-shadow for solid colours.
+                      ...(colour?.shimmerClass
+                        ? { filter: ROW_ICON_SHADOW }
+                        : { textShadow: ROW_TEXT_SHADOW }),
+                    }}
+                  >
                     {entry.playerName}
                     {entry.isGuest && (
                       <span className="text-stone-500 text-xs ml-1">(Guest)</span>
                     )}
                   </span>
+                  {title && (
+                    <span
+                      className="block text-stone-400 leading-none"
+                      style={{ fontSize: '9px', marginTop: -1, textShadow: ROW_TEXT_SHADOW }}
+                    >
+                      {title.text}
+                    </span>
+                  )}
                 </div>
                 <div className="flex-1 flex items-center gap-0.5 flex-wrap">
                   {entry.tiles.map((tile, i) => {
                     const frame = TILE_FRAMES[tile.type as TileType];
                     if (frame == null) return null;
                     return (
-                      <div key={i} className="relative" style={{ width: 16, height: 16 }}>
+                      <div
+                        key={i}
+                        className="relative"
+                        style={{ width: 16, height: 16, filter: ROW_ICON_SHADOW }}
+                      >
                         <SpriteIcon frame={frame} />
                         {tile.level > 0 && (
                           <span
@@ -184,32 +236,49 @@ export const LeaderboardScreen = memo(function LeaderboardScreen() {
                           cursor: 'help',
                           borderBottom: '1px dashed rgba(251, 191, 36, 0.5)',
                           paddingBottom: 1,
+                          textShadow: ROW_TEXT_SHADOW,
                         }}
                       >
                         {entry.artifacts.length}
                       </span>
                     </Tooltip>
                   ) : (
-                    <span className="text-xs text-stone-600">0</span>
+                    <span className="text-xs text-stone-600" style={{ textShadow: ROW_TEXT_SHADOW }}>0</span>
                   )}
                 </span>
-                <span className="w-10 text-center text-xs text-amber-300">
+                <span
+                  className="w-10 text-center text-xs text-amber-300"
+                  style={{ textShadow: ROW_TEXT_SHADOW }}
+                >
                   {entry.runCompleted ? '\u2714' : ''}
                 </span>
-                <span className="w-12 text-center text-stone-400 text-xs">
+                <span
+                  className="w-12 text-center text-stone-400 text-xs"
+                  style={{ textShadow: ROW_TEXT_SHADOW }}
+                >
                   {entry.character === 'reno' ? 'Reno' : 'Rust'}
                 </span>
-                <span className="w-10 text-right text-stone-400 text-xs">
+                <span
+                  className="w-10 text-right text-stone-400 text-xs"
+                  style={{ textShadow: ROW_TEXT_SHADOW }}
+                >
                   {entry.ascensionLevel > 0 ? `A${entry.ascensionLevel}` : '-'}
                 </span>
-                <span className="w-16 text-right text-stone-400 text-xs">
+                <span
+                  className="w-16 text-right text-stone-400 text-xs"
+                  style={{ textShadow: ROW_TEXT_SHADOW }}
+                >
                   {formatDuration(entry.runDurationSeconds)}
                 </span>
-                <span className="w-20 text-right text-amber-300 text-sm font-bold">
+                <span
+                  className="w-20 text-right text-amber-300 text-sm font-bold"
+                  style={{ textShadow: ROW_TEXT_SHADOW }}
+                >
                   {entry.score.toLocaleString()}
                 </span>
               </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>

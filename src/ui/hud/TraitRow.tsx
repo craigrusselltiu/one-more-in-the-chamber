@@ -4,7 +4,12 @@ import { SpriteIcon } from '../components/SpriteIcon';
 import { Tooltip } from '../components/Tooltip';
 import { colorizeKeywords, getReferencedKeywords, KeywordLine } from '../components/KeywordText';
 import { TRAIT_FRAMES, TRAIT_BREAKPOINTS } from '../../data/spriteConfig';
-import type { TraitId } from '../../types/game';
+import type { ArtifactInstance, TraitId } from '../../types/game';
+
+// Stable empty fallbacks: a fresh literal from a zustand selector triggers an
+// infinite useSyncExternalStore re-render when run is null.
+const EMPTY_ARTIFACTS: ArtifactInstance[] = [];
+const EMPTY_TRAIT_COUNTS: Partial<Record<TraitId, number>> = {};
 
 const OUTLINE_STYLE: React.CSSProperties = {
   WebkitTextStroke: '2px #000',
@@ -93,8 +98,8 @@ const TRAIT_DESCRIPTIONS: Record<string, Record<number, string>> = {
  * Mirrors ArtifactBar positioning but on the right side.
  */
 export const TraitRow = memo(function TraitRow() {
-  const artifacts = useRunStore((s) => s.run?.artifacts ?? []);
-  const traitCounts = useRunStore((s) => s.run?.traitCounts ?? {});
+  const artifacts = useRunStore((s) => s.run?.artifacts ?? EMPTY_ARTIFACTS);
+  const traitCounts = useRunStore((s) => s.run?.traitCounts ?? EMPTY_TRAIT_COUNTS);
 
   if (artifacts.length === 0) return null;
 

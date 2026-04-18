@@ -11,6 +11,7 @@ import { EventScreen } from './ui/screens/EventScreen';
 import { ScoreScreen } from './ui/screens/ScoreScreen';
 import { ArtifactScreen } from './ui/screens/ArtifactScreen';
 import { ReputationShopScreen } from './ui/screens/ReputationShopScreen';
+import { CustomizeScreen } from './ui/screens/CustomizeScreen';
 import { LeaderboardScreen } from './ui/screens/LeaderboardScreen';
 import { SettingsScreen } from './ui/screens/SettingsScreen';
 import { LoginScreen, PickNameScreen } from './ui/screens/LoginScreen';
@@ -28,6 +29,7 @@ import { TutorialOverlay } from './ui/components/TutorialOverlay';
 import { SyncIndicator } from './ui/components/SyncIndicator';
 import { LoginSyncOverlay } from './ui/components/LoginSyncOverlay';
 import { KickoutOverlay } from './ui/components/KickoutOverlay';
+import { BloodOverlay } from './ui/components/BloodOverlay';
 import { EventBus, GameEvent } from './game/EventBus';
 import { useRunStore } from './store/runStore';
 import { useCombatStore } from './store/combatStore';
@@ -36,6 +38,7 @@ import { subscribeAuth, getAuthState } from './services/auth';
 import type { CombatConfig, CombatResult } from './game/combat/CombatManager';
 import type { CombatSnapshot } from './types/combatSnapshot';
 import { saveCombatSnapshot, clearCombatSnapshot, purgeCorruptSnapshots } from './services/localSave';
+import { pushCombatSnapshot, clearRemoteCombatSnapshot } from './services/syncService';
 import { initSfx } from './services/sfx';
 import { consumePendingSnapshot } from './services/combatResume';
 import { setCombatSceneData } from './game/scenes/CombatScene';
@@ -71,6 +74,7 @@ export type Screen =
   | 'score'
   | 'artifact'
   | 'reputation-shop'
+  | 'customize'
   | 'leaderboard'
   | 'settings'
   | 'login'
@@ -438,6 +442,7 @@ export default function App() {
 
           // Clear any stale combat snapshot before starting fresh
           clearCombatSnapshot(run.id).catch(() => {});
+          clearRemoteCombatSnapshot(run.id).catch(() => {});
 
           // Reset combat store before starting
           useCombatStore.getState().reset();
@@ -488,6 +493,7 @@ export default function App() {
       const runId = store.run?.id;
       if (runId) {
         clearCombatSnapshot(runId).catch(() => {});
+        clearRemoteCombatSnapshot(runId).catch(() => {});
       }
 
       // Always sync ability charge (persists between combats)
@@ -519,6 +525,7 @@ export default function App() {
       // Return to map (or tile-select after boss) after a brief delay
       setTimeout(() => {
         if (!result.victory) {
+          if (result.deathCause) store.setDeathCause(result.deathCause);
           EventBus.emit(GameEvent.SCREEN_CHANGE, 'score');
           store.endRun(false);
           return;
@@ -593,6 +600,7 @@ export default function App() {
       saveCombatSnapshot(snapshot).catch((err) => {
         console.error('[save] combat snapshot failed:', err);
       });
+      pushCombatSnapshot(snapshot).catch(() => {});
     };
 
     EventBus.on(GameEvent.COMBAT_SAVE_REQUESTED, handleSaveRequest);
@@ -615,6 +623,7 @@ export default function App() {
 
       const snapshot = scene.combatManager.createSnapshot(run.id);
       saveCombatSnapshot(snapshot).catch(() => {});
+      pushCombatSnapshot(snapshot).catch(() => {});
     };
 
     document.addEventListener('visibilitychange', handleVisibilityChange);
@@ -755,6 +764,7 @@ export default function App() {
             {screen === 'event' && <EventScreen />}
             {screen === 'score' && <ScoreScreen />}
             {screen === 'reputation-shop' && <ReputationShopScreen />}
+            {screen === 'customize' && <CustomizeScreen />}
             {screen === 'leaderboard' && <LeaderboardScreen />}
             {screen === 'settings' && <SettingsScreen />}
             {screen === 'login' && <LoginScreen />}
@@ -825,6 +835,8 @@ export default function App() {
           Pre-alpha v0.6.9
         </span>
       </div>
+
+      <BloodOverlay />
     </div>
   );
 }
