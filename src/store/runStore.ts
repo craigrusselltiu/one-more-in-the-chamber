@@ -5,14 +5,14 @@ import { useMetaStore } from './metaStore';
 import { useSettingsStore } from './settingsStore';
 import { ARTIFACTS } from '../data/artifacts';
 import { CHARACTER_TILES } from '../data/tiles';
-import { getAscensionMutations } from '../data/ascension';
+import { getWantedLevelMutations } from '../data/wantedLevel';
 import { getMaxConsumableSlots } from '../utils/consumableSlots';
 import { deleteRun as deleteRunFromDB, clearCombatSnapshot } from '../services/localSave';
 import { abandonOtherActiveRuns, clearRemoteCombatSnapshot } from '../services/syncService';
 
 interface PendingNewGame {
   character: CharacterId;
-  ascensionLevel: number;
+  wantedLevel: number;
 }
 
 interface RunStore {
@@ -22,9 +22,9 @@ interface RunStore {
   restoreRun: (run: RunState) => void;
   /** Clear the active run from store and IndexedDB. */
   clearRun: () => Promise<void>;
-  /** Set pending new game config (character + ascension) before tile select. */
+  /** Set pending new game config (character + wanted level) before tile select. */
   setPendingNewGame: (config: PendingNewGame) => void;
-  startRun: (seed: string, ascensionLevel?: number) => void;
+  startRun: (seed: string, wantedLevel?: number) => void;
   updateHealth: (delta: number) => void;
   updateGold: (delta: number) => void;
   syncHealth: (current: number, max: number) => void;
@@ -66,7 +66,7 @@ interface RunStore {
   setPendingNextFightSwapBonus: (amount: number | undefined) => void;
   incrementMerchantUpgradesPurchased: () => void;
   setActMerchantSurcharge: (amount: number | undefined) => void;
-  setPendingNextFightPotion: (effect: 'heal' | 'damage' | 'vulnerable' | 'poison' | undefined) => void;
+  setPendingNextFightPotion: (effect: 'heal' | 'damage' | 'protected' | 'poison' | undefined) => void;
   advanceAct: () => void;
   setMapState: (map: MapState) => void;
   endRun: (completed: boolean) => void;
@@ -131,15 +131,15 @@ export const useRunStore = create<RunStore>((set, get) => ({
 
   setPendingNewGame: (config) => set({ pendingNewGame: config }),
 
-  startRun: (seed, ascensionLevel = 0) => {
+  startRun: (seed, wantedLevel = 0) => {
     const pending = get().pendingNewGame;
     const character = pending?.character ?? 'red_panda';
-    // Ascension mutations applied at run start.
-    const ascMods = getAscensionMutations(ascensionLevel);
-    const mapState = generateMap(seed, 1, ascMods.eliteCountBonus);
+    // Wanted-level mutations applied at run start.
+    const ascMods = getWantedLevelMutations(wantedLevel);
+    const mapState = generateMap(seed, 1, ascMods.eliteCountBonus, ascMods.campfireCountPenalty);
     const loadouts = useMetaStore.getState().meta.unlockedLoadouts;
 
-    // Apply loadout bonuses. L10: ascension override drops base starting gold.
+    // Apply loadout bonuses. L10: wanted-level override drops base starting gold.
     let gold = ascMods.startingGoldOverride ?? 100;
     const consumables: ConsumableInstance[] = [];
     const artifacts: ArtifactInstance[] = [];
@@ -198,7 +198,7 @@ export const useRunStore = create<RunStore>((set, get) => ({
         id: crypto.randomUUID(),
         character,
         seed,
-        ascensionLevel,
+        wantedLevel,
         currentAct: 1,
         currentNodeId: null,
         health: startingHealth,
@@ -578,8 +578,8 @@ export const useRunStore = create<RunStore>((set, get) => ({
       if (!state.run || state.run.currentAct >= 3) return state;
       const nextAct = (state.run.currentAct + 1) as Act;
       // L5: heal a fraction of missing HP between acts (default 100%).
-      const mods = getAscensionMutations(state.run.ascensionLevel);
-      const mapState = generateMap(state.run.seed, nextAct, mods.eliteCountBonus);
+      const mods = getWantedLevelMutations(state.run.wantedLevel);
+      const mapState = generateMap(state.run.seed, nextAct, mods.eliteCountBonus, mods.campfireCountPenalty);
       const missing = state.run.maxHealth - state.run.health;
       const healed = Math.round(missing * mods.interActHealFraction);
       const newHealth = Math.min(state.run.maxHealth, state.run.health + healed);

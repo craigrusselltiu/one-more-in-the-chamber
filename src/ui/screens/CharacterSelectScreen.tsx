@@ -61,16 +61,16 @@ const CHARACTERS: CharacterInfo[] = [
 export const CharacterSelectScreen = memo(function CharacterSelectScreen() {
   const setPendingNewGame = useRunStore((s) => s.setPendingNewGame);
   const startRun = useRunStore((s) => s.startRun);
-  const highestCleared = useMetaStore((s) => s.meta.highestAscensionCleared);
-  const lastAscension = useMetaStore((s) => s.meta.lastAscensionLevel);
+  const highestCleared = useMetaStore((s) => s.meta.highestWantedLevelCleared);
+  const lastWantedLevel = useMetaStore((s) => s.meta.lastWantedLevel);
   const lastCharacter = useMetaStore((s) => s.meta.lastCharacter) as CharacterId;
-  const setLastAscensionLevel = useMetaStore((s) => s.setLastAscensionLevel);
+  const setLastWantedLevel = useMetaStore((s) => s.setLastWantedLevel);
   const setLastCharacter = useMetaStore((s) => s.setLastCharacter);
   const [selectedCharacter, setSelectedCharacter] = useState<CharacterId>(lastCharacter ?? 'red_panda');
-  const [ascensionLevel, setAscensionLevel] = useState(lastAscension ?? 0);
+  const [wantedLevel, setWantedLevel] = useState(lastWantedLevel ?? 0);
   const [customSeed, setCustomSeed] = useState('');
 
-  // Ascension caps at 20. Scaling beyond 20 is disabled.
+  // Wanted Level caps at 30. Scaling beyond 30 is disabled.
   const maxSelectable = Math.min(30, highestCleared + 1);
   const char = CHARACTERS.find((c) => c.id === selectedCharacter) ?? CHARACTERS[0];
 
@@ -79,11 +79,11 @@ export const CharacterSelectScreen = memo(function CharacterSelectScreen() {
   }, []);
 
   const handleConfirm = () => {
-    setLastAscensionLevel(ascensionLevel);
+    setLastWantedLevel(wantedLevel);
     setLastCharacter(selectedCharacter);
-    setPendingNewGame({ character: selectedCharacter, ascensionLevel });
+    setPendingNewGame({ character: selectedCharacter, wantedLevel });
     const seed = (customSeed.trim() || Date.now().toString(36) + Math.random().toString(36).slice(2, 6)).toUpperCase();
-    startRun(seed, ascensionLevel);
+    startRun(seed, wantedLevel);
     EventBus.emit(GameEvent.SCREEN_CHANGE, 'map' satisfies Screen);
   };
 
@@ -205,13 +205,13 @@ export const CharacterSelectScreen = memo(function CharacterSelectScreen() {
         />
       </div>
 
-      {/* Ascension + Back / Confirm - bottom right (ascension centered above buttons) */}
+      {/* Wanted Level + Back / Confirm - bottom right (selector centered above buttons) */}
       <div className="absolute bottom-6 right-4 flex flex-col items-center gap-3">
         {maxSelectable > 0 && (
-          <AscensionSelector
-            level={ascensionLevel}
+          <WantedLevelSelector
+            level={wantedLevel}
             maxLevel={maxSelectable}
-            onChange={setAscensionLevel}
+            onChange={setWantedLevel}
           />
         )}
         <div className="flex gap-3">
@@ -323,42 +323,43 @@ function ExclusiveRow({ artifactId, tileType }: { artifactId: string; tileType: 
   );
 }
 
-/** Per-level ascension mutation descriptions (index = level, 0 = none). */
-const ASCENSION_EFFECTS: string[] = [
+/** Per-level Wanted Level mutation descriptions (index = level, 0 = none).
+ *  Strings match docs/CONTENT.md verbatim, minus the parenthetical details. */
+const WANTED_LEVEL_EFFECTS: string[] = [
   '',
-  'Elites spawn more often.',
   'Normal enemies are deadlier.',
   'Elites are deadlier.',
   'Bosses are deadlier.',
+  'Elites spawn more often.',
   'Heal less between acts.',
   'Start each run with less health.',
   'Normal enemies are tougher.',
   'Elites are tougher.',
   'Bosses are tougher.',
-  'Start with less gold.',
+  'Start each run with less gold.',
   'Start each run with 1 less consumable slot.',
   'Upgraded tiles appear less often.',
   'All enemies drop less gold.',
   'Start with less max HP.',
+  'Merchants do not have sales.',
+  'Normal enemies are even tougher.',
+  'Elites are even tougher.',
+  'Bosses are even tougher.',
+  'Merchant upgrades are more expensive.',
   'Legendary artifacts are less common.',
-  'Shops cost more.',
-  'Normal enemies gain an additional 5% HP and 5% damage.',
-  'Elites gain an additional 5% HP and 5% damage.',
-  'Bosses gain an additional 5% HP and 5% damage.',
-  'At the end of Act 3, the final boss spawns with a random Act 3 elite.',
-  'Merchants no longer have sales.',
-  'Normal enemies gain an additional 5% HP.',
-  'Elites gain an additional 5% HP.',
-  'Bosses gain an additional 5% HP.',
+  'Merchants cost more.',
+  'Normal enemies are even deadlier.',
+  'Elites are even deadlier.',
+  'Bosses are even deadlier.',
   'Start each run with a random corruption.',
+  'You feel a presence looming over you.',
   'Start with even less max HP.',
-  'Normal enemies gain an additional 5% damage.',
-  'Elites gain an additional 5% damage.',
-  'Bosses gain an additional 5% damage.',
+  'At the end of Act 3, the final boss spawns with a random Act 3 elite.',
+  'Campfires are less common.',
   'Start each run with an extra Charcoal tile.',
 ];
 
-function AscensionSelector({
+function WantedLevelSelector({
   level,
   maxLevel,
   onChange,
@@ -367,7 +368,7 @@ function AscensionSelector({
   maxLevel: number;
   onChange: (level: number) => void;
 }) {
-  const effect = ASCENSION_EFFECTS[level] ?? '';
+  const effect = WANTED_LEVEL_EFFECTS[level] ?? '';
 
   return (
     <div className="flex flex-col items-center gap-1" style={{ width: 160 }}>
@@ -375,7 +376,7 @@ function AscensionSelector({
         className="text-yellow-400 text-xs font-bold uppercase tracking-wider"
         style={{ WebkitTextStroke: '2px #000', paintOrder: 'stroke fill' }}
       >
-        Ascension
+        Wanted Level
       </span>
       <div className="flex items-center gap-3">
         <button

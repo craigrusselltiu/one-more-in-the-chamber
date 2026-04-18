@@ -55,7 +55,7 @@ export const TopBar = memo(function TopBar({ mapDisabled }: { showMapButton?: bo
   const health = run?.health ?? 100;
   const maxHealth = run?.maxHealth ?? 100;
   const gold = run?.gold ?? 0;
-  const ascensionLevel = run?.ascensionLevel ?? 0;
+  const wantedLevel = run?.wantedLevel ?? 0;
   const playTimeSeconds = run?.playTimeSeconds ?? 0;
   const [showMap, setShowMap] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
@@ -112,8 +112,8 @@ export const TopBar = memo(function TopBar({ mapDisabled }: { showMapButton?: bo
             </span>
           )}
         </div>
-        {ascensionLevel > 0 && (
-          <span className="absolute left-1/2 -translate-x-1/2 text-stone-500 font-bold z-10">Ascension {ascensionLevel}</span>
+        {wantedLevel > 0 && (
+          <span className="absolute left-1/2 -translate-x-1/2 text-stone-500 font-bold z-10">Wanted Level {wantedLevel}</span>
         )}
         <div className="flex items-center gap-2">
           <span className="text-stone-500">{formatTimer(elapsed)}</span>

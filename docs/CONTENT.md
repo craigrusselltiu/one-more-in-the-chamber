@@ -44,39 +44,39 @@ Bullet tiles - Bullet, .50 Cal, Buckshot, and Ricochet
 - Fool's Gold -- disguised tile that wastes a match (no resources generated)
 - Suppressed -- when creating a match with this tile, that match does nothing
 
-## Ascension
+## Wanted Level
 
-Each level of ascension adds a mutation to the game, plus all previous level mutations.
+Each Wanted Level adds a mutation to the game, plus all previous level mutations.
 
-Level 1 - Elites spawn more often.
-Level 2 - Normal enemies are deadlier.
-Level 3 - Elites are deadlier.
-Level 4 - Bosses are deadlier.
+Level 1 - Normal enemies are deadlier. (10% damage)
+Level 2 - Elites are deadlier. (10% damage)
+Level 3 - Bosses are deadlier. (10% damage)
+Level 4 - Elites spawn more often. (2 more per act)
 Level 5 - Heal less between acts. (only heal 80% of missing HP)
 Level 6 - Start each run with less health. (10% missing HP)
-Level 7 - Normal enemies are tougher.
-Level 8 - Elites are tougher.
-Level 9 - Bosses are tougher.
-Level 10 - Start with less gold. (50g)
+Level 7 - Normal enemies are tougher. (10% HP)
+Level 8 - Elites are tougher. (10% HP)
+Level 9 - Bosses are tougher. (10% HP)
+Level 10 - Start each run with less gold.
 Level 11 - Start each run with 1 less consumable slot.
 Level 12 - Upgraded tiles appear less often.
 Level 13 - All enemies drop less gold. (10% less)
 Level 14 - Start with less max HP. (5% less)
-Level 15 - Legendary artifacts are less common.
-Level 16 - Shops cost more. (10% more)
-Level 17 - Normal enemies gain an additional 5% HP and 5% damage.
-Level 18 - Elites gain an additional 5% HP and 5% damage.
-Level 19 - Bosses gain an additional 5% HP and 5% damage.
-Level 20 - At the end of Act 3, the final boss spawns with a random Act 3 elite. (elite has Summoned status)
-Level 21 - Merchants do not have sales anymore.
-Level 22 - Normal enemies gain an additional 5% HP.
-Level 23 - Elites gain an additional 5% HP.
-Level 24 - Bosses gain an additional 5% HP.
+Level 15 - Merchants do not have sales.
+Level 16 - Normal enemies are even tougher. (10% HP)
+Level 17 - Elites are even tougher. (10% HP)
+Level 18 - Bosses are even tougher. (10% HP)
+Level 19 - Merchant upgrades are more expensive. (starts at 250g instead of 200)
+Level 20 - Legendary artifacts are less common.
+Level 21 - Merchants cost more. (10% more)
+Level 22 - Normal enemies are even deadlier. (10% damage)
+Level 23 - Elites are even deadlier. (10% damage)
+Level 24 - Bosses are even deadlier. (10% damage)
 Level 25 - Start each run with a random corruption.
-Level 26 - Start with even less max HP. (5% less + 5% before should be 10% total)
-Level 27 - Normal enemies gain an additional 5% damage.
-Level 28 - Elites gain an additional 5% damage.
-Level 29 - Bosses gain an additional 5% damage.
+Level 26 - You feel a presence looming over you. (Outlaw King chance doubled for all acts)
+Level 27 - Start with even less max HP. (5% less)
+Level 28 - At the end of Act 3, the final boss spawns with a random Act 3 elite. (elite has Summoned status)
+Level 29 - Campfires are less common. (1 less per act)
 Level 30 - Start each run with an extra Charcoal tile. (this is in addition to the starter tile that you pick)
 
 ## Scoring
@@ -97,6 +97,6 @@ Max Combo (100 each point above 1, e.g. 1.7x combo = 700 points)
 
 ---
 
-Ascension (+ 0.05x each ascension level, e.g. ascension 2 is x1.1)
+Wanted Level (+ 0.05x per level, e.g. Wanted Level 2 is x1.1)
 Time (x2 at 0hrs, x1 at 1hr30, x1 is lowest, only appears if won)
 Reputation Gain (x0.5 if defeat, x1 if won, only appears if lost)

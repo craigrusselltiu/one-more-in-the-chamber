@@ -59,7 +59,7 @@ import {
 } from './data/enemies';
 import type { EnemyDefinition } from './types/combat';
 import type { MapNodeType, Act } from './types/game';
-import { applyAscensionToEnemies, getAscensionMutations } from './data/ascension';
+import { applyWantedLevelToEnemies, getWantedLevelMutations } from './data/wantedLevel';
 import { createSeededRandom } from './utils/seededRandom';
 
 export type Screen =
@@ -82,8 +82,8 @@ export type Screen =
   | 'welcome';
 
 const ENCOUNTER_ROLLERS: Record<Act, {
-  regular: (r: () => number, nodeIndex?: number, outlawKingAvailable?: boolean) => EnemyDefinition[];
-  elite: (r?: () => number, outlawKingAvailable?: boolean, nodeIndex?: number) => EnemyDefinition[];
+  regular: (r: () => number, nodeIndex?: number, outlawKingAvailable?: boolean, okChanceMult?: number) => EnemyDefinition[];
+  elite: (r?: () => number, outlawKingAvailable?: boolean, nodeIndex?: number, okChanceMult?: number) => EnemyDefinition[];
 }> = {
   1: { regular: rollAct1Encounter, elite: rollAct1EliteEncounter },
   2: { regular: rollAct2Encounter, elite: rollAct2EliteEncounter },
@@ -104,6 +104,7 @@ function rollEncounter(
   nodeId?: string,
   nodeIndex = 99,
   outlawKingAvailable = false,
+  okChanceMult = 1,
 ): EncounterInfo {
   const rand = seed && nodeId ? createSeededRandom(`${seed}-encounter-${nodeId}`) : undefined;
   if (nodeType === 'boss') {
@@ -117,9 +118,9 @@ function rollEncounter(
   }
   const rollers = ENCOUNTER_ROLLERS[act];
   if (nodeType === 'elite') {
-    return { enemies: rollers.elite(rand, outlawKingAvailable, nodeIndex), isElite: true, isBoss: false };
+    return { enemies: rollers.elite(rand, outlawKingAvailable, nodeIndex, okChanceMult), isElite: true, isBoss: false };
   }
-  const enemies = rollers.regular(rand ?? Math.random, nodeIndex, outlawKingAvailable);
+  const enemies = rollers.regular(rand ?? Math.random, nodeIndex, outlawKingAvailable, okChanceMult);
   return {
     enemies,
     isElite: false,
@@ -277,13 +278,14 @@ export default function App() {
           const visited = run.mapState?.nodes.filter((n) => n.visited).length ?? 0;
           if (visited === 0 && run.mapState) {
             const act = run.currentAct;
+            const okChanceMult = getWantedLevelMutations(run.wantedLevel).outlawKingChanceMultiplier;
             const hasOutlawKing = run.mapState.nodes.some((n) => {
               if (n.type !== 'combat' && n.type !== 'elite') return false;
               // Act 1: only after artifact node (row > 6); Acts 2/3: after early rows (row >= 3)
               if (act === 1 && n.row <= 6) return false;
               if (act !== 1 && n.row < 3) return false;
               const rand = createSeededRandom(`${run.seed}-encounter-${n.id}`);
-              return rand() < OUTLAW_KING_ENCOUNTER_CHANCE_BY_ACT[act];
+              return rand() < OUTLAW_KING_ENCOUNTER_CHANCE_BY_ACT[act] * okChanceMult;
             });
             if (hasOutlawKing) {
               setTimeout(() => {
@@ -363,6 +365,7 @@ export default function App() {
           const nodeType = currentNode?.type ?? 'combat';
           const nodeRow = currentNode?.row ?? 99;
           const outlawKingAvailable = !run.outlawKingEncountered;
+          const ascMods = getWantedLevelMutations(run.wantedLevel);
           // Event-driven fights (e.g. Coyote Den) override the roll with a specific enemy list.
           const forcedIds = run.forcedCombatEnemies;
           const encounter: EncounterInfo = forcedIds && forcedIds.length > 0
@@ -376,6 +379,7 @@ export default function App() {
               }
             : rollEncounter(
                 run.currentAct, nodeType, run.seed, run.currentNodeId ?? undefined, nodeRow, outlawKingAvailable,
+                ascMods.outlawKingChanceMultiplier,
               );
           if (forcedIds && forcedIds.length > 0) {
             useRunStore.getState().setForcedCombatEnemies(undefined);
@@ -384,7 +388,7 @@ export default function App() {
           if (encounterContainsOutlawKing(encounter.enemies)) {
             useRunStore.getState().markOutlawKingEncountered();
           }
-          // Categorize the encounter for ascension scaling.
+          // Categorize the encounter for wanted-level scaling.
           // Outlaw King in a "normal" combat node still counts as elite.
           const hasOutlawKing = encounterContainsOutlawKing(encounter.enemies);
           const category: 'normal' | 'elite' | 'boss' = encounter.isBoss
@@ -392,13 +396,12 @@ export default function App() {
             : encounter.isElite || hasOutlawKing
             ? 'elite'
             : 'normal';
-          const ascMods = getAscensionMutations(run.ascensionLevel);
 
           // Scale the base encounter first.
-          applyAscensionToEnemies(encounter.enemies, run.ascensionLevel, category);
+          applyWantedLevelToEnemies(encounter.enemies, run.wantedLevel, category);
 
           // Vulture Circle event penalty: apply a +HP multiplier to this act's
-          // boss on top of ascension scaling, then clear the flag.
+          // boss on top of wanted-level scaling, then clear the flag.
           const bossHpBonus = run.pendingActBossHpBonus ?? 0;
           if (encounter.isBoss && bossHpBonus > 0) {
             for (const e of encounter.enemies) {
@@ -418,7 +421,7 @@ export default function App() {
             if (elitePool.length > 0) {
               const pick = elitePool[Math.floor(Math.random() * elitePool.length)];
               const companion = { ...pick, _summoned: true } as typeof pick;
-              applyAscensionToEnemies([companion], run.ascensionLevel, 'elite');
+              applyWantedLevelToEnemies([companion], run.wantedLevel, 'elite');
               encounter.enemies.push(companion);
             }
           }

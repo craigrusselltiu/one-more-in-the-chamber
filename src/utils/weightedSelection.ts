@@ -19,7 +19,7 @@ const BASE_BOSS_RARITY_WEIGHTS: Record<ArtifactRarity, number> = {
 };
 
 /**
- * Build weight tables with overrides (e.g. for ascension L15 lowering legendary).
+ * Build weight tables with overrides (e.g. for Wanted Level L20 lowering legendary).
  */
 function buildWeights(
   base: Record<ArtifactRarity, number>,
@@ -33,7 +33,7 @@ function buildWeights(
  * Pick one artifact from a pool using weighted rarity selection.
  * Desperado(2) doubles the weight of desperado-tagged artifacts.
  * `bossReward = true` restricts the pool to Rare/Legendary with 25/75 weights.
- * `legendaryWeightOverride` lets ascension L15 lower the legendary weight.
+ * `legendaryWeightOverride` lets Wanted Level L20 lower the legendary weight.
  */
 export function weightedArtifactPick<T extends { rarity?: ArtifactRarity; tags: string[] }>(
   pool: T[],

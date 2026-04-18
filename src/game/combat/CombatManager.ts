@@ -40,7 +40,7 @@ export interface CombatConfig {
   isBoss?: boolean;
   /** Set to true when this encounter contains the Outlaw King (guaranteed legendary drop on victory). */
   isOutlawKing?: boolean;
-  /** Gold multiplier from ascension (1.0 = normal, <1.0 = reduced). */
+  /** Gold multiplier from wanted level (1.0 = normal, <1.0 = reduced). */
   goldMultiplier?: number;
 }
 
@@ -131,7 +131,7 @@ export class CombatManager {
    *  tag like "Poison" / "Bomb"). Used to attribute the killing blow when
    *  endCombat fires in defeat. */
   private lastDamageSource: string | null = null;
-  /** Gold multiplier from ascension level (1.0 = normal, <1.0 = reduced). */
+  /** Gold multiplier from wanted level (1.0 = normal, <1.0 = reduced). */
   private goldMultiplier: number;
 
   constructor(board: Board, config: CombatConfig) {
@@ -308,9 +308,9 @@ export class CombatManager {
           this.player.tryLethalSave();
           this.floatOnPlayer('-10', '#D04040');
           break;
-        case 'vulnerable':
-          this.player.vulnerableStacks += 2;
-          this.floatOnPlayer('+2 VULNERABLE', '#C070D0', 9);
+        case 'protected':
+          this.player.protectedStacks += 1;
+          this.floatOnPlayer('+1 PROTECTED', '#60D8D8', 9);
           break;
         case 'poison':
           this.player.poisonedStacks += 5;
@@ -1832,7 +1832,7 @@ export class CombatManager {
       this.player.barricadeStacks = Math.min(this.player.barricadeStacks + output.barricadeStacks, 1);
     }
 
-    // Gold (reduced by ascension modifier)
+    // Gold (reduced by wanted-level modifier)
     if (output.gold > 0) {
       const scaledGold = Math.max(1, Math.round(output.gold * this.goldMultiplier));
       this.player.addGold(scaledGold);

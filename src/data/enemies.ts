@@ -720,12 +720,13 @@ export function rollAct1Encounter(
   rand: () => number = Math.random,
   nodeIndex = 99,
   outlawKingAvailable = false,
+  okChanceMult = 1,
 ): EnemyDefinition[] {
   const isEarly = nodeIndex < 3;
   if (isEarly) {
     return rollPresetEncounter(ACT1_EARLY_ENCOUNTERS, ACT1_NORMAL, rand, 'act1-early');
   }
-  if (outlawKingAvailable && nodeIndex > 6 && rand() < OUTLAW_KING_ENCOUNTER_CHANCE_BY_ACT[1]) {
+  if (outlawKingAvailable && nodeIndex > 6 && rand() < OUTLAW_KING_ENCOUNTER_CHANCE_BY_ACT[1] * okChanceMult) {
     return buildOutlawKingEncounter(1);
   }
   return rollLateEncounter(
@@ -738,8 +739,9 @@ export function rollAct1EliteEncounter(
   rand: () => number = Math.random,
   outlawKingAvailable = false,
   nodeIndex = 99,
+  okChanceMult = 1,
 ): EnemyDefinition[] {
-  if (outlawKingAvailable && nodeIndex > 6 && rand() < OUTLAW_KING_ENCOUNTER_CHANCE_BY_ACT[1]) {
+  if (outlawKingAvailable && nodeIndex > 6 && rand() < OUTLAW_KING_ENCOUNTER_CHANCE_BY_ACT[1] * okChanceMult) {
     return buildOutlawKingEncounter(1);
   }
   const pool = Object.values(ACT1_ELITE);
@@ -753,12 +755,13 @@ export function rollAct2Encounter(
   rand: () => number = Math.random,
   nodeIndex = 99,
   outlawKingAvailable = false,
+  okChanceMult = 1,
 ): EnemyDefinition[] {
   const isEarly = nodeIndex < 3;
   if (isEarly) {
     return rollPresetEncounter(ACT2_EARLY_ENCOUNTERS, ACT2_NORMAL, rand, 'act2-early');
   }
-  if (outlawKingAvailable && rand() < OUTLAW_KING_ENCOUNTER_CHANCE_BY_ACT[2]) {
+  if (outlawKingAvailable && rand() < OUTLAW_KING_ENCOUNTER_CHANCE_BY_ACT[2] * okChanceMult) {
     return buildOutlawKingEncounter(2);
   }
   return rollLateEncounter(
@@ -772,8 +775,10 @@ export function rollAct2Encounter(
 export function rollAct2EliteEncounter(
   rand: () => number = Math.random,
   outlawKingAvailable = false,
+  _nodeIndex = 99,
+  okChanceMult = 1,
 ): EnemyDefinition[] {
-  if (outlawKingAvailable && rand() < OUTLAW_KING_ENCOUNTER_CHANCE_BY_ACT[2]) {
+  if (outlawKingAvailable && rand() < OUTLAW_KING_ENCOUNTER_CHANCE_BY_ACT[2] * okChanceMult) {
     return buildOutlawKingEncounter(2);
   }
   const pool = Object.values(ACT2_ELITE);
@@ -787,12 +792,13 @@ export function rollAct3Encounter(
   rand: () => number = Math.random,
   nodeIndex = 99,
   outlawKingAvailable = false,
+  okChanceMult = 1,
 ): EnemyDefinition[] {
   const isEarly = nodeIndex < 3;
   if (isEarly) {
     return rollPresetEncounter(ACT3_EARLY_ENCOUNTERS, ACT3_NORMAL, rand, 'act3-early');
   }
-  if (outlawKingAvailable && rand() < OUTLAW_KING_ENCOUNTER_CHANCE_BY_ACT[3]) {
+  if (outlawKingAvailable && rand() < OUTLAW_KING_ENCOUNTER_CHANCE_BY_ACT[3] * okChanceMult) {
     return buildOutlawKingEncounter(3);
   }
   // Act 3 has no dynamic "any 2" encounter -- 25% early preset, 75% late preset
@@ -803,8 +809,10 @@ export function rollAct3Encounter(
 export function rollAct3EliteEncounter(
   rand: () => number = Math.random,
   outlawKingAvailable = false,
+  _nodeIndex = 99,
+  okChanceMult = 1,
 ): EnemyDefinition[] {
-  if (outlawKingAvailable && rand() < OUTLAW_KING_ENCOUNTER_CHANCE_BY_ACT[3]) {
+  if (outlawKingAvailable && rand() < OUTLAW_KING_ENCOUNTER_CHANCE_BY_ACT[3] * okChanceMult) {
     return buildOutlawKingEncounter(3);
   }
   const pool = Object.values(ACT3_ELITE);

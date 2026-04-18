@@ -13,7 +13,7 @@ import { createSeededRandom, seededShuffle } from '../../utils/seededRandom';
 import { weightedArtifactPickN } from '../../utils/weightedSelection';
 import type { TileType, TraitId } from '../../types/game';
 import type { Screen } from '../../App';
-import { getAscensionMutations } from '../../data/ascension';
+import { getWantedLevelMutations } from '../../data/wantedLevel';
 import { getMaxConsumableSlots } from '../../utils/consumableSlots';
 import { rollTileRewardLevel } from '../../utils/tileRewardLevel';
 
@@ -84,7 +84,7 @@ export const MerchantScreen = memo(function MerchantScreen() {
   const stock = useMemo(() => {
     if (!run || !snapshot) return { consumables: [] as MerchantItem[], artifacts: [] as MerchantItem[], tiles: [] as MerchantItem[] };
     const rand = createSeededRandom(`${run.seed}-merchant-${run.currentNodeId}`);
-    const ascPriceMult = getAscensionMutations(run.ascensionLevel).merchantPriceMultiplier;
+    const ascPriceMult = getWantedLevelMutations(run.wantedLevel).merchantPriceMultiplier;
     // One-shot discount from events (e.g. Train Wreck "Check for survivors"). Consumed on first stock computation.
     const discount = run.nextMerchantDiscount ?? 0;
     // Act-wide surcharge from events (e.g. Medicine Wagon "Threaten him"). Cleared on act advance.
@@ -113,9 +113,9 @@ export const MerchantScreen = memo(function MerchantScreen() {
     // Corrupt-tagged artifacts are event-only rewards; never stocked by merchants.
     const availableArtifacts = ARTIFACTS.filter((a) => !ownedIds.has(a.id) && !a.tags.includes('corrupt') && (!a.exclusive || a.exclusive === run.character));
     const desperadoActive = (run.traitCounts?.desperado ?? 0) >= 2;
-    const legendaryWeight = getAscensionMutations(run.ascensionLevel).legendaryWeight;
+    const legendaryWeight = getWantedLevelMutations(run.wantedLevel).legendaryWeight;
     const pickedArtifacts = weightedArtifactPickN(availableArtifacts, 4, rand, desperadoActive, legendaryWeight);
-    // Rarity-tiered pricing (pre-ascension / pre-discount):
+    // Rarity-tiered pricing (pre-wanted-level / pre-discount):
     //   Common    100-140
     //   Uncommon  141-180
     //   Rare      181-220
@@ -128,7 +128,7 @@ export const MerchantScreen = memo(function MerchantScreen() {
     };
     // One random artifact in the stock gets a 50%-off SALE tag. L21 disables
     // sales entirely for the rest of the run.
-    const salesDisabled = getAscensionMutations(run.ascensionLevel).disableMerchantSales;
+    const salesDisabled = getWantedLevelMutations(run.wantedLevel).disableMerchantSales;
     const saleIndex = !salesDisabled && pickedArtifacts.length > 0
       ? Math.floor(rand() * pickedArtifacts.length)
       : -1;
@@ -160,7 +160,7 @@ export const MerchantScreen = memo(function MerchantScreen() {
       const picks = seededShuffle(available, rand).slice(0, 2);
       for (const swapTile of picks) {
         const def = TILE_DEFINITIONS[swapTile];
-        const tileLevel = rollTileRewardLevel(run.currentAct, run.ascensionLevel, rand);
+        const tileLevel = rollTileRewardLevel(run.currentAct, run.wantedLevel, rand);
         tiles.push({
           type: 'tile_swap',
           id: `swap-${swapTile}`,
@@ -172,9 +172,12 @@ export const MerchantScreen = memo(function MerchantScreen() {
       }
     }
 
-    // Upgrade card (base 200, +50 per upgrade already bought this run, once per merchant).
+    // Upgrade card (base 200, +50 per upgrade already bought this run, once
+    // per merchant). L19 wanted-level adds an extra +50 to the base.
     const upgradesBought = run.merchantUpgradesPurchased ?? 0;
-    const upgradePrice = Math.round((200 + 50 * upgradesBought) * priceMult);
+    const wl = getWantedLevelMutations(run.wantedLevel);
+    const upgradeBase = 200 + wl.merchantUpgradeBasePriceBonus;
+    const upgradePrice = Math.round((upgradeBase + 50 * upgradesBought) * priceMult);
     const hasUpgradeableTiles = snapTileTypes.some((t) => TILE_DEFINITIONS[t]?.upgradeText);
     if (hasUpgradeableTiles) {
       tiles.push({

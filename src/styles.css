@@ -164,70 +164,29 @@
 
 /* Leaderboard player-name shimmer colours -- reused by the Reputation Shop
    preview, the Customize preview, and the leaderboard entry itself. Share
-   the rarity-sweep keyframe with artifacts for a consistent look. */
-.name-shimmer-rainbow {
-  background: linear-gradient(90deg, #e84545, #f59e0b, #fbbf24, #22c55e, #3b82f6, #a855f7, #ec4899, #e84545);
-  background-size: 300% 100%;
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
-  animation: rarity-sweep 5s linear infinite;
-  font-weight: bold;
-}
-.name-shimmer-red {
-  background: linear-gradient(90deg, #7a1818, #e84545, #ff9a9a, #e84545, #7a1818, #e84545, #ff9a9a, #e84545, #7a1818);
-  background-size: 300% 100%;
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
-  animation: rarity-sweep 5s linear infinite;
-  font-weight: bold;
-}
-.name-shimmer-gold {
-  background: linear-gradient(90deg, #b09830, #f5d442, #fff8c0, #f5d442, #b09830, #f5d442, #fff8c0, #f5d442, #b09830);
-  background-size: 300% 100%;
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
-  animation: rarity-sweep 5s linear infinite;
-  font-weight: bold;
-}
-.name-shimmer-blue {
-  background: linear-gradient(90deg, #3060a0, #5b9bf5, #b0d4ff, #5b9bf5, #3060a0, #5b9bf5, #b0d4ff, #5b9bf5, #3060a0);
-  background-size: 300% 100%;
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
-  animation: rarity-sweep 5s linear infinite;
-  font-weight: bold;
-}
-.name-shimmer-poison {
-  background: linear-gradient(90deg, #3a9a3a, #6ee76e, #b0ffb0, #6ee76e, #3a9a3a, #6ee76e, #b0ffb0, #6ee76e, #3a9a3a);
-  background-size: 300% 100%;
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
-  animation: rarity-sweep 5s linear infinite;
-  font-weight: bold;
-}
-.name-shimmer-shadow {
-  background: linear-gradient(90deg, #2a1040, #4c1d95, #8b5cf6, #4c1d95, #2a1040, #4c1d95, #8b5cf6, #4c1d95, #2a1040);
-  background-size: 300% 100%;
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
-  animation: rarity-sweep 5s linear infinite;
-  font-weight: bold;
-}
+   the rarity-sweep keyframe with artifacts but use a slower duration so the
+   player name doesn't feel frantic when you're scanning the board. */
+.name-shimmer-rainbow,
+.name-shimmer-red,
+.name-shimmer-gold,
+.name-shimmer-blue,
+.name-shimmer-poison,
+.name-shimmer-shadow,
 .name-shimmer-bubblegum {
-  background: linear-gradient(90deg, #db2777, #ec4899, #f9a8d4, #ec4899, #db2777, #ec4899, #f9a8d4, #ec4899, #db2777);
   background-size: 300% 100%;
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
-  animation: rarity-sweep 5s linear infinite;
+  animation: rarity-sweep 9s linear infinite;
   font-weight: bold;
 }
+.name-shimmer-rainbow   { background-image: linear-gradient(90deg, #e84545, #f59e0b, #fbbf24, #22c55e, #3b82f6, #a855f7, #ec4899, #e84545); }
+.name-shimmer-red       { background-image: linear-gradient(90deg, #7a1818, #e84545, #ff9a9a, #e84545, #7a1818, #e84545, #ff9a9a, #e84545, #7a1818); }
+.name-shimmer-gold      { background-image: linear-gradient(90deg, #b09830, #f5d442, #fff8c0, #f5d442, #b09830, #f5d442, #fff8c0, #f5d442, #b09830); }
+.name-shimmer-blue      { background-image: linear-gradient(90deg, #3060a0, #5b9bf5, #b0d4ff, #5b9bf5, #3060a0, #5b9bf5, #b0d4ff, #5b9bf5, #3060a0); }
+.name-shimmer-poison    { background-image: linear-gradient(90deg, #3a9a3a, #6ee76e, #b0ffb0, #6ee76e, #3a9a3a, #6ee76e, #b0ffb0, #6ee76e, #3a9a3a); }
+.name-shimmer-shadow    { background-image: linear-gradient(90deg, #2a1040, #4c1d95, #8b5cf6, #4c1d95, #2a1040, #4c1d95, #8b5cf6, #4c1d95, #2a1040); }
+.name-shimmer-bubblegum { background-image: linear-gradient(90deg, #db2777, #ec4899, #f9a8d4, #ec4899, #db2777, #ec4899, #f9a8d4, #ec4899, #db2777); }
 
 /* Screen transition: black wipe left-to-right */
 @keyframes wipe-in {

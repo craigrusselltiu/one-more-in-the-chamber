@@ -7,6 +7,23 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 ## v0.6.10
 
 ### Added
+- **Ascension renamed to Wanted Level.** Every user-visible string on the character-select selector, TopBar, Score screen, and leaderboard tag (now `W{n}` instead of `A{n}`) reads "Wanted Level". Code identifiers followed through: `AscensionMutations` -> `WantedLevelMutations`, `getAscensionMutations` -> `getWantedLevelMutations`, `applyAscensionToEnemies` -> `applyWantedLevelToEnemies`, `RunState.ascensionLevel` -> `wantedLevel`, `MetaProgression.highestAscensionCleared` / `lastAscensionLevel` -> `highestWantedLevelCleared` / `lastWantedLevel`, `ScoreData.ascensionMultiplier` -> `wantedLevelMultiplier`. `src/data/ascension.ts` moved to `src/data/wantedLevel.ts`.
+- New migration `20260418_rename_ascension_to_wanted_level.sql` renames `runs.ascension_level`, `scores.ascension_level`, `scores.ascension_multiplier`, `meta_progression.highest_ascension_cleared` to their `wanted_level*` equivalents (data preserved).
+- `loadMeta` now migrates the old `highestAscensionCleared` / `lastAscensionLevel` localStorage keys into the renamed shape on first load, so a player's pre-rename unlocked wanted levels don't disappear and hide the selector.
+- Wanted Level spec reworked per `docs/CONTENT.md`. Levels reshuffled:
+  - L1-L3: normal/elite/boss +10% damage (was L2-L4).
+  - L4: +2 elites per act (was L1).
+  - L15: merchants no sales (was L21).
+  - L16-L18: additional +10% HP on each category (was +5% at L17-L19).
+  - L19: merchant upgrade base price +50g (200 -> 250). New `merchantUpgradeBasePriceBonus` field.
+  - L20: legendary weight 1 (was L15).
+  - L21: merchant prices x1.1 (was L16).
+  - L22-L24: additional +10% damage on each category (was +5% HP at L22-L24).
+  - L26: Outlaw King encounter chance x2. New `outlawKingChanceMultiplier` field threaded through every `rollAct*Encounter` signature + the pre-roll warning in `App.tsx`. Flavor text: "You feel a presence looming over you."
+  - L27: Max HP x0.9 (second drop, cumulative with L14).
+  - L28: final boss + random Act 3 elite (was L20).
+  - L29: campfires -1 per act. New `campfireCountPenalty` field threaded through `generateMap` + `assignNodeTypes`.
+- Five new nameplates: Blood Moon (66,666 rep), Bubble Tea (15,000), Golden Laurels (7,777), Graveyard (15,000), Void (25,000).
 - Ascension capped raised to L30. New mutations on top of the existing L1-L20:
   - L21 - Merchants no longer stock a discounted SALE artifact.
   - L22 / L23 / L24 - Normals / elites / bosses gain an additional +5% HP.
@@ -24,6 +41,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 - Merchant shop layout reorganised: Row 1 is now 4 Artifacts + 1 Upgrade (was Artifacts + Tile); Row 2 is 3 Consumables + 2 Tiles (was 4 Consumables + Upgrade). Stock builder rolls two distinct `tile_swap` entries via `seededShuffle(available, rand).slice(0, 2)` when available.
 - Act 1 merchants can now offer tiles from the full `STARTER_POOL + ADDITIONAL_POOL` union, not just starter tiles.
 - Ascension max-selectable cap raised from 20 to 30 (`CharacterSelectScreen.tsx`). `ASCENSION_EFFECTS` string table extended with the L21-L30 blurbs.
+- Leaderboard row shadows darker and more prominent: `ROW_TEXT_SHADOW` and `ROW_ICON_SHADOW` bumped from 1px blur / 0.85 alpha to 2px blur / 1.0 alpha, so text and tile icons read cleanly against any equipped nameplate art.
+
+### Fixed
+- Medicine Wagon potion rolled the wrong fourth outcome. Doc specifies 2 positive (Heal 27 / +1 Protected) and 2 negative (-10 HP / +5 Poison); code had Vulnerable (negative) in the Protected slot, so all four outcomes were neutral-to-bad. Changed `pendingNextFightPotion` union from `'heal' | 'damage' | 'vulnerable' | 'poison'` to `'heal' | 'damage' | 'protected' | 'poison'`, updated the EventScreen outcome array, event description string ("gain 2 Vulnerable" -> "gain 1 Protected"), and the CombatManager resolver branch.
 
 ## v0.6.9
 

@@ -19,7 +19,7 @@ export interface LeaderboardEntry {
   /** True when the score was posted by a guest (no authenticated account). */
   isGuest: boolean;
   score: number;
-  ascensionLevel: number;
+  wantedLevel: number;
   runCompleted: boolean;
   runDurationSeconds: number;
   character: string;
@@ -58,7 +58,7 @@ export async function fetchLeaderboard(period: LeaderboardPeriod): Promise<Leade
   return withSyncIndicator(async () => {
     let query = sb
       .from('scores')
-      .select('final_score, ascension_level, run_completed, run_duration_seconds, character, created_at, player_id, player_name, tiles, artifacts, killed_by')
+      .select('final_score, wanted_level, run_completed, run_duration_seconds, character, created_at, player_id, player_name, tiles, artifacts, killed_by')
       .order('final_score', { ascending: false })
       .limit(100);
 
@@ -112,7 +112,7 @@ function mapLeaderboardRows(
       playerName: (row.player_name as string) ?? 'Anonymous',
       isGuest: row.player_id == null,
       score: (row.final_score as number) ?? 0,
-      ascensionLevel: (row.ascension_level as number) ?? 0,
+      wantedLevel: (row.wanted_level as number) ?? 0,
       runCompleted: (row.run_completed as boolean) ?? false,
       runDurationSeconds: (row.run_duration_seconds as number) ?? 0,
       character: (row.character as string) ?? 'red_panda',

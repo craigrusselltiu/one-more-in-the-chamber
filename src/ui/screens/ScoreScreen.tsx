@@ -18,12 +18,12 @@ function formatDuration(totalSeconds: number): string {
 
 /**
  * ScoreScreen: end-of-run scoring breakdown.
- * Formula: (Base + Bonus) x Ascension x Time
+ * Formula: (Base + Bonus) x Wanted Level x Time
  */
 export const ScoreScreen = memo(function ScoreScreen() {
   const run = useRunStore((s) => s.run);
   const endRun = useRunStore((s) => s.endRun);
-  const setHighestAscension = useMetaStore((s) => s.setHighestAscension);
+  const setHighestWantedLevel = useMetaStore((s) => s.setHighestWantedLevel);
   const addReputation = useMetaStore((s) => s.addReputation);
 
   const score = useMemo(() => {
@@ -51,16 +51,16 @@ export const ScoreScreen = memo(function ScoreScreen() {
     const comboBonus = Math.round((maxComboMultiplier - 1.0) * 1000);
     const bonusPoints = goldObtained + artifactBonus + damageBonus + comboBonus;
 
-    const ascensionMultiplier = 1.0 + 0.05 * run.ascensionLevel;
+    const wantedLevelMultiplier = 1.0 + 0.05 * run.wantedLevel;
     const timeMultiplier = completed ? computeTimeMultiplier(run.playTimeSeconds ?? 0) : 1.0;
     const completionMultiplier = completed ? 2.0 : 1.0;
 
-    const finalScore = Math.round((baseScore + bonusPoints) * ascensionMultiplier * timeMultiplier * completionMultiplier);
+    const finalScore = Math.round((baseScore + bonusPoints) * wantedLevelMultiplier * timeMultiplier * completionMultiplier);
 
     return {
       baseScore,
       bonusPoints,
-      ascensionMultiplier,
+      wantedLevelMultiplier,
       timeMultiplier,
       completionMultiplier,
       finalScore,
@@ -99,10 +99,10 @@ export const ScoreScreen = memo(function ScoreScreen() {
       id: crypto.randomUUID(),
       runId: run.id,
       character: run.character,
-      ascensionLevel: run.ascensionLevel,
+      wantedLevel: run.wantedLevel,
       baseScore: score.baseScore,
       bonusPoints: score.bonusPoints,
-      ascensionMultiplier: score.ascensionMultiplier,
+      wantedLevelMultiplier: score.wantedLevelMultiplier,
       timeBonus: score.timeMultiplier,
       finalScore: score.finalScore,
       runDurationSeconds: score.runDurationSeconds,
@@ -123,7 +123,7 @@ export const ScoreScreen = memo(function ScoreScreen() {
   const handleMainMenu = () => {
     const completed = score?.completed ?? false;
     if (completed && run) {
-      setHighestAscension(run.ascensionLevel);
+      setHighestWantedLevel(run.wantedLevel);
     }
     if (score) {
       const rep = Math.floor(score.finalScore / 10);
@@ -177,9 +177,9 @@ export const ScoreScreen = memo(function ScoreScreen() {
           <div className="border-t border-stone-600 my-1" />
 
           <ScoreLine
-            label="Ascension"
-            value={`x${score.ascensionMultiplier.toFixed(2)}`}
-            detail={`Level ${run.ascensionLevel}`}
+            label="Wanted Level"
+            value={`x${score.wantedLevelMultiplier.toFixed(2)}`}
+            detail={`Level ${run.wantedLevel}`}
             isMultiplier
           />
           {score.completed && (

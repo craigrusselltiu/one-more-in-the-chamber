@@ -470,7 +470,7 @@ export const EventScreen = memo(function EventScreen() {
         return;
       }
       case 'medicine_potion': {
-        const outcomes = ['heal', 'damage', 'vulnerable', 'poison'] as const;
+        const outcomes = ['heal', 'damage', 'protected', 'poison'] as const;
         const pick = outcomes[Math.floor(Math.random() * outcomes.length)];
         useRunStore.getState().setPendingNextFightPotion(pick);
         finishChoice(choice);

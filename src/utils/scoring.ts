@@ -31,12 +31,12 @@ export function calculateScore(run: RunState): number {
   const comboBonus = Math.round((maxCombo - 1.0) * 1000);
   const bonusPoints = goldBonus + artifactBonus + damageBonus + comboBonus;
 
-  // Ascension multiplier always applies; time + completion bonus only on a win.
-  const ascensionMultiplier = 1.0 + 0.05 * n(run.ascensionLevel);
+  // Wanted-level multiplier always applies; time + completion bonus only on a win.
+  const wantedLevelMultiplier = 1.0 + 0.05 * n(run.wantedLevel);
   const timeMultiplier = completed ? computeTimeMultiplier(n(run.playTimeSeconds)) : 1.0;
   const completionMultiplier = completed ? 2.0 : 1.0;
 
-  const raw = (baseScore + bonusPoints) * ascensionMultiplier * timeMultiplier * completionMultiplier;
+  const raw = (baseScore + bonusPoints) * wantedLevelMultiplier * timeMultiplier * completionMultiplier;
   return Number.isFinite(raw) ? Math.round(raw) : 0;
 }
 

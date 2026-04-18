@@ -4,7 +4,7 @@ export interface RunState {
   id: string;
   character: CharacterId;
   seed: string;
-  ascensionLevel: number;
+  wantedLevel: number;
   currentAct: Act;
   currentNodeId: string | null;
   health: number;
@@ -63,7 +63,7 @@ export interface RunState {
   /** Additive surcharge (fraction, e.g. 0.2 = +20%) applied to merchant prices for the rest of the current act (Medicine Wagon "Threaten him"). Cleared on advanceAct. */
   actMerchantSurcharge?: number;
   /** Delayed potion effect rolled by Medicine Wagon; applied once at the start of the next combat. */
-  pendingNextFightPotion?: 'heal' | 'damage' | 'vulnerable' | 'poison';
+  pendingNextFightPotion?: 'heal' | 'damage' | 'protected' | 'poison';
   /** What killed the player on defeat -- enemy name, event title, or a generic tag like "Poison". Populated when endRun(false) is called; null/undefined for victories. */
   deathCause?: string;
   status: 'active' | 'completed' | 'abandoned';
@@ -166,7 +166,7 @@ export interface MapState {
 export interface ScoreData {
   baseScore: number;
   bonusPoints: number;
-  ascensionMultiplier: number;
+  wantedLevelMultiplier: number;
   timeBonus: number;
   finalScore: number;
   runDurationSeconds: number;

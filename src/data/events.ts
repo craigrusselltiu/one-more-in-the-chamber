@@ -298,7 +298,7 @@ const medicineWagon: EventDefinition = {
     },
     {
       label: 'Drink delayed potion',
-      description: 'At the start of next combat, heal 27 HP, take 10 damage, gain 2 Vulnerable, or gain 5 Poison.',
+      description: 'At the start of next combat, heal 27 HP, gain 1 Protected, take 10 damage, or gain 5 Poison.',
       effect: 'medicine_potion',
       resultText: 'The liquid is warm and faintly alive. Doc watches you swallow and does not bother to wish you luck.',
     },

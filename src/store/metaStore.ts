@@ -38,7 +38,7 @@ function pushMetaDebounced(meta: MetaProgression): void {
       equippedNameplate: meta.equippedNameplate,
       equippedColour: meta.equippedColour,
       equippedTitle: meta.equippedTitle,
-      highestAscensionCleared: meta.highestAscensionCleared,
+      highestWantedLevelCleared: meta.highestWantedLevelCleared,
     }).catch((err) => console.error('[sync] pushMeta failed:', err));
   }, REMOTE_PUSH_DELAY_MS);
 }
@@ -58,8 +58,8 @@ interface MetaProgression {
   equippedNameplate: string | null;
   equippedColour: string | null;
   equippedTitle: string | null;
-  highestAscensionCleared: number;
-  lastAscensionLevel: number;
+  highestWantedLevelCleared: number;
+  lastWantedLevel: number;
   lastCharacter: string;
   playerName: string;
   completedTutorials: string[];
@@ -77,8 +77,8 @@ interface MetaStore {
   /** Purchase a shop item: deducts reputation and unlocks into the correct category. */
   purchaseShopItem: (unlockId: string, cost: number, category: ShopCategory) => boolean;
   isUnlocked: (unlockId: string, category: ShopCategory) => boolean;
-  setHighestAscension: (level: number) => void;
-  setLastAscensionLevel: (level: number) => void;
+  setHighestWantedLevel: (level: number) => void;
+  setLastWantedLevel: (level: number) => void;
   setLastCharacter: (id: string) => void;
   setPlayerName: (name: string) => void;
   setEquippedSkin: (id: string | null) => void;
@@ -133,8 +133,8 @@ const DEFAULT_META: MetaProgression = {
   equippedNameplate: null,
   equippedColour: null,
   equippedTitle: null,
-  highestAscensionCleared: -1,
-  lastAscensionLevel: 0,
+  highestWantedLevelCleared: -1,
+  lastWantedLevel: 0,
   lastCharacter: 'red_panda',
   playerName: '',
   completedTutorials: [],
@@ -144,15 +144,26 @@ function loadMeta(): MetaProgression {
   try {
     const raw = localStorage.getItem(META_STORAGE_KEY);
     if (raw) {
-      const parsed = { ...DEFAULT_META, ...JSON.parse(raw) } as MetaProgression;
+      const rawParsed = JSON.parse(raw) as Record<string, unknown>;
+      // Migrate legacy "ascension" keys to the renamed "wanted level" keys.
+      // Players who installed before the rename still have the old shape in
+      // localStorage; without this copy, loadMeta would drop their progress
+      // back to -1 / 0 defaults and hide the Wanted Level selector.
+      if (rawParsed.highestAscensionCleared != null && rawParsed.highestWantedLevelCleared == null) {
+        rawParsed.highestWantedLevelCleared = rawParsed.highestAscensionCleared;
+      }
+      if (rawParsed.lastAscensionLevel != null && rawParsed.lastWantedLevel == null) {
+        rawParsed.lastWantedLevel = rawParsed.lastAscensionLevel;
+      }
+      const parsed = { ...DEFAULT_META, ...rawParsed } as MetaProgression;
       // Sanitize numeric fields: any NaN / Infinity / non-number from a
       // previously-broken save resets to the default (0 / -1) so it can
       // never propagate further.
       const safeNum = (v: unknown, fallback: number): number =>
         typeof v === 'number' && Number.isFinite(v) ? v : fallback;
       parsed.reputation = safeNum(parsed.reputation, 0);
-      parsed.highestAscensionCleared = safeNum(parsed.highestAscensionCleared, -1);
-      parsed.lastAscensionLevel = safeNum(parsed.lastAscensionLevel, 0);
+      parsed.highestWantedLevelCleared = safeNum(parsed.highestWantedLevelCleared, -1);
+      parsed.lastWantedLevel = safeNum(parsed.lastWantedLevel, 0);
       return parsed;
     }
   } catch { /* ignore */ }
@@ -265,16 +276,16 @@ export const useMetaStore = create<MetaStore>((set, get) => ({
     return meta[key].includes(unlockId);
   },
 
-  setHighestAscension: (level) =>
+  setHighestWantedLevel: (level) =>
     set((state) => {
-      const meta = { ...state.meta, highestAscensionCleared: Math.max(state.meta.highestAscensionCleared, level) };
+      const meta = { ...state.meta, highestWantedLevelCleared: Math.max(state.meta.highestWantedLevelCleared, level) };
       persistMeta(meta);
       return { meta };
     }),
 
-  setLastAscensionLevel: (level) =>
+  setLastWantedLevel: (level) =>
     set((state) => {
-      const meta = { ...state.meta, lastAscensionLevel: level };
+      const meta = { ...state.meta, lastWantedLevel: level };
       persistMeta(meta);
       return { meta };
     }),

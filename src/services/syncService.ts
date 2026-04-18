@@ -2,7 +2,7 @@
  * Sync service: local (IndexedDB) <-> remote (Supabase).
  *
  * Merge rules from SPEC:
- * - meta_progression: additive merge (union unlocks, max reputation/ascension).
+ * - meta_progression: additive merge (union unlocks, max reputation/wanted level).
  * - runs (active): compare updated_at, keep more recent or more nodes cleared.
  * - scores: append-only, no remote overwrites.
  */
@@ -42,7 +42,7 @@ interface MetaRow {
   equipped_nameplate: string | null;
   equipped_colour: string | null;
   equipped_title: string | null;
-  highest_ascension_cleared: number;
+  highest_wanted_level_cleared: number;
 }
 
 interface LocalMeta {
@@ -61,7 +61,7 @@ interface LocalMeta {
   equippedNameplate: string | null;
   equippedColour: string | null;
   equippedTitle: string | null;
-  highestAscensionCleared: number;
+  highestWantedLevelCleared: number;
 }
 
 interface RunRow {
@@ -175,7 +175,7 @@ export async function pushRun(run: LocalRun): Promise<void> {
     character: run.character ?? 'red_panda',
     status: run.status,
     seed: run.seed,
-    ascension_level: run.ascensionLevel ?? 0,
+    wanted_level: run.wantedLevel ?? 0,
     current_act: run.currentAct ?? 1,
     current_node_id: run.currentNodeId ?? null,
     updated_at: now,
@@ -264,7 +264,7 @@ export async function pushRun(run: LocalRun): Promise<void> {
  *  traitCounts is derived from artifacts so it's also excluded. */
 const EXTRA_STATE_OMIT_KEYS = new Set<string>([
   // runs table
-  'id', 'character', 'status', 'seed', 'ascensionLevel', 'currentAct', 'currentNodeId',
+  'id', 'character', 'status', 'seed', 'wantedLevel', 'currentAct', 'currentNodeId',
   'updatedAt',
   // run_state columns
   'health', 'maxHealth', 'gold', 'activeTileTypes', 'tileUpgrades', 'artifacts',
@@ -423,7 +423,7 @@ export async function pullRemoteStateOverwriteLocal(): Promise<void> {
           equippedNameplate: r.equipped_nameplate ?? z.equippedNameplate ?? null,
           equippedColour: r.equipped_colour ?? z.equippedColour ?? null,
           equippedTitle: r.equipped_title ?? z.equippedTitle ?? null,
-          highestAscensionCleared: Math.max(n(z.highestAscensionCleared, -1), n(r.highest_ascension_cleared, -1)),
+          highestWantedLevelCleared: Math.max(n(z.highestWantedLevelCleared, -1), n(r.highest_wanted_level_cleared, -1)),
         };
         useMetaStore.getState().hydrateFromRemote(merged);
         await saveMeta('progression', merged);
@@ -574,7 +574,7 @@ export async function pushMeta(meta: {
   equippedNameplate: string | null;
   equippedColour: string | null;
   equippedTitle: string | null;
-  highestAscensionCleared: number;
+  highestWantedLevelCleared: number;
 }): Promise<void> {
   const sb = getSupabase();
   const { userId } = getAuthState();
@@ -596,7 +596,7 @@ export async function pushMeta(meta: {
     equipped_nameplate: meta.equippedNameplate,
     equipped_colour: meta.equippedColour,
     equipped_title: meta.equippedTitle,
-    highest_ascension_cleared: meta.highestAscensionCleared,
+    highest_wanted_level_cleared: meta.highestWantedLevelCleared,
     updated_at: new Date().toISOString(),
   });
 }
@@ -614,10 +614,10 @@ export async function pushScore(score: LocalScore, playerName?: string): Promise
     player_name: playerName ?? 'Anonymous',
     run_id: score.runId,
     character: score.character ?? 'red_panda',
-    ascension_level: score.ascensionLevel ?? 0,
+    wanted_level: score.wantedLevel ?? 0,
     base_score: score.baseScore ?? 0,
     bonus_points: score.bonusPoints ?? 0,
-    ascension_multiplier: score.ascensionMultiplier ?? 1,
+    wanted_level_multiplier: score.wantedLevelMultiplier ?? 1,
     time_bonus: score.timeBonus ?? 0,
     final_score: score.finalScore ?? 0,
     run_duration_seconds: score.runDurationSeconds ?? 0,
@@ -653,7 +653,7 @@ async function syncMeta(sb: ReturnType<typeof getSupabase> & object, userId: str
     equippedNameplate: zustand.equippedNameplate,
     equippedColour: zustand.equippedColour,
     equippedTitle: zustand.equippedTitle,
-    highestAscensionCleared: zustand.highestAscensionCleared,
+    highestWantedLevelCleared: zustand.highestWantedLevelCleared,
   };
   // maybeSingle() returns null (not an error) when the account has no
   // meta_progression row yet -- i.e. first-time account creation. In that
@@ -689,7 +689,7 @@ async function syncMeta(sb: ReturnType<typeof getSupabase> & object, userId: str
     equipped_nameplate: merged.equippedNameplate,
     equipped_colour: merged.equippedColour,
     equipped_title: merged.equippedTitle,
-    highest_ascension_cleared: merged.highestAscensionCleared,
+    highest_wanted_level_cleared: merged.highestWantedLevelCleared,
     updated_at: now,
   });
   markLocalMetaSynced(now);
@@ -698,7 +698,7 @@ async function syncMeta(sb: ReturnType<typeof getSupabase> & object, userId: str
 /**
  * Merge local and remote meta progression on login.
  *
- * Remote is authoritative for numeric fields (reputation, highestAscensionCleared)
+ * Remote is authoritative for numeric fields (reputation, highestWantedLevelCleared)
  * whenever a remote row exists: logging into an account should load *that
  * account's* progression, and guest / stale-local data must never clobber it.
  * Arrays still union so any guest-earned unlocks on this device are preserved.
@@ -726,7 +726,7 @@ function mergeMeta(
     equippedNameplate: null,
     equippedColour: null,
     equippedTitle: null,
-    highestAscensionCleared: 0,
+    highestWantedLevelCleared: 0,
   };
   const r = remote ?? {
     reputation: 0,
@@ -743,14 +743,14 @@ function mergeMeta(
     equipped_nameplate: null,
     equipped_colour: null,
     equipped_title: null,
-    highest_ascension_cleared: 0,
+    highest_wanted_level_cleared: 0,
   };
 
   const n = (v: unknown, d = 0) => (typeof v === 'number' && Number.isFinite(v) ? v : d);
   const reputation = remote ? n(r.reputation) : n(l.reputation);
-  const highestAscensionCleared = remote
-    ? n(r.highest_ascension_cleared, -1)
-    : n(l.highestAscensionCleared, -1);
+  const highestWantedLevelCleared = remote
+    ? n(r.highest_wanted_level_cleared, -1)
+    : n(l.highestWantedLevelCleared, -1);
 
   // Equipped fields are singletons: remote wins when a remote row exists
   // (account is source of truth on login), otherwise keep local.
@@ -774,7 +774,7 @@ function mergeMeta(
     equippedNameplate,
     equippedColour,
     equippedTitle,
-    highestAscensionCleared,
+    highestWantedLevelCleared,
   };
 }
 
@@ -820,7 +820,7 @@ async function pullRemoteRun(
     id: remote.id,
     character: remote.character as string,
     seed: remote.seed as string,
-    ascensionLevel: remote.ascension_level as number,
+    wantedLevel: remote.wanted_level as number,
     currentAct: remote.current_act as number,
     currentNodeId: remote.current_node_id as string | null,
     status: remote.status,
@@ -946,10 +946,10 @@ async function syncScores(sb: ReturnType<typeof getSupabase> & object, userId: s
         id: remote.id,
         runId: remote.run_id,
         character: remote.character,
-        ascensionLevel: remote.ascension_level,
+        wantedLevel: remote.wanted_level,
         baseScore: remote.base_score,
         bonusPoints: remote.bonus_points,
-        ascensionMultiplier: remote.ascension_multiplier,
+        wantedLevelMultiplier: remote.wanted_level_multiplier,
         timeBonus: remote.time_bonus,
         finalScore: remote.final_score,
         runDurationSeconds: remote.run_duration_seconds,

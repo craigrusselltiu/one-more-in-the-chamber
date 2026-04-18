@@ -66,8 +66,33 @@ export const NAMEPLATES: NameplateDef[] = [
   },
   {
     id: 'nameplate_cherry',
-    name: 'Cherry',
+    name: 'Cherry Blossom',
     imagePath: 'assets/nameplates/cherry.png',
+  },
+  {
+    id: 'nameplate_blood_moon',
+    name: 'Blood Moon',
+    imagePath: 'assets/nameplates/blood_moon.png',
+  },
+  {
+    id: 'nameplate_bubble_tea',
+    name: 'Bubble Tea',
+    imagePath: 'assets/nameplates/bubble_tea.png',
+  },
+  {
+    id: 'nameplate_golden_laurels',
+    name: 'Golden Laurels',
+    imagePath: 'assets/nameplates/golden_laurels.png',
+  },
+  {
+    id: 'nameplate_graveyard',
+    name: 'Graveyard',
+    imagePath: 'assets/nameplates/graveyard.png',
+  },
+  {
+    id: 'nameplate_void',
+    name: 'Void',
+    imagePath: 'assets/nameplates/void.png',
   },
 ];
 

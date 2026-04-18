@@ -122,7 +122,7 @@ don't use double dashes, just single
 - Text: "A gaudy wagon creaks to a stop on the dust road, its crooked sign proclaiming DOC HOPKINS' CURE-ALL in peeling gilt letters above shelves crowded with green glass bottles, herb bundles, and tins stamped with writhing serpents. The doc himself tips his bowler and smiles too wide beneath a waxed moustache, hands open in welcome, while his mule watches the horizon with the weary patience of a creature that has seen too many towns and too many funerals.\nSomething in one of the darker bottles shifts on its own when you step closer, and the liquid inside holds its shape a heartbeat too long, as if deciding whether to be medicine or something worse."
 - Choices:
     - **Buy Strong Whiskey** — Gain 1 Strong Whiskey and lose 30 gold.
-    - **Drink delayed potion** — At the start of next combat, heal 27 HP, take 10 damage, gain 2 Vulnerable, or gain 5 Poison.
+    - **Drink mysterious vial** — At the start of next combat, heal 27 HP, gain 1 protected, take 10 damage, or gain 5 Poison.
     - **Threaten him** — Gain 1 Bandage, 1 Snake Oil, and 129 gold. Merchants cost 20% more this act.
 
 # Event Ideas

@@ -37,7 +37,7 @@ export const TileSelectScreen = memo(function TileSelectScreen() {
   // Between-act selections roll levels for the next act's distribution.
   // Starter selection is always level 0.
   const targetAct = isBossReward ? (run?.currentAct ?? 1) + 1 : 1;
-  const ascLevel = run?.ascensionLevel ?? 0;
+  const wantedLevel = run?.wantedLevel ?? 0;
 
   // Pick 3 random tiles from pool (excluding already-owned) with rolled levels.
   // Lock the offered tiles once generated so they don't re-roll when run state changes.
@@ -55,7 +55,7 @@ export const TileSelectScreen = memo(function TileSelectScreen() {
     const shuffled = seededShuffle(available, rand);
     const result: OfferedTile[] = shuffled.slice(0, 3).map((type) => ({
       type,
-      level: rollTileRewardLevel(targetAct, ascLevel, rand),
+      level: rollTileRewardLevel(targetAct, wantedLevel, rand),
     }));
     lockedRef.current = result;
     return result;

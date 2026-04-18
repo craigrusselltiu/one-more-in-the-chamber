@@ -48,6 +48,7 @@ function assignNodeTypes(
   totalRows: number,
   rng: () => number,
   eliteCountBonus: number,
+  campfirePenalty: number,
 ): void {
   const artifactRow = 6; // 7th node (0-indexed)
   const fixedRows = new Set([0, artifactRow, totalRows - 2, totalRows - 1]);
@@ -72,10 +73,11 @@ function assignNodeTypes(
   // 3. Determine target counts
   const pick = (min: number, max: number) => min + Math.floor(rng() * (max - min + 1));
   const targets: { type: MapNodeType; count: number }[] = [
-    // L1 (ascension): +eliteCountBonus to both min and max.
+    // L4 (wanted level): +eliteCountBonus to both min and max.
     { type: 'elite', count: pick(3 + eliteCountBonus, 4 + eliteCountBonus) },
     { type: 'merchant', count: pick(2, 3) },
-    { type: 'campfire', count: pick(2, 3) },
+    // L29 (wanted level): campfirePenalty shrinks the assignable campfire count.
+    { type: 'campfire', count: Math.max(0, pick(2, 3) - campfirePenalty) },
     { type: 'event', count: pick(3, 6) },
   ];
 
@@ -110,7 +112,7 @@ function assignNodeTypes(
   // Remaining assignable nodes stay as 'combat'
 }
 
-export function generateMap(seed: string, act: Act, eliteCountBonus = 0): MapState {
+export function generateMap(seed: string, act: Act, eliteCountBonus = 0, campfirePenalty = 0): MapState {
   const rng = mulberry32(hashString(seed + ':act' + act));
   const nodes: MapNode[] = [];
   const totalRows = ROWS_PER_ACT;
@@ -153,7 +155,7 @@ export function generateMap(seed: string, act: Act, eliteCountBonus = 0): MapSta
   }
 
   // Assign types with strict constraint enforcement
-  assignNodeTypes(nodes, totalRows, rng, eliteCountBonus);
+  assignNodeTypes(nodes, totalRows, rng, eliteCountBonus, campfirePenalty);
 
   // Build connections: each node connects to 1-2 nodes in the next row
   for (let row = 0; row < totalRows - 1; row++) {

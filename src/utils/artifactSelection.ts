@@ -1,5 +1,5 @@
 import { ARTIFACTS, type ArtifactDefinition } from '../data/artifacts';
-import { getAscensionMutations } from '../data/ascension';
+import { getWantedLevelMutations } from '../data/wantedLevel';
 import { weightedArtifactPick, weightedArtifactPickN } from './weightedSelection';
 import type { RunState, TraitId } from '../types/game';
 
@@ -38,7 +38,7 @@ export function pickArtifactForRun(
 ): ArtifactDefinition {
   const pool = getArtifactPoolForRun(run, opts);
   const desperadoActive = (run.traitCounts?.desperado ?? 0) >= 2;
-  const legendaryWeight = getAscensionMutations(run.ascensionLevel).legendaryWeight;
+  const legendaryWeight = getWantedLevelMutations(run.wantedLevel).legendaryWeight;
   return weightedArtifactPick(pool, rand, desperadoActive, opts.bossReward ?? false, legendaryWeight);
 }
 
@@ -51,7 +51,7 @@ export function pickArtifactsForRun(
 ): ArtifactDefinition[] {
   const pool = getArtifactPoolForRun(run, opts);
   const desperadoActive = (run.traitCounts?.desperado ?? 0) >= 2;
-  const legendaryWeight = getAscensionMutations(run.ascensionLevel).legendaryWeight;
+  const legendaryWeight = getWantedLevelMutations(run.wantedLevel).legendaryWeight;
   return weightedArtifactPickN(pool, count, rand, desperadoActive, legendaryWeight, opts.bossReward ?? false);
 }
 
@@ -74,6 +74,6 @@ export function pickArtifactByTag(
   const unowned = tagged.filter((a) => !ownedIds.has(a.id));
   const pool = unowned.length > 0 ? unowned : tagged;
   const desperadoActive = (run.traitCounts?.desperado ?? 0) >= 2;
-  const legendaryWeight = getAscensionMutations(run.ascensionLevel).legendaryWeight;
+  const legendaryWeight = getWantedLevelMutations(run.wantedLevel).legendaryWeight;
   return weightedArtifactPick(pool, rand, desperadoActive, false, legendaryWeight);
 }

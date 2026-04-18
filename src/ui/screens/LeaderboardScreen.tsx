@@ -10,8 +10,8 @@ import type { Screen } from '../../App';
 
 /** Shared drop-shadow values so every row column stays legible over any
  *  equipped nameplate art. Light enough not to overpower the type. */
-const ROW_TEXT_SHADOW = '1px 1px 1px rgba(0, 0, 0, 0.85)';
-const ROW_ICON_SHADOW = 'drop-shadow(1px 1px 1px rgba(0, 0, 0, 0.85))';
+const ROW_TEXT_SHADOW = '2px 2px 2px rgba(0, 0, 0, 1)';
+const ROW_ICON_SHADOW = 'drop-shadow(2px 2px 2px rgba(0, 0, 0, 1))';
 
 const TABS: { key: LeaderboardPeriod; label: string }[] = [
   { key: 'daily', label: 'Daily' },
@@ -262,7 +262,7 @@ export const LeaderboardScreen = memo(function LeaderboardScreen() {
                   className="w-10 text-right text-stone-400 text-xs"
                   style={{ textShadow: ROW_TEXT_SHADOW }}
                 >
-                  {entry.ascensionLevel > 0 ? `A${entry.ascensionLevel}` : '-'}
+                  {entry.wantedLevel > 0 ? `W${entry.wantedLevel}` : '-'}
                 </span>
                 <span
                   className="w-16 text-right text-stone-400 text-xs"
