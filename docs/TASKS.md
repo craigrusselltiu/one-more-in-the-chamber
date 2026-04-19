@@ -42,3 +42,8 @@ todo:
 - turn indicator - add to combat state
 - update Hardened - should be every damage taken reduces hardened. when 0 become incincible.
 - got a random bomb on the board fighting dusty? should not be possible.
+- consumables can't be used in map?
+- jackhammer doesn't work
+- adjust healthbars
+- improve ability indicator
+- show obsidian as a tooltip in charcoal, or just hide it?

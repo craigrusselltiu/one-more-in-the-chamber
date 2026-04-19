@@ -4,6 +4,20 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## v0.7.1
+
+### Added
+- Broom consumable (65g): clears all tile hazards. Previously Panacea's behaviour.
+
+### Changed
+- Jackhammer reworked to match TILES.md: each subsequent Jackhammer match on the *same* targeted enemy upgrades Jackhammer by one level for that combat. Switching targets resets the streak. Current level renders as "Lv N (+M)" in the Tiles popup. Plumbed through `Player.jackhammerCombatLevel`, `CombatState`, `CombatSnapshot`, and `combatStore` so the level survives quit/resume.
+- Panacea repurposed from clearing tile hazards to curing all debuffs (Vulnerable, Poison, Terrified). Cost 100 -> 60g.
+- Consumable price pass per CONSUMABLES.md: Wanted Flyer 40 -> 25, Pocket Watch 100 -> 65, Strong Coffee 70 -> 30, Strong Whiskey 60 -> 30, Bandage 40 -> 25, Skeleton Key 30 -> 20, Tumbleweed 50 -> 30, Signal Flare 30 -> 20, Snake Oil 88 -> 45, Lasso 100 -> 55.
+- Medicine Wagon event updated: Strong Whiskey choice costs 10g (was 30g), the delayed "potion" choice removed, explicit Leave choice added.
+
+### Fixed
+- Consumables with `canUseInMap` (Strong Whiskey, Bandage, Snake Oil) can now be used outside combat again. Root cause: `combatStore` was never reset on combat exit, so a stale `enemies` array kept `inCombat` true and gated ConsumableSlots off.
+
 ## v0.7.0
 
 ### Added

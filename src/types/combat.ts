@@ -28,6 +28,8 @@ export interface CombatState {
   deadManWalkingStacks: number;
   /** Loot: triggers at 20 stacks (deal 10 dmg, gain 8 block, heal 6, gain 12 gold). */
   lootStacks: number;
+  /** Jackhammer per-combat level bonus from consecutive same-target hits. */
+  jackhammerCombatLevel: number;
   enemies: EnemyState[];
   targetedEnemyIndex: number;
   phase: CombatPhase;

@@ -32,11 +32,11 @@ don't use double dashes, just single
 ## The Card Game
 - Text: "A lantern sputters against the bruise-colored dusk, casting its glow across three warped cards and the ringed hand of a raccoon whose own wanted poster peels on the wall behind him. The ghost town beyond is hollow as a gunshot's echo — empty windows, leaning beams, not so much as a dog barking — and the only sound is the soft tick of his pipe and the slow, patient shuffle of pasteboard on pine.\nHe does not look up when you approach; he has been waiting, and the cards, it seems, already know your name."
 - Choices:
-    - **Play** — Pay 50 gold to play a game. (if the player has no money, this option is disabled)
+    - **Play** — Pay 40 gold to play a game. (if the player has no money, this option is disabled)
     - **Leave**
 - Play - the player is shown 3 cards, then they are flipped, shuffled showing an animation (make the animation impossible to follow), then the player clicks on a face-down card, which is revealed to show their reward
-    - Gold game 60% - 0 gold, 49 gold, 267 gold
-    - Item game 10% - Legendary Artifact (just show artifact icon), 3 random consumables (show 3 icons), Common Artifact (just icon)
+    - Gold game 50% - 0 gold, 39 gold, 267 gold
+    - Item game 20% - Legendary Artifact (just show artifact icon), 3 random consumables (show 3 icons), Common Artifact (just icon)
     - Health game 30% - Lose 7 HP, Gain 5 Max HP, Restore HP to full
 
 ## The Old Well
@@ -74,9 +74,10 @@ don't use double dashes, just single
     - **Investigate** — Lose 3% max HP for artifact chance. (10%)
     - **Leave**
 - Further levels:
-    - **Go deeper** — Lose 5% max HP for artifact chance. (25%)
-    - **Go deeper** — Lose 7% HP for artifact chance. (50%)
-    - **Go deeper** — Lose 10% HP for artifact. (100%)
+    - **Go deeper** — Lose 5% max HP for artifact chance. (20%)
+    - **Go deeper** — Lose 7% HP for artifact chance. (30%)
+    - **Go deeper** — Lose 10% HP for artifact. (50%)
+    - **Go deeper** — Lose 15% HP for artifact. (100%)
 
 ## The Vulture Circle
 - Text: "The wind has stopped, like the desert itself is holding its breath. A bounty hunter lies face-down in cracked earth, his badge still gleaming beneath a dark bloom of blood, the wanted posters on the wire fence fluttering with names he will never collect. The vultures have already chosen their judge, and one watches from a dead branch with the patient eyes of something that has seen this story end a hundred times before."
@@ -114,16 +115,16 @@ don't use double dashes, just single
 ## The Ghost Town Saloon
 - Text: "The swinging doors hang crooked on rusted hinges and cobwebs drape the bottles behind the bar like funeral lace, each label faded but the whiskey inside still bright as a fresh wound. A half-played hand of cards waits on a dusty table beside a lone revolver and a stack of chips, as if the game had paused mid-bet and the players simply forgot how to breathe.\nSunlight cuts through the torn curtains in slow gold bars, and somewhere in the back room the piano ghosts a single key, though no hand rests upon it."
 - Choices:
-    - **Drink** — Heal 20 HP. Lose 1 swap at the start of the next fight.
+    - **Drink** — Heal 28 HP. Lose 1 swap at the start of the next fight.
     - **Search the back** — Gain a random artifact, or fight 3 bandits. (50%)
     - **Move on** — Take 39 gold from the tip jar.
 
 ## The Medicine Wagon
 - Text: "A gaudy wagon creaks to a stop on the dust road, its crooked sign proclaiming DOC HOPKINS' CURE-ALL in peeling gilt letters above shelves crowded with green glass bottles, herb bundles, and tins stamped with writhing serpents. The doc himself tips his bowler and smiles too wide beneath a waxed moustache, hands open in welcome, while his mule watches the horizon with the weary patience of a creature that has seen too many towns and too many funerals.\nSomething in one of the darker bottles shifts on its own when you step closer, and the liquid inside holds its shape a heartbeat too long, as if deciding whether to be medicine or something worse."
 - Choices:
-    - **Buy Strong Whiskey** — Gain 1 Strong Whiskey and lose 30 gold.
-    - **Drink mysterious vial** — At the start of next combat, heal 27 HP, gain 1 protected, take 10 damage, or gain 5 Poison.
+    - **Buy Strong Whiskey** — Gain 1 Strong Whiskey and lose 10 gold.
     - **Threaten him** — Gain 1 Bandage, 1 Snake Oil, and 129 gold. Merchants cost 20% more this act.
+    - **Leave**
 
 # Event Ideas
 

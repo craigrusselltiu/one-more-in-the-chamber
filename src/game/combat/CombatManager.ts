@@ -133,9 +133,7 @@ export class CombatManager {
   private lastDamageSource: string | null = null;
   /** Gold multiplier from wanted level (1.0 = normal, <1.0 = reduced). */
   private goldMultiplier: number;
-  /** Jackhammer / Nunchucks per-combat level bonus; grows by 1 when the same
-   *  enemy is hit consecutively. Reset each fight. */
-  private jackhammerCombatLevel = 0;
+  /** Last enemy Jackhammer hit -- consecutive same-target hits bump player.jackhammerCombatLevel. */
   private jackhammerLastTarget: number | null = null;
   private nunchucksLastTarget: number | null = null;
 
@@ -505,6 +503,7 @@ export class CombatManager {
         duelStacks: this.player.duelStacks,
         chainStacks: this.player.chainStacks,
         lootStacks: this.player.lootStacks,
+        jackhammerCombatLevel: this.player.jackhammerCombatLevel,
         protectedStacks: this.player.protectedStacks,
         critChance: 0, // deprecated, kept for snapshot compat
         thorns: this.player.thorns,
@@ -570,6 +569,7 @@ export class CombatManager {
     this.player.duelStacks = sp.duelStacks ?? 0;
     this.player.chainStacks = sp.chainStacks ?? 0;
     this.player.lootStacks = sp.lootStacks ?? 0;
+    this.player.jackhammerCombatLevel = sp.jackhammerCombatLevel ?? 0;
     this.player.protectedStacks = sp.protectedStacks ?? 0;
     // critChance deprecated — Lucky stacks are the crit chance now
     this.player.thorns = sp.thorns;
@@ -1239,7 +1239,7 @@ export class CombatManager {
           this.board.setLassoMode(true);
           document.body.classList.add('cursor-lasso');
           break;
-        case 'panacea': {
+        case 'broom': {
           this.hazardManager.clearAllOfType('poison');
           this.hazardManager.clearAllOfType('bomb');
           this.hazardManager.clearAllOfType('sand');
@@ -1247,6 +1247,12 @@ export class CombatManager {
           const cleared = this.hazardManager.clearAllOfType('lock');
           this.hazardManager.clearAllOfType('suppress');
           this.grantJailCellKeysBlock(cleared.length);
+          break;
+        }
+        case 'panacea': {
+          this.player.vulnerableStacks = 0;
+          this.player.poisonedStacks = 0;
+          this.player.terrifiedStacks = 0;
           break;
         }
         default:
@@ -1373,6 +1379,20 @@ export class CombatManager {
         const zero = this.resolver.emptyOutput();
         EventBus.emit(GameEvent.MATCH_RESOLVED, match, zero);
         continue;
+      }
+
+      // Jackhammer: if matching with the same target as the previous jackhammer hit,
+      // bump the per-combat level BEFORE resolving so the current match benefits.
+      if (match.tileType === 'jackhammer') {
+        const jTarget = this.getTargetedAliveEnemy();
+        const jIdx = jTarget ? this.enemies.indexOf(jTarget) : -1;
+        if (jIdx >= 0 && this.jackhammerLastTarget === jIdx) {
+          this.player.jackhammerCombatLevel += 1;
+        }
+        this.jackhammerLastTarget = jIdx;
+        if (jIdx >= 0) {
+          EventBus.emit(GameEvent.COMBAT_STATE_UPDATE, this.buildState());
+        }
       }
 
       let upgradeLevel = this.player.getUpgradeLevel(match.tileType);
@@ -1554,17 +1574,6 @@ export class CombatManager {
           this.floatOnPlayer('-1', '#C04040');
           EventBus.emit(GameEvent.PLAYER_HP_CHANGE, this.player.health, this.player.maxHealth);
         }
-      }
-
-      // Jackhammer: per-combat level bump on consecutive same-target hits
-      if (match.tileType === 'jackhammer') {
-        const target = this.getTargetedAliveEnemy();
-        const targetIdx = target ? this.enemies.indexOf(target) : -1;
-        if (targetIdx >= 0 && this.jackhammerLastTarget === targetIdx) {
-          this.jackhammerCombatLevel += 1;
-        }
-        scaled.damage += this.jackhammerCombatLevel * match.tiles.length;
-        this.jackhammerLastTarget = targetIdx;
       }
 
       // Nunchucks: hits twice if attacking a different enemy than the previous nunchucks attack
@@ -2937,6 +2946,7 @@ export class CombatManager {
       duelStacks: this.player.duelStacks,
       chainStacks: this.player.chainStacks,
       lootStacks: this.player.lootStacks,
+      jackhammerCombatLevel: this.player.jackhammerCombatLevel,
       terrifiedStacks: this.player.terrifiedStacks,
       vulnerableStacks: this.player.vulnerableStacks,
       thorns: this.player.thorns,

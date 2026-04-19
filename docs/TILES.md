@@ -236,7 +236,7 @@ NOTE: The tile pool for Acts 2, 3, and also the shop should be the Starter Tiles
 
 ### Jackhammer
 - Flavor text: "The second hit is always the hardest."
-- Behaviour text: Deal 1 damage per tile. Gains 1 level this combat when attacking the same enemy as the previous attack.
+- Behaviour text: Deal 1 damage per tile. Each subsequent hit on the same target as the previous Jackhammer hit permanently upgrades Jackhammer by 1 level for this combat.
 - Upgrade text: +1 damage per tile per level
 - Resource formula: (1 damage + level * 1) * tiles
 - Single formula: 1 damage + level * 1
@@ -250,7 +250,7 @@ NOTE: The tile pool for Acts 2, 3, and also the shop should be the Starter Tiles
 
 ### Milk
 - Flavor text: "Good for the bones."
-- Behaviour text: Gain 2 block per tile. Heal 1 HP per 3-match, plus 1 per extra tile. On turn 5, transform into Cheese.
+- Behaviour text: Gain 2 block per tile. Heal 1 HP per 3-match, plus 1 per extra tile. On turn 4, transform into Cheese.
 - Upgrade text: +1 block per tile per level
 - Resource formula: (2 block + level * 1) * tiles, 1 healing + (tiles - 3)
 - Single formula: 2 block + level * 1

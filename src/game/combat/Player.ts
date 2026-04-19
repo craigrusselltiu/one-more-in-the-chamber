@@ -59,6 +59,8 @@ export class Player {
   mirageReplacementType: TileType | null = null;
   /** Rattlesnake(2): +1 level to poison-applying tiles (waste, rattler). */
   poisonTileBonus = 0;
+  /** Jackhammer per-combat level bonus: +1 per consecutive same-target hit. */
+  jackhammerCombatLevel = 0;
   /** Multiplier applied to all heal() amounts (e.g. Dry Atmosphere = 0.9). */
   healMultiplier = 1.0;
 
@@ -276,6 +278,10 @@ export class Player {
     // Rattlesnake(2): +1 level to poison-applying tiles.
     if (this.poisonTileBonus > 0 && (type === 'waste' || type === 'rattler')) {
       level += this.poisonTileBonus;
+    }
+    // Jackhammer: per-combat level bumps from consecutive same-target hits.
+    if (type === 'jackhammer' && this.jackhammerCombatLevel > 0) {
+      level += this.jackhammerCombatLevel;
     }
     return level;
   }

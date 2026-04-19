@@ -53,6 +53,7 @@ export interface SerializedPlayer {
   duelStacks?: number;
   chainStacks?: number;
   lootStacks?: number;
+  jackhammerCombatLevel?: number;
   protectedStacks?: number;
   critChance: number;
   thorns: number;

@@ -25,6 +25,7 @@ interface CombatStore {
   duelStacks: number;
   chainStacks: number;
   lootStacks: number;
+  jackhammerCombatLevel: number;
   terrifiedStacks: number;
   vulnerableStacks: number;
   thorns: number;
@@ -93,6 +94,7 @@ const initialState = {
   duelStacks: 0,
   chainStacks: 0,
   lootStacks: 0,
+  jackhammerCombatLevel: 0,
   terrifiedStacks: 0,
   vulnerableStacks: 0,
   thorns: 0,
@@ -140,6 +142,7 @@ export const useCombatStore = create<CombatStore>((set) => ({
       duelStacks: state.duelStacks,
       chainStacks: state.chainStacks,
       lootStacks: state.lootStacks ?? 0,
+      jackhammerCombatLevel: state.jackhammerCombatLevel ?? 0,
       terrifiedStacks: state.terrifiedStacks,
       vulnerableStacks: state.vulnerableStacks,
       thorns: state.thorns,

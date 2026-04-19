@@ -323,7 +323,7 @@ export function buildTileDescription(type: TileType, upgradeLevel: number): Reac
     }
     case 'jackhammer': {
       const v = def.baseValue + bonus;
-      return [...seg('Deal ', false), ...seg(`${v}`, upgraded), ...seg(' damage per tile. Gains 1 level this combat when attacking the same enemy as the previous attack.', false)];
+      return [...seg('Deal ', false), ...seg(`${v}`, upgraded), ...seg(' damage per tile. Each subsequent hit on the same target as the previous Jackhammer hit upgrades Jackhammer by 1 level for this combat.', false)];
     }
     case 'nunchucks': {
       const v = def.baseValue + bonus;
@@ -464,7 +464,7 @@ export function buildUpgradePreview(type: TileType, currentLevel: number): React
     case 'sacrificial_blade':
       return [...seg('Lose 1 HP. Deal ', false), ...arrowUpgrade(oldVal, newVal), ...seg(' damage per tile.', false)];
     case 'jackhammer':
-      return [...seg('Deal ', false), ...arrowUpgrade(oldVal, newVal), ...seg(' damage per tile. Gains 1 level this combat when attacking the same enemy as the previous attack.', false)];
+      return [...seg('Deal ', false), ...arrowUpgrade(oldVal, newVal), ...seg(' damage per tile. Each subsequent hit on the same target as the previous Jackhammer hit upgrades Jackhammer by 1 level for this combat.', false)];
     case 'nunchucks':
       return [...seg('Deal ', false), ...arrowUpgrade(oldVal, newVal), ...seg(' damage per tile. Hits twice if attacking a different enemy than the previous attack.', false)];
     case 'milk':

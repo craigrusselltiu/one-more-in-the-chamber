@@ -292,21 +292,20 @@ const medicineWagon: EventDefinition = {
   choices: [
     {
       label: 'Buy Strong Whiskey',
-      description: 'Gain 1 Strong Whiskey and lose 30 gold.',
+      description: 'Gain 1 Strong Whiskey and lose 10 gold.',
       effect: 'medicine_whiskey',
       resultText: "The bottle is heavier than it has any right to be. Doc pockets your coin without counting it.",
-    },
-    {
-      label: 'Drink delayed potion',
-      description: 'At the start of next combat, heal 27 HP, gain 1 Protected, take 10 damage, or gain 5 Poison.',
-      effect: 'medicine_potion',
-      resultText: 'The liquid is warm and faintly alive. Doc watches you swallow and does not bother to wish you luck.',
     },
     {
       label: 'Threaten him',
       description: 'Gain 1 Bandage, 1 Snake Oil, and 129 gold. Merchants cost 20% more this act.',
       effect: 'medicine_threaten',
       resultText: "Doc raises his hands with the same easy smile. Word travels faster than wagons out here, and every shopkeeper this act will know your face.",
+    },
+    {
+      label: 'Leave',
+      description: '',
+      effect: 'none',
     },
   ],
 };

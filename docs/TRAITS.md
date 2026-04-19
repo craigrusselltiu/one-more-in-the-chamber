@@ -87,6 +87,10 @@ Trait level = number of artifacts held with that tag. Effects activate at breakp
 NOTE: breakpoint 2 just makes your poison tiles act as if they're 1 level higher.
 probably add a (+1) next to the level in the Tiles popup, merchant screen, and tile selection if you have B2
 
+## Juggernaut
+- Flavor: ""
+- 2 -- max hp
+
 ## Corrupt
 - Flavor:
 - 2 -- At the start of combat, add Shadow to 2 random tiles for each corruption you own.

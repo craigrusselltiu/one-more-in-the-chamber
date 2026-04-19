@@ -152,6 +152,7 @@ export const CONSUMABLE_FRAMES: Record<string, number> = {
   signal_flare: 162,
   snake_oil: 1483,
   lasso: 685,
+  broom: 898,
   panacea: 1418,
 };
 

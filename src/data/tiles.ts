@@ -467,7 +467,7 @@ export const TILE_DEFINITIONS: Record<TileType, TileDefinition> = {
     baseValue: 1,
     upgradeValue: 1,
     pool: 'additional',
-    description: 'Deal 1 damage per tile. Gains 1 level this combat when attacking the same enemy as the previous attack.',
+    description: 'Deal 1 damage per tile. Each subsequent hit on the same target as the previous Jackhammer hit upgrades Jackhammer by 1 level for this combat.',
     flavor: 'The second hit is always the hardest.',
     upgradeText: '+1 damage per tile per level',
   },

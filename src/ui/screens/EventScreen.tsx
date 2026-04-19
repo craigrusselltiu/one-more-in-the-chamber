@@ -463,16 +463,9 @@ export const EventScreen = memo(function EventScreen() {
         return;
       }
       case 'medicine_whiskey': {
-        if (run.gold < 30) return;
-        updateGold(-30);
+        if (run.gold < 10) return;
+        updateGold(-10);
         addConsumable({ id: 'tonic' });
-        finishChoice(choice);
-        return;
-      }
-      case 'medicine_potion': {
-        const outcomes = ['heal', 'damage', 'protected', 'poison'] as const;
-        const pick = outcomes[Math.floor(Math.random() * outcomes.length)];
-        useRunStore.getState().setPendingNextFightPotion(pick);
         finishChoice(choice);
         return;
       }
@@ -548,7 +541,7 @@ export const EventScreen = memo(function EventScreen() {
     if (choice.effect === 'play_card_game') return run.gold < PLAY_COST;
     if (choice.effect === 'preacher_confess') return run.gold < 66;
     if (choice.effect === 'campfire_trade') return run.consumables.length === 0;
-    if (choice.effect === 'medicine_whiskey') return run.gold < 30;
+    if (choice.effect === 'medicine_whiskey') return run.gold < 10;
     return false;
   };
 

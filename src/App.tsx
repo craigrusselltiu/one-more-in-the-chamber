@@ -472,8 +472,10 @@ export default function App() {
         }
       }
     } else if (screen !== 'combat' && prevScreenRef.current === 'combat') {
-      // Leaving combat: stop CombatScene
+      // Leaving combat: stop CombatScene and clear combat store so the HUD
+      // (consumable slots, etc.) reports `inCombat = false` on the map.
       game.scene.stop('CombatScene');
+      useCombatStore.getState().reset();
     }
 
     prevScreenRef.current = screen;
@@ -835,7 +837,7 @@ export default function App() {
           className="absolute right-2 bottom-1 pointer-events-none z-[60]"
           style={{ fontSize: '9px', color: 'rgba(255,255,255,0.3)' }}
         >
-          Pre-alpha v0.7.0
+          Pre-alpha v0.7.1
         </span>
       </div>
 
