@@ -247,7 +247,7 @@ export function buildTileDescription(type: TileType, upgradeLevel: number): Reac
       ];
     }
     case 'stampede':
-      return [...seg('Deal 1 damage to ALL enemies per tile', false), ...flatBonus(upgradeLevel, uv), ...seg('.', false)];
+      return [...seg('Deal 1 damage to ALL enemies per tile', false), ...flatBonus(upgradeLevel, uv), ...seg('. Deals 1 more per tile for each enemy currently alive.', false)];
     case 'battery': {
       const bv = 1 + upgradeLevel * uv;
       return [...seg('Gain ', false), ...seg(`${bv}`, upgraded), ...seg(' ability charge per 3-match, plus 1 per extra tile.', false)];
@@ -262,12 +262,10 @@ export function buildTileDescription(type: TileType, upgradeLevel: number): Reac
       return [...seg('Heals 1 HP per 3-match, plus 1 per extra tile', false), ...flatBonus(upgradeLevel, uv), ...seg('.', false)];
     case 'ace':
       return [...seg('Gain 1 stack of Ace per tile', false), ...flatBonus(upgradeLevel, uv), ...seg('.', false)];
-    case 'horseshoe': {
-      const hv = def.baseValue + bonus;
-      return [...seg('Gain ', false), ...seg(`${hv}`, upgraded), ...seg(' stack of Lucky per tile.', false)];
-    }
+    case 'horseshoe':
+      return [...seg('Gain 1 stack of Lucky per tile', false), ...flatBonus(upgradeLevel, uv), ...seg('.', false)];
     case 'tombstone':
-      return [...seg('Deal 2 damage per tile', false), ...flatBonus(upgradeLevel, uv), ...seg('. Deals double damage when target is below 30% HP.', false)];
+      return [...seg('Deal 2 damage per tile', false), ...flatBonus(upgradeLevel, uv), ...seg('. Deals double damage when target is below 50% HP.', false)];
     case 'saloon': {
       const bv = 1 + upgradeLevel * uv;
       return [...seg('Heal ', false), ...seg(`${bv}`, upgraded), ...seg(' HP per 3-match, plus 1 per extra tile. Generate the base resources of adjacent tiles.', false)];
@@ -290,13 +288,58 @@ export function buildTileDescription(type: TileType, upgradeLevel: number): Reac
         ...seg(` ${levelWord}.`, false),
       ];
     }
-    case 'boulder': {
+    case 'boulder':
+      return [...seg('Deal damage equal to 20% of current block per tile. Cannot be upgraded.', false)];
+
+    // --- New per-tile upgrade tiles ---
+    case 'axe': {
       const v = def.baseValue + bonus;
-      return [
-        ...seg('Deal ', false),
-        ...seg(`${v}`, upgraded),
-        ...seg(' damage per tile, plus 1 damage per block.', false),
-      ];
+      return [...seg('Deal ', false), ...seg(`${v}`, upgraded), ...seg(' damage per tile. Deals double damage to enemies with block.', false)];
+    }
+    case 'mace': {
+      const v = def.baseValue + bonus;
+      return [...seg('Deal ', false), ...seg(`${v}`, upgraded), ...seg(' damage per tile. Ignores block.', false)];
+    }
+    case 'cactus':
+      return [...seg('Gain 1 block per tile', false), ...flatBonus(upgradeLevel, uv), ...seg('. Gain 1 Thorns per tile.', false)];
+    case 'loot':
+      return [...seg('Gain 1 Loot per tile', false), ...flatBonus(upgradeLevel, uv), ...seg('.', false)];
+    case 'hourglass': {
+      const extra = upgradeLevel * uv;
+      const segs = [...seg('Deals damage equal to the current number of swaps per tile', false)];
+      if (extra > 0) {
+        segs.push(...seg(', plus ', false), ...seg(`${extra}`, upgraded), ...seg(' per tile', false));
+      }
+      segs.push(...seg('.', false));
+      return segs;
+    }
+    case 'chainsaw': {
+      const pct = 9 + upgradeLevel * 1;
+      return [...seg('Deal damage equal to ', false), ...seg(`${pct}%`, upgraded), ...seg(' of your missing HP per tile.', false)];
+    }
+    case 'sacrificial_blade': {
+      const v = def.baseValue + bonus;
+      return [...seg('Lose 1 HP. Deal ', false), ...seg(`${v}`, upgraded), ...seg(' damage per tile.', false)];
+    }
+    case 'jackhammer': {
+      const v = def.baseValue + bonus;
+      return [...seg('Deal ', false), ...seg(`${v}`, upgraded), ...seg(' damage per tile. Gains 1 level this combat when attacking the same enemy as the previous attack.', false)];
+    }
+    case 'nunchucks': {
+      const v = def.baseValue + bonus;
+      return [...seg('Deal ', false), ...seg(`${v}`, upgraded), ...seg(' damage per tile. Hits twice if attacking a different enemy than the previous attack.', false)];
+    }
+    case 'milk': {
+      const v = def.baseValue + bonus;
+      return [...seg('Gain ', false), ...seg(`${v}`, upgraded), ...seg(' block per tile. Heal 1 HP per 3-match, plus 1 per extra tile. On turn 5, transform into Cheese.', false)];
+    }
+    case 'cheese': {
+      const v = def.baseValue + bonus;
+      return [...seg('Gain ', false), ...seg(`${v}`, upgraded), ...seg(' block per tile. Heal 1 per tile.', false)];
+    }
+    case 'obsidian': {
+      const v = def.baseValue + bonus;
+      return [...seg('Deal ', false), ...seg(`${v}`, upgraded), ...seg(' damage and gain ', false), ...seg(`${v}`, upgraded), ...seg(' block per tile. Cannot be swapped out for another tile.', false)];
     }
 
     // --- No upgrade / special ---
@@ -332,7 +375,7 @@ export function buildUpgradePreview(type: TileType, currentLevel: number): React
       return [...seg('Deal 1 damage per tile. Destroy ', false), ...arrowUpgrade(oldDestroy, newDestroy), ...seg(' random other tiles per 3-match, plus 1 per extra tile.', false)];
     }
     case 'boulder':
-      return [...seg('Deal ', false), ...arrowUpgrade(oldVal, newVal), ...seg(' damage per tile, plus 1 damage per block.', false)];
+      return [...seg('Deal damage equal to 20% of current block per tile. Cannot be upgraded.', false)];
 
     // --- Rattler: splits between damage and venom ---
     case 'rattler':
@@ -357,7 +400,7 @@ export function buildUpgradePreview(type: TileType, currentLevel: number): React
       return [...seg('Apply ', false), ...arrowUpgrade(oldBv, newBv), ...seg(' Bounty stack per tile.', false)];
     }
     case 'stampede':
-      return [...seg('Deal 1 damage to ALL enemies per tile', false), ...flatBonusPreview(currentLevel, uv), ...seg('.', false)];
+      return [...seg('Deal 1 damage to ALL enemies per tile', false), ...flatBonusPreview(currentLevel, uv), ...seg('. Deals 1 more per tile for each enemy currently alive.', false)];
     case 'battery': {
       const oldBv = 1 + currentLevel * uv;
       const newBv = 1 + (currentLevel + 1) * uv;
@@ -376,7 +419,7 @@ export function buildUpgradePreview(type: TileType, currentLevel: number): React
     case 'horseshoe':
       return [...seg('Gain 1 stack of Lucky per tile', false), ...flatBonusPreview(currentLevel, uv), ...seg('.', false)];
     case 'tombstone':
-      return [...seg('Deal 2 damage per tile', false), ...flatBonusPreview(currentLevel, uv), ...seg('. Deals double damage when target is below 30% HP.', false)];
+      return [...seg('Deal 2 damage per tile', false), ...flatBonusPreview(currentLevel, uv), ...seg('. Deals double damage when target is below 50% HP.', false)];
     case 'saloon': {
       const oldBv = 1 + currentLevel * uv;
       const newBv = 1 + (currentLevel + 1) * uv;
@@ -390,9 +433,51 @@ export function buildUpgradePreview(type: TileType, currentLevel: number): React
       return [...seg('Deal 4 damage per tile', false), ...flatBonusPreview(currentLevel, uv), ...seg(' but ONLY if exactly 4 matched. 3 or 5+ matches deal no damage.', false)];
     case 'mirage':
       return [
-        ...seg("At the start of combat, transforms into a random tile you don't own for the rest of combat. Transformed tile gains ", false),
+        ...seg("At the start of combat, transforms into a random tile you don't own for the rest of combat. Transformed tile gains ",  false),
         ...arrowUpgrade(currentLevel, currentLevel + 1),
         ...seg(' levels.', false),
+      ];
+
+    // --- New per-tile upgrade tiles ---
+    case 'axe':
+      return [...seg('Deal ', false), ...arrowUpgrade(oldVal, newVal), ...seg(' damage per tile. Deals double damage to enemies with block.', false)];
+    case 'mace':
+      return [...seg('Deal ', false), ...arrowUpgrade(oldVal, newVal), ...seg(' damage per tile. Ignores block.', false)];
+    case 'cactus':
+      return [...seg('Gain 1 block per tile', false), ...flatBonusPreview(currentLevel, uv), ...seg('. Gain 1 Thorns per tile.', false)];
+    case 'loot':
+      return [...seg('Gain 1 Loot per tile', false), ...flatBonusPreview(currentLevel, uv), ...seg('.', false)];
+    case 'hourglass': {
+      const oldExtra = currentLevel * uv;
+      const newExtra = (currentLevel + 1) * uv;
+      return [
+        ...seg('Deals damage equal to the current number of swaps per tile, plus ', false),
+        ...arrowUpgrade(oldExtra, newExtra),
+        ...seg(' per tile.', false),
+      ];
+    }
+    case 'chainsaw': {
+      const oldPct = 9 + currentLevel * 1;
+      const newPct = 9 + (currentLevel + 1) * 1;
+      return [...seg('Deal damage equal to ', false), <span key="pct">{oldPct}% <O>{'\u2192'} {newPct}%</O></span>, ...seg(' of your missing HP per tile.', false)];
+    }
+    case 'sacrificial_blade':
+      return [...seg('Lose 1 HP. Deal ', false), ...arrowUpgrade(oldVal, newVal), ...seg(' damage per tile.', false)];
+    case 'jackhammer':
+      return [...seg('Deal ', false), ...arrowUpgrade(oldVal, newVal), ...seg(' damage per tile. Gains 1 level this combat when attacking the same enemy as the previous attack.', false)];
+    case 'nunchucks':
+      return [...seg('Deal ', false), ...arrowUpgrade(oldVal, newVal), ...seg(' damage per tile. Hits twice if attacking a different enemy than the previous attack.', false)];
+    case 'milk':
+      return [...seg('Gain ', false), ...arrowUpgrade(oldVal, newVal), ...seg(' block per tile. Heal 1 HP per 3-match, plus 1 per extra tile. On turn 5, transform into Cheese.', false)];
+    case 'cheese':
+      return [...seg('Gain ', false), ...arrowUpgrade(oldVal, newVal), ...seg(' block per tile. Heal 1 per tile.', false)];
+    case 'obsidian':
+      return [
+        ...seg('Deal ', false),
+        <span key="ob-dmg">{oldVal} <O>{'\u2192'} {newVal}</O></span>,
+        ...seg(' damage and gain ', false),
+        <span key="ob-blk">{oldVal} <O>{'\u2192'} {newVal}</O></span>,
+        ...seg(' block per tile. Cannot be swapped out for another tile.', false),
       ];
 
     default:

@@ -36,7 +36,7 @@ import type { EnemyDefinition, EnemyMove } from '../types/combat';
  *   L27 -- Max HP x0.9 (another -5% on top of L14)
  *   L28 -- Final boss spawns with a random Act 3 elite (Summoned status)
  *   L29 -- Campfires are less common (-1 assignable per act)
- *   L30 -- Start each run with an extra Charcoal tile in the deck
+ *   L30 -- The first tile selection is replaced with a single Charcoal tile
  */
 
 export type EnemyCategory = 'normal' | 'elite' | 'boss';
@@ -86,7 +86,7 @@ export interface WantedLevelMutations {
   finalBossExtraElite: boolean;
   /** L29: number of assignable campfires removed from each act's map roll. */
   campfireCountPenalty: number;
-  /** L30: if true, inject 'charcoal' into the player's active tile deck at run start. */
+  /** L30: if true, the first (starter) tile selection is forced to a single Charcoal option. */
   extraCharcoalTile: boolean;
 }
 

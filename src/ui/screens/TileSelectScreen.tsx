@@ -10,6 +10,7 @@ import { SpriteIcon } from '../components/SpriteIcon';
 import { Tooltip } from '../components/Tooltip';
 import { createSeededRandom, seededShuffle } from '../../utils/seededRandom';
 import { rollTileRewardLevel } from '../../utils/tileRewardLevel';
+import { getWantedLevelMutations } from '../../data/wantedLevel';
 
 import type { TileType } from '../../types/game';
 import type { Screen } from '../../App';
@@ -39,11 +40,20 @@ export const TileSelectScreen = memo(function TileSelectScreen() {
   const targetAct = isBossReward ? (run?.currentAct ?? 1) + 1 : 1;
   const wantedLevel = run?.wantedLevel ?? 0;
 
+  // L30: the starter selection is replaced with a single forced Charcoal pick.
+  const forceCharcoal =
+    isStarterSelection && getWantedLevelMutations(wantedLevel).extraCharcoalTile;
+
   // Pick 3 random tiles from pool (excluding already-owned) with rolled levels.
   // Lock the offered tiles once generated so they don't re-roll when run state changes.
   const lockedRef = useRef<OfferedTile[] | null>(null);
   const offered: OfferedTile[] = useMemo(() => {
     if (lockedRef.current) return lockedRef.current;
+    if (forceCharcoal) {
+      const result: OfferedTile[] = [{ type: 'charcoal', level: 0 }];
+      lockedRef.current = result;
+      return result;
+    }
     const owned = run?.activeTileTypes ?? [];
     let available = pool.filter((t) => !owned.includes(t));
     if (available.length < 3) {
@@ -93,6 +103,7 @@ export const TileSelectScreen = memo(function TileSelectScreen() {
         {offered.map(({ type: tileType, level }) => {
           const def = TILE_DEFINITIONS[tileType];
           const isSelected = selected === tileType;
+          const poisonBonus = (run?.traitCounts?.rattlesnake ?? 0) >= 2 && (tileType === 'waste' || tileType === 'rattler') ? 1 : 0;
           const upgradeTooltip = def.upgradeText ? (
             <div className="whitespace-nowrap" style={{ fontSize: '8px', lineHeight: 1.3 }}>
               <span className="text-stone-400 font-bold">Upgrade</span>
@@ -118,15 +129,15 @@ export const TileSelectScreen = memo(function TileSelectScreen() {
               >
                 <SpriteIcon frame={TILE_FRAMES[tileType]} scale={2} className="mb-1.5" />
                 <div className="flex items-center gap-1.5">
-                  <span className="text-amber-300 text-xs font-bold">
+                  <span className="text-amber-300 text-xs font-bold" style={{ fontSize: def.label.length > 12 ? '10px' : undefined }}>
                     {def.label}
                   </span>
                   <span className="text-yellow-400 font-bold" style={{ fontSize: '8px' }}>
-                    Lv {level + 1}
+                    Lv {level + 1}{poisonBonus > 0 ? ` (+${poisonBonus})` : ''}
                   </span>
                 </div>
                 <span className="text-stone-300 text-center mt-1 leading-tight" style={{ fontSize: '9px' }}>
-                  {buildTileDescription(tileType, level)}
+                  {buildTileDescription(tileType, level + poisonBonus)}
                 </span>
                 {def.flavor && (
                   <span className={`${isSelected ? 'text-stone-500' : 'text-stone-600'} text-center mt-1 leading-tight italic`} style={{ fontSize: '8px' }}>

@@ -32,3 +32,13 @@ artifact ideas:
 todo:
 - store run data for guests
 - flagellation items, self damage
+- improved tutorials
+- quests - dailies/weeklies?
+- battlepass?
+- NPCs
+- dialogue
+- Ledger (compendium)
+- damage lines changed to come out of player sprite instead of tiles itself
+- turn indicator - add to combat state
+- update Hardened - should be every damage taken reduces hardened. when 0 become incincible.
+- got a random bomb on the board fighting dusty? should not be possible.

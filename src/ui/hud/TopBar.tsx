@@ -173,6 +173,7 @@ export const TopBar = memo(function TopBar({ mapDisabled }: { showMapButton?: bo
           activeTileTypes={run.activeTileTypes}
           tileUpgrades={run.tileUpgrades}
           mirageType={mirageType}
+          poisonBonus={(run.traitCounts?.rattlesnake ?? 0) >= 2 ? 1 : 0}
           onClose={() => setShowTiles(false)}
         />
       )}
@@ -208,13 +209,17 @@ function TilesPopup({
   activeTileTypes,
   tileUpgrades,
   mirageType,
+  poisonBonus,
   onClose,
 }: {
   activeTileTypes: import('../../types/game').TileType[];
   tileUpgrades: Partial<Record<import('../../types/game').TileType, number>>;
   mirageType: import('../../types/game').TileType | null;
+  poisonBonus: number;
   onClose: () => void;
 }) {
+  const getBonus = (t: import('../../types/game').TileType) =>
+    poisonBonus > 0 && (t === 'waste' || t === 'rattler') ? poisonBonus : 0;
   return (
     <div
       className="absolute inset-0 z-50 flex items-center justify-center bg-black/60 pointer-events-auto"
@@ -244,7 +249,9 @@ function TilesPopup({
           {activeTileTypes.flatMap((tileType) => {
             const def = TILE_DEFINITIONS[tileType];
             if (!def) return [];
-            const level = tileUpgrades[tileType] ?? 0;
+            const baseLevel = tileUpgrades[tileType] ?? 0;
+            const bonus = getBonus(tileType);
+            const level = baseLevel + bonus;
             const tooltipContent = (
               <div className="flex flex-col gap-0.5">
                 <div className="font-bold text-amber-400" style={{ fontSize: '10px' }}>{def.label}</div>
@@ -262,7 +269,7 @@ function TilesPopup({
                   <SpriteIcon frame={TILE_FRAMES[tileType]} scale={1} />
                   <span className="text-amber-300 text-xs font-bold">{def.label}</span>
                   <span className="text-yellow-400" style={{ fontSize: '8px' }}>
-                    Lv {level + 1}
+                    Lv {baseLevel + 1}{bonus > 0 ? ` (+${bonus})` : ''}
                   </span>
                 </div>
               </Tooltip>,
@@ -272,7 +279,7 @@ function TilesPopup({
               const mDef = TILE_DEFINITIONS[mirageType];
               if (mDef) {
                 // Mirage adds its upgrade level to the transformed tile's level.
-                const mLevel = (tileUpgrades[mirageType] ?? 0) + (tileUpgrades['mirage'] ?? 0);
+                const mLevel = (tileUpgrades[mirageType] ?? 0) + (tileUpgrades['mirage'] ?? 0) + getBonus(mirageType);
                 const mTooltip = (
                   <div className="flex flex-col gap-0.5">
                     <div className="font-bold text-amber-400" style={{ fontSize: '10px' }}>{mDef.label}</div>

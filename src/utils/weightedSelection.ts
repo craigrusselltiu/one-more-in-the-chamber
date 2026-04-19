@@ -64,6 +64,10 @@ export function weightedArtifactPick<T extends { rarity?: ArtifactRarity; tags: 
   });
 
   const total = weights.reduce((sum, w) => sum + w, 0);
+  // When every entry has weight 0 (e.g. a pool of all-Corrupt artifacts from a
+  // tag filter, since Corrupt has base weight 0 to keep it out of normal rolls),
+  // fall back to uniform selection instead of always returning the first item.
+  if (total <= 0) return effectivePool[Math.floor(rand() * effectivePool.length)];
   let roll = rand() * total;
   for (let i = 0; i < effectivePool.length; i++) {
     roll -= weights[i];

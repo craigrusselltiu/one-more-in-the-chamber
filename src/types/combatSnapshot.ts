@@ -52,6 +52,7 @@ export interface SerializedPlayer {
   readyStacks?: number;
   duelStacks?: number;
   chainStacks?: number;
+  lootStacks?: number;
   protectedStacks?: number;
   critChance: number;
   thorns: number;

@@ -356,7 +356,7 @@ const WANTED_LEVEL_EFFECTS: string[] = [
   'Start with even less max HP.',
   'At the end of Act 3, the final boss spawns with a random Act 3 elite.',
   'Campfires are less common.',
-  'Start each run with an extra Charcoal tile.',
+  'The first tile selection is replaced with a single Charcoal tile.',
 ];
 
 function WantedLevelSelector({

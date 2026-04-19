@@ -61,6 +61,8 @@ export const MerchantScreen = memo(function MerchantScreen() {
   const [upgradePhase, setUpgradePhase] = useState<'none' | 'selecting' | 'upgraded'>('none');
   const [upgradeSelectedTile, setUpgradeSelectedTile] = useState<TileType | null>(null);
   const [swapSelectedTile, setSwapSelectedTile] = useState<TileType | null>(null);
+  const poisonTileBonus = (run?.traitCounts?.rattlesnake ?? 0) >= 2 ? 1 : 0;
+  const poisonBonusFor = (t: TileType) => (poisonTileBonus > 0 && (t === 'waste' || t === 'rattler') ? poisonTileBonus : 0);
 
   useEffect(() => { playMerchant(); }, []);
 
@@ -407,7 +409,9 @@ export const MerchantScreen = memo(function MerchantScreen() {
                 <div className="grid grid-cols-4 gap-2">
                   {swappableTiles.map((tileType) => {
                     const def = TILE_DEFINITIONS[tileType];
-                    const level = run?.tileUpgrades[tileType] ?? 0;
+                    const baseLevel = run?.tileUpgrades[tileType] ?? 0;
+                    const tBonus = poisonBonusFor(tileType);
+                    const level = baseLevel + tBonus;
                     const isSelected = swapSelectedTile === tileType;
                     return (
                       <button
@@ -422,8 +426,8 @@ export const MerchantScreen = memo(function MerchantScreen() {
                         }}
                       >
                         <SpriteIcon frame={TILE_FRAMES[tileType]} scale={2} className="mb-1.5" />
-                        <span className="text-amber-300 text-xs font-bold">{def.label}</span>
-                        <span className="text-yellow-400" style={{ fontSize: '8px' }}>Lv {level + 1}</span>
+                        <span className="text-amber-300 text-xs font-bold" style={{ fontSize: def.label.length > 13 ? '10px' : undefined }}>{def.label}</span>
+                        <span className="text-yellow-400" style={{ fontSize: '8px' }}>Lv {baseLevel + 1}{tBonus > 0 ? ` (+${tBonus})` : ''}</span>
                         <span className="text-stone-300 text-center mt-1 leading-tight" style={{ fontSize: '9px' }}>
                           {buildTileDescription(tileType, level)}
                         </span>
@@ -453,10 +457,15 @@ export const MerchantScreen = memo(function MerchantScreen() {
                     {swapPending.price}g
                   </span>
                   <SpriteIcon frame={TILE_FRAMES[newTileType]} scale={2} className="mb-1.5" />
-                  <span className="text-amber-300 text-xs font-bold">{newDef.label}</span>
-                  {newLevel > 0 && <span className="text-yellow-400" style={{ fontSize: '8px' }}>Lv {newLevel + 1}</span>}
+                  <span className="text-amber-300 text-xs font-bold" style={{ fontSize: newDef.label.length > 13 ? '10px' : undefined }}>{newDef.label}</span>
+                  {(() => {
+                    const nBonus = poisonBonusFor(newTileType);
+                    return (newLevel > 0 || nBonus > 0) ? (
+                      <span className="text-yellow-400" style={{ fontSize: '8px' }}>Lv {newLevel + 1}{nBonus > 0 ? ` (+${nBonus})` : ''}</span>
+                    ) : null;
+                  })()}
                   <span className="text-stone-300 text-center mt-1 leading-tight" style={{ fontSize: '9px' }}>
-                    {buildTileDescription(newTileType, newLevel)}
+                    {buildTileDescription(newTileType, newLevel + poisonBonusFor(newTileType))}
                   </span>
                   {newDef.flavor && (
                     <span className="text-stone-600 text-center mt-1 leading-tight italic" style={{ fontSize: '8px' }}>
@@ -524,9 +533,9 @@ export const MerchantScreen = memo(function MerchantScreen() {
                         }}
                       >
                         <SpriteIcon frame={TILE_FRAMES[tileType]} scale={2} className="mb-1" />
-                        <span className="text-amber-300 text-xs font-bold">{def.label}</span>
+                        <span className="text-amber-300 text-xs font-bold" style={{ fontSize: def.label.length > 13 ? '10px' : undefined }}>{def.label}</span>
                         <span className="text-yellow-400" style={{ fontSize: '8px' }}>
-                          Lv {currentLevel + 1} {'\u2192'} {currentLevel + 2}
+                          Lv {currentLevel + 1} {'\u2192'} {currentLevel + 2}{poisonBonusFor(tileType) > 0 ? ` (+${poisonBonusFor(tileType)})` : ''}
                         </span>
                         <span className="text-stone-500 text-center" style={{ fontSize: '9px' }}>
                           {def.upgradeText}

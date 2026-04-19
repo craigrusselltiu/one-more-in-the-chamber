@@ -69,9 +69,9 @@ export class TraitSystem {
     this.matchCountThisFight = 0;
     this.sheriffBlockUsedThisFight = false;
     this.player = player;
-    // Sheriff(4): gain 4 Sturdy at fight start
+    // Sheriff(4): gain 3 Sturdy at fight start
     if (this.isActive('sheriff', 4)) {
-      player.sturdyStacks += 4;
+      player.sturdyStacks += 3;
     }
 
     // Outlaw(5): at start of Boss encounters, gain 5 Rageful + 3 Vulnerable to all enemies
@@ -87,9 +87,9 @@ export class TraitSystem {
       this.deadManWalkingAvailable = true;
     }
 
-    // Preacher(6): gain 2 Grace at start of combat
+    // Preacher(6): gain 1 Grace at start of combat
     if (this.isActive('preacher', 6)) {
-      player.graceStacks += 2;
+      player.graceStacks += 1;
     }
   }
 
@@ -163,16 +163,16 @@ export class TraitSystem {
 
     // --- Prospector ---
 
-    // Prospector(2): any match: 25% chance to generate 7 gold
+    // Prospector(2): any match: 25% chance to generate 6 gold
     if (this.isActive('prospector', 2)) {
       if (Math.random() < 0.25) {
-        modified.gold += 7;
+        modified.gold += 6;
       }
     }
 
-    // Prospector(6): deal 5% of current gold as extra damage
+    // Prospector(6): deal 3% of current gold as extra damage
     if (this.isActive('prospector', 6) && player.gold > 0) {
-      modified.damage += Math.floor(player.gold * 0.05);
+      modified.damage += Math.floor(player.gold * 0.03);
     }
 
     // --- Gunslinger ---
@@ -210,17 +210,20 @@ export class TraitSystem {
   // Undertaker
   // ---------------------------------------------------------------------------
 
-  /** Undertaker(3): +50% damage to summoned enemies. Returns multiplier bonus (0.5 or 0). */
+  /** Undertaker(2): +50% damage to summoned enemies. Returns multiplier bonus (0.5 or 0). */
   getUndertakerBonusDamage(targetIsSummoned: boolean): number {
-    if (this.isActive('undertaker', 3) && targetIsSummoned) return 0.5;
+    if (this.isActive('undertaker', 2) && targetIsSummoned) return 0.5;
     return 0;
   }
 
-  /** Undertaker(6): on enemy kill, grant 1 Ready to player. */
-  onEnemyKilledUndertaker(): void {
-    if (this.isActive('undertaker', 6) && this.player) {
-      this.player.addReady(1);
+  /** Undertaker(4): on enemy kill, grant +1 max HP (and heal by 1). Returns true if triggered. */
+  onEnemyKilledUndertaker(): boolean {
+    if (this.isActive('undertaker', 4) && this.player) {
+      this.player.maxHealth += 1;
+      this.player.health = Math.min(this.player.maxHealth, this.player.health + 1);
+      return true;
     }
+    return false;
   }
 
   // ---------------------------------------------------------------------------
@@ -296,6 +299,11 @@ export class TraitSystem {
     return this.isActive('sheriff', 6);
   }
 
+  /** Sheriff(8): immune to Suppress hazard placement. */
+  isSuppressImmune(): boolean {
+    return this.isActive('sheriff', 8);
+  }
+
   // ---------------------------------------------------------------------------
   // Tracker
   // ---------------------------------------------------------------------------
@@ -314,18 +322,23 @@ export class TraitSystem {
   // Antivenom
   // ---------------------------------------------------------------------------
 
-  /** Antivenom(3): matching adjacent to poison clears it. */
+  /** Antivenom(2): matching adjacent to poison clears it. */
   clearsAdjacentPoison(): boolean {
-    return this.isActive('antivenom', 3);
+    return this.isActive('antivenom', 2);
+  }
+
+  /** Antivenom(4): at the start of every turn, halve player's Poison stacks. */
+  halvesPoisonOnTurnStart(): boolean {
+    return this.isActive('antivenom', 4);
   }
 
   // ---------------------------------------------------------------------------
   // Rattlesnake
   // ---------------------------------------------------------------------------
 
-  /** Rattlesnake(2): clearing/matching poison applies venom to target. */
-  poisonHazardAppliesPoison(): boolean {
-    return this.isActive('rattlesnake', 2);
+  /** Rattlesnake(2): poison-applying tiles (waste, rattler) gain +1 level. */
+  getPoisonTileLevelBonus(): number {
+    return this.isActive('rattlesnake', 2) ? 1 : 0;
   }
 
   /** Rattlesnake(4): venom applies to ALL enemies instead of just the target. */

@@ -105,6 +105,7 @@ export const CampfireScreen = memo(function CampfireScreen() {
           {run.activeTileTypes.filter((t) => TILE_DEFINITIONS[t]?.upgradeText).map((tileType) => {
             const def = TILE_DEFINITIONS[tileType];
             const currentLevel = run.tileUpgrades[tileType] ?? 0;
+            const poisonBonus = (run.traitCounts?.rattlesnake ?? 0) >= 2 && (tileType === 'waste' || tileType === 'rattler') ? 1 : 0;
             const isSelected = selectedTile === tileType;
 
             const previewTooltip = (
@@ -127,9 +128,9 @@ export const CampfireScreen = memo(function CampfireScreen() {
                   }}
                 >
                   <SpriteIcon frame={TILE_FRAMES[tileType]} scale={2} className="mb-1" />
-                  <span className="text-amber-300 text-xs font-bold">{def.label}</span>
+                  <span className="text-amber-300 text-xs font-bold" style={{ fontSize: def.label.length > 13 ? '10px' : undefined }}>{def.label}</span>
                   <span className="text-yellow-400" style={{ fontSize: '8px' }}>
-                    Lv {currentLevel + 1} {'\u2192'} {currentLevel + 2}
+                    Lv {currentLevel + 1} {'\u2192'} {currentLevel + 2}{poisonBonus > 0 ? ` (+${poisonBonus})` : ''}
                   </span>
                   <span className="text-stone-500 text-center mt-1" style={{ fontSize: '9px' }}>
                     {def.upgradeText}

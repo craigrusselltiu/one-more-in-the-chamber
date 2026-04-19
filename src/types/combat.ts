@@ -26,6 +26,8 @@ export interface CombatState {
   protectedStacks: number;
   /** Dead Man Walking: each stack absorbs one debuff; decrements at end of player turn. */
   deadManWalkingStacks: number;
+  /** Loot: triggers at 20 stacks (deal 10 dmg, gain 8 block, heal 6, gain 12 gold). */
+  lootStacks: number;
   enemies: EnemyState[];
   targetedEnemyIndex: number;
   phase: CombatPhase;
@@ -122,7 +124,8 @@ export type PlayerStatusEffect =
   | { type: 'protected'; value: number }
   | { type: 'lethargic'; value: number }
   | { type: 'tinnitus'; value: number }
-  | { type: 'dead_man_walking'; value: number };
+  | { type: 'dead_man_walking'; value: number }
+  | { type: 'loot'; value: number };
 
 export type EnemyStatusEffect =
   | { type: 'block'; value: number }

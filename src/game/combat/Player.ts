@@ -20,6 +20,7 @@ export class Player {
   readyStacks = 0;
   duelStacks = 0;
   chainStacks = 0;
+  lootStacks = 0;
   terrifiedStacks = 0;
   vulnerableStacks = 0;
   thorns = 0;
@@ -56,6 +57,8 @@ export class Player {
   deadManWalkingStacks = 0;
   /** If the player owns Mirage, the type it transformed into for this combat. */
   mirageReplacementType: TileType | null = null;
+  /** Rattlesnake(2): +1 level to poison-applying tiles (waste, rattler). */
+  poisonTileBonus = 0;
   /** Multiplier applied to all heal() amounts (e.g. Dry Atmosphere = 0.9). */
   healMultiplier = 1.0;
 
@@ -269,6 +272,10 @@ export class Player {
     // Mirage adds its upgrade level to the type it transformed into.
     if (this.mirageReplacementType === type) {
       level += this.tileUpgrades['mirage'] ?? 0;
+    }
+    // Rattlesnake(2): +1 level to poison-applying tiles.
+    if (this.poisonTileBonus > 0 && (type === 'waste' || type === 'rattler')) {
+      level += this.poisonTileBonus;
     }
     return level;
   }

@@ -18,6 +18,7 @@ export interface ResourceOutput {
   sturdyStacks: number;
   chainStacks: number;
   duelStacks: number;
+  lootStacks: number;
   /** Whether a Chip tile hit (true) or missed (false). Undefined for non-chip tiles. */
   chipHit?: boolean;
   /** The damage Chip would deal if it hit (used by Reno's Coin damage doubling). */
@@ -39,7 +40,9 @@ export interface ResourceOutput {
 
 /** Tiles where upgrade scales per tile (not flat per match). */
 const PER_TILE_UPGRADE: Set<TileType> = new Set([
-  'buckshot', 'fifty_cal', 'barricade', 'chip', 'boulder', 'bounty', 'horseshoe', 'duel',
+  'buckshot', 'fifty_cal', 'barricade', 'chip', 'boulder', 'bounty', 'duel',
+  'axe', 'mace', 'hourglass', 'sacrificial_blade', 'jackhammer', 'nunchucks', 'milk', 'cheese',
+  'obsidian',
 ]);
 
 /**
@@ -99,7 +102,7 @@ export class ResourceResolver {
     return this.buildOutput(match.tileType, baseTotal, upgradeBonus, count);
   }
 
-  resolveSingle(type: TileType, upgradeLevel: number, playerBlock = 0): ResourceOutput {
+  resolveSingle(type: TileType, upgradeLevel: number, playerBlock = 0, swapsRemaining = 0): ResourceOutput {
     const def = TILE_DEFINITIONS[type];
     if (!def) return this.emptyOutput();
 
@@ -108,8 +111,10 @@ export class ResourceResolver {
     // Flat-upgrade tiles: divide upgrade bonus by 3 on single resolve
     const adjustedBonus = PER_TILE_UPGRADE.has(type) ? upgradeBonus : Math.floor(upgradeBonus / 3);
     const output = this.buildOutput(type, baseTotal, adjustedBonus, 1);
-    // Boulder: add block / 3 as bonus damage on single resolve
-    if (type === 'boulder') output.damage += Math.floor(playerBlock / 3);
+    // Boulder: damage = floor(block / 5) on single resolve
+    if (type === 'boulder') output.damage = Math.floor(playerBlock / 5);
+    // Hourglass: add swaps-remaining bonus damage on single resolve
+    if (type === 'hourglass') output.damage += swapsRemaining;
     return output;
   }
 
@@ -293,9 +298,74 @@ export class ResourceResolver {
         break;
 
       case 'charcoal':
-        // Flat 1 damage + 1 block per match regardless of tile count
-        output.damage = 1;
+        // Flat 1 damage + 1 block per match regardless of tile count.
+        // Upgrade adds flat damage per level (block unchanged).
+        output.damage = 1 + Math.round(upgradeBonus);
         output.block = 1;
+        break;
+
+      // --- New tiles ---
+
+      case 'axe':
+        // Per-tile upgrade. CombatManager doubles damage when target has block.
+        output.damage = total;
+        break;
+
+      case 'mace':
+        output.damage = total;
+        output.piercesBlock = true;
+        break;
+
+      case 'cactus':
+        // Block per tile (flat upgrade). CombatManager grants +1 Thorns.
+        output.block = total;
+        break;
+
+      case 'loot':
+        // Grants Loot stacks; CombatManager triggers effect when reaching 20.
+        output.lootStacks = total;
+        break;
+
+      case 'hourglass':
+        // Damage scales with swaps used this turn (added in CombatManager).
+        // Base is per-tile upgrade only; 0 without swaps.
+        output.damage = total;
+        break;
+
+      case 'chainsaw':
+        // Damage = player's missing-HP fraction scaled per tile (added in CombatManager).
+        // Upgrade contributes +1% missing HP per tile per level; base is 0 here.
+        output.damage = 0;
+        break;
+
+      case 'sacrificial_blade':
+        // Per-tile upgrade. CombatManager applies the -1 HP self-cost (min 1 HP).
+        output.damage = total;
+        break;
+
+      case 'jackhammer':
+      case 'nunchucks':
+        // Per-tile upgrade. CombatManager tracks per-combat level bumps on
+        // consecutive same-target attacks.
+        output.damage = total;
+        break;
+
+      case 'milk':
+        // Per-tile block; match-based healing (1 HP per 3-match, +1 per extra tile).
+        output.block = total;
+        output.healing = Math.max(0, count - 2);
+        break;
+
+      case 'cheese':
+        // Per-tile block (upgrade); per-tile healing (flat 1 per tile).
+        output.block = total;
+        output.healing = count;
+        break;
+
+      case 'obsidian':
+        // Per-tile damage and block (both scale with upgrade).
+        output.damage = total;
+        output.block = total;
         break;
     }
 
@@ -319,6 +389,7 @@ export class ResourceResolver {
       sturdyStacks: 0,
       chainStacks: 0,
       duelStacks: 0,
+      lootStacks: 0,
       isAoE: false,
       piercesBlock: false,
       targetsHighestHp: false,

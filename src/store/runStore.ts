@@ -195,10 +195,9 @@ export const useRunStore = create<RunStore>((set, get) => ({
     const maxHealth = Math.round(100 * ascMods.maxHealthMultiplier);
     // L6: start at 90% of max HP
     const startingHealth = Math.max(1, Math.round(maxHealth * ascMods.startingHealthFraction));
-    // L30: inject an extra Charcoal tile into the active deck
-    if (ascMods.extraCharcoalTile && !coreTiles.includes('charcoal')) {
-      coreTiles.push('charcoal');
-    }
+    // L30: the starter tile selection is replaced with a forced Charcoal pick
+    // (handled in TileSelectScreen via ascMods.extraCharcoalTile). No change to
+    // the starting deck here -- player still begins with only their character tiles.
 
     set({
       pendingNewGame: null,
@@ -349,8 +348,15 @@ export const useRunStore = create<RunStore>((set, get) => ({
     set((state) => {
       if (!state.run) return state;
       const tileUpgrades = { ...state.run.tileUpgrades };
-      tileUpgrades[type] = (tileUpgrades[type] ?? 0) + 1;
-      return { run: { ...state.run, tileUpgrades } };
+      const nextLevel = (tileUpgrades[type] ?? 0) + 1;
+      tileUpgrades[type] = nextLevel;
+      let activeTileTypes = state.run.activeTileTypes;
+      if (type === 'charcoal' && nextLevel >= 10 && activeTileTypes.includes('charcoal') && !activeTileTypes.includes('obsidian')) {
+        activeTileTypes = activeTileTypes.map((t) => (t === 'charcoal' ? 'obsidian' : t));
+        tileUpgrades.obsidian = nextLevel;
+        delete tileUpgrades.charcoal;
+      }
+      return { run: { ...state.run, activeTileTypes, tileUpgrades } };
     }),
 
   setTileUpgrade: (type, level) =>
@@ -359,7 +365,13 @@ export const useRunStore = create<RunStore>((set, get) => ({
       const tileUpgrades = { ...state.run.tileUpgrades };
       if (level > 0) tileUpgrades[type] = level;
       else delete tileUpgrades[type];
-      return { run: { ...state.run, tileUpgrades } };
+      let activeTileTypes = state.run.activeTileTypes;
+      if (type === 'charcoal' && level >= 10 && activeTileTypes.includes('charcoal') && !activeTileTypes.includes('obsidian')) {
+        activeTileTypes = activeTileTypes.map((t) => (t === 'charcoal' ? 'obsidian' : t));
+        tileUpgrades.obsidian = level;
+        delete tileUpgrades.charcoal;
+      }
+      return { run: { ...state.run, activeTileTypes, tileUpgrades } };
     }),
 
   tickPlayTime: () =>

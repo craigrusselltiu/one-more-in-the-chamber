@@ -133,6 +133,11 @@ export class CombatManager {
   private lastDamageSource: string | null = null;
   /** Gold multiplier from wanted level (1.0 = normal, <1.0 = reduced). */
   private goldMultiplier: number;
+  /** Jackhammer / Nunchucks per-combat level bonus; grows by 1 when the same
+   *  enemy is hit consecutively. Reset each fight. */
+  private jackhammerCombatLevel = 0;
+  private jackhammerLastTarget: number | null = null;
+  private nunchucksLastTarget: number | null = null;
 
   constructor(board: Board, config: CombatConfig) {
     this.board = board;
@@ -184,6 +189,7 @@ export class CombatManager {
     // Mirage was transformed in CombatScene before CombatManager was created;
     // record the chosen type so getUpgradeLevel can apply Mirage's upgrade.
     this.player.mirageReplacementType = this.board.getMirageType();
+    this.player.poisonTileBonus = this.traits.getPoisonTileLevelBonus();
 
     // Initialize enemies
     for (const def of config.enemies) {
@@ -238,7 +244,7 @@ export class CombatManager {
           else if (action.kind === 'lock') { if (!startOfFightHazardImmune) this.hazardManager.placeRandomLocks(action.value); }
           else if (action.kind === 'lock_row') { if (!startOfFightHazardImmune) this.hazardManager.lockRow(Math.floor(Math.random() * 8)); }
           else if (action.kind === 'lock_column') { if (!startOfFightHazardImmune) this.hazardManager.lockColumn(Math.floor(Math.random() * 8)); }
-          else if (action.kind === 'suppress') { if (!startOfFightHazardImmune) this.hazardManager.placeRandomSuppress(action.value); }
+          else if (action.kind === 'suppress') { if (!startOfFightHazardImmune && !this.traits.isSuppressImmune()) this.hazardManager.placeRandomSuppress(action.value); }
           else if (action.kind === 'bomb') { if (!startOfFightHazardImmune) this.hazardManager.placeRandomBombs(action.value, 3 + this.traits.getBombCountdownBonus()); }
           else if (action.kind === 'gain_cloak') enemy.state.cloak += action.value;
           else if (action.kind === 'gain_hardened') enemy.state.hardened += action.value;
@@ -498,6 +504,7 @@ export class CombatManager {
         readyStacks: this.player.readyStacks,
         duelStacks: this.player.duelStacks,
         chainStacks: this.player.chainStacks,
+        lootStacks: this.player.lootStacks,
         protectedStacks: this.player.protectedStacks,
         critChance: 0, // deprecated, kept for snapshot compat
         thorns: this.player.thorns,
@@ -562,6 +569,7 @@ export class CombatManager {
     this.player.readyStacks = sp.readyStacks ?? 0;
     this.player.duelStacks = sp.duelStacks ?? 0;
     this.player.chainStacks = sp.chainStacks ?? 0;
+    this.player.lootStacks = sp.lootStacks ?? 0;
     this.player.protectedStacks = sp.protectedStacks ?? 0;
     // critChance deprecated — Lucky stacks are the crit chance now
     this.player.thorns = sp.thorns;
@@ -573,6 +581,7 @@ export class CombatManager {
     // Mirage was already restored on the board; mirror it onto the player so
     // getUpgradeLevel applies the mirage upgrade after a mid-combat reload.
     this.player.mirageReplacementType = this.board.getMirageType();
+    this.player.poisonTileBonus = this.traits.getPoisonTileLevelBonus();
 
     // Restore enemies
     this.enemies = snapshot.enemies.map((se) => {
@@ -678,6 +687,11 @@ export class CombatManager {
     this.board.resetTurn();
 
     this.hazardManager.resetTurnArtifactState();
+
+    // Antivenom(4): halve player's Poison stacks at the start of every turn.
+    if (this.player.poisonedStacks > 0 && this.traits.halvesPoisonOnTurnStart()) {
+      this.player.poisonedStacks = Math.floor(this.player.poisonedStacks / 2);
+    }
 
     // Venomous tick: player takes damage equal to stacks, stacks decrease by 1
     // Bone Charm: venom damage halved
@@ -1459,9 +1473,9 @@ export class CombatManager {
       const cloakActive = isCascade
         && this.aliveEnemies().some(e => e.state.cloak > 0);
 
-      // Player Terrified: deal 50% less damage
+      // Player Terrified: deal 25% less damage
       if (this.player.terrifiedStacks > 0 && output.damage > 0) {
-        output.damage = Math.round(output.damage * 0.5);
+        output.damage = Math.round(output.damage * 0.75);
       }
 
       // Scope Lens: 5+ matches generate double resources
@@ -1488,9 +1502,79 @@ export class CombatManager {
         // Status stacks, flags, etc. are NOT scaled:
       };
 
-      // Boulder: add player's current block as bonus damage
+      // Boulder: damage = floor(block / 5) * tiles
       if (match.tileType === 'boulder') {
-        scaled.damage += this.player.block;
+        scaled.damage = Math.floor(this.player.block / 5) * match.tiles.length;
+      }
+
+      // Stampede: +1 damage per tile for each currently-alive enemy
+      if (match.tileType === 'stampede') {
+        const aliveCount = this.aliveEnemies().length;
+        scaled.damage += aliveCount * match.tiles.length;
+      }
+
+      // Tombstone: double damage when the targeted enemy is below 50% HP
+      if (match.tileType === 'tombstone') {
+        const target = this.getTargetedAliveEnemy();
+        if (target && target.state.health * 2 < target.state.maxHealth) {
+          scaled.damage *= 2;
+        }
+      }
+
+      // Axe: double damage when the targeted enemy has any block
+      if (match.tileType === 'axe') {
+        const target = this.getTargetedAliveEnemy();
+        if (target && target.state.block > 0) {
+          scaled.damage *= 2;
+        }
+      }
+
+      // Cactus: grant +1 Thorns per tile on every match
+      if (match.tileType === 'cactus') {
+        this.player.thorns += match.tiles.length;
+      }
+
+      // Hourglass: +swaps-remaining * tiles bonus damage
+      if (match.tileType === 'hourglass') {
+        scaled.damage += this.swapsRemaining * match.tiles.length;
+      }
+
+      // Chainsaw: damage = floor(missingHP * (0.09 + level * 0.01)) per tile
+      if (match.tileType === 'chainsaw') {
+        const level = this.player.getUpgradeLevel('chainsaw');
+        const missing = Math.max(0, this.player.maxHealth - this.player.health);
+        const pct = 0.09 + level * 0.01;
+        scaled.damage += Math.floor(missing * pct) * match.tiles.length;
+      }
+
+      // Sacrificial Blade: lose 1 HP (cannot drop below 1)
+      if (match.tileType === 'sacrificial_blade') {
+        if (this.player.health > 1) {
+          this.player.health -= 1;
+          this.floatOnPlayer('-1', '#C04040');
+          EventBus.emit(GameEvent.PLAYER_HP_CHANGE, this.player.health, this.player.maxHealth);
+        }
+      }
+
+      // Jackhammer: per-combat level bump on consecutive same-target hits
+      if (match.tileType === 'jackhammer') {
+        const target = this.getTargetedAliveEnemy();
+        const targetIdx = target ? this.enemies.indexOf(target) : -1;
+        if (targetIdx >= 0 && this.jackhammerLastTarget === targetIdx) {
+          this.jackhammerCombatLevel += 1;
+        }
+        scaled.damage += this.jackhammerCombatLevel * match.tiles.length;
+        this.jackhammerLastTarget = targetIdx;
+      }
+
+      // Nunchucks: hits twice if attacking a different enemy than the previous nunchucks attack
+      if (match.tileType === 'nunchucks') {
+        const target = this.getTargetedAliveEnemy();
+        const targetIdx = target ? this.enemies.indexOf(target) : -1;
+        if (targetIdx >= 0 && this.nunchucksLastTarget !== null && this.nunchucksLastTarget !== targetIdx) {
+          scaled.duelDoubleHit = true;
+        }
+        if (targetIdx >= 0) this.nunchucksLastTarget = targetIdx;
       }
 
       this.applyResourceOutput(scaled, isCrit);
@@ -1588,8 +1672,10 @@ export class CombatManager {
             this.player.ragefulStacks += ragefulGain;
             this.floatOnPlayer(`+${ragefulGain} RAGEFUL`, '#D04040', 9);
           }
-          // Undertaker(6): on enemy death, gain 1 Ready
-          this.traits.onEnemyKilledUndertaker();
+          // Undertaker(4): on enemy death, +1 max HP
+          if (this.traits.onEnemyKilledUndertaker()) {
+            EventBus.emit(GameEvent.PLAYER_HP_CHANGE, this.player.health, this.player.maxHealth);
+          }
           // Reaper's Scythe: apply Shadow to 5 tiles
           if (this.artifacts.has('reapers_scythe')) {
             this.board.applyShadowToRandomTiles(5);
@@ -1687,7 +1773,7 @@ export class CombatManager {
         if (!tile || tile.type === 'saloon' || tile.type === 'showdown' || tile.type === 'tumbleweed' || tile.type === 'fools_gold') continue;
 
         const upgradeLevel = this.player.getUpgradeLevel(tile.type);
-        const output = this.resolver.resolveSingle(tile.type, upgradeLevel, this.player.block);
+        const output = this.resolver.resolveSingle(tile.type, upgradeLevel, this.player.block, this.swapsRemaining);
         this.capFlatEffects(output, capSeen);
         this.applyResourceOutput(output, false, true);
       }
@@ -1718,6 +1804,22 @@ export class CombatManager {
       this.player.addBlock(lockBlock);
       this.floatOnPlayer(`+${lockBlock}`, '#6888A0');
     }
+  }
+
+  /** Loot tile 20-stack payout: 10 damage, 8 block, 6 heal, 12 gold. */
+  private triggerLootPayout(): void {
+    const target = this.getTargetedAliveEnemy();
+    if (target) {
+      this.dealDamageToEnemy(target, 10, false);
+      this.emitEnemyHpChanges();
+    }
+    this.player.addBlock(8);
+    const healed = this.player.heal(6);
+    const goldGain = Math.max(1, Math.round(12 * this.goldMultiplier));
+    this.player.addGold(goldGain);
+    this.floatOnPlayer(`+${goldGain}g +8 BLOCK${healed > 0 ? ` +${healed}` : ''}`, '#C89030', 9);
+    EventBus.emit(GameEvent.PLAYER_HP_CHANGE, this.player.health, this.player.maxHealth);
+    EventBus.emit(GameEvent.GOLD_CHANGE, this.player.gold);
   }
 
   /** Get the highest-HP alive enemy. */
@@ -1839,12 +1941,12 @@ export class CombatManager {
 
       EventBus.emit(GameEvent.GOLD_CHANGE, this.player.gold);
 
-      // Prospector(4): gaining gold deals 2 damage to a random enemy
+      // Prospector(4): gaining gold deals 1 damage to a random enemy
       if (this.traits.goldDealsDamage()) {
         const alive = this.aliveEnemies();
         if (alive.length > 0) {
           const target = alive[Math.floor(Math.random() * alive.length)];
-          this.dealDamageToEnemy(target, 2, false);
+          this.dealDamageToEnemy(target, 1, false);
           this.emitEnemyHpChanges();
         }
       }
@@ -1957,6 +2059,16 @@ export class CombatManager {
         this.player.duelStacks = 0;
         this.player.addReady(1);
         this.floatOnPlayer('+1 READY', '#D4A030', 9);
+      }
+    }
+
+    // Loot stacks: at 20 stacks, trigger payout and reset
+    if (output.lootStacks > 0) {
+      this.player.lootStacks += output.lootStacks;
+      this.floatOnPlayer(`+${output.lootStacks} LOOT`, '#C89030', 9);
+      while (this.player.lootStacks >= 20) {
+        this.player.lootStacks -= 20;
+        this.triggerLootPayout();
       }
     }
 
@@ -2383,7 +2495,7 @@ export class CombatManager {
         if (this.player.protectedStacks <= 0) this.hazardManager.placeRandomSand(ma.value);
         break;
       case 'suppress':
-        if (this.player.protectedStacks <= 0) this.hazardManager.placeRandomSuppress(ma.value);
+        if (this.player.protectedStacks <= 0 && !this.traits.isSuppressImmune()) this.hazardManager.placeRandomSuppress(ma.value);
         break;
       case 'fools_gold':
         if (this.player.protectedStacks <= 0) this.hazardManager.placeRandomFoolsGold(ma.value);
@@ -2550,9 +2662,9 @@ export class CombatManager {
     if (enemy.state.blindedStacks > 0) return;
     // Enemy Rageful: +1 damage per stack (decrement handled once per move in executeMoveAction)
     let adjustedDamage = damage + enemy.state.ragefulStacks;
-    // Enemy Terrified: deal 50% less damage
+    // Enemy Terrified: deal 25% less damage
     if (enemy.state.terrifiedStacks > 0) {
-      adjustedDamage = Math.round(adjustedDamage * 0.5);
+      adjustedDamage = Math.round(adjustedDamage * 0.75);
     }
     if (this.artifacts.has('preachers_bible')) {
       adjustedDamage = Math.max(0, adjustedDamage - 1);
@@ -2730,40 +2842,14 @@ export class CombatManager {
       const step = getStep();
       playMatch(step);
       const clearPoison = this.traits.clearsAdjacentPoison();
-      let poisonCleared = 0;
       let locksFreed = 0;
       let sandRevealed = 0;
       for (const match of stepMatches) {
         const locksBefore = this.hazardManager.countHazards('lock');
         const sandBefore = this.hazardManager.countHazards('sand');
-        const freed = this.hazardManager.resolveAdjacentHazards(match.tiles, clearPoison);
+        this.hazardManager.resolveAdjacentHazards(match.tiles, clearPoison);
         locksFreed += locksBefore - this.hazardManager.countHazards('lock');
         sandRevealed += sandBefore - this.hazardManager.countHazards('sand');
-        if (clearPoison) {
-          poisonCleared += freed.filter(p => {
-            // Count tiles that were poison (now cleared)
-            const tile = this.board.getGrid()[p.row]?.[p.col];
-            return tile && !tile.hazard; // was just freed
-          }).length;
-        }
-      }
-      // Rattlesnake(2): cleared poison applies venom to target
-      if (poisonCleared > 0 && this.traits.poisonHazardAppliesPoison()) {
-        // Rattlesnake(4): venom applies to ALL enemies
-        if (this.traits.poisonAppliesToAll()) {
-          for (const enemy of this.aliveEnemies()) {
-            this.applyPoison(enemy, poisonCleared);
-            this.floatOnEnemy(enemy, `+${poisonCleared} POISON`, '#40ff40', 9);
-            EventBus.emit(GameEvent.ENEMY_HP_CHANGE, { ...enemy.state });
-          }
-        } else {
-          const target = this.getTargetedAliveEnemy();
-          if (target) {
-            this.applyPoison(target, poisonCleared);
-            this.floatOnEnemy(target, `+${poisonCleared} POISON`, '#40ff40', 9);
-            EventBus.emit(GameEvent.ENEMY_HP_CHANGE, { ...target.state });
-          }
-        }
       }
       // Jail Cell Keys: gain 4 block per lock freed
       if (locksFreed > 0) {
@@ -2850,6 +2936,7 @@ export class CombatManager {
       readyStacks: this.player.readyStacks,
       duelStacks: this.player.duelStacks,
       chainStacks: this.player.chainStacks,
+      lootStacks: this.player.lootStacks,
       terrifiedStacks: this.player.terrifiedStacks,
       vulnerableStacks: this.player.vulnerableStacks,
       thorns: this.player.thorns,
@@ -2898,7 +2985,7 @@ export class CombatManager {
     const seen = new Set<string>();
     for (const info of destroyed) {
       const upgradeLevel = this.player.getUpgradeLevel(info.type);
-      const output = this.resolver.resolveSingle(info.type, upgradeLevel, this.player.block);
+      const output = this.resolver.resolveSingle(info.type, upgradeLevel, this.player.block, this.swapsRemaining);
       this.capFlatEffects(output, seen);
       this.applyResourceOutput(output, false, true);
     }

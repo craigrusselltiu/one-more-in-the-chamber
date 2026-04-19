@@ -87,6 +87,9 @@ export type TileType =
   | 'battery'
   | 'waste'
   | 'prairie_fire'
+  | 'axe'
+  | 'mace'
+  | 'cactus'
   // Additional
   | 'chain'
   | 'whiskey'
@@ -102,11 +105,20 @@ export type TileType =
   | 'duel'
   | 'mirage'
   | 'boulder'
+  | 'loot'
+  | 'hourglass'
+  | 'chainsaw'
+  | 'sacrificial_blade'
+  | 'jackhammer'
+  | 'nunchucks'
+  | 'milk'
   // Special
   | 'showdown'
   | 'tumbleweed'
   | 'fools_gold'
-  | 'charcoal';
+  | 'charcoal'
+  | 'obsidian'
+  | 'cheese';
 
 export type TraitId =
   | 'outlaw'

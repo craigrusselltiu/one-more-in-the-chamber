@@ -12,20 +12,21 @@ Bullet tiles - Bullet, .50 Cal, Buckshot, and Ricochet
 - Ready - Your next non-cascade attack deals 50% more damage. (max 1)
 - Chain - Your Chain tiles gain 1 extra damage per stack.
 - Thorns - When attacked, deal damage back equal to the number of stacks. Clear at the end of the turn.
-- Cloak - Cascade damage taken is reduced by 50%.. Decrease stacks by 1 at the end of the turn.
+- Cloak - Cascade damage taken is reduced by 50%. Decrease stacks by 1 at the end of the turn.
 - Hardened - Damage taken every swapped is capped to the number of Hardened stacks.
 - Dead Man Walking - Immune to debuffs. Decrease stacks by 1 at the end of the turn or whenever a debuff is applied.
 - Protected - Immune to tile hazards. Decrease stacks by 1 at the end of the turn.
 - Invulnerable - Immune to all damage. Decrease stacks by 1 at the end of the turn.
 - Duel - When gaining this, if you have 4 stacks, gain Ready and clear Duel stacks.
 - Scavenger - When another enemy dies, heal 6 HP.
+- Loot - On 20 stacks, deal 10 damage, gain 8 block, heal 6 HP, and gain 12 gold.
 
 # Debuffs
 - Vulnerable - Take 25% extra damage from attacks. Decrease stacks by 1 at the end of the turn.
 - Poison - At the start of the turn, take damage equal to the number of stacks and decrease stacks by 1.
 - Bounty - When applying this or taking damage, if HP is lower than Bounty stacks, die.
 - Summoned - Dies when all non-summoned enemies have died.
-- Terrified - Deal 50% less damage. Decrease stacks by 1 at the end of the turn.
+- Terrified - Deal 25% less damage. Decrease stacks by 1 at the end of the turn.
 - Blinded - Attacks deal no damage. Decrease stacks by 1 at the end of the turn.
 
 # Tile Augments
@@ -77,7 +78,7 @@ Level 26 - You feel a presence looming over you. (Outlaw King chance doubled for
 Level 27 - Start with even less max HP. (5% less)
 Level 28 - At the end of Act 3, the final boss spawns with a random Act 3 elite. (elite has Summoned status)
 Level 29 - Campfires are less common. (1 less per act)
-Level 30 - Start each run with an extra Charcoal tile. (this is in addition to the starter tile that you pick)
+Level 30 - The first tile selection is replaced with a single Charcoal tile.
 
 ## Scoring
 

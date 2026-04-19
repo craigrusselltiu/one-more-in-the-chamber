@@ -6,21 +6,21 @@
 |---|---|---|---|---|---|---|
 | Outlaw | 1 | 1 | 3 | 0 | 1(+1) | 6(+1) |
 | Sheriff | 3 | 1 | 4 | 0 | 0 | 8 |
-| Antivenom | 0 | 1 | 2 | 0 | 1 | 4 |
+| Antivenom | 0 | 1 | 1 | 0 | 2 | 4 |
 | Rattlesnake | 1 | 2 | 1 | 0 | 1 | 5 |
 | Prospector | 1 | 3 | 2(+1) | 0 | 1 | 7(+1) |
-| Sapper | 1 | 1 | 2 | 0 | 1 | 5 |
+| Sapper | 1 | 1 | 1 | 0 | 2 | 5 |
 | Mustang | 3 | 0 | 2 | 0 | 1 | 6 |
-| Gunslinger | 2 | 2 | 1 | 0 | 1(+1) | 6(+1) |
+| Gunslinger | 2 | 3 | 1 | 0 | 1(+1) | 7(+1) |
 | Saloon Keeper | 1 | 2 | 2(+1) | 0 | 0 | 5(+1) |
 | Sniper | 0 | 1 | 3 | 0 | 1 | 5 |
 | Dead Man Walking | 0 | 2 | 3 | 0 | 3 | 8 |
 | Preacher | 1 | 3 | 1 | 0 | 2 | 7 |
-| Tracker | 3 | 1 | 1 | 0 | 0 | 5 |
+| Tracker | 3 | 1 | 0 | 0 | 1 | 5 |
 | Undertaker | 1 | 3 | 0 | 0 | 2 | 6 |
 | Desperado | 1 | 3 | 1 | 0 | 0(+1) | 5(+1) |
 
-Overall: 19C, 26U, 28(+2)R, 0E, 14(+2)L = 86(+5) trait slots across 58(+4) artifacts
+Overall: 19C, 27U, 25(+2)R, 0E, 18(+3)L = 89(+5) trait slots across 58(+4) artifacts
 
 ## Trait Intersection Matrix
 
@@ -28,14 +28,14 @@ Diagonal = single-trait artifacts. Off-diagonal = artifacts with both traits.
 
 | | OUT | SHR | AV | RAT | PRO | SAP | MUS | GUN | SAL | SNI | DMW | PRE | TRK | UND | DES |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| **OUT** | 1 | 1 | . | . | . | . | 1 | 1(+1) | . | 2 | . | . | . | 1 | . |
+| **OUT** | 0 | 1 | . | . | . | . | 1 | 1(+1) | . | 2 | . | . | . | 1 | . |
 | **SHR** | | 4 | . | . | . | . | . | 1 | . | . | 1 | . | . | . | 1 |
 | **AV** | | | 2 | . | . | 1 | . | . | . | . | 1 | . | 1 | . | . |
 | **RAT** | | | | 3 | . | . | . | 1 | . | . | . | . | . | . | 1 |
 | **PRO** | | | | | 3(+1) | 1 | . | . | . | . | . | 1 | 1 | . | 1 |
 | **SAP** | | | | | | 2 | . | . | . | . | . | . | 1 | 1 | . |
 | **MUS** | | | | | | | 3 | . | . | . | . | 1 | 1 | . | . |
-| **GUN** | | | | | | | | 1(+1) | 1 | . | 1 | 1 | . | . | . |
+| **GUN** | | | | | | | | 1 | 1 | . | 1 | 1 | . | . | . |
 | **SAL** | | | | | | | | | 2(+1) | . | 1 | 1 | . | . | . |
 | **SNI** | | | | | | | | | | 3 | . | . | . | . | . |
 | **DMW** | | | | | | | | | | | 1 | 1 | . | 1 | 1 |
@@ -55,7 +55,7 @@ Diagonal = single-trait artifacts. Off-diagonal = artifacts with both traits.
 | Prospector | 6 | 7(+1) | +1(+1) |
 | Sapper | 4 | 5 | +1 |
 | Mustang | 4 | 6 | +2 |
-| Gunslinger | 6 | 6(+1) | 0(+1) |
+| Gunslinger | 6 | 7(+1) | +1(+1) |
 | Saloon Keeper | 5 | 5(+1) | 0(+1) |
 | Sniper | 5 | 5 | 0 |
 | Dead Man Walking | 7 | 8 | +1 |
@@ -380,10 +380,6 @@ Diagonal = single-trait artifacts. Off-diagonal = artifacts with both traits.
 - Effect: Cascade matches trigger 1 level higher.
 - Flavor: "The house always wins."
 - NOTE: if the player's tile is Lv 2, cascade trigger of this tile will be lv 3
-
----
-
-## New Additions
 
 ### Holy Water
 - Tags: Preacher, Mustang

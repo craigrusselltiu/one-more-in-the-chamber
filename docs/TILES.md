@@ -52,7 +52,7 @@ NOTE: The tile pool for Acts 2, 3, and also the shop should be the Starter Tiles
 
 ### Stampede
 - Flavor text: "The ground shakes. Everything in the way gets flattened."
-- Behaviour text: Deal 1 damage to ALL enemies per tile.
+- Behaviour text: Deal 1 damage to ALL enemies per tile. Deals 1 more per tile for each enemy currently alive.
 - Upgrade text: +2 damage to match total per level
 - Resource formula: (1 AoE damage * tiles) + (level * 2)
 - Single formula: 1 AoE damage + floor(level * 2 / 3)
@@ -101,10 +101,31 @@ NOTE: The tile pool for Acts 2, 3, and also the shop should be the Starter Tiles
 
 ### Whiskey
 - Flavor text: "The cowboy's medicine."
-- Behaviour text: Heals 1 HP per 3-match, plus 1 per extra tile.
+- Behaviour text: Heal 2 HP per 3-match, plus 1 per extra tile.
 - Upgrade text: +1 heal to match total per level
 - Resource formula: 2 healing + (tiles - 3) + (level * 1)
-- Single formula: 2 healing + floor(level * 1 / 3)
+- Single formula: floor(level * 1 / 3) healing
+
+### Axe
+- Flavor text: "Here's Johnny!"
+- Behaviour text: Deal 2 damage per tile. Deals double damage to enemies with block.
+- Upgrade text: +1 damage per tile per level
+- Resource formula: (2 damage + level * 1) * tiles
+- Single formula: 2 damage + level * 1
+
+### Mace
+- Flavor text: "Armor's just in the way."
+- Behaviour text: Deal 2 damage per tile. Ignores block.
+- Upgrade text: +1 damage per tile per level
+- Resource formula: (2 damage + level * 1) * tiles
+- Single formula: 2 damage + level * 1
+
+### Cactus
+- Flavor text: "Touch it. I dare you."
+- Behaviour text: Gain 1 block per tile. Gain 1 Thorns per tile.
+- Upgrade text: +2 block to match total per level
+- Resource formula: (1 block * tiles) + (level * 2), 1 Thorns * tiles
+- Single formula: 1 block + floor(level * 2 / 3), 1 Thorns * tiles
 
 ## Additional Tiles
 
@@ -131,7 +152,7 @@ NOTE: The tile pool for Acts 2, 3, and also the shop should be the Starter Tiles
 
 ### Tombstone
 - Flavor text: "Dead men pay debts."
-- Behaviour text: Deal 2 damage per tile. Deals double damage when target is below 30% HP.
+- Behaviour text: Deal 2 damage per tile. Deals double damage when target is below 50% HP.
 - Upgrade text: +2 damage to match total per level
 - Resource formula: (2 damage * tiles) + (level * 2) (doubled if target below 30% HP)
 - Single formula: 2 damage + floor(level * 2 / 3)
@@ -159,14 +180,13 @@ NOTE: The tile pool for Acts 2, 3, and also the shop should be the Starter Tiles
 
 ### Boulder
 - Flavor text: "Gravity does the rest."
-- Behaviour text: Deal 1 damage per tile, plus 1 damage per block.
-- Upgrade text: +1 damage per tile per level
-- Resource formula: (1 damage + level * 1) * tiles + current block
-- Single formula: 1 damage + level * 1 + floor(current block / 3)
+- Behaviour text: Deal damage equal to 20% of current block per tile. Cannot be upgraded.
+- Resource formula: current block / 5 * tiles
+- Single formula: floor(current block / 5)
 
 ### Cavalry
 - Flavor text: "Reinforcements have arrived."
-- Behaviour text: 2 block per tile. If 4+ matched, +1 swap this turn (max 1 per turn).
+- Behaviour text: Gain 2 block per tile. On 4+ match, gain 1 swap this turn (max 1 per turn).
 - Upgrade text: +2 block to match total per level
 - Resource formula: (1 block * tiles) + (level * 2), +1 swap if tiles >= 4 (max 1/turn)
 - Single formula: 1 block + floor(level * 2 / 3)
@@ -185,6 +205,56 @@ NOTE: The tile pool for Acts 2, 3, and also the shop should be the Starter Tiles
 - Resource formula: resolves as the transformed tile
 - Single formula: resolves as the transformed tile
 
+### Loot
+- Flavor text: "A little bit of everything."
+- Behaviour text: Gain 1 Loot per tile.
+- Upgrade text: +2 stack to match total per level
+- Resource formula: (1 stack * tiles) + (level * 2)
+- Single formula: 1 stack + floor(level * 2 / 3)
+
+### Hourglass
+- Flavor text: "It's not how much time you have, it's how you use it."
+- Behaviour text: Deal damage equal to current number of swaps per tile.
+- Upgrade text: +1 damage per swap
+- Resource formula: (swaps + level * 1) * tile
+- Single formula: swaps + level * 1
+
+### Chainsaw
+- Flavor text: "Everybody's after my chainsaw heart! What about my heart?!"
+- Behaviour text: Deal damage equal to 9% of your missing HP per tile.
+- Upgrade text: +1% missing HP per tile
+- Resource formula: floor(9% missing HP + level * 1%) * tiles
+- Single formula: floor(9% missing HP + level * 1%)
+
+### Sacrificial Blade
+- Flavor text: "A little blood pays for a lot of steel."
+- Behaviour text: Lose 1 HP. Deal 4 damage per tile.
+- Upgrade text: +1 damage per tile per level
+- Resource formula: (4 damage + level * 1) * tiles
+- Single formula: 4 damage + level * 1
+- NOTE: player cannot die from this, only goes to 1 HP, and no lower.
+
+### Jackhammer
+- Flavor text: "The second hit is always the hardest."
+- Behaviour text: Deal 1 damage per tile. Gains 1 level this combat when attacking the same enemy as the previous attack.
+- Upgrade text: +1 damage per tile per level
+- Resource formula: (1 damage + level * 1) * tiles
+- Single formula: 1 damage + level * 1
+
+### Nunchucks
+- Flavor text: "Be like water."
+- Behaviour text: Deal 2 damage per tile. Hits twice if attacking a different enemy than the previous attack.
+- Upgrade text: +1 damage per tile per level
+- Resource formula: (2 damage + level * 1) * tiles
+- Single formula: 2 damage + level * 1
+
+### Milk
+- Flavor text: "Good for the bones."
+- Behaviour text: Gain 2 block per tile. Heal 1 HP per 3-match, plus 1 per extra tile. On turn 5, transform into Cheese.
+- Upgrade text: +1 block per tile per level
+- Resource formula: (2 block + level * 1) * tiles, 1 healing + (tiles - 3)
+- Single formula: 2 block + level * 1
+
 ## Special Tiles
 
 ### Showdown
@@ -198,10 +268,25 @@ NOTE: The tile pool for Acts 2, 3, and also the shop should be the Starter Tiles
 - Single formula: no resource generation
 
 ### Charcoal
-- Flavor text: "It is said to makes Fire-type moves more powerful."
-- Behaviour text: On match, deal 1 damage and gain 1 block. Cannot be upgraded or swapped out for another tile.
-- Resource formula: 1 damage, 1 block (ignores tile count)
-- Single formula: 1 damage, 1 block
+- Flavor text: "Does... nothing?"
+- Behaviour text: On match, deal 1 damage and 1 block. Cannot be swapped out for another tile. On level 10, transform into Obsidian.
+- Upgrade text: +1 damage to match total per level
+- Resource formula: (1 + level * 1) damage, 1 block
+- Single formula: 1 + floor(level * 1 / 3) damage, 1 block
+
+### Obsidian
+- Flavor text: "Forged in fire, cooled in blood."
+- Behaviour text: Deal 1 damage and gain 1 block per tile. Cannot be swapped out for another tile.
+- Upgrade text: +1 damage per tile per level, +1 block per tile per level
+- Resource formula: (1 damage + level * 1) * tiles, (1 block + level * 1) * tiles
+- Single formula: 1 damage + level * 1, 1 block + level * 1
+
+### Cheese
+- Flavor text: "Aged long enough to fight back."
+- Behaviour text: Gain 4 block per tile. Heal 1 per tile.
+- Upgrade text: +1 block per tile per level
+- Resource formula: (4 block + level * 1) * tiles, 1 healing * tiles
+- Single formula: 4 block + level * 1, 1 healing
 
 ### Fool's Gold
 - Flavor text: "All that glitters."
@@ -209,13 +294,6 @@ NOTE: The tile pool for Acts 2, 3, and also the shop should be the Starter Tiles
 - Single formula: no resource generation
 
 ## New Tile Ideas
-
-### Cactus
-- Flavor text: "Touch it. I dare you."
-- Behaviour text: Gain 1 block per tile. Deal 1 damage back to any enemy that attacks you this turn.
-- Upgrade text: +1 reflected damage to match total per level
-- Resource formula: (1 block * tiles), 1 damage reflect + (level * 1) (this turn)
-- Single formula: 1 block, 1 damage reflect (this turn)
 
 ### Dynamite
 - Flavor text: "Volatile but useful. Light the fuse on your special move."
@@ -237,13 +315,6 @@ NOTE: The tile pool for Acts 2, 3, and also the shop should be the Starter Tiles
 - Upgrade text: +1 stack to match total per level
 - Resource formula: (1 Vulnerable * tiles) + (level * 1)
 - Single formula: 1 Vulnerable + floor(level * 1 / 3)
-
-### Loot
-- Flavor text: "A little bit of everything."
-- Behaviour text: Earn 1 gold per tile. Heal 1 HP per tile.
-- Upgrade text: +1 gold to match total per level
-- Resource formula: (1 gold * tiles) + (level * 1), (1 healing * tiles)
-- Single formula: 1 gold + floor(level * 1 / 3), 1 healing
 
 ### Sandstorm
 - Flavor text: "Can't hit what you can't see."
@@ -383,13 +454,6 @@ NOTE: The tile pool for Acts 2, 3, and also the shop should be the Starter Tiles
 - Behaviour text: No resource generation on its own. At end of turn, repeats the most recent non-Echo match resolved this turn at 50% effectiveness.
 - Upgrade text: +10% replayed effectiveness per level (caps at 100%)
 - Resource formula: no direct output; queues a replay of last non-Echo match at (50% + level * 10%) effect
-- Single formula: no resource generation
-
-### Hourglass
-- Flavor text: "Every grain, a chance."
-- Behaviour text: No resource generation on match. Each match of any tile during combat ticks a hidden counter; after 5 counted matches, grant 1 extra turn (once per combat).
-- Upgrade text: -1 to counter threshold per level (min 2)
-- Resource formula: 0; increments fight-wide match counter; triggers extra turn at max(2, 5 - level) counted matches
 - Single formula: no resource generation
 
 ### Bear Trap

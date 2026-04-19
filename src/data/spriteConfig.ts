@@ -37,6 +37,19 @@ export const TILE_FRAMES: Record<TileType, number> = {
   tumbleweed: 1098,
   fools_gold: 1155,
   charcoal: 1135,
+  // New tiles -- frames chosen as rough thematic placeholders; adjust with sprite-picker.
+  axe: 705,
+  mace: 133,
+  cactus: 1005,
+  loot: 675,
+  hourglass: 699,
+  chainsaw: 706,
+  sacrificial_blade: 812,
+  jackhammer: 727,
+  nunchucks: 920,
+  milk: 369,
+  cheese: 323,
+  obsidian: 1136,
 };
 
 /** Artifact sprite frames (by artifact ID). */

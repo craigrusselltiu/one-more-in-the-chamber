@@ -19,8 +19,9 @@ export const TRAITS: TraitDefinition[] = [
     description: 'The law is heavier than it looks.',
     breakpoints: [
       { threshold: 2, description: 'Double the first time you gain block each combat.' },
-      { threshold: 4, description: 'At the start of combat, gain 4 Sturdy.' },
+      { threshold: 4, description: 'At the start of combat, gain 3 Sturdy.' },
       { threshold: 6, description: 'Block reflects 100% of absorbed damage back to attacker.' },
+      { threshold: 8, description: 'Become immune to Suppress.' },
     ],
   },
   {
@@ -37,9 +38,9 @@ export const TRAITS: TraitDefinition[] = [
     name: 'Prospector',
     description: "There's gold in them hills. And in that match.",
     breakpoints: [
-      { threshold: 2, description: 'On any match, 25% chance to generate 7 gold.' },
-      { threshold: 4, description: 'Whenever you gain gold during combat, deal 2 damage to a random enemy.' },
-      { threshold: 6, description: 'Deal 5% of your current gold as extra damage.' },
+      { threshold: 2, description: 'On any match, 25% chance to generate 6 gold.' },
+      { threshold: 4, description: 'Whenever you gain gold during combat, deal 1 damage to a random enemy.' },
+      { threshold: 6, description: 'Deal 3% of your current gold as extra damage.' },
     ],
   },
   {
@@ -94,7 +95,7 @@ export const TRAITS: TraitDefinition[] = [
     name: 'Mustang',
     description: "Can't fence what won't be fenced.",
     breakpoints: [
-      { threshold: 4, description: '+1 swap per turn.' },
+      { threshold: 4, description: 'Gain 1 swap per turn.' },
     ],
   },
   {
@@ -113,7 +114,7 @@ export const TRAITS: TraitDefinition[] = [
     breakpoints: [
       { threshold: 2, description: "Whenever you don't deal damage in a turn, heal 5." },
       { threshold: 4, description: 'Take 20% less damage from enemies with lower HP than you.' },
-      { threshold: 6, description: 'At the start of combat, gain 2 Grace.' },
+      { threshold: 6, description: 'At the start of combat, gain 1 Grace.' },
     ],
   },
   {
@@ -121,7 +122,8 @@ export const TRAITS: TraitDefinition[] = [
     name: 'Antivenom',
     description: "Don't step on anything that hisses.",
     breakpoints: [
-      { threshold: 3, description: 'Matching next to a Poison tile clears it.' },
+      { threshold: 2, description: 'Matching next to a Poison tile clears it.' },
+      { threshold: 4, description: 'At the start of every turn, halve your Poison.' },
     ],
   },
   {
@@ -129,8 +131,8 @@ export const TRAITS: TraitDefinition[] = [
     name: 'Undertaker',
     description: 'Business is booming.',
     breakpoints: [
-      { threshold: 3, description: 'Deal 50% more damage to summoned enemies.' },
-      { threshold: 6, description: 'On enemy death, gain 1 Ready.' },
+      { threshold: 2, description: 'Deal 50% more damage to summoned enemies.' },
+      { threshold: 4, description: 'Killing an enemy grants 1 max HP.' },
     ],
   },
   {
@@ -147,7 +149,7 @@ export const TRAITS: TraitDefinition[] = [
     name: 'Rattlesnake',
     description: "I'm a slithery snake.",
     breakpoints: [
-      { threshold: 2, description: 'Clearing or matching Poison tiles applies Poison to target instead.' },
+      { threshold: 2, description: 'Your tiles that apply Poison have +1 level.' },
       { threshold: 4, description: 'When you would apply Poison, apply it to ALL enemies.' },
     ],
   },

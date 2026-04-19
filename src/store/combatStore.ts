@@ -24,6 +24,7 @@ interface CombatStore {
   readyStacks: number;
   duelStacks: number;
   chainStacks: number;
+  lootStacks: number;
   terrifiedStacks: number;
   vulnerableStacks: number;
   thorns: number;
@@ -91,6 +92,7 @@ const initialState = {
   readyStacks: 0,
   duelStacks: 0,
   chainStacks: 0,
+  lootStacks: 0,
   terrifiedStacks: 0,
   vulnerableStacks: 0,
   thorns: 0,
@@ -137,6 +139,7 @@ export const useCombatStore = create<CombatStore>((set) => ({
       readyStacks: state.readyStacks,
       duelStacks: state.duelStacks,
       chainStacks: state.chainStacks,
+      lootStacks: state.lootStacks ?? 0,
       terrifiedStacks: state.terrifiedStacks,
       vulnerableStacks: state.vulnerableStacks,
       thorns: state.thorns,
@@ -198,6 +201,7 @@ export function getPlayerStatusEffects(store: CombatStore): PlayerStatusEffect[]
   if (store.readyStacks > 0) effects.push({ type: 'ready', value: store.readyStacks });
   if (store.duelStacks > 0) effects.push({ type: 'duel', value: store.duelStacks });
   if (store.chainStacks > 0) effects.push({ type: 'chain', value: store.chainStacks });
+  if (store.lootStacks > 0) effects.push({ type: 'loot', value: store.lootStacks });
   if (store.terrifiedStacks > 0) effects.push({ type: 'terrified', value: store.terrifiedStacks });
   if (store.vulnerableStacks > 0) effects.push({ type: 'vulnerable', value: store.vulnerableStacks });
   if (store.thorns > 0) effects.push({ type: 'thorns', value: store.thorns });

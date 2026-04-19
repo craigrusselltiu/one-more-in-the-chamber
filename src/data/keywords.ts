@@ -63,7 +63,7 @@ export const KEYWORDS: Record<string, KeywordDefinition> = {
   },
   Terrified: {
     color: '#8B4789',
-    description: 'Deal 50% less damage. Decrease stacks by 1 at the end of the turn.',
+    description: 'Deal 25% less damage. Decrease stacks by 1 at the end of the turn.',
   },
   Blinded: {
     color: '#A0A0A0',
@@ -84,5 +84,9 @@ export const KEYWORDS: Record<string, KeywordDefinition> = {
   Scavenger: {
     color: '#40D840',
     description: 'When another enemy dies, heal 6 HP.',
+  },
+  Loot: {
+    color: '#C89030',
+    description: 'On 20 stacks, deal 10 damage, gain 8 block, heal 6 HP, and gain 12 gold. Resets to 0.',
   },
 };

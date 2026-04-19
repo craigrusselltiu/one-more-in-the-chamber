@@ -4,6 +4,37 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## v0.7.0
+
+### Added
+- Twelve new tiles from TILES.md: Axe (double damage vs blocked enemies), Mace (pierces block), Cactus (block + Thorns per tile), Loot (builds stacks toward a mixed-reward payout), Hourglass (damage scales with current swaps), Chainsaw (damage scales with missing HP), Sacrificial Blade (-1 HP, high damage), Jackhammer (gains level per consecutive same-target hit), Nunchucks (hits twice on target switch), Milk (block + heal, transforms into Cheese on turn 5), Cheese (block + per-tile heal), Obsidian (per-tile damage + block). Sprites, KeywordText previews, and tile pool entries wired through.
+- `Loot` keyword: Loot tiles grant stacks instead of gold; at 20 stacks the player deals 10 damage, gains 8 block, heals 6 HP, and gains 12 gold. `lootStacks` threaded through `CombatState`, `PlayerSnapshot`, `combatStore`, and `StatusEffects` row so the stack count persists across quit/resume.
+- Holy Water artifact (Preacher/Mustang, Rare) appended to `ARTIFACTS.md`.
+
+### Changed
+- Trait rewrites across the roster:
+  - Sheriff gains a new B8 breakpoint: immune to Suppress. Sheriff B4 Sturdy dropped 4 -> 3.
+  - Prospector breakpoints toned down: B2 gold 7 -> 6, B4 damage on gold gain 2 -> 1, B6 current-gold scaling 5% -> 3%.
+  - Gunslinger trait counts rebalanced in `ARTIFACTS.md` matrix (net +1 uncommon trait slot).
+  - Antivenom reworked: B3 moved to B2 (clear neighbouring Poison tile on match); new B4 halves the player's Poison at the start of every turn.
+  - Undertaker reworked: B3 -> B2 (+50% damage to Summoned); new B4 grants +1 max HP on enemy kill. `onEnemyKilledUndertaker` returns a flag so CombatManager emits `PLAYER_HP_CHANGE` after the max-HP bump, which keeps it persisted through `CombatBridge`'s syncHealth path.
+  - Preacher B6 Grace start-of-combat stacks 2 -> 1.
+  - Rattlesnake B2 rewritten from "clearing/matching Poison tiles applies Poison to target" to "Your tiles that apply Poison have +1 level." Implemented via new `Player.poisonTileBonus` which adds into `getUpgradeLevel` for `waste` and `rattler`. Tile popup, TileSelect, Merchant, and Campfire screens all show "Lv N (+1)" when the bonus is active.
+- Boulder redesigned: `baseValue`/`upgradeValue` both 0, cannot be upgraded. Damage = `floor(current block / 5) * tiles` (overwrites scaled damage; single-resolve uses `floor(block / 5)`). Removed from upgrade lists automatically via missing `upgradeText`.
+- Hourglass swapped from "swaps used this turn" to "swaps remaining". `resolveSingle` accepts a `swapsRemaining` parameter; both call sites (`applyAdjacentTileResolution` and `resolveDestroyedTiles`) thread `this.swapsRemaining` through.
+- Terrified damage reduction softened from -50% to -25% for both player and enemy carriers. Keyword description updated in `keywords.ts`.
+- Tombstone low-HP doubling threshold 30% -> 50%.
+- Stampede behaviour text clarifies "+1 damage per tile for each currently-alive enemy" (code already did this).
+- Whiskey base healing doubled to 2 HP per 3-match (was 1 per 3-match + 1 per extra); flat +1 per extra tile unchanged.
+- Venom/Venomous consolidated to "Poison" naming throughout keywords. Tile `venom` renamed to `waste`. Antivenom/Envenomed identifiers preserved per prior guidance.
+- Wanted Level L30 mutation reworded: first tile selection is replaced with a single Charcoal tile (was: extra Charcoal on top of starter pick).
+- Cloak description typo fixed (stray double period).
+
+### Fixed
+- Dead `poisonCleared` tracking loop removed from CombatManager after the Rattlesnake B2 rewrite.
+- `poisonTileBonus` is now initialised in both the CombatManager constructor and `restoreFromSnapshot`, so Rattlesnake B2's +1 tile level survives quit/resume.
+- Scoring NaN guards retained; no regression.
+
 ## v0.6.10
 
 ### Added

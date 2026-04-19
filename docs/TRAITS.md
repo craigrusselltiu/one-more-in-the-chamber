@@ -5,8 +5,9 @@ Trait level = number of artifacts held with that tag. Effects activate at breakp
 ## Sheriff
 - Flavor: "The law is heavier than it looks."
 - 2 -- Double the first time you gain block each combat.
-- 4 -- At the start of combat, gain 4 Sturdy.
+- 4 -- At the start of combat, gain 3 Sturdy.
 - 6 -- Block reflects 100% of absorbed damage back to attacker.
+- 8 -- Become immune to Suppress.
 
 ## Outlaw
 - Flavor: "Wanted: Alive. Preferably not."
@@ -15,9 +16,9 @@ Trait level = number of artifacts held with that tag. Effects activate at breakp
 
 ## Prospector
 - Flavor: "There's gold in them hills. And in that match."
-- 2 -- On any match, 25% chance to generate 7 gold.
-- 4 -- Whenever you gain gold during combat, deal 2 damage to a random enemy.
-- 6 -- Deal 5% of your current gold as extra damage.
+- 2 -- On any match, 25% chance to generate 6 gold.
+- 4 -- Whenever you gain gold during combat, deal 1 damage to a random enemy.
+- 6 -- Deal 3% of your current gold as extra damage.
 
 ## Gunslinger
 - Flavor: "Fastest hand in the west. And the luckiest."
@@ -50,7 +51,7 @@ Trait level = number of artifacts held with that tag. Effects activate at breakp
 
 ## Mustang
 - Flavor: "Can't fence what won't be fenced."
-- 4 -- +1 swap per turn.
+- 4 -- Gain 1 swap per turn.
 
 ## Tracker
 - Flavor: "Read the tracks. See what's hidden."
@@ -62,16 +63,17 @@ Trait level = number of artifacts held with that tag. Effects activate at breakp
 - Flavor: "The sermon ain't over yet."
 - 2 -- Whenever you don't deal damage in a turn, heal 5
 - 4 -- Take 20% less damage from enemies with lower HP than you.
-- 6 -- At the start of combat, gain 2 Grace.
+- 6 -- At the start of combat, gain 1 Grace.
 
 ## Antivenom
 - Flavor: "Don't step on anything that hisses."
-- 3 -- Matching next to a Poison tile clears it.
+- 2 -- Matching next to a Poison tile clears it.
+- 4 -- At the start of every turn, halve your Poison.
 
 ## Undertaker
 - Flavor: "Business is booming."
-- 3 -- Deal 50% more damage to summoned enemies.
-- 6 -- On enemy death, gain 1 Ready.
+- 2 -- Deal 50% more damage to summoned enemies.
+- 4 -- Killing an enemy grants 1 max HP.
 
 ## Desperado
 - Flavor: "Go big or go home."
@@ -80,8 +82,10 @@ Trait level = number of artifacts held with that tag. Effects activate at breakp
 
 ## Rattlesnake
 - Flavor: "I'm a slithery snake."
-- 2 -- Clearing or matching Poison tiles applies Poison to target instead.
+- 2 -- Your tiles that apply Poison have +1 level.
 - 4 -- When you would apply Poison, apply it to ALL enemies.
+NOTE: breakpoint 2 just makes your poison tiles act as if they're 1 level higher.
+probably add a (+1) next to the level in the Tiles popup, merchant screen, and tile selection if you have B2
 
 ## Corrupt
 - Flavor:
