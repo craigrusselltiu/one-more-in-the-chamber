@@ -6,7 +6,7 @@ import { useRunStore } from '../../store/runStore';
 import { useMetaStore } from '../../store/metaStore';
 import { SpriteIcon } from '../components/SpriteIcon';
 import { Tooltip } from '../components/Tooltip';
-import { UI_FRAMES, ARTIFACT_FRAMES, TILE_FRAMES } from '../../data/spriteConfig';
+import { UI_FRAMES, ARTIFACT_FRAMES, TILE_FRAMES, HAZARD_FRAMES } from '../../data/spriteConfig';
 import { ARTIFACTS, RARITY_BREATHE_CLASS } from '../../data/artifacts';
 import { TILE_DEFINITIONS } from '../../data/tiles';
 import { KEYWORDS } from '../../data/keywords';
@@ -64,9 +64,15 @@ export const CharacterSelectScreen = memo(function CharacterSelectScreen() {
   const highestCleared = useMetaStore((s) => s.meta.highestWantedLevelCleared);
   const lastWantedLevel = useMetaStore((s) => s.meta.lastWantedLevel);
   const lastCharacter = useMetaStore((s) => s.meta.lastCharacter) as CharacterId;
+  const unlockedCharacters = useMetaStore((s) => s.meta.unlockedCharacters);
   const setLastWantedLevel = useMetaStore((s) => s.setLastWantedLevel);
   const setLastCharacter = useMetaStore((s) => s.setLastCharacter);
-  const [selectedCharacter, setSelectedCharacter] = useState<CharacterId>(lastCharacter ?? 'red_panda');
+  const isLocked = (id: CharacterId) => !unlockedCharacters.includes(id);
+  // If lastCharacter is now locked (pre-gate Reno main), fall back to red_panda
+  // so the screen never boots into a locked preview.
+  const defaultCharacter: CharacterId =
+    lastCharacter && !isLocked(lastCharacter) ? lastCharacter : 'red_panda';
+  const [selectedCharacter, setSelectedCharacter] = useState<CharacterId>(defaultCharacter);
   const [wantedLevel, setWantedLevel] = useState(lastWantedLevel ?? 0);
   const [customSeed, setCustomSeed] = useState('');
 
@@ -79,6 +85,7 @@ export const CharacterSelectScreen = memo(function CharacterSelectScreen() {
   }, []);
 
   const handleConfirm = () => {
+    if (isLocked(selectedCharacter)) return;
     setLastWantedLevel(wantedLevel);
     setLastCharacter(selectedCharacter);
     setPendingNewGame({ character: selectedCharacter, wantedLevel });
@@ -117,10 +124,11 @@ export const CharacterSelectScreen = memo(function CharacterSelectScreen() {
       <div className="absolute -left-2 top-1/2 -translate-y-1/2 flex flex-col gap-2">
         {CHARACTERS.map((c) => {
           const isSelected = selectedCharacter === c.id;
+          const locked = isLocked(c.id);
           return (
             <button
               key={c.id}
-              onClick={() => setSelectedCharacter(c.id)}
+              onClick={() => { if (!locked) setSelectedCharacter(c.id); }}
               className="flex items-center gap-2"
               style={{
                 padding: '10px 16px 10px 48px',
@@ -129,17 +137,40 @@ export const CharacterSelectScreen = memo(function CharacterSelectScreen() {
                 transform: isSelected ? 'translateX(0)' : 'translateX(-20px)',
                 transition: 'transform 0.15s',
                 minWidth: 170,
+                cursor: locked ? 'not-allowed' : 'pointer',
               }}
             >
-              <img
-                src={`${import.meta.env.BASE_URL}assets/sprites/${c.sprite}`}
-                alt={c.name}
-                style={{ width: 40, height: 40, imageRendering: 'pixelated', objectFit: 'cover' }}
-              />
+              <div className="relative" style={{ width: 40, height: 40 }}>
+                <img
+                  src={`${import.meta.env.BASE_URL}assets/sprites/${c.sprite}`}
+                  alt={c.name}
+                  style={{
+                    width: 40,
+                    height: 40,
+                    imageRendering: 'pixelated',
+                    objectFit: 'cover',
+                    filter: locked ? 'brightness(0)' : undefined,
+                  }}
+                />
+                {locked && (
+                  <div
+                    style={{
+                      position: 'absolute',
+                      inset: 0,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      pointerEvents: 'none',
+                    }}
+                  >
+                    <SpriteIcon frame={HAZARD_FRAMES.lock} scale={1} outline="#000" outlineWidth={2} />
+                  </div>
+                )}
+              </div>
               <span
                 className="text-sm font-bold"
                 style={{
-                  color: isSelected ? '#fcd34d' : '#a8a29e',
+                  color: locked ? '#57534e' : isSelected ? '#fcd34d' : '#a8a29e',
                   WebkitTextStroke: '2px #000',
                   paintOrder: 'stroke fill',
                 }}

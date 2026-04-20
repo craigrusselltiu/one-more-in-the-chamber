@@ -115,6 +115,7 @@ export class CombatManager {
   private enemyDiedThisSwap = false;
   /** Track swaps used this turn for Sharpshooter's Eye reset. */
   private swapsUsedThisTurn = 0;
+  private ensureSwapPhaseMovesPromise: Promise<void> | null = null;
   /** Whether the current swap being resolved was non-adjacent (lasso). */
   private currentSwapIsLasso = false;
   /** Lasso consumable: number of remaining non-adjacent swaps allowed. */
@@ -133,8 +134,9 @@ export class CombatManager {
   private lastDamageSource: string | null = null;
   /** Gold multiplier from wanted level (1.0 = normal, <1.0 = reduced). */
   private goldMultiplier: number;
-  /** Last enemy Jackhammer hit -- consecutive same-target hits bump player.jackhammerCombatLevel. */
-  private jackhammerLastTarget: number | null = null;
+  /** Set true when any Jackhammer match resolves during the current player turn.
+   *  If still false at the end of the turn, player.jackhammerCombatLevel resets. */
+  private jackhammerUsedThisTurn = false;
   private nunchucksLastTarget: number | null = null;
 
   constructor(board: Board, config: CombatConfig) {
@@ -292,37 +294,11 @@ export class CombatManager {
       this.board.applyShadowToRandomTiles(2 * corruptCount);
     }
 
-    // Traveling Preacher "Confess": grant queued Grace stacks on fight start.
+    // Travelling Preacher "Confess": grant queued Grace stacks on fight start.
     const pendingGrace = useRunStore.getState().run?.pendingNextFightGrace ?? 0;
     if (pendingGrace > 0) {
       this.player.graceStacks += pendingGrace;
       useRunStore.getState().setPendingNextFightGrace(undefined);
-    }
-
-    // Medicine Wagon "Drink delayed potion": apply the rolled outcome at fight start.
-    const pendingPotion = useRunStore.getState().run?.pendingNextFightPotion;
-    if (pendingPotion) {
-      switch (pendingPotion) {
-        case 'heal':
-          this.player.heal(27);
-          this.floatOnPlayer('+27', '#40D840');
-          break;
-        case 'damage':
-          this.player.health = Math.max(0, this.player.health - 10);
-          this.player.tryLethalSave();
-          this.floatOnPlayer('-10', '#D04040');
-          break;
-        case 'protected':
-          this.player.protectedStacks += 1;
-          this.floatOnPlayer('+1 PROTECTED', '#60D8D8', 9);
-          break;
-        case 'poison':
-          this.player.poisonedStacks += 5;
-          this.floatOnPlayer('+5 POISON', '#40ff40', 9);
-          break;
-      }
-      EventBus.emit(GameEvent.PLAYER_HP_CHANGE, this.player.health, this.player.maxHealth);
-      useRunStore.getState().setPendingNextFightPotion(undefined);
     }
 
     // Tinnitus: hide enemy intents on turn 1. Cleared at the start of turn 2.
@@ -686,6 +662,15 @@ export class CombatManager {
     this.resolver.resetTurn();
     this.board.resetTurn();
 
+    // Jackhammer: if no Jackhammer match happened last turn, drop the per-combat
+    // extra-hit level back to 0. Checked at the start of each new turn so the
+    // reset happens once the next player turn actually begins.
+    if (this.turnNumber > 1 && !this.jackhammerUsedThisTurn && this.player.jackhammerCombatLevel > 0) {
+      this.player.jackhammerCombatLevel = 0;
+      EventBus.emit(GameEvent.COMBAT_STATE_UPDATE, this.buildState());
+    }
+    this.jackhammerUsedThisTurn = false;
+
     this.hazardManager.resetTurnArtifactState();
 
     // Antivenom(4): halve player's Poison stacks at the start of every turn.
@@ -789,6 +774,35 @@ export class CombatManager {
   }
 
   /**
+   * Some consumables and mid-turn board mutations can leave the board with
+   * zero legal adjacent swaps. If the player enters swap phase in that state,
+   * reshuffle until a valid move exists so they don't get stuck.
+   */
+  private ensureSwapPhaseHasValidMoves(): void {
+    if (this.ensureSwapPhaseMovesPromise) return;
+    if (this.phase !== 'swap-phase') return;
+    if (this.swapsRemaining <= 0) return;
+    if (this.board.getIsResolving()) return;
+    if (this.isCombatOver()) return;
+
+    // Lasso allows non-adjacent swaps; avoid reshuffling based on adjacent-only
+    // move detection while lasso mode is active.
+    if (this.lassoSwapsRemaining > 0) return;
+
+    if (this.board.hasValidMoves()) return;
+
+    this.board.setIsResolving(true);
+    this.ensureSwapPhaseMovesPromise = (async () => {
+      await this.board.reshuffleAnimated();
+      this.board.setIsResolving(false);
+      this.emitFullState();
+      EventBus.emit(GameEvent.COMBAT_SAVE_REQUESTED);
+    })().finally(() => {
+      this.ensureSwapPhaseMovesPromise = null;
+    });
+  }
+
+  /**
    * Perform a swap. Validates the move, resolves matches + cascades,
    * applies all resources, then checks if swaps are exhausted.
    */
@@ -804,6 +818,12 @@ export class CombatManager {
     }
     if (this.phase !== 'swap-phase' || this.swapsRemaining <= 0) return;
     if (this.board.getIsResolving()) return;
+
+    // If the board has no legal swaps, reshuffle first and don't consume a swap.
+    if (!this.board.hasValidMoves() && this.lassoSwapsRemaining <= 0) {
+      this.ensureSwapPhaseHasValidMoves();
+      return;
+    }
 
     this.swapsRemaining--;
     this.swapsUsedThisTurn++;
@@ -1171,6 +1191,7 @@ export class CombatManager {
     }
 
     this.emitFullState();
+    this.ensureSwapPhaseHasValidMoves();
   }
 
   // ---------------------------------------------------------------------------
@@ -1190,7 +1211,7 @@ export class CombatManager {
     for (let trigger = 0; trigger < triggerCount; trigger++) {
       const healMult = this.artifacts.getConsumableHealMultiplier();
       switch (consumableId) {
-        case 'tonic':
+        case 'strong_whiskey':
           this.player.heal(Math.round(20 * healMult));
           break;
         case 'bandage':
@@ -1230,6 +1251,7 @@ export class CombatManager {
           }
           this.board.setIsResolving(false);
           EventBus.emit(GameEvent.COMBO_UPDATE, 0);
+          this.ensureSwapPhaseHasValidMoves();
           break;
         }
         case 'signal_flare':
@@ -1237,9 +1259,10 @@ export class CombatManager {
           break;
         case 'stick_of_tnt':
           await this.resolveStickOfTNT();
+          this.ensureSwapPhaseHasValidMoves();
           break;
         case 'snake_oil':
-          this.resolveSnakeOil();
+          this.resolveSnakeOil(healMult);
           break;
         case 'lasso':
           this.lassoSwapsRemaining++;
@@ -1302,29 +1325,37 @@ export class CombatManager {
     return true;
   }
 
-  private resolveSnakeOil(): void {
+  private resolveSnakeOil(healMult: number): void {
     const roll = Math.random();
-    if (roll < 0.25) {
-      this.player.heal(15);
-    } else if (roll < 0.5) {
-      const target = this.getTargetedAliveEnemy();
-      if (target) this.damageDealtThisFight += target.takeDamage(15).hpLost;
-    } else if (roll < 0.75) {
-      this.player.addGold(Math.max(1, Math.round(10 * this.goldMultiplier)));
-    } else {
-      // Poison: small self-damage
-      if (this.player.takeDamage(8).hpLost > 0) {
+    if (roll < 0.2) {
+      this.player.heal(Math.round(23 * healMult));
+      return;
+    }
+    if (roll < 0.4) {
+      // Gain 6 max HP (and heal by the same amount, capped at the new max).
+      this.player.maxHealth += 6;
+      this.player.health = Math.min(this.player.maxHealth, this.player.health + 6);
+      return;
+    }
+    if (roll < 0.6) {
+      this.player.addGold(Math.max(1, Math.round(100 * this.goldMultiplier)));
+      return;
+    }
+    if (roll < 0.8) {
+      if (this.player.takeDamage(14).hpLost > 0) {
         this.playerTookDamageThisFight = true;
         this.lastDamageSource = 'Snake Oil';
       }
+      return;
     }
+    // 20%: do nothing.
   }
 
   private async resolveStickOfTNT(): Promise<void> {
-    // Clear entire row (middle row for max impact).
+    // Clear the bottom row.
     // Special tiles trigger automatically via destroyTilesWithEffects.
     const boardSize = this.board.getBoardSize();
-    const targetRow = Math.floor(boardSize / 2);
+    const targetRow = boardSize - 1;
 
     // Collect positions for the entire middle row
     const positions: import('../../types/combat').GridPosition[] = [];
@@ -1347,6 +1378,10 @@ export class CombatManager {
     if (cascadeMatches.length > 0) {
       await this.processMatches(cascadeMatches);
     }
+
+    // TNT can leave the board in a no-valid-moves state; if the player is still
+    // in swap phase, reshuffle before returning control.
+    this.ensureSwapPhaseHasValidMoves();
 
     this.emitFullState();
     this.emitEnemyHpChanges();
@@ -1388,29 +1423,16 @@ export class CombatManager {
         continue;
       }
 
-      // Jackhammer: if matching with the same target as the previous jackhammer hit,
-      // bump the per-combat level BEFORE resolving so the current match benefits.
-      if (match.tileType === 'jackhammer') {
-        const jTarget = this.getTargetedAliveEnemy();
-        const jIdx = jTarget ? this.enemies.indexOf(jTarget) : -1;
-        if (jIdx >= 0 && this.jackhammerLastTarget === jIdx) {
-          this.player.jackhammerCombatLevel += 1;
-        }
-        this.jackhammerLastTarget = jIdx;
-        if (jIdx >= 0) {
-          EventBus.emit(GameEvent.COMBAT_STATE_UPDATE, this.buildState());
-        }
-      }
-
       let upgradeLevel = this.player.getUpgradeLevel(match.tileType);
       // Loaded Dice: cascade matches trigger 1 level higher
       if (comboMultiplier > 1.0) upgradeLevel += this.artifacts.getCascadeUpgradeBonus();
-      let output = this.resolver.resolve(match, upgradeLevel);
-
-      // Chain buff: add chainStacks bonus damage per Chain tile
-      if (match.tileType === 'chain' && this.player.chainStacks > 0) {
-        output.damage += this.player.chainStacks * match.length;
+      // Chain: each Chain stack acts as an extra upgrade level for this combat,
+      // so the flat-per-level bonus (+2 damage to match total) stacks up across
+      // matches instead of applying as a per-tile buff.
+      if (match.tileType === 'chain') {
+        upgradeLevel += this.player.chainStacks;
       }
+      let output = this.resolver.resolve(match, upgradeLevel);
 
       // Poison tiles: apply venomous stacks to player
       if (match.poisonCount && match.poisonCount > 0) {
@@ -1475,23 +1497,24 @@ export class CombatManager {
         this.artifacts.onCritTriggered(this.player, targetEnemy);
       }
 
-      // Ace stacks: consumed on next non-Ace non-cascade match
+      // Ace stacks: consumed on next non-Ace non-cascade match (all resources)
       if (match.tileType !== 'ace' && comboMultiplier === 1.0 && this.player.aceStacks > 0) {
         multiplier *= this.player.consumeAce();
       }
 
-      // Ready: next non-cascade attack deals 50% more damage
-      if (comboMultiplier === 1.0 && output.damage > 0 && this.player.readyStacks > 0) {
-        multiplier *= this.player.consumeReady();
-      }
-
-      // Consumable match multiplier (Moonshine/Coffee) -- applies to first match only
+      // Consumable match multiplier (Moonshine/Coffee): all resources, first match only
       if (this.nextMatchMultiplier > 1.0) {
         multiplier *= this.nextMatchMultiplier;
         this.nextMatchMultiplier = 1.0;
       }
 
-      // Cloak: reduce cascade damage by 50% while any enemy has the buff.
+      // Ready: next non-cascade attack deals 50% more damage (DAMAGE ONLY).
+      let damageOnlyMult = 1.0;
+      if (comboMultiplier === 1.0 && output.damage > 0 && this.player.readyStacks > 0) {
+        damageOnlyMult *= this.player.consumeReady();
+      }
+
+      // Cloak: reduce cascade damage by 50% while any enemy has the buff (DAMAGE ONLY).
       // `forceCascadeForCloak` treats every step as a cascade — used by abilities
       // (Deadeye, Shuffle, Dust Devil Boots, reshuffle) and board mutations
       // (Prairie Fire spread, Tumbleweed Golem transform) where the follow-up
@@ -1505,12 +1528,21 @@ export class CombatManager {
         output.damage = Math.round(output.damage * 0.75);
       }
 
-      // Scope Lens: 5+ matches generate double resources
+      // Scope Lens: 5+ matches double all resources (damage/block/gold/healing
+      // AND count-driven stacks). Fixed-1 stacks (chain, duel, barricade,
+      // vulnerable) are skipped -- doubling a flat-1 stack from 1 to 2 would
+      // silently change per-match semantics of those tiles.
       if (this.artifacts.shouldDoubleMatchResources(match.length)) {
         output.damage *= 2;
         output.block *= 2;
         output.gold *= 2;
         output.healing *= 2;
+        output.aceStacks *= 2;
+        output.poisonStacks *= 2;
+        output.luckyStacks *= 2;
+        output.bountyStacks *= 2;
+        output.lootStacks *= 2;
+        output.abilityCharges *= 2;
       }
 
       // Sniper's Eye: 5-match attacks deal damage to ALL enemies
@@ -1518,15 +1550,23 @@ export class CombatManager {
         output.isAoE = true;
       }
 
-      // Apply multiplier + combo bonus to damage/block/gold/healing (not to status effects)
+      // Apply multipliers. `totalMultiplier` scales all resources; Ready and
+      // Cloak ride on top of it for damage only. Fixed-1 stacks (chain, duel,
+      // barricade, vulnerable) and bonus flags are preserved via the spread.
       const totalMultiplier = multiplier * comboMultiplier;
+      const damageMultiplier = totalMultiplier * damageOnlyMult * (cloakActive ? 0.5 : 1);
       const scaled: ResourceOutput = {
         ...output,
-        damage: Math.floor(output.damage * totalMultiplier * (cloakActive ? 0.5 : 1)),
+        damage: Math.floor(output.damage * damageMultiplier),
         block: Math.floor(output.block * totalMultiplier),
         gold: Math.floor(output.gold * totalMultiplier),
         healing: Math.floor(output.healing * totalMultiplier),
-        // Status stacks, flags, etc. are NOT scaled:
+        aceStacks: Math.floor(output.aceStacks * totalMultiplier),
+        poisonStacks: Math.floor(output.poisonStacks * totalMultiplier),
+        luckyStacks: Math.floor(output.luckyStacks * totalMultiplier),
+        bountyStacks: Math.floor(output.bountyStacks * totalMultiplier),
+        lootStacks: Math.floor(output.lootStacks * totalMultiplier),
+        abilityCharges: Math.floor(output.abilityCharges * totalMultiplier),
       };
 
       // Boulder: damage = floor(block / 5) * tiles
@@ -1591,6 +1631,17 @@ export class CombatManager {
           scaled.duelDoubleHit = true;
         }
         if (targetIdx >= 0) this.nunchucksLastTarget = targetIdx;
+      }
+
+      // Jackhammer: each Jackhammer match this turn adds one extra hit to the
+      // next one. Level 0 = 1 hit (no extras), level N = N extra hits after the
+      // primary. Bump the combat-level after the current match uses it, and
+      // record that Jackhammer was touched this turn so the level doesn't reset.
+      if (match.tileType === 'jackhammer') {
+        scaled.extraHits = this.player.jackhammerCombatLevel;
+        this.player.jackhammerCombatLevel += 1;
+        this.jackhammerUsedThisTurn = true;
+        EventBus.emit(GameEvent.COMBAT_STATE_UPDATE, this.buildState());
       }
 
       this.applyResourceOutput(scaled, isCrit);
@@ -1933,6 +1984,17 @@ export class CombatManager {
       if (output.duelDoubleHit) {
         const target = this.getTargetedAliveEnemy();
         if (target) this.dealDamageToEnemy(target, damage, false, isCrit);
+      }
+
+      // Jackhammer: extra damage applications on the currently-targeted enemy.
+      // Target is re-acquired each iteration so kills mid-sequence fall through
+      // cleanly instead of damaging a corpse.
+      if (output.extraHits && output.extraHits > 0) {
+        for (let h = 0; h < output.extraHits; h++) {
+          const target = this.getTargetedAliveEnemy();
+          if (!target) break;
+          this.dealDamageToEnemy(target, damage, false, isCrit);
+        }
       }
 
       this.emitEnemyHpChanges();
@@ -2932,6 +2994,9 @@ export class CombatManager {
   private setPhase(phase: CombatPhase): void {
     this.phase = phase;
     this.emitFullState();
+    if (phase === 'swap-phase') {
+      this.ensureSwapPhaseHasValidMoves();
+    }
   }
 
   private buildState(): CombatState {

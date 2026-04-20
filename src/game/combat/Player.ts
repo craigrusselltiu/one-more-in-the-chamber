@@ -263,6 +263,7 @@ export class Player {
     this.pendingBlockNextTurn = 0;
     this.goldThisFight = 0;
     this.goldObtainedThisFight = 0;
+    this.jackhammerCombatLevel = 0;
   }
 
   isDead(): boolean {
@@ -278,10 +279,6 @@ export class Player {
     // Rattlesnake(2): +1 level to poison-applying tiles.
     if (this.poisonTileBonus > 0 && (type === 'waste' || type === 'rattler')) {
       level += this.poisonTileBonus;
-    }
-    // Jackhammer: per-combat level bumps from consecutive same-target hits.
-    if (type === 'jackhammer' && this.jackhammerCombatLevel > 0) {
-      level += this.jackhammerCombatLevel;
     }
     return level;
   }

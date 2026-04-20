@@ -30,7 +30,7 @@ const cardGame: EventDefinition = {
   choices: [
     {
       label: 'Play',
-      description: 'Pay 50 gold to play a game.',
+      description: 'Pay 40 gold to play a game.',
       effect: 'play_card_game',
     },
     {
@@ -156,7 +156,7 @@ const vultureCircle: EventDefinition = {
 
 const travelingPreacher: EventDefinition = {
   id: 'traveling_preacher',
-  title: 'The Traveling Preacher',
+  title: 'The Travelling Preacher',
   flavourText: "He stands in the middle of the cracked earth like he grew out of it, black coat still as stone, bible heavy in one hand and the other never far from the {{yellow:pistol}} at his hip. His wagon sags behind him with its {{blue:silent bell}} and its perched congregation of vultures, and a {{red:crooked cross}} strung with rosaries leans toward him as if listening for a sermon.\nThe brim of his hat swallows his face, but you can feel him watching, weighing your soul against the weight of the lead in his holster, and deciding which he means to deliver first.",
   align: 'left',
   background: 'event_preacher.png',
@@ -169,7 +169,7 @@ const travelingPreacher: EventDefinition = {
     },
     {
       label: 'Draw',
-      description: 'Gain 1 corruption and a random Preacher-tagged artifact.',
+      description: 'Gain 1 corruption, 166 gold, and a Preacher-tagged artifact.',
       effect: 'preacher_draw',
       resultText: 'Smoke, ringing, and two new weights in your pocket. He watches you leave with eyes like scripture.',
     },
@@ -265,7 +265,7 @@ const ghostTownSaloon: EventDefinition = {
   choices: [
     {
       label: 'Drink',
-      description: 'Heal 20 HP. Lose 1 swap at the start of the next fight.',
+      description: 'Heal 28 HP. Lose 1 swap at the start of the next fight.',
       effect: 'saloon_drink',
       resultText: 'The whiskey burns sweeter than it has any right to. Your head swims as you step back out into the light.',
     },

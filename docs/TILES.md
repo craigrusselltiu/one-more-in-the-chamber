@@ -131,10 +131,10 @@ NOTE: The tile pool for Acts 2, 3, and also the shop should be the Starter Tiles
 
 ### Chain
 - Flavor text: "Links in the chain. More you match, harder they hit."
-- Behaviour text: Deal 1 damage per tile. Each Chain match adds +1 damage to ALL Chain tiles for this combat.
-- Upgrade text: +1 damage to match total per level
-- Resource formula: (1 damage * tiles) + (level * 1), 1 Chain
-- Single formula: 1 damage + floor(level * 1 / 3), 1 Chain
+- Behaviour text: Deal 1 damage per tile. Each Chain match adds +1 level for this combat.
+- Upgrade text: +2 damage to match total per level
+- Resource formula: (1 damage * tiles) + (level * 2), 1 Chain
+- Single formula: 1 damage + floor(level * 2 / 3), 1 Chain
 
 ### Horseshoe
 - Flavor text: "Luck favors the prepared."
@@ -154,7 +154,7 @@ NOTE: The tile pool for Acts 2, 3, and also the shop should be the Starter Tiles
 - Flavor text: "Dead men pay debts."
 - Behaviour text: Deal 2 damage per tile. Deals double damage when target is below 50% HP.
 - Upgrade text: +2 damage to match total per level
-- Resource formula: (2 damage * tiles) + (level * 2) (doubled if target below 30% HP)
+- Resource formula: (2 damage * tiles) + (level * 2) (doubled if target below 50% HP)
 - Single formula: 2 damage + floor(level * 2 / 3)
 
 ### Saloon
@@ -188,8 +188,8 @@ NOTE: The tile pool for Acts 2, 3, and also the shop should be the Starter Tiles
 - Flavor text: "Reinforcements have arrived."
 - Behaviour text: Gain 2 block per tile. On 4+ match, gain 1 swap this turn (max 1 per turn).
 - Upgrade text: +2 block to match total per level
-- Resource formula: (1 block * tiles) + (level * 2), +1 swap if tiles >= 4 (max 1/turn)
-- Single formula: 1 block + floor(level * 2 / 3)
+- Resource formula: (2 block * tiles) + (level * 2), +1 swap if tiles >= 4 (max 1/turn)
+- Single formula: 2 block + floor(level * 2 / 3)
 
 ### Duel
 - Flavor text: "In carnage, I bloom, like a flower in the dawn."
@@ -228,22 +228,22 @@ NOTE: The tile pool for Acts 2, 3, and also the shop should be the Starter Tiles
 
 ### Sacrificial Blade
 - Flavor text: "A little blood pays for a lot of steel."
-- Behaviour text: Lose 1 HP. Deal 4 damage per tile.
+- Behaviour text: Lose 1 HP. Deal 3 damage per tile. Gain 1 Rageful.
 - Upgrade text: +1 damage per tile per level
-- Resource formula: (4 damage + level * 1) * tiles
-- Single formula: 4 damage + level * 1
+- Resource formula: (4 damage + level * 1) * tiles, 1 Rageful
+- Single formula: 4 damage + level * 1, 1 Rageful
 - NOTE: player cannot die from this, only goes to 1 HP, and no lower.
 
 ### Jackhammer
 - Flavor text: "The second hit is always the hardest."
-- Behaviour text: Deal 1 damage per tile. Each subsequent hit on the same target as the previous Jackhammer hit permanently upgrades Jackhammer by 1 level for this combat.
+- Behaviour text: Deal 1 damage per tile. Each subsequent Jackhammer hits 1 extra time. Resets when not used in a turn.
 - Upgrade text: +1 damage per tile per level
-- Resource formula: (1 damage + level * 1) * tiles
-- Single formula: 1 damage + level * 1
+- Resource formula: (1 damage + level * 1) * tiles, 1 level
+- Single formula: 1 damage + level * 1, 1 level
 
 ### Nunchucks
 - Flavor text: "Be like water."
-- Behaviour text: Deal 2 damage per tile. Hits twice if attacking a different enemy than the previous attack.
+- Behaviour text: Deal 2 damage per tile. Has a 50% chance to hit twice if attacking a different enemy than the previous attack.
 - Upgrade text: +1 damage per tile per level
 - Resource formula: (2 damage + level * 1) * tiles
 - Single formula: 2 damage + level * 1

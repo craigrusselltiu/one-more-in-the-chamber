@@ -242,4 +242,14 @@ export const SHOP_ITEMS: ShopItemDefinition[] = [
   { id: 'shop_tile_chainsaw',          name: TILE_DEFINITIONS.chainsaw.label,          description: TILE_DEFINITIONS.chainsaw.description,          cost: 5000, category: 'tile', unlockId: 'chainsaw' },
   { id: 'shop_tile_jackhammer',        name: TILE_DEFINITIONS.jackhammer.label,        description: TILE_DEFINITIONS.jackhammer.description,        cost: 8000, category: 'tile', unlockId: 'jackhammer' },
   { id: 'shop_tile_sacrificial_blade', name: TILE_DEFINITIONS.sacrificial_blade.label, description: TILE_DEFINITIONS.sacrificial_blade.description, cost: 8000, category: 'tile', unlockId: 'sacrificial_blade' },
+
+  // --- Characters (gated playable characters) ---
+  {
+    id: 'shop_character_reno',
+    name: 'Reno',
+    description: "A smooth-talking gambler who stacks the odds. He doesn't fight fair - he fights lucky.",
+    cost: 2500,
+    category: 'character',
+    unlockId: 'reno',
+  },
 ];

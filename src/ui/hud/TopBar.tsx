@@ -61,7 +61,6 @@ export const TopBar = memo(function TopBar({ mapDisabled }: { showMapButton?: bo
   const [showSettings, setShowSettings] = useState(false);
   const [showTiles, setShowTiles] = useState(false);
   const mirageType = useCombatStore((s) => s.mirageType);
-  const jackhammerCombatLevel = useCombatStore((s) => s.jackhammerCombatLevel);
   const [seedCopied, setSeedCopied] = useState(false);
   const [elapsed, setElapsed] = useState(playTimeSeconds);
   const endRun = useRunStore((s) => s.endRun);
@@ -175,7 +174,6 @@ export const TopBar = memo(function TopBar({ mapDisabled }: { showMapButton?: bo
           tileUpgrades={run.tileUpgrades}
           mirageType={mirageType}
           poisonBonus={(run.traitCounts?.rattlesnake ?? 0) >= 2 ? 1 : 0}
-          jackhammerCombatLevel={jackhammerCombatLevel}
           onClose={() => setShowTiles(false)}
         />
       )}
@@ -212,19 +210,16 @@ function TilesPopup({
   tileUpgrades,
   mirageType,
   poisonBonus,
-  jackhammerCombatLevel,
   onClose,
 }: {
   activeTileTypes: import('../../types/game').TileType[];
   tileUpgrades: Partial<Record<import('../../types/game').TileType, number>>;
   mirageType: import('../../types/game').TileType | null;
   poisonBonus: number;
-  jackhammerCombatLevel: number;
   onClose: () => void;
 }) {
   const getBonus = (t: import('../../types/game').TileType) => {
     if (poisonBonus > 0 && (t === 'waste' || t === 'rattler')) return poisonBonus;
-    if (t === 'jackhammer' && jackhammerCombatLevel > 0) return jackhammerCombatLevel;
     return 0;
   };
   return (

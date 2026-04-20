@@ -182,6 +182,10 @@ export interface DestroyedTileInfo {
   type: TileType;
   row: number;
   col: number;
+  /** True if the destroyed tile carried the Shadow attribute, so callers can
+   *  trigger its shadow bolt even when it was cleared via cross-clear spill
+   *  or explosive chain (not as part of a direct match). */
+  isShadow: boolean;
 }
 
 export interface BoardHazard {

@@ -2,6 +2,7 @@ import { useCallback } from 'react';
 import { GameEvent } from '../../game/EventBus';
 import { useCombatStore } from '../../store/combatStore';
 import { useRunStore } from '../../store/runStore';
+import { useMetaStore } from '../../store/metaStore';
 import { useEventBus } from '../hooks/useEventBus';
 import type { CombatState } from '../../types/combat';
 
@@ -21,18 +22,62 @@ export function CombatBridge() {
   const syncRunHealth = useRunStore((s) => s.syncHealth);
   const syncRunGold = useRunStore((s) => s.syncGold);
 
+  const discoverStatusEffects = useCallback((state: CombatState) => {
+    const meta = useMetaStore.getState();
+
+    const discoverIf = (slug: string, stacks: number | undefined) => {
+      if ((stacks ?? 0) > 0) meta.discoverStatusEffect(slug);
+    };
+
+    // Player statuses (fields on CombatState)
+    discoverIf('ace', state.aceStacks);
+    discoverIf('lucky', state.luckyStacks);
+    discoverIf('barricade', state.barricadeStacks);
+    discoverIf('rageful', state.ragefulStacks);
+    discoverIf('sturdy', state.sturdyStacks);
+    discoverIf('grace', state.graceStacks);
+    discoverIf('poison', state.poisonedStacks);
+    discoverIf('ready', state.readyStacks);
+    discoverIf('duel', state.duelStacks);
+    discoverIf('chain', state.chainStacks);
+    discoverIf('terrified', state.terrifiedStacks);
+    discoverIf('vulnerable', state.vulnerableStacks);
+    discoverIf('protected', state.protectedStacks);
+    discoverIf('dead_man_walking', state.deadManWalkingStacks);
+    discoverIf('loot', state.lootStacks);
+
+    // Enemy statuses (fields on EnemyState)
+    for (const e of state.enemies) {
+      discoverIf('poison', e.poisonStacks);
+      discoverIf('vulnerable', e.vulnerable);
+      discoverIf('bounty', e.bountyStacks);
+      discoverIf('terrified', e.terrifiedStacks);
+      discoverIf('blinded', e.blindedStacks);
+      discoverIf('rageful', e.ragefulStacks);
+      discoverIf('grace', e.graceStacks);
+      discoverIf('dead_man_walking', e.deadManWalking);
+      discoverIf('barricade', e.barricadeStacks);
+      discoverIf('invulnerable', e.invulnerable);
+      discoverIf('scavenger', e.scavenger);
+    }
+  }, []);
+
   useEventBus(
     GameEvent.COMBAT_STATE_UPDATE,
     useCallback((...args: unknown[]) => {
-      sync(args[0] as CombatState);
-    }, [sync]),
+      const state = args[0] as CombatState;
+      sync(state);
+      discoverStatusEffects(state);
+    }, [sync, discoverStatusEffects]),
   );
 
   useEventBus(
     GameEvent.TURN_START,
     useCallback((...args: unknown[]) => {
-      sync(args[0] as CombatState);
-    }, [sync]),
+      const state = args[0] as CombatState;
+      sync(state);
+      discoverStatusEffects(state);
+    }, [sync, discoverStatusEffects]),
   );
 
   useEventBus(

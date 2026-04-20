@@ -257,7 +257,7 @@ export function buildTileDescription(type: TileType, upgradeLevel: number): Reac
     case 'prairie_fire':
       return [...seg('Deal 2 damage per tile', false), ...flatBonus(upgradeLevel, uv), ...seg('. After each turn, each tile has a 1 in 4 chance to spread.', false)];
     case 'chain':
-      return [...seg('Deal 1 damage per tile', false), ...flatBonus(upgradeLevel, uv), ...seg('. Each Chain match adds +1 damage to ALL Chain tiles for this combat.', false)];
+      return [...seg('Deal 1 damage per tile', false), ...flatBonus(upgradeLevel, uv), ...seg('. Each Chain match adds +1 level for this combat.', false)];
     case 'whiskey':
       return [...seg('Heals 1 HP per 3-match, plus 1 per extra tile', false), ...flatBonus(upgradeLevel, uv), ...seg('.', false)];
     case 'ace':
@@ -273,7 +273,7 @@ export function buildTileDescription(type: TileType, upgradeLevel: number): Reac
     case 'shank':
       return [...seg('Deal 1 damage per tile', false), ...flatBonus(upgradeLevel, uv), ...seg(' and apply 1 Vulnerable.', false)];
     case 'cavalry':
-      return [...seg('Gain 2 block per tile', false), ...flatBonus(upgradeLevel, uv), ...seg('. If 4+ matched, +1 swap this turn (max 1 per turn).', false)];
+      return [...seg('Gain 2 block per tile', false), ...flatBonus(upgradeLevel, uv), ...seg('. On 4+ match, gain 1 swap this turn (max 1 per turn).', false)];
     case 'duel': {
       const dv = def.baseValue + bonus;
       return [...seg('Deal ', false), ...seg(`${dv}`, upgraded), ...seg(' damage per tile. On exactly 4-match, deal the damage twice. Gain 1 Duel.', false)];
@@ -315,11 +315,11 @@ export function buildTileDescription(type: TileType, upgradeLevel: number): Reac
     }
     case 'sacrificial_blade': {
       const v = def.baseValue + bonus;
-      return [...seg('Lose 1 HP. Deal ', false), ...seg(`${v}`, upgraded), ...seg(' damage per tile.', false)];
+      return [...seg('Lose 1 HP. Deal ', false), ...seg(`${v}`, upgraded), ...seg(' damage per tile. Gain 1 Rageful.', false)];
     }
     case 'jackhammer': {
       const v = def.baseValue + bonus;
-      return [...seg('Deal ', false), ...seg(`${v}`, upgraded), ...seg(' damage per tile. Each subsequent hit on the same target as the previous Jackhammer hit upgrades Jackhammer by 1 level for this combat.', false)];
+      return [...seg('Deal ', false), ...seg(`${v}`, upgraded), ...seg(' damage per tile. Each subsequent Jackhammer hits 1 extra time. Resets when not used in a turn.', false)];
     }
     case 'nunchucks': {
       const v = def.baseValue + bonus;
@@ -407,7 +407,7 @@ export function buildUpgradePreview(type: TileType, currentLevel: number): React
     case 'prairie_fire':
       return [...seg('Deal 2 damage per tile', false), ...flatBonusPreview(currentLevel, uv), ...seg('. After each turn, each tile has a 1 in 4 chance to spread.', false)];
     case 'chain':
-      return [...seg('Deal 1 damage per tile', false), ...flatBonusPreview(currentLevel, uv), ...seg('. Each Chain match adds +1 damage to ALL Chain tiles for this combat.', false)];
+      return [...seg('Deal 1 damage per tile', false), ...flatBonusPreview(currentLevel, uv), ...seg('. Each Chain match adds +1 level for this combat.', false)];
     case 'whiskey':
       return [...seg('Heals 1 HP per 3-match, plus 1 per extra tile', false), ...flatBonusPreview(currentLevel, uv), ...seg('.', false)];
     case 'ace':
@@ -458,9 +458,9 @@ export function buildUpgradePreview(type: TileType, currentLevel: number): React
       return [...seg('Deal damage equal to ', false), <span key="pct">{oldPct}% <O>{'\u2192'} {newPct}%</O></span>, ...seg(' of your missing HP per tile.', false)];
     }
     case 'sacrificial_blade':
-      return [...seg('Lose 1 HP. Deal ', false), ...arrowUpgrade(oldVal, newVal), ...seg(' damage per tile.', false)];
+      return [...seg('Lose 1 HP. Deal ', false), ...arrowUpgrade(oldVal, newVal), ...seg(' damage per tile. Gain 1 Rageful.', false)];
     case 'jackhammer':
-      return [...seg('Deal ', false), ...arrowUpgrade(oldVal, newVal), ...seg(' damage per tile. Each subsequent hit on the same target as the previous Jackhammer hit upgrades Jackhammer by 1 level for this combat.', false)];
+      return [...seg('Deal ', false), ...arrowUpgrade(oldVal, newVal), ...seg(' damage per tile. Each subsequent Jackhammer hits 1 extra time. Resets when not used in a turn.', false)];
     case 'nunchucks':
       return [...seg('Deal ', false), ...arrowUpgrade(oldVal, newVal), ...seg(' damage per tile. Hits twice if attacking a different enemy than the previous attack.', false)];
     case 'milk':

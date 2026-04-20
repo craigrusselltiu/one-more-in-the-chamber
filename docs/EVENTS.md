@@ -85,11 +85,11 @@ don't use double dashes, just single
     - **Take the gear** — Upgrade a random tile and gain 2 random consumables. This act's boss gains 10% max HP.
     - **Bury him** — Heal 16 HP and gain 33 gold from his pockets.
 
-## The Traveling Preacher
+## The Travelling Preacher
 - Text: "He stands in the middle of the cracked earth like he grew out of it, black coat still as stone, bible heavy in one hand and the other never far from the pistol at his hip. His wagon sags behind him with its silent bell and its perched congregation of vultures, and a crooked cross strung with rosaries leans toward him as if listening for a sermon.\nThe brim of his hat swallows his face, but you can feel him watching, weighing your soul against the weight of the lead in his holster, and deciding which he means to deliver first."
 - Choices:
     - **Confess** — Lose 66 gold, heal to full HP and start the next fight with 3 Grace.
-    - **Draw** — Gain 1 corruption and a Preacher-tagged artifact.
+    - **Draw** — Gain 1 corruption, 166 gold, and a Preacher-tagged artifact.
     - **Walk away**
 
 ## The Campfire Stranger

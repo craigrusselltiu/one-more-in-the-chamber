@@ -5,9 +5,10 @@ import { useCombatStore } from '../../store/combatStore';
 import { CONSUMABLES } from '../../data/consumables';
 import { SpriteIcon } from '../components/SpriteIcon';
 import { Tooltip } from '../components/Tooltip';
-import { CONSUMABLE_FRAMES } from '../../data/spriteConfig';
+import { CONSUMABLE_FRAMES, TILE_FRAMES } from '../../data/spriteConfig';
 import { colorizeKeywords, getReferencedKeywords, KeywordSubTooltips } from '../components/KeywordText';
 import { getMaxConsumableSlots } from '../../utils/consumableSlots';
+import { adjustHeal } from '../../utils/healAdjust';
 import type { ConsumableInstance } from '../../types/game';
 
 /** Stable empty-array reference for the null-run fallback. Returning a fresh
@@ -20,7 +21,7 @@ function useConsumableOnMap(consumableId: string): boolean {
   const store = useRunStore.getState();
   if (!store.run) return false;
   switch (consumableId) {
-    case 'tonic':
+    case 'strong_whiskey':
       store.updateHealth(20);
       return true;
     case 'bandage':
@@ -28,13 +29,21 @@ function useConsumableOnMap(consumableId: string): boolean {
       return true;
     case 'snake_oil': {
       const roll = Math.random();
-      if (roll < 0.33) {
-        store.updateHealth(15);
-      } else if (roll < 0.66) {
-        store.updateGold(10);
-        store.addGoldObtained(10);
+      if (roll < 0.2) {
+        store.updateHealth(23);
+      } else if (roll < 0.4) {
+        const run = store.run;
+        if (run) {
+          const heal = adjustHeal(run, 6);
+          store.syncHealth(Math.min(run.maxHealth + 6, run.health + heal), run.maxHealth + 6);
+        }
+      } else if (roll < 0.6) {
+        store.updateGold(100);
+        store.addGoldObtained(100);
+      } else if (roll < 0.8) {
+        store.updateHealth(-14);
       } else {
-        store.updateHealth(-8);
+        // Do nothing.
       }
       return true;
     }
@@ -176,13 +185,19 @@ const ConsumableSlot = memo(function ConsumableSlot({
             opacity: filled ? 1 : 0.4,
           }}
         >
-          {filled && consumableId && CONSUMABLE_FRAMES[consumableId] != null ? (
-            <SpriteIcon frame={CONSUMABLE_FRAMES[consumableId]} scale={1} />
-          ) : filled && name ? (
-            <span className="text-[6px] text-white font-bold leading-none">
-              {name.charAt(0)}
-            </span>
-          ) : null}
+          {(() => {
+            if (!filled || !consumableId) return null;
+            const frame = consumableId === 'tumbleweed' ? TILE_FRAMES.tumbleweed : CONSUMABLE_FRAMES[consumableId];
+            if (frame != null) return <SpriteIcon frame={frame} scale={1} />;
+            if (name) {
+              return (
+                <span className="text-[6px] text-white font-bold leading-none">
+                  {name.charAt(0)}
+                </span>
+              );
+            }
+            return null;
+          })()}
         </button>
       </Tooltip>
       {showMenu && (

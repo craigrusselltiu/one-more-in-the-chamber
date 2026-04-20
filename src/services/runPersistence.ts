@@ -82,6 +82,20 @@ function migrateRun(run: RunState): RunState {
     console.info('[persist] migrated run: ascensionLevel -> wantedLevel');
   }
 
+  // Rename consumable ID: tonic -> strong_whiskey
+  if (Array.isArray(run.consumables)) {
+    let migrated = false;
+    for (const consumable of run.consumables) {
+      if (consumable && (consumable as { id?: unknown }).id === 'tonic') {
+        (consumable as { id: string }).id = 'strong_whiskey';
+        migrated = true;
+      }
+    }
+    if (migrated) {
+      console.info('[persist] migrated consumable id: tonic -> strong_whiskey');
+    }
+  }
+
   if (!run.mapState) return run;
   let migrated = false;
   for (const node of run.mapState.nodes) {

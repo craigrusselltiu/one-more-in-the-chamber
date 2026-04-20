@@ -78,7 +78,7 @@ export const TileSelectScreen = memo(function TileSelectScreen() {
     const shuffled = seededShuffle(available, rand);
     const result: OfferedTile[] = shuffled.slice(0, 3).map((type) => ({
       type,
-      level: rollTileRewardLevel(targetAct, wantedLevel, rand),
+      level: rollTileRewardLevel(targetAct, wantedLevel, rand, type),
     }));
     lockedRef.current = result;
     return result;

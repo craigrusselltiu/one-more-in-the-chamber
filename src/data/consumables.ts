@@ -17,7 +17,7 @@ export const CONSUMABLES: ConsumableDefinition[] = [
     name: 'Stick of TNT',
     category: 'offensive',
     description: 'Light the fuse.',
-    effect: 'Clear entire row. Tiles generate resources; damage goes to targeted enemy.',
+    effect: 'Clear the bottom row of the board. Each destroyed tile generates its single-resolve resources. Explosive and showdown chains trigger normally.',
     cost: 35,
   },
   {
@@ -25,7 +25,7 @@ export const CONSUMABLES: ConsumableDefinition[] = [
     name: 'Wanted Flyer',
     category: 'offensive',
     description: 'Price on their head.',
-    effect: 'Apply 2 Vulnerable to target enemy.',
+    effect: 'Apply 2 Vulnerable to the targeted enemy.',
     cost: 25,
   },
   {
@@ -46,7 +46,7 @@ export const CONSUMABLES: ConsumableDefinition[] = [
   },
   // Defensive
   {
-    id: 'tonic',
+    id: 'strong_whiskey',
     name: 'Strong Whiskey',
     category: 'defensive',
     description: 'Burns going down, patches you up.',
@@ -59,7 +59,7 @@ export const CONSUMABLES: ConsumableDefinition[] = [
     name: 'Bandage',
     category: 'defensive',
     description: 'Patch wounds, suck out poison.',
-    effect: 'Heal 10 HP, cleanse all poison tiles on board.',
+    effect: 'Heal 10 HP and cleanse all poison tiles on the board.',
     cost: 25,
     canUseInMap: true,
   },
@@ -69,7 +69,7 @@ export const CONSUMABLES: ConsumableDefinition[] = [
     name: 'Skeleton Key',
     category: 'utility',
     description: 'Every lock has a key.',
-    effect: 'Unlock all locked tiles.',
+    effect: 'Unlock all locked tiles on the board.',
     cost: 20,
   },
   {
@@ -77,7 +77,7 @@ export const CONSUMABLES: ConsumableDefinition[] = [
     name: 'Tumbleweed',
     category: 'utility',
     description: 'Wind rearranges everything.',
-    effect: 'Reshuffle entire board.',
+    effect: 'Reshuffle the entire board. Any resulting matches resolve as cascades.',
     cost: 30,
   },
   {
@@ -85,7 +85,7 @@ export const CONSUMABLES: ConsumableDefinition[] = [
     name: 'Signal Flare',
     category: 'utility',
     description: 'Nothing stays hidden.',
-    effect: 'Reveal all buried tiles.',
+    effect: 'Reveal all Buried tiles on the board.',
     cost: 20,
   },
   {
@@ -93,7 +93,7 @@ export const CONSUMABLES: ConsumableDefinition[] = [
     name: 'Snake Oil',
     category: 'utility',
     description: 'Who knows what\'s in the bottle.',
-    effect: 'Random effect (heal/damage/poison/gold).',
+    effect: 'Random effect (20% each): Heal 23 HP, gain 6 max HP, gain 100 gold, take 14 damage, or do nothing.',
     cost: 45,
     canUseInMap: true,
   },

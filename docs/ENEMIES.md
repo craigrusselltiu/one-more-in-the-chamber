@@ -153,7 +153,7 @@ I want just the text prompt that I can copy straight into Gemini. No formatting,
     - Attack 9, Lock 2
     - Attack 2x3, Bury 4
     - Attack 3, Lock 5
-- NOTE: If there are multiple of them, only 1 of them should be doing Attack 4x3, Bury 4
+- NOTE: If there are multiple of them, only 1 of them should be doing Attack 2x3, Bury 4
 
 ### Tunnel Rat
 - Base HP: 84

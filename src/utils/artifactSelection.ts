@@ -13,7 +13,7 @@ interface ArtifactPickOptions {
 /**
  * Filter the full artifact list to what's valid for this run: unowned and
  * character-compatible. Corrupt-tagged artifacts are excluded -- they can
- * only be granted by specific events (e.g. Traveling Preacher "Draw").
+ * only be granted by specific events (e.g. Travelling Preacher "Draw").
  * Falls back to the full non-corrupt pool if filtering empties it.
  */
 export function getArtifactPoolForRun(run: RunState, opts: ArtifactPickOptions = {}): ArtifactDefinition[] {

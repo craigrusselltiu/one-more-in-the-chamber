@@ -58,18 +58,23 @@ export class CascadeResolver {
       const destroyed = await board.destroyTilesWithEffects(allPositions);
 
       // Build extra match results from tiles not in the original matches
-      // (cross-clear tiles + explosive/showdown chain tiles)
-      const extraByType = new Map<TileType, GridPosition[]>();
+      // (cross-clear tiles + explosive/showdown chain tiles). Shadow tiles
+      // swept up here still fire their bolts via the per-type shadowCount.
+      const extraByType = new Map<TileType, { tiles: GridPosition[]; shadowCount: number }>();
       for (const info of destroyed) {
         const key = `${info.row},${info.col}`;
         if (!matchPosKeys.has(key)) {
-          const list = extraByType.get(info.type) ?? [];
-          list.push({ row: info.row, col: info.col });
-          extraByType.set(info.type, list);
+          let bucket = extraByType.get(info.type);
+          if (!bucket) {
+            bucket = { tiles: [], shadowCount: 0 };
+            extraByType.set(info.type, bucket);
+          }
+          bucket.tiles.push({ row: info.row, col: info.col });
+          if (info.isShadow) bucket.shadowCount++;
         }
       }
       const extraResults: MatchResult[] = [];
-      for (const [type, tiles] of extraByType) {
+      for (const [type, { tiles, shadowCount }] of extraByType) {
         extraResults.push({
           tiles,
           tileType: type,
@@ -81,6 +86,7 @@ export class CascadeResolver {
           crossIntersections: [],
           matchBonus: 1.0,
           isChainDestruction: true,
+          shadowCount: shadowCount > 0 ? shadowCount : undefined,
         });
       }
 

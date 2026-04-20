@@ -162,7 +162,7 @@ export const MerchantScreen = memo(function MerchantScreen() {
       const picks = seededShuffle(available, rand).slice(0, 2);
       for (const swapTile of picks) {
         const def = TILE_DEFINITIONS[swapTile];
-        const tileLevel = rollTileRewardLevel(run.currentAct, run.wantedLevel, rand);
+        const tileLevel = rollTileRewardLevel(run.currentAct, run.wantedLevel, rand, swapTile);
         tiles.push({
           type: 'tile_swap',
           id: `swap-${swapTile}`,
@@ -336,7 +336,7 @@ export const MerchantScreen = memo(function MerchantScreen() {
               const canAfford = run.gold >= item.price;
               const full = run.consumables.length >= maxSlots;
               const consId = item.id.replace('cons-', '');
-              const frame = CONSUMABLE_FRAMES[consId];
+              const frame = consId === 'tumbleweed' ? TILE_FRAMES.tumbleweed : CONSUMABLE_FRAMES[consId];
               return (
                 <MerchantCard
                   key={item.id}

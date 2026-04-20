@@ -66,7 +66,6 @@ interface RunStore {
   setPendingNextFightSwapBonus: (amount: number | undefined) => void;
   incrementMerchantUpgradesPurchased: () => void;
   setActMerchantSurcharge: (amount: number | undefined) => void;
-  setPendingNextFightPotion: (effect: 'heal' | 'damage' | 'protected' | 'poison' | undefined) => void;
   advanceAct: () => void;
   setMapState: (map: MapState) => void;
   endRun: (completed: boolean) => void;
@@ -99,6 +98,13 @@ export const useRunStore = create<RunStore>((set, get) => ({
       (upgrades as Record<string, number>)['waste'] = (upgrades as Record<string, number>)['venom'];
       delete (upgrades as Record<string, number>)['venom'];
       migrated.tileUpgrades = upgrades;
+    }
+
+    // Rename consumable ID: tonic -> strong_whiskey
+    if (migrated.consumables) {
+      migrated.consumables = migrated.consumables.map((c) =>
+        c.id === 'tonic' ? { ...c, id: 'strong_whiskey' } : c,
+      );
     }
 
     // Backfill persisted scoring counters for older saves.
@@ -154,7 +160,7 @@ export const useRunStore = create<RunStore>((set, get) => ({
     const traitCounts: Partial<Record<string, number>> = {};
 
     if (loadouts.includes('outlaws_stash')) gold += 15;
-    if (loadouts.includes('healers_kit')) consumables.push({ id: 'tonic' });
+    if (loadouts.includes('healers_kit')) consumables.push({ id: 'strong_whiskey' });
     if (loadouts.includes('demolitions_kit')) {
       consumables.push({ id: 'stick_of_tnt' }, { id: 'stick_of_tnt' });
     }
@@ -595,12 +601,6 @@ export const useRunStore = create<RunStore>((set, get) => ({
     set((state) => {
       if (!state.run) return state;
       return { run: { ...state.run, actMerchantSurcharge: amount } };
-    }),
-
-  setPendingNextFightPotion: (effect) =>
-    set((state) => {
-      if (!state.run) return state;
-      return { run: { ...state.run, pendingNextFightPotion: effect } };
     }),
 
   advanceAct: () =>

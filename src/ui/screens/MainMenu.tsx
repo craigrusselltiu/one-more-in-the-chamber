@@ -11,7 +11,6 @@ import changelogRaw from '../../../CHANGELOG.md?raw';
 
 import type { Screen } from '../../App';
 
-
 function MenuButton({
   label,
   onClick,

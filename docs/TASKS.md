@@ -30,21 +30,16 @@ artifact ideas:
 - free cookie at start of boss fight
 
 todo:
-- flagellation items, self damage
 - improved tutorials
 - quests - dailies/weeklies?
 - battlepass?
 - achievements + unlocks based on achievements
 - NPCs
 - dialogue
-- Ledger (compendium)
 - damage lines changed to come out of player sprite instead of tiles itself
 - turn indicator - add to combat state
 - update Hardened - should be every damage taken reduces hardened. when 0 become incincible.
 - got a random bomb on the board fighting dusty? should not be possible.
-- consumables can't be used in map?
-- jackhammer doesn't work
 - adjust healthbars
 - improve ability indicator
-- ace should affect loot (and other statuses)
-- cross clear/explosions should trigger shadow tiles
+- swap starts with no possible moves.

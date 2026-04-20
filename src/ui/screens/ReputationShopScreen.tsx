@@ -50,6 +50,12 @@ const FEATURED_NAMEPLATE_IDS: string[] = [
   'shop_nameplate_bubble_tea',
 ];
 
+/** Character portrait lookup for the Characters tab. unlockId -> sprite filename
+ *  in /assets/sprites/. Keep in sync with CharacterSelectScreen's CHARACTERS list. */
+const CHARACTER_SPRITES: Record<string, string> = {
+  reno: 'reno.png',
+};
+
 export const ReputationShopScreen = memo(function ReputationShopScreen() {
   const reputation = useMetaStore((s) => s.meta.reputation);
   const isUnlocked = useMetaStore((s) => s.isUnlocked);
@@ -215,6 +221,19 @@ export const ReputationShopScreen = memo(function ReputationShopScreen() {
           <div className="flex flex-wrap gap-2 justify-center pt-2 pb-2">
             {visibleItems.map((item) => (
               <TileShopCard
+                key={item.id}
+                item={item}
+                owned={isUnlocked(item.unlockId, item.category)}
+                affordable={reputation >= item.cost}
+                selected={selectedId === item.id}
+                onSelect={() => setSelectedId(item.id)}
+              />
+            ))}
+          </div>
+        ) : tab === 'character' ? (
+          <div className="flex flex-wrap gap-2 justify-center pt-2 pb-2">
+            {visibleItems.map((item) => (
+              <CharacterShopCard
                 key={item.id}
                 item={item}
                 owned={isUnlocked(item.unlockId, item.category)}
@@ -488,6 +507,73 @@ function TileShopCard({
           "{def.flavor}"
         </span>
       )}
+    </button>
+  );
+}
+
+/** Character-specific shop card: shows the character portrait above the name and
+ *  description so buyers see who they're unlocking before spending rep. Mirrors
+ *  TileShopCard's layout. */
+function CharacterShopCard({
+  item,
+  owned,
+  affordable,
+  selected,
+  onSelect,
+}: {
+  item: ShopItemDefinition;
+  owned: boolean;
+  affordable: boolean;
+  selected: boolean;
+  onSelect: () => void;
+}) {
+  const disabled = owned;
+  const sprite = CHARACTER_SPRITES[item.unlockId];
+  const base = import.meta.env.BASE_URL;
+  return (
+    <button
+      onClick={onSelect}
+      onMouseEnter={playHover}
+      disabled={disabled}
+      className={`relative flex flex-col items-center w-32 rounded-sm text-center transition-transform ${
+        owned
+          ? 'opacity-60 cursor-not-allowed'
+          : affordable
+            ? 'hover:-translate-y-0.5 active:translate-y-0.5 cursor-pointer'
+            : 'opacity-70 cursor-pointer'
+      }`}
+      style={{
+        backgroundColor: selected
+          ? 'rgba(120, 53, 15, 0.75)'
+          : owned
+            ? 'rgba(28, 25, 23, 0.5)'
+            : 'rgba(28, 25, 23, 0.8)',
+        padding: '20px 10px 12px',
+        boxShadow: '3px 3px 2px rgba(0,0,0,0.7)',
+        transform: selected ? 'translateY(-4px)' : undefined,
+      }}
+    >
+      <span
+        className="absolute top-1 right-1.5 font-bold"
+        style={{
+          fontSize: '10px',
+          color: owned ? '#78716c' : affordable ? '#fcd34d' : '#a8a29e',
+        }}
+      >
+        {owned ? 'OWNED' : item.cost.toLocaleString()}
+      </span>
+      {sprite && (
+        <img
+          src={`${base}assets/sprites/${sprite}`}
+          alt={item.name}
+          style={{ width: 48, height: 48, imageRendering: 'pixelated', objectFit: 'cover' }}
+          className="mb-1.5"
+        />
+      )}
+      <span className="text-amber-300 text-xs font-bold">{item.name}</span>
+      <span className="text-stone-300 text-center mt-1 leading-tight" style={{ fontSize: '9px' }}>
+        {item.description}
+      </span>
     </button>
   );
 }

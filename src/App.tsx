@@ -62,6 +62,7 @@ import type { EnemyDefinition } from './types/combat';
 import type { MapNodeType, Act } from './types/game';
 import { applyWantedLevelToEnemies, getWantedLevelMutations } from './data/wantedLevel';
 import { createSeededRandom } from './utils/seededRandom';
+import { APP_VERSION_LABEL } from './version';
 
 export type Screen =
   | 'main-menu'
@@ -683,6 +684,13 @@ export default function App() {
       <div ref={gameContainerRef} className="absolute inset-0" />
       <OfflineIndicator />
 
+      <span
+        className="absolute right-2 bottom-1 pointer-events-none z-[9999]"
+        style={{ fontSize: '9px', color: 'rgba(255,255,255,0.3)' }}
+      >
+        {APP_VERSION_LABEL}
+      </span>
+
       {/* Global SVG defs. The enemy-target-outline filter produces ONLY the
           dilated-alpha ring around a sprite (no source merge), so a duplicate
           sprite layered on top renders as a clean white outline whose opacity
@@ -835,13 +843,6 @@ export default function App() {
           />
         )}
 
-        {/* Global version label */}
-        <span
-          className="absolute right-2 bottom-1 pointer-events-none z-[60]"
-          style={{ fontSize: '9px', color: 'rgba(255,255,255,0.3)' }}
-        >
-          Pre-alpha v0.7.2
-        </span>
       </div>
 
       <BloodOverlay />

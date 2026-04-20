@@ -5,7 +5,7 @@ import { pickEventFromBag, type EventChoice } from '../../data/events';
 import { createSeededRandom, seededShuffle } from '../../utils/seededRandom';
 import { pauseRunPersistence, resumeRunPersistence, forceSaveRun } from '../../services/runPersistence';
 import { SpriteIcon } from '../components/SpriteIcon';
-import { UI_FRAMES, ARTIFACT_FRAMES, CONSUMABLE_FRAMES } from '../../data/spriteConfig';
+import { UI_FRAMES, ARTIFACT_FRAMES, CONSUMABLE_FRAMES, TILE_FRAMES } from '../../data/spriteConfig';
 import { ARTIFACTS, RARITY_COLORS_DIM, type ArtifactDefinition } from '../../data/artifacts';
 import { pickArtifactForRun, pickArtifactByTag } from '../../utils/artifactSelection';
 import { adjustHeal } from '../../utils/healAdjust';
@@ -25,7 +25,7 @@ type Reward =
   | { kind: 'max_hp'; amount: number }
   | { kind: 'heal_full' };
 
-const PLAY_COST = 50;
+const PLAY_COST = 40;
 const PREVIEW_MS = 1500;
 const SETTLE_MS = 1000;
 const SHUFFLE_MS = 2000;
@@ -35,11 +35,12 @@ const CARD_W = 120;
 const CARD_H = 180;
 
 /** Abandoned Mine: each step drills deeper, risking more HP for a better artifact roll. */
-const MINE_LEVELS: Array<{ label: string; description: string; hpPct: number; chance: number }> = [
-  { label: 'Investigate', description: 'Lose 3% max HP for artifact chance. (10%)', hpPct: 0.03, chance: 0.10 },
-  { label: 'Go deeper', description: 'Lose 5% max HP for artifact chance. (25%)', hpPct: 0.05, chance: 0.25 },
-  { label: 'Go deeper', description: 'Lose 7% max HP for artifact chance. (50%)', hpPct: 0.07, chance: 0.50 },
-  { label: 'Go deeper', description: 'Lose 10% max HP for artifact. (100%)', hpPct: 0.10, chance: 1.00 },
+const MINE_LEVELS: Array<{ label: string; description: string; hpPct: number; chance: number; hpBase: 'max' | 'current' }> = [
+  { label: 'Investigate', description: 'Lose 3% max HP for artifact chance. (10%)', hpPct: 0.03, chance: 0.10, hpBase: 'max' },
+  { label: 'Go deeper', description: 'Lose 5% max HP for artifact chance. (20%)', hpPct: 0.05, chance: 0.20, hpBase: 'max' },
+  { label: 'Go deeper', description: 'Lose 7% HP for artifact chance. (30%)', hpPct: 0.07, chance: 0.30, hpBase: 'current' },
+  { label: 'Go deeper', description: 'Lose 10% HP for artifact. (50%)', hpPct: 0.10, chance: 0.50, hpBase: 'current' },
+  { label: 'Go deeper', description: 'Lose 15% HP for artifact. (100%)', hpPct: 0.15, chance: 1.00, hpBase: 'current' },
 ];
 
 function renderEventParagraph(text: string, baseKey: number): ReactNode[] {
@@ -129,7 +130,7 @@ function generateRewards(
     case 'gold':
       return [
         { kind: 'gold', amount: 0 },
-        { kind: 'gold', amount: 49 },
+        { kind: 'gold', amount: 39 },
         { kind: 'gold', amount: 267 },
       ];
     case 'item': {
@@ -236,7 +237,7 @@ export const EventScreen = memo(function EventScreen() {
   const [pickedSlot, setPickedSlot] = useState<number | null>(null);
   const [resultText, setResultText] = useState<string>('');
   const [postResultScreen, setPostResultScreen] = useState<Screen>('map');
-  // Abandoned Mine: current depth level (1-4). Only meaningful for that event.
+  // Abandoned Mine: current depth level (1-5). Only meaningful for that event.
   const [mineLevel, setMineLevel] = useState(1);
 
   // Preview -> settle -> shuffle
@@ -361,7 +362,8 @@ export const EventScreen = memo(function EventScreen() {
       }
       case 'abandoned_mine_step': {
         const config = MINE_LEVELS[mineLevel - 1];
-        const hpLoss = Math.max(1, Math.floor(run.maxHealth * config.hpPct));
+        const base = config.hpBase === 'max' ? run.maxHealth : run.health;
+        const hpLoss = Math.max(1, Math.floor(base * config.hpPct));
         if (applyHpLoss(hpLoss)) return;
         if (Math.random() < config.chance) {
           const artifact = pickRandomArtifact();
@@ -408,6 +410,8 @@ export const EventScreen = memo(function EventScreen() {
         return;
       }
       case 'preacher_draw': {
+        updateGold(166);
+        addGoldObtained(166);
         const corrupt = pickArtifactByTag(run, 'corrupt', Math.random);
         if (corrupt) addArtifact({ id: corrupt.id, tags: corrupt.tags });
         const preacher = pickArtifactByTag(run, 'preacher', Math.random);
@@ -465,7 +469,7 @@ export const EventScreen = memo(function EventScreen() {
       case 'medicine_whiskey': {
         if (run.gold < 10) return;
         updateGold(-10);
-        addConsumable({ id: 'tonic' });
+        addConsumable({ id: 'strong_whiskey' });
         finishChoice(choice);
         return;
       }
@@ -486,7 +490,7 @@ export const EventScreen = memo(function EventScreen() {
         return;
       }
       case 'saloon_drink': {
-        const heal = adjustHeal(run, 20);
+        const heal = adjustHeal(run, 28);
         syncHealth(Math.min(run.maxHealth, run.health + heal), run.maxHealth);
         const current = run.pendingNextFightSwapBonus ?? 0;
         useRunStore.getState().setPendingNextFightSwapBonus(current - 1);
@@ -617,7 +621,7 @@ export const EventScreen = memo(function EventScreen() {
         return (
           <div className="relative flex items-center gap-2">
             {reward.ids.map((id, i) => {
-              const frame = CONSUMABLE_FRAMES[id];
+              const frame = id === 'tumbleweed' ? TILE_FRAMES.tumbleweed : CONSUMABLE_FRAMES[id];
               return frame != null ? <SpriteIcon key={i} frame={frame} scale={1.5} /> : null;
             })}
           </div>

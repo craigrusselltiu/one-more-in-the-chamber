@@ -1,4 +1,6 @@
 import { getWantedLevelMutations } from '../data/wantedLevel';
+import type { TileType } from '../types/game';
+import { TILE_DEFINITIONS } from '../data/tiles';
 
 /**
  * Roll a reward tile's starting upgrade level (internal 0-indexed) based on
@@ -22,7 +24,11 @@ export function rollTileRewardLevel(
   targetAct: number,
   wantedLevel: number,
   rand: () => number,
+  tileType?: TileType,
 ): number {
+  // Non-upgradeable tiles should never roll an upgraded starting level.
+  if (tileType && !TILE_DEFINITIONS[tileType]?.upgradeText) return 0;
+
   const l12 = getWantedLevelMutations(wantedLevel).reducedTileUpgradeFrequency;
   const r = rand();
   if (targetAct <= 1) return 0;

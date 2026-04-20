@@ -2,7 +2,7 @@ import { memo, type ReactNode } from 'react';
 import type { PlayerStatusEffect, EnemyStatusEffect } from '../../types/combat';
 import { SpriteIcon } from '../components/SpriteIcon';
 import { Tooltip } from '../components/Tooltip';
-import { STATUS_FRAMES, TILE_FRAMES, ARTIFACT_FRAMES } from '../../data/spriteConfig';
+import { STATUS_FRAMES, TILE_FRAMES, ARTIFACT_FRAMES, TRAIT_FRAMES } from '../../data/spriteConfig';
 import { KEYWORDS } from '../../data/keywords';
 import { KeywordLine } from '../components/KeywordText';
 
@@ -72,6 +72,19 @@ const OUTLINE_STYLE: React.CSSProperties = {
   paintOrder: 'stroke fill',
 };
 
+function statusFrameFor(type: string): number {
+  // Special cases: use artifact/trait icons instead of status-sheet frames.
+  if (type === 'protected') return ARTIFACT_FRAMES.high_vis_jacket;
+  if (type === 'dead_man_walking') return TRAIT_FRAMES.dead_man_walking;
+
+  return (
+    STATUS_FRAMES[type]
+    ?? ARTIFACT_FRAMES[type]
+    ?? (TILE_FRAMES as Record<string, number>)[type]
+    ?? 0
+  );
+}
+
 /**
  * StatusEffects: horizontal row of sprite icons with value overlaid
  * in the bottom-right corner of each sprite.
@@ -91,12 +104,7 @@ export const StatusEffects = memo(function StatusEffects({ effects }: StatusEffe
             style={{ width: 16, height: 16 }}
           >
             <SpriteIcon
-              frame={
-                STATUS_FRAMES[effect.type]
-                ?? ARTIFACT_FRAMES[effect.type]
-                ?? (TILE_FRAMES as Record<string, number>)[effect.type]
-                ?? 0
-              }
+              frame={statusFrameFor(effect.type)}
               scale={1}
             />
             {!hideValue && (

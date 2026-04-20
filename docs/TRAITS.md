@@ -92,5 +92,5 @@ probably add a (+1) next to the level in the Tiles popup, merchant screen, and t
 - 2 -- max hp
 
 ## Corrupt
-- Flavor:
+- Flavor: "Something rotten, clinging close."
 - 2 -- At the start of combat, add Shadow to 2 random tiles for each corruption you own.

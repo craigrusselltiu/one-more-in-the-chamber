@@ -54,7 +54,7 @@ export interface RunState {
   pendingEventArtifactChoiceCount?: number;
   /** Additive HP multiplier applied to the current act's boss (e.g. 0.1 = +10% max HP). Cleared after the boss encounter rolls. */
   pendingActBossHpBonus?: number;
-  /** Grace stacks to grant the player at the start of the next combat (e.g. Traveling Preacher). Cleared on consume. */
+  /** Grace stacks to grant the player at the start of the next combat (e.g. Travelling Preacher). Cleared on consume. */
   pendingNextFightGrace?: number;
   /** Extra swaps per turn granted at the start of the next combat (e.g. Campfire Stranger "Keep walking"). Cleared on consume. */
   pendingNextFightSwapBonus?: number;
@@ -62,8 +62,6 @@ export interface RunState {
   merchantUpgradesPurchased?: number;
   /** Additive surcharge (fraction, e.g. 0.2 = +20%) applied to merchant prices for the rest of the current act (Medicine Wagon "Threaten him"). Cleared on advanceAct. */
   actMerchantSurcharge?: number;
-  /** Delayed potion effect rolled by Medicine Wagon; applied once at the start of the next combat. */
-  pendingNextFightPotion?: 'heal' | 'damage' | 'protected' | 'poison';
   /** What killed the player on defeat -- enemy name, event title, or a generic tag like "Poison". Populated when endRun(false) is called; null/undefined for victories. */
   deathCause?: string;
   status: 'active' | 'completed' | 'abandoned';

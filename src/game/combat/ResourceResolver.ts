@@ -36,6 +36,9 @@ export interface ResourceOutput {
   buckshotHits: number;
   /** Duel: if true, damage is dealt a second time. */
   duelDoubleHit?: boolean;
+  /** Number of additional damage applications on the targeted enemy after the
+   *  primary hit. Used by Jackhammer's per-combat extra-hit stack. */
+  extraHits?: number;
 }
 
 /** Tiles where upgrade scales per tile (not flat per match). */
@@ -341,6 +344,7 @@ export class ResourceResolver {
       case 'sacrificial_blade':
         // Per-tile upgrade. CombatManager applies the -1 HP self-cost (min 1 HP).
         output.damage = total;
+        output.ragefulStacks = 1;
         break;
 
       case 'jackhammer':

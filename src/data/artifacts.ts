@@ -100,7 +100,7 @@ export const ARTIFACTS: ArtifactDefinition[] = [
     id: 'twin_revolvers',
     name: 'Twin Revolvers',
     description: 'Two guns. Twice the fun.',
-    tags: ['outlaw'],
+    tags: ['outlaw', 'gunslinger'],
     effect: 'Bullets deal 50% more damage, but has a 10% chance to miss.',
     rarity: 'uncommon',
   },

@@ -4,6 +4,33 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## v0.7.3
+
+### Added
+- Enemy intent tooltips: hovering intent icons above enemies now shows the intent name and effect.
+- Reputation Shop: Characters tab + Reno unlock (Reno is locked by default until purchased).
+
+### Changed
+- Snake Oil consumable updated to match `docs/CONSUMABLES.md`: random effect (20% each) of Heal 23 HP, gain 6 max HP, gain 100 gold, take 14 damage, or do nothing (applies both in combat and on the map).
+- The Card Game event updated to match `docs/EVENTS.md`: play cost 50g -> 40g, gold reward 49g -> 39g.
+- The Abandoned Mine event updated to match `docs/EVENTS.md` depth ladder and odds (now 5 steps, ending at a guaranteed artifact).
+- The Ghost Town Saloon event "Drink" choice updated to heal 28 HP (was 20).
+- "The Travelling Preacher" spelling updated (was "Traveling") and the **Draw** choice now grants 166 gold in addition to corruption + a Preacher-tagged artifact.
+- Ledger status effects are now discovered: the Status Effects tab entries stay hidden until you either gain the status effect or see an enemy with it.
+- Cavalry behaviour text updated to match `docs/TILES.md`: "Gain 2 block per tile. On 4+ match, gain 1 swap this turn (max 1 per turn)." Applied in tile definitions and keyword descriptions so it matches across Tile Select, Merchant, etc.
+- Strong Whiskey consumable ID renamed from `tonic` to `strong_whiskey` (old saves auto-migrate on load).
+- Consumable effect text updated to match `docs/CONSUMABLES.md` (Merchant cards + tooltips now include Buried/cascade wording where applicable).
+- Stick of TNT now clears the bottom row (was the middle row).
+- Version label is now global (always visible, including main menu + non-run screens).
+
+### Fixed
+- Twin Revolvers now modifies all bullet-type tile matches (not just Bullet) and missed shots no longer apply Envenomed Ammo's poison.
+- Boulder no longer appears as an upgraded offer (Lv 2+) in Tile Select or Merchant: reward-level rolls now clamp to Lv 1 for tiles without upgrade text.
+- Removed unused Medicine Wagon delayed-potion plumbing (`pendingNextFightPotion`) which was no longer reachable from the event UI.
+- Status icons: `Protected` now uses the High Vis Jacket artifact sprite, and `Dead Man Walking` uses the trait sprite (removed the unused `STATUS_FRAMES` entries).
+- Tumbleweed icons now use `TILE_FRAMES.tumbleweed` directly for both the consumable icon and the enemy intent icon (removed the redundant `CONSUMABLE_FRAMES.tumbleweed` / `INTENT_FRAMES.transform_tumbleweed` entries).
+- Swap phase now auto-reshuffles if the board has no legal swaps at swap start (can occur after shuffle-style effects during the consumable window).
+
 ## v0.7.2
 
 ### Added

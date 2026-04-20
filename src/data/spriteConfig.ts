@@ -37,7 +37,6 @@ export const TILE_FRAMES: Record<TileType, number> = {
   tumbleweed: 1098,
   fools_gold: 1155,
   charcoal: 1135,
-  // New tiles -- frames chosen as rough thematic placeholders; adjust with sprite-picker.
   axe: 705,
   mace: 133,
   cactus: 1005,
@@ -54,67 +53,50 @@ export const TILE_FRAMES: Record<TileType, number> = {
 
 /** Artifact sprite frames (by artifact ID). */
 export const ARTIFACT_FRAMES: Record<string, number> = {
-  // Exclusive
   bamboo_canteen: 1001,
   rusts_cylinder: 764,
   rigged_deck: 793,
   renos_coin: 1157,
-  // Outlaw
   outlaws_spurs: 293,
   twin_revolvers: 1244,
   stolen_badge: 165,
-  // Sheriff
   rusty_deputy_badge: 166,
   bounty_board: 1245,
   jail_cell_keys: 741,
   reinforced_duster: 231,
   iron_will: 296,
-  // Antivenom
   snakeskin_boots: 287,
   bone_charm: 1200,
   shed_skin: 1209,
-  // Rattlesnake
   sidewinder_belt: 289,
   envenomed_ammo: 1247,
   cactus_spine_vest: 229,
   rattlesnake_fang_necklace: 830,
-  // Prospector
   gold_tooth: 1185,
-  // Sapper
   blasting_pan: 1248,
   black_powder_cache: 724,
   tinkers_wrench: 928,
-  // Mustang
   saddlebag: 681,
   trailblazers_compass: 765,
   dust_devil_boots: 277,
   dans_feather: 1175,
-  // Gunslinger
   lucky_bullet: 906,
   dead_mans_hand: 1226,
   silver_bullet: 1249,
-  // Saloon Keeper
   barkeeps_shotgun: 909,
   top_shelf_reserve: 498,
   last_call_bell: 856,
-  // Sniper
   gillie_suit: 1251,
   kill_confirmed: 169,
-  // Dead Man Walking
   deaths_pocket_watch: 1250,
-  // Preacher
   preachers_bible: 624,
   offering_plate: 803,
-  // Tracker
   trappers_snare: 768,
-  // Undertaker
   gravediggers_shovel: 78,
   corpse_explosion: 1213,
   reapers_scythe: 107,
-  // Desperado
   sheriffs_domino: 791,
   loaded_dice: 790,
-  // New Additions
   holy_water: 1529,
   resurrecting_nails: 777,
   dead_mans_bones: 1257,
@@ -133,7 +115,6 @@ export const ARTIFACT_FRAMES: Record<string, number> = {
   deaths_glare: 1217,
   strong_liver: 1214,
   golden_pickaxe: 24,
-  // Corrupt (curses) -- placeholder frames; swap once art is chosen
   lethargic: 1224,
   dry_atmosphere: 1195,
   tinnitus: 862,
@@ -145,10 +126,9 @@ export const CONSUMABLE_FRAMES: Record<string, number> = {
   wanted_flyer: 1245,
   pocket_watch: 678,
   strong_coffee: 371,
-  tonic: 666,
+  strong_whiskey: 666,
   bandage: 912,
   skeleton_key: 742,
-  tumbleweed: 1098,
   signal_flare: 162,
   snake_oil: 1483,
   lasso: 685,
@@ -175,9 +155,7 @@ export const STATUS_FRAMES: Record<string, number> = {
   summoned: 704,
   hardened: 550,
   fuse: 725,
-  dead_man_walking: 1259,
   invulnerable: 783,
-  protected: 235,
   scavenger: 1240,
 };
 
@@ -251,7 +229,6 @@ export const INTENT_FRAMES: Record<string, number> = {
   heal: 912,
   shuffle_rows: 277,
   gravity_shift: 305,
-  transform_tumbleweed: 1098,
 };
 
 /** Intent action colors for number badges. */

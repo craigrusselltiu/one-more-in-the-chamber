@@ -5,7 +5,7 @@ import { TILE_DEFINITIONS } from '../../data/tiles';
 import { ARTIFACTS, RARITY_BREATHE_CLASS } from '../../data/artifacts';
 import { CONSUMABLES } from '../../data/consumables';
 import { KEYWORDS } from '../../data/keywords';
-import { TILE_FRAMES, ARTIFACT_FRAMES, CONSUMABLE_FRAMES, STATUS_FRAMES, HAZARD_FRAMES } from '../../data/spriteConfig';
+import { TILE_FRAMES, ARTIFACT_FRAMES, CONSUMABLE_FRAMES, STATUS_FRAMES, HAZARD_FRAMES, TRAIT_FRAMES } from '../../data/spriteConfig';
 import { SHOP_ITEMS } from '../../data/shopItems';
 import { SpriteIcon } from '../components/SpriteIcon';
 import { Tooltip } from '../components/Tooltip';
@@ -25,8 +25,9 @@ const TABS: { key: TabKey; label: string }[] = [
 
 /** Keywords that live in KEYWORDS for coloring text but are not actually
  *  combatant status effects, so they don't belong in the Status tab. Shadow
- *  is a per-tile attribute (Tile.isShadow), not a stackable buff/debuff. */
-const NON_STATUS_KEYWORDS = new Set<string>(['Shadow']);
+ *  is a per-tile attribute (Tile.isShadow); Obsidian and Cheese are per-tile
+ *  resource-generators (tile types), not stackable buffs/debuffs. */
+const NON_STATUS_KEYWORDS = new Set<string>(['Shadow', 'Obsidian', 'Cheese']);
 
 /** Tile/artifact ids that require a shop purchase. Derived once so the Ledger
  *  can show a lock overlay on discovered-but-not-unlocked entries. */
@@ -50,13 +51,18 @@ function extractKeywords(text: string): string[] {
 /** Resolve a keyword to a sprite frame:
  *  1. STATUS_FRAMES (dedicated status icon)
  *  2. TILE_FRAMES (keyword shares a name with a tile: Ace, Chain, Bounty, Duel, Loot)
- *  3. null (render letter chip fallback) */
+ *  3. ARTIFACT_FRAMES / TRAIT_FRAMES (keyword shares an id with an artifact/trait)
+ *  4. null (render letter chip fallback) */
 function statusFrameFor(name: string): number | null {
   const slug = name.toLowerCase().replace(/ /g, '_');
+  if (slug === 'protected') return ARTIFACT_FRAMES.high_vis_jacket;
+  if (slug === 'dead_man_walking') return TRAIT_FRAMES.dead_man_walking;
   if (STATUS_FRAMES[slug] != null) return STATUS_FRAMES[slug];
   if ((TILE_FRAMES as Record<string, number>)[slug] != null) {
     return (TILE_FRAMES as Record<string, number>)[slug];
   }
+  if (ARTIFACT_FRAMES[slug] != null) return ARTIFACT_FRAMES[slug];
+  if (TRAIT_FRAMES[slug] != null) return TRAIT_FRAMES[slug];
   return null;
 }
 
@@ -64,6 +70,7 @@ export const LedgerScreen = memo(function LedgerScreen() {
   const discoveredTiles = useMetaStore((s) => s.meta.discoveredTiles);
   const discoveredArtifacts = useMetaStore((s) => s.meta.discoveredArtifacts);
   const discoveredConsumables = useMetaStore((s) => s.meta.discoveredConsumables);
+  const discoveredStatusEffects = useMetaStore((s) => s.meta.discoveredStatusEffects);
   const unlockedTiles = useMetaStore((s) => s.meta.unlockedTiles);
   const unlockedArtifacts = useMetaStore((s) => s.meta.unlockedArtifacts);
   const [tab, setTab] = useState<TabKey>('tiles');
@@ -129,23 +136,32 @@ export const LedgerScreen = memo(function LedgerScreen() {
           <UnknownTooltip />
         );
         return (
-          <LedgerCell key={`c-${c.id}`} frame={CONSUMABLE_FRAMES[c.id]} discovered={discovered} tooltip={tooltip} />
+          <LedgerCell
+            key={`c-${c.id}`}
+            frame={c.id === 'tumbleweed' ? TILE_FRAMES.tumbleweed : CONSUMABLE_FRAMES[c.id]}
+            discovered={discovered}
+            tooltip={tooltip}
+          />
         );
       });
     }
-    // Status effects: always visible, no discovery mask.
+    // Status effects: discovered once the player gains them or sees them on an enemy.
     return Object.entries(KEYWORDS)
       .filter(([name]) => !NON_STATUS_KEYWORDS.has(name))
       .map(([name, def]) => {
         const frame = statusFrameFor(name);
-        const tooltip = <StatusTooltip name={name} color={def.color} description={def.description} />;
+        const slug = name.toLowerCase().replace(/ /g, '_');
+        const discovered = discoveredStatusEffects.includes(slug);
+        const tooltip = discovered
+          ? <StatusTooltip name={name} color={def.color} description={def.description} />
+          : <UnknownTooltip />;
         return (
           <LedgerCell
             key={`s-${name}`}
             frame={frame}
-            discovered={true}
+            discovered={discovered}
             tooltip={tooltip}
-            fallbackLabel={name}
+            fallbackLabel={discovered ? name : '?'}
             fallbackColor={def.color}
           />
         );

@@ -210,9 +210,11 @@ export class ArtifactSystem {
     const isGunTile = match.tileType === 'bullet' || match.tileType === 'fifty_cal'
       || match.tileType === 'buckshot' || match.tileType === 'ricochet';
 
-    // Twin Revolvers: Bullets deal 50% more damage, 10% chance to miss
-    if (this.has('twin_revolvers') && match.tileType === 'bullet') {
-      if (Math.random() < 0.1) {
+    // Twin Revolvers: bullets deal 50% more damage, 10% chance to miss
+    const twinRevolversActive = this.has('twin_revolvers') && isGunTile;
+    const twinRevolversMissed = twinRevolversActive && Math.random() < 0.1;
+    if (twinRevolversActive) {
+      if (twinRevolversMissed) {
         modified.damage = 0;
       } else {
         modified.damage = Math.round(modified.damage * 1.5);
@@ -220,7 +222,8 @@ export class ArtifactSystem {
     }
 
     // Envenomed Ammo: Bullet-type tile matches apply 1 venom stack to target
-    if (this.has('envenomed_ammo') && isGunTile) {
+    // (A missed shot should not apply poison.)
+    if (this.has('envenomed_ammo') && isGunTile && !twinRevolversMissed) {
       modified.poisonStacks += 1;
     }
 

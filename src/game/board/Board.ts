@@ -715,11 +715,17 @@ export class Board {
 
     const destroyed = await this.destroyTilesWithEffects(positions);
 
-    // Build match results grouped by type
-    const byType = new Map<TileType, number>();
-    for (const info of destroyed) byType.set(info.type, (byType.get(info.type) ?? 0) + 1);
+    // Build match results grouped by type. Track shadow tiles caught in the
+    // blast so each fires a shadow bolt via the standard shadowCount path.
+    const byType = new Map<TileType, { count: number; shadowCount: number }>();
+    for (const info of destroyed) {
+      const bucket = byType.get(info.type) ?? { count: 0, shadowCount: 0 };
+      bucket.count++;
+      if (info.isShadow) bucket.shadowCount++;
+      byType.set(info.type, bucket);
+    }
     const matchResults: MatchResult[] = [];
-    for (const [tType, count] of byType) {
+    for (const [tType, { count, shadowCount }] of byType) {
       matchResults.push({
         tiles: Array.from({ length: count }, (_, i) => ({ row: 0, col: i })),
         tileType: tType,
@@ -731,6 +737,7 @@ export class Board {
         crossIntersections: [],
         isChainDestruction: true,
         matchBonus: 1.0,
+        shadowCount: shadowCount > 0 ? shadowCount : undefined,
       });
     }
 
@@ -860,7 +867,7 @@ export class Board {
       if (!tile) continue;
 
       detonated.add(key);
-      results.push({ type: tile.type, row: pos.row, col: pos.col });
+      results.push({ type: tile.type, row: pos.row, col: pos.col, isShadow: tile.isShadow });
 
       if (tile.isExplosive) explosiveQueue.push(pos);
       if (tile.isShowdown || tile.type === 'showdown') showdownQueue.push(pos);
@@ -905,7 +912,7 @@ export class Board {
             if (!tile) continue;
 
             detonated.add(key);
-            results.push({ type: tile.type, row: r, col: c });
+            results.push({ type: tile.type, row: r, col: c, isShadow: tile.isShadow });
 
             if (tile.isExplosive) explosiveQueue.push({ row: r, col: c });
             if (tile.isShowdown || tile.type === 'showdown') showdownQueue.push({ row: r, col: c });

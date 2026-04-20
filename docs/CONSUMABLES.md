@@ -55,7 +55,7 @@
 
 ### Snake Oil
 - Flavor: "Who knows what's in the bottle."
-- Effect: Random effect (20% each): Heal 23 HP, gain 6 max HP, gain 100 gold, take 8 damage, or do nothing.
+- Effect: Random effect (20% each): Heal 23 HP, gain 6 max HP, gain 100 gold, take 14 damage, or do nothing.
 - Can use in map
 - Cost: 45
 
