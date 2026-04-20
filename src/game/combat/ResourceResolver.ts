@@ -41,7 +41,7 @@ export interface ResourceOutput {
 /** Tiles where upgrade scales per tile (not flat per match). */
 const PER_TILE_UPGRADE: Set<TileType> = new Set([
   'buckshot', 'fifty_cal', 'barricade', 'chip', 'boulder', 'bounty', 'duel',
-  'axe', 'mace', 'hourglass', 'sacrificial_blade', 'jackhammer', 'nunchucks', 'milk', 'cheese',
+  'hourglass', 'sacrificial_blade', 'jackhammer', 'nunchucks', 'milk', 'cheese',
   'obsidian',
 ]);
 

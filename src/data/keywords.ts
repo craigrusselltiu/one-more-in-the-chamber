@@ -89,4 +89,12 @@ export const KEYWORDS: Record<string, KeywordDefinition> = {
     color: '#C89030',
     description: 'On 20 stacks, deal 10 damage, gain 8 block, heal 6 HP, and gain 12 gold. Resets to 0.',
   },
+  Obsidian: {
+    color: '#8B5CF6',
+    description: 'Deal 1 damage and gain 1 block per tile. Cannot be swapped out for another tile.',
+  },
+  Cheese: {
+    color: '#E8C040',
+    description: 'Gain 4 block per tile. Heal 1 per tile.',
+  },
 };

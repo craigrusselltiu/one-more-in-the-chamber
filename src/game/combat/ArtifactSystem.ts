@@ -144,8 +144,8 @@ export class ArtifactSystem {
     // Lethargic: arm the first-swap-does-nothing flag for this combat.
     this.lethargicPending = this.has('lethargic');
 
-    // Dry Atmosphere: reduce all healing by 10% for this combat.
-    player.healMultiplier = this.has('dry_atmosphere') ? 0.9 : 1.0;
+    // Dry Atmosphere: reduce all healing by 20% for this combat.
+    player.healMultiplier = this.has('dry_atmosphere') ? 0.8 : 1.0;
   }
 
   /** Get number of Deadeye shots (3 default, 6 with Rust's Cylinder). */

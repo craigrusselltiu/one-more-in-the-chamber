@@ -292,14 +292,10 @@ export function buildTileDescription(type: TileType, upgradeLevel: number): Reac
       return [...seg('Deal damage equal to 20% of current block per tile. Cannot be upgraded.', false)];
 
     // --- New per-tile upgrade tiles ---
-    case 'axe': {
-      const v = def.baseValue + bonus;
-      return [...seg('Deal ', false), ...seg(`${v}`, upgraded), ...seg(' damage per tile. Deals double damage to enemies with block.', false)];
-    }
-    case 'mace': {
-      const v = def.baseValue + bonus;
-      return [...seg('Deal ', false), ...seg(`${v}`, upgraded), ...seg(' damage per tile. Ignores block.', false)];
-    }
+    case 'axe':
+      return [...seg('Deal 2 damage per tile', false), ...flatBonus(upgradeLevel, uv), ...seg('. Deals double damage to enemies with block.', false)];
+    case 'mace':
+      return [...seg('Deal 2 damage per tile', false), ...flatBonus(upgradeLevel, uv), ...seg('. Ignores block.', false)];
     case 'cactus':
       return [...seg('Gain 1 block per tile', false), ...flatBonus(upgradeLevel, uv), ...seg('. Gain 1 Thorns per tile.', false)];
     case 'loot':
@@ -331,7 +327,7 @@ export function buildTileDescription(type: TileType, upgradeLevel: number): Reac
     }
     case 'milk': {
       const v = def.baseValue + bonus;
-      return [...seg('Gain ', false), ...seg(`${v}`, upgraded), ...seg(' block per tile. Heal 1 HP per 3-match, plus 1 per extra tile. On turn 5, transform into Cheese.', false)];
+      return [...seg('Gain ', false), ...seg(`${v}`, upgraded), ...seg(' block per tile. Heal 1 HP per 3-match, plus 1 per extra tile. On turn 4, transform into Cheese.', false)];
     }
     case 'cheese': {
       const v = def.baseValue + bonus;
@@ -428,7 +424,7 @@ export function buildUpgradePreview(type: TileType, currentLevel: number): React
     case 'shank':
       return [...seg('Deal 1 damage per tile', false), ...flatBonusPreview(currentLevel, uv), ...seg(' and apply 1 Vulnerable.', false)];
     case 'cavalry':
-      return [...seg('1 damage per tile', false), ...flatBonusPreview(currentLevel, uv), ...seg('. If 4+ matched, +1 swap this turn (max 1 per turn).', false)];
+      return [...seg('Gain 2 block per tile', false), ...flatBonusPreview(currentLevel, uv), ...seg('. If 4+ matched, +1 swap this turn (max 1 per turn).', false)];
     case 'duel':
       return [...seg('Deal 4 damage per tile', false), ...flatBonusPreview(currentLevel, uv), ...seg(' but ONLY if exactly 4 matched. 3 or 5+ matches deal no damage.', false)];
     case 'mirage':
@@ -440,9 +436,9 @@ export function buildUpgradePreview(type: TileType, currentLevel: number): React
 
     // --- New per-tile upgrade tiles ---
     case 'axe':
-      return [...seg('Deal ', false), ...arrowUpgrade(oldVal, newVal), ...seg(' damage per tile. Deals double damage to enemies with block.', false)];
+      return [...seg('Deal 2 damage per tile', false), ...flatBonusPreview(currentLevel, uv), ...seg('. Deals double damage to enemies with block.', false)];
     case 'mace':
-      return [...seg('Deal ', false), ...arrowUpgrade(oldVal, newVal), ...seg(' damage per tile. Ignores block.', false)];
+      return [...seg('Deal 2 damage per tile', false), ...flatBonusPreview(currentLevel, uv), ...seg('. Ignores block.', false)];
     case 'cactus':
       return [...seg('Gain 1 block per tile', false), ...flatBonusPreview(currentLevel, uv), ...seg('. Gain 1 Thorns per tile.', false)];
     case 'loot':
@@ -468,7 +464,7 @@ export function buildUpgradePreview(type: TileType, currentLevel: number): React
     case 'nunchucks':
       return [...seg('Deal ', false), ...arrowUpgrade(oldVal, newVal), ...seg(' damage per tile. Hits twice if attacking a different enemy than the previous attack.', false)];
     case 'milk':
-      return [...seg('Gain ', false), ...arrowUpgrade(oldVal, newVal), ...seg(' block per tile. Heal 1 HP per 3-match, plus 1 per extra tile. On turn 5, transform into Cheese.', false)];
+      return [...seg('Gain ', false), ...arrowUpgrade(oldVal, newVal), ...seg(' block per tile. Heal 1 HP per 3-match, plus 1 per extra tile. On turn 4, transform into Cheese.', false)];
     case 'cheese':
       return [...seg('Gain ', false), ...arrowUpgrade(oldVal, newVal), ...seg(' block per tile. Heal 1 per tile.', false)];
     case 'obsidian':

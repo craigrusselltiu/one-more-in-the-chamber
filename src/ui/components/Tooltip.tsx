@@ -27,7 +27,14 @@ export const Tooltip = memo(function Tooltip({ text, content, secondContent, chi
   const tooltipRef = useRef<HTMLDivElement>(null);
   const [pos, setPos] = useState<{ left: number; top: number } | null>(null);
 
-  const show = useCallback(() => setVisible(true), []);
+  // Effective position can flip from the requested one when the tooltip would
+  // overflow the viewport vertically. Reset to the prop value whenever the
+  // tooltip hides so the next show starts fresh.
+  const [effectivePosition, setEffectivePosition] = useState<'top' | 'bottom'>(position);
+  const show = useCallback(() => {
+    setEffectivePosition(position);
+    setVisible(true);
+  }, [position]);
   const hide = useCallback(() => setVisible(false), []);
 
   const tooltipBody = content ?? text;
@@ -43,7 +50,7 @@ export const Tooltip = memo(function Tooltip({ text, content, secondContent, chi
     const x = align === 'left'
       ? (rect.left - (vRect?.left ?? 0)) / scale
       : (rect.left + rect.width / 2 - (vRect?.left ?? 0)) / scale;
-    const y = position === 'top'
+    const y = effectivePosition === 'top'
       ? (rect.top - (vRect?.top ?? 0)) / scale
       : (rect.bottom - (vRect?.top ?? 0)) / scale;
     setPos({ left: x, top: y });
@@ -61,14 +68,25 @@ export const Tooltip = memo(function Tooltip({ text, content, secondContent, chi
 
       if (tr.left < vr.left) {
         tip.style.left = `${margin}px`;
-        tip.style.transform = position === 'top' ? 'translateY(-100%)' : 'none';
+        tip.style.transform = effectivePosition === 'top' ? 'translateY(-100%)' : 'none';
       } else if (tr.right > vr.right) {
         tip.style.left = 'auto';
         tip.style.right = `${margin}px`;
-        tip.style.transform = position === 'top' ? 'translateY(-100%)' : 'none';
+        tip.style.transform = effectivePosition === 'top' ? 'translateY(-100%)' : 'none';
+      }
+
+      // Vertical auto-flip: if the tooltip overflows past the viewport top or
+      // bottom, flip to the opposite side. Guarded to flip at most once per
+      // show so we don't oscillate when both sides lack room.
+      const overflowsBottom = tr.bottom > vr.bottom;
+      const overflowsTop = tr.top < vr.top;
+      if (effectivePosition === 'bottom' && overflowsBottom && !overflowsTop) {
+        setEffectivePosition('top');
+      } else if (effectivePosition === 'top' && overflowsTop && !overflowsBottom) {
+        setEffectivePosition('bottom');
       }
     });
-  }, [visible, position, align]);
+  }, [visible, effectivePosition, align]);
 
   // Find the portal target (the scaled viewport container)
   const getPortalTarget = (): HTMLElement | null => {
@@ -93,7 +111,7 @@ export const Tooltip = memo(function Tooltip({ text, content, secondContent, chi
           style={{
             zIndex: 9999,
             left: pos.left,
-            ...(position === 'top'
+            ...(effectivePosition === 'top'
               ? { top: pos.top, transform: align === 'left' ? 'translateY(-100%)' : 'translate(-50%, -100%)', marginTop: -4 }
               : { top: pos.top, transform: align === 'left' ? 'none' : 'translateX(-50%)', marginTop: gap ?? 8 }),
           }}

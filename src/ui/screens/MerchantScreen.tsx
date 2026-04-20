@@ -8,7 +8,7 @@ import { ADDITIONAL_POOL, STARTER_POOL, TILE_DEFINITIONS } from '../../data/tile
 import { TILE_FRAMES, UI_FRAMES, CONSUMABLE_FRAMES, ARTIFACT_FRAMES } from '../../data/spriteConfig';
 import { SpriteIcon } from '../components/SpriteIcon';
 import { Tooltip } from '../components/Tooltip';
-import { buildTileDescription, buildUpgradePreview, colorizeKeywords } from '../components/KeywordText';
+import { buildTileDescription, buildUpgradePreview, colorizeKeywords, KeywordSubTooltips, getReferencedKeywords } from '../components/KeywordText';
 import { createSeededRandom, seededShuffle } from '../../utils/seededRandom';
 import { weightedArtifactPickN } from '../../utils/weightedSelection';
 import type { TileType, TraitId } from '../../types/game';
@@ -366,8 +366,10 @@ export const MerchantScreen = memo(function MerchantScreen() {
                   <span className="text-amber-300">{def.upgradeText}</span>
                 </div>
               ) : undefined;
+              const hasKeywords = getReferencedKeywords(def.description).length > 0;
+              const keywordTooltip = hasKeywords ? <KeywordSubTooltips text={def.description} /> : undefined;
               return (
-                <Tooltip key={tileItem.id} content={upgradeTooltip} position="bottom" gap={30}>
+                <Tooltip key={tileItem.id} content={upgradeTooltip} secondContent={keywordTooltip} position="bottom" gap={30}>
                   <MerchantCard
                     icon={<SpriteIcon frame={TILE_FRAMES[tileType]} scale={2} />}
                     name={tileItem.name}

@@ -12,6 +12,7 @@ import { ScoreScreen } from './ui/screens/ScoreScreen';
 import { ArtifactScreen } from './ui/screens/ArtifactScreen';
 import { ReputationShopScreen } from './ui/screens/ReputationShopScreen';
 import { CustomizeScreen } from './ui/screens/CustomizeScreen';
+import { LedgerScreen } from './ui/screens/LedgerScreen';
 import { LeaderboardScreen } from './ui/screens/LeaderboardScreen';
 import { SettingsScreen } from './ui/screens/SettingsScreen';
 import { LoginScreen, PickNameScreen } from './ui/screens/LoginScreen';
@@ -75,6 +76,7 @@ export type Screen =
   | 'artifact'
   | 'reputation-shop'
   | 'customize'
+  | 'ledger'
   | 'leaderboard'
   | 'settings'
   | 'login'
@@ -770,6 +772,7 @@ export default function App() {
             {screen === 'score' && <ScoreScreen />}
             {screen === 'reputation-shop' && <ReputationShopScreen />}
             {screen === 'customize' && <CustomizeScreen />}
+            {screen === 'ledger' && <LedgerScreen />}
             {screen === 'leaderboard' && <LeaderboardScreen />}
             {screen === 'settings' && <SettingsScreen />}
             {screen === 'login' && <LoginScreen />}
@@ -837,7 +840,7 @@ export default function App() {
           className="absolute right-2 bottom-1 pointer-events-none z-[60]"
           style={{ fontSize: '9px', color: 'rgba(255,255,255,0.3)' }}
         >
-          Pre-alpha v0.7.1
+          Pre-alpha v0.7.2
         </span>
       </div>
 

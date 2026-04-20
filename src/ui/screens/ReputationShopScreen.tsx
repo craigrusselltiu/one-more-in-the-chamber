@@ -3,8 +3,13 @@ import { EventBus, GameEvent } from '../../game/EventBus';
 import { useMetaStore } from '../../store/metaStore';
 import { SHOP_ITEMS, type ShopCategory, type ShopItemDefinition } from '../../data/shopItems';
 import { NAMEPLATE_BY_ID, COLOUR_BY_ID } from '../../data/cosmetics';
+import { TILE_FRAMES } from '../../data/spriteConfig';
+import { TILE_DEFINITIONS } from '../../data/tiles';
+import { SpriteIcon } from '../components/SpriteIcon';
+import { buildTileDescription } from '../components/KeywordText';
 import { playHover } from '../../services/sfx';
 import type { Screen } from '../../App';
+import type { TileType } from '../../types/game';
 
 type TabKey = 'featured' | ShopCategory;
 
@@ -12,6 +17,7 @@ const TABS: { key: TabKey; label: string }[] = [
   { key: 'featured', label: 'Featured' },
   { key: 'character', label: 'Characters' },
   { key: 'skin', label: 'Skins' },
+  { key: 'tile', label: 'Tiles' },
   { key: 'artifact', label: 'Artifacts' },
   { key: 'event', label: 'Events' },
   { key: 'nameplate', label: 'Nameplates' },
@@ -132,7 +138,7 @@ export const ReputationShopScreen = memo(function ReputationShopScreen() {
       {/* Card grid -- pt-2 / pb-2 leave room for hover/select translateY so
           cards don't clip behind the tab row or the footer on transform. */}
       <div
-        className="flex-1 overflow-y-auto w-full px-6"
+        className="flex-1 overflow-y-auto w-full px-6 thin-scroll"
         style={{ maxWidth: 860 }}
       >
         {visibleItems.length === 0 ? (
@@ -196,6 +202,19 @@ export const ReputationShopScreen = memo(function ReputationShopScreen() {
           <div className="flex flex-col gap-2 pt-2 pb-2 w-full">
             {visibleItems.map((item) => (
               <NameplateShopCard
+                key={item.id}
+                item={item}
+                owned={isUnlocked(item.unlockId, item.category)}
+                affordable={reputation >= item.cost}
+                selected={selectedId === item.id}
+                onSelect={() => setSelectedId(item.id)}
+              />
+            ))}
+          </div>
+        ) : tab === 'tile' ? (
+          <div className="flex flex-wrap gap-2 justify-center pt-2 pb-2">
+            {visibleItems.map((item) => (
+              <TileShopCard
                 key={item.id}
                 item={item}
                 owned={isUnlocked(item.unlockId, item.category)}
@@ -296,7 +315,7 @@ function ShopCard({
           color: owned ? '#78716c' : affordable ? '#fcd34d' : '#a8a29e',
         }}
       >
-        {owned ? 'OWNED' : `${item.cost.toLocaleString()} Reputation`}
+        {owned ? 'OWNED' : item.cost.toLocaleString()}
       </span>
       {(() => {
         // Colour shop items render their name in the shimmer class so the
@@ -389,8 +408,86 @@ function NameplateShopCard({
           paintOrder: 'stroke fill',
         }}
       >
-        {owned ? 'OWNED' : `${item.cost.toLocaleString()} Reputation`}
+        {owned ? 'OWNED' : item.cost.toLocaleString()}
       </span>
+    </button>
+  );
+}
+
+/** Tile-specific shop card: mirrors the in-run TileSelectScreen card layout
+ *  (sprite + label + description + flavor) so the shop preview matches what
+ *  the player will see when the tile actually drops. */
+function TileShopCard({
+  item,
+  owned,
+  affordable,
+  selected,
+  onSelect,
+}: {
+  item: ShopItemDefinition;
+  owned: boolean;
+  affordable: boolean;
+  selected: boolean;
+  onSelect: () => void;
+}) {
+  const disabled = owned;
+  const tileType = item.unlockId as TileType;
+  const frame = TILE_FRAMES[tileType];
+  const def = TILE_DEFINITIONS[tileType];
+  return (
+    <button
+      onClick={onSelect}
+      onMouseEnter={playHover}
+      disabled={disabled}
+      className={`relative flex flex-col items-center w-32 rounded-sm text-center transition-transform ${
+        owned
+          ? 'opacity-60 cursor-not-allowed'
+          : affordable
+            ? 'hover:-translate-y-0.5 active:translate-y-0.5 cursor-pointer'
+            : 'opacity-70 cursor-pointer'
+      }`}
+      style={{
+        backgroundColor: selected
+          ? 'rgba(120, 53, 15, 0.75)'
+          : owned
+            ? 'rgba(28, 25, 23, 0.5)'
+            : 'rgba(28, 25, 23, 0.8)',
+        padding: '20px 10px 12px',
+        boxShadow: '3px 3px 2px rgba(0,0,0,0.7)',
+        transform: selected ? 'translateY(-4px)' : undefined,
+      }}
+    >
+      <span
+        className="absolute top-1 right-1.5 font-bold"
+        style={{
+          fontSize: '10px',
+          color: owned ? '#78716c' : affordable ? '#fcd34d' : '#a8a29e',
+        }}
+      >
+        {owned ? 'OWNED' : `${item.cost.toLocaleString()}`}
+      </span>
+      {typeof frame === 'number' && (
+        <SpriteIcon frame={frame} scale={2} className="mb-1.5" />
+      )}
+      <span
+        className="text-amber-300 text-xs font-bold"
+        style={{ fontSize: def && def.label.length > 12 ? '10px' : undefined }}
+      >
+        {def?.label ?? item.name}
+      </span>
+      {def && (
+        <span className="text-stone-300 text-center mt-1 leading-tight" style={{ fontSize: '9px' }}>
+          {buildTileDescription(tileType, 0)}
+        </span>
+      )}
+      {def?.flavor && (
+        <span
+          className={`${selected ? 'text-stone-500' : 'text-stone-600'} text-center mt-1 leading-tight italic`}
+          style={{ fontSize: '8px' }}
+        >
+          "{def.flavor}"
+        </span>
+      )}
     </button>
   );
 }

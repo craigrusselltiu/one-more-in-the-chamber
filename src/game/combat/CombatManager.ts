@@ -810,14 +810,13 @@ export class CombatManager {
     this.setPhase('resolving');
     EventBus.emit(GameEvent.SWAPS_CHANGE, this.swapsRemaining, this.swapsPerTurn);
 
-    // Lethargic: the first swap of the combat generates no resources. Tiles
-    // still swap and match visually, but processMatches sees the flag and
-    // emits empty output for every match in this swap's cascade.
-    if (this.artifacts.lethargicPending) {
-      this.artifacts.lethargicPending = false;
+    // Lethargic: the first VALID swap generates no resources. We tentatively
+    // set the suppress flag so match processing ignores resources, but only
+    // officially consume `lethargicPending` after the swap passes validity
+    // checks -- invalid swaps leave the pending flag intact for the next try.
+    const wasLethargicPending = this.artifacts.lethargicPending;
+    if (wasLethargicPending) {
       this.lethargicSuppressResources = true;
-      useCombatStore.getState().setLethargicActive(false);
-      this.floatOnPlayer('Lethargic', '#8B3A9B');
     }
 
     const from = { row: fromRow, col: fromCol };
@@ -867,7 +866,8 @@ export class CombatManager {
     }
 
     if (!result.valid) {
-      // Invalid swap -- refund
+      // Invalid swap -- refund. Lethargic pending flag is preserved so the
+      // next valid swap is the one that gets suppressed.
       playSwapFail();
       this.swapsRemaining++;
       this.swapsUsedThisTurn--;
@@ -875,6 +875,13 @@ export class CombatManager {
       this.setPhase('swap-phase');
       this.lethargicSuppressResources = false;
       return;
+    }
+
+    // Valid swap -- officially consume Lethargic pending now.
+    if (wasLethargicPending) {
+      this.artifacts.lethargicPending = false;
+      useCombatStore.getState().setLethargicActive(false);
+      this.floatOnPlayer('Lethargic', '#8B3A9B');
     }
 
     // Ricochet: apply gravity + fill the gap(s) left by triggered tiles,

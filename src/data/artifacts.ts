@@ -605,7 +605,7 @@ export const ARTIFACTS: ArtifactDefinition[] = [
     name: 'Lethargic',
     description: "Some mornings, you just aren't ready.",
     tags: ['corrupt'],
-    effect: 'The first swap each combat generates no resources.',
+    effect: 'The first match each combat generates no resources.',
     rarity: 'corrupt',
   },
   {
@@ -613,7 +613,7 @@ export const ARTIFACTS: ArtifactDefinition[] = [
     name: 'Dry Atmosphere',
     description: 'Sun bakes the blood before it can heal.',
     tags: ['corrupt'],
-    effect: 'All healing is reduced by 10%.',
+    effect: 'All healing is reduced by 20%.',
     rarity: 'corrupt',
   },
   {

@@ -1,3 +1,5 @@
+import { TILE_DEFINITIONS } from './tiles';
+
 export type ShopCategory =
   | 'artifact'
   | 'event'
@@ -7,7 +9,8 @@ export type ShopCategory =
   | 'skin'
   | 'nameplate'
   | 'colour'
-  | 'title';
+  | 'title'
+  | 'tile';
 
 export interface ShopItemDefinition {
   id: string;
@@ -227,4 +230,16 @@ export const SHOP_ITEMS: ShopItemDefinition[] = [
   { id: 'shop_title_still_kicking',      name: 'Still Kicking',      description: '"Still Kicking" appears beneath your name.',      cost: 10000, category: 'title', unlockId: 'title_still_kicking' },
   { id: 'shop_title_not_guilty',         name: 'Not Guilty',         description: '"Not Guilty" appears beneath your name.',         cost: 10000, category: 'title', unlockId: 'title_not_guilty' },
   { id: 'shop_title_fuck_it_we_ball',    name: 'Fuck It We Ball',    description: '"Fuck It We Ball" appears beneath your name.',    cost: 10000, category: 'title', unlockId: 'title_fuck_it_we_ball' },
+
+  // --- Tiles (gated pool entries -- unlockId matches tile type id) ---
+  { id: 'shop_tile_loot',              name: TILE_DEFINITIONS.loot.label,              description: TILE_DEFINITIONS.loot.description,              cost: 3000, category: 'tile', unlockId: 'loot' },
+  { id: 'shop_tile_hourglass',         name: TILE_DEFINITIONS.hourglass.label,         description: TILE_DEFINITIONS.hourglass.description,         cost: 3000, category: 'tile', unlockId: 'hourglass' },
+  { id: 'shop_tile_milk',              name: TILE_DEFINITIONS.milk.label,              description: TILE_DEFINITIONS.milk.description,              cost: 3000, category: 'tile', unlockId: 'milk' },
+  { id: 'shop_tile_axe',               name: TILE_DEFINITIONS.axe.label,               description: TILE_DEFINITIONS.axe.description,               cost: 5000, category: 'tile', unlockId: 'axe' },
+  { id: 'shop_tile_mace',              name: TILE_DEFINITIONS.mace.label,              description: TILE_DEFINITIONS.mace.description,              cost: 5000, category: 'tile', unlockId: 'mace' },
+  { id: 'shop_tile_cactus',            name: TILE_DEFINITIONS.cactus.label,            description: TILE_DEFINITIONS.cactus.description,            cost: 5000, category: 'tile', unlockId: 'cactus' },
+  { id: 'shop_tile_nunchucks',         name: TILE_DEFINITIONS.nunchucks.label,         description: TILE_DEFINITIONS.nunchucks.description,         cost: 5000, category: 'tile', unlockId: 'nunchucks' },
+  { id: 'shop_tile_chainsaw',          name: TILE_DEFINITIONS.chainsaw.label,          description: TILE_DEFINITIONS.chainsaw.description,          cost: 5000, category: 'tile', unlockId: 'chainsaw' },
+  { id: 'shop_tile_jackhammer',        name: TILE_DEFINITIONS.jackhammer.label,        description: TILE_DEFINITIONS.jackhammer.description,        cost: 8000, category: 'tile', unlockId: 'jackhammer' },
+  { id: 'shop_tile_sacrificial_blade', name: TILE_DEFINITIONS.sacrificial_blade.label, description: TILE_DEFINITIONS.sacrificial_blade.description, cost: 8000, category: 'tile', unlockId: 'sacrificial_blade' },
 ];

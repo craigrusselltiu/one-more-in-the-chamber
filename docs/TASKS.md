@@ -30,11 +30,11 @@ artifact ideas:
 - free cookie at start of boss fight
 
 todo:
-- store run data for guests
 - flagellation items, self damage
 - improved tutorials
 - quests - dailies/weeklies?
 - battlepass?
+- achievements + unlocks based on achievements
 - NPCs
 - dialogue
 - Ledger (compendium)
@@ -46,4 +46,5 @@ todo:
 - jackhammer doesn't work
 - adjust healthbars
 - improve ability indicator
-- show obsidian as a tooltip in charcoal, or just hide it?
+- ace should affect loot (and other statuses)
+- cross clear/explosions should trigger shadow tiles

@@ -38,11 +38,15 @@ interface MetaRow {
   unlocked_nameplates: string[];
   unlocked_colours: string[];
   unlocked_titles: string[];
+  unlocked_tiles: string[];
   equipped_skin: string | null;
   equipped_nameplate: string | null;
   equipped_colour: string | null;
   equipped_title: string | null;
   highest_wanted_level_cleared: number;
+  discovered_tiles: string[];
+  discovered_artifacts: string[];
+  discovered_consumables: string[];
 }
 
 interface LocalMeta {
@@ -57,11 +61,15 @@ interface LocalMeta {
   unlockedNameplates: string[];
   unlockedColours: string[];
   unlockedTitles: string[];
+  unlockedTiles: string[];
   equippedSkin: string | null;
   equippedNameplate: string | null;
   equippedColour: string | null;
   equippedTitle: string | null;
   highestWantedLevelCleared: number;
+  discoveredTiles: string[];
+  discoveredArtifacts: string[];
+  discoveredConsumables: string[];
 }
 
 interface RunRow {
@@ -418,12 +426,16 @@ export async function pullRemoteStateOverwriteLocal(): Promise<void> {
           unlockedNameplates: [...new Set([...(z.unlockedNameplates ?? []), ...(r.unlocked_nameplates ?? [])])],
           unlockedColours: [...new Set([...(z.unlockedColours ?? []), ...(r.unlocked_colours ?? [])])],
           unlockedTitles: [...new Set([...(z.unlockedTitles ?? []), ...(r.unlocked_titles ?? [])])],
+          unlockedTiles: [...new Set([...(z.unlockedTiles ?? []), ...(r.unlocked_tiles ?? [])])],
           // Equipped singletons: prefer remote (authoritative per account).
           equippedSkin: r.equipped_skin ?? z.equippedSkin ?? null,
           equippedNameplate: r.equipped_nameplate ?? z.equippedNameplate ?? null,
           equippedColour: r.equipped_colour ?? z.equippedColour ?? null,
           equippedTitle: r.equipped_title ?? z.equippedTitle ?? null,
           highestWantedLevelCleared: Math.max(n(z.highestWantedLevelCleared, -1), n(r.highest_wanted_level_cleared, -1)),
+          discoveredTiles: [...new Set([...(z.discoveredTiles ?? []), ...(r.discovered_tiles ?? [])])],
+          discoveredArtifacts: [...new Set([...(z.discoveredArtifacts ?? []), ...(r.discovered_artifacts ?? [])])],
+          discoveredConsumables: [...new Set([...(z.discoveredConsumables ?? []), ...(r.discovered_consumables ?? [])])],
         };
         useMetaStore.getState().hydrateFromRemote(merged);
         await saveMeta('progression', merged);
@@ -570,11 +582,15 @@ export async function pushMeta(meta: {
   unlockedNameplates: string[];
   unlockedColours: string[];
   unlockedTitles: string[];
+  unlockedTiles: string[];
   equippedSkin: string | null;
   equippedNameplate: string | null;
   equippedColour: string | null;
   equippedTitle: string | null;
   highestWantedLevelCleared: number;
+  discoveredTiles: string[];
+  discoveredArtifacts: string[];
+  discoveredConsumables: string[];
 }): Promise<void> {
   const sb = getSupabase();
   const { userId } = getAuthState();
@@ -592,11 +608,15 @@ export async function pushMeta(meta: {
     unlocked_nameplates: meta.unlockedNameplates,
     unlocked_colours: meta.unlockedColours,
     unlocked_titles: meta.unlockedTitles,
+    unlocked_tiles: meta.unlockedTiles,
     equipped_skin: meta.equippedSkin,
     equipped_nameplate: meta.equippedNameplate,
     equipped_colour: meta.equippedColour,
     equipped_title: meta.equippedTitle,
     highest_wanted_level_cleared: meta.highestWantedLevelCleared,
+    discovered_tiles: meta.discoveredTiles,
+    discovered_artifacts: meta.discoveredArtifacts,
+    discovered_consumables: meta.discoveredConsumables,
     updated_at: new Date().toISOString(),
   });
 }
@@ -656,11 +676,15 @@ async function syncMeta(sb: ReturnType<typeof getSupabase> & object, userId: str
     unlockedNameplates: zustand.unlockedNameplates,
     unlockedColours: zustand.unlockedColours,
     unlockedTitles: zustand.unlockedTitles,
+    unlockedTiles: zustand.unlockedTiles,
     equippedSkin: zustand.equippedSkin,
     equippedNameplate: zustand.equippedNameplate,
     equippedColour: zustand.equippedColour,
     equippedTitle: zustand.equippedTitle,
     highestWantedLevelCleared: zustand.highestWantedLevelCleared,
+    discoveredTiles: zustand.discoveredTiles,
+    discoveredArtifacts: zustand.discoveredArtifacts,
+    discoveredConsumables: zustand.discoveredConsumables,
   };
   // maybeSingle() returns null (not an error) when the account has no
   // meta_progression row yet -- i.e. first-time account creation. In that
@@ -692,11 +716,15 @@ async function syncMeta(sb: ReturnType<typeof getSupabase> & object, userId: str
     unlocked_nameplates: merged.unlockedNameplates,
     unlocked_colours: merged.unlockedColours,
     unlocked_titles: merged.unlockedTitles,
+    unlocked_tiles: merged.unlockedTiles,
     equipped_skin: merged.equippedSkin,
     equipped_nameplate: merged.equippedNameplate,
     equipped_colour: merged.equippedColour,
     equipped_title: merged.equippedTitle,
     highest_wanted_level_cleared: merged.highestWantedLevelCleared,
+    discovered_tiles: merged.discoveredTiles,
+    discovered_artifacts: merged.discoveredArtifacts,
+    discovered_consumables: merged.discoveredConsumables,
     updated_at: now,
   });
   markLocalMetaSynced(now);
@@ -729,11 +757,15 @@ function mergeMeta(
     unlockedNameplates: [],
     unlockedColours: [],
     unlockedTitles: [],
+    unlockedTiles: [],
     equippedSkin: null,
     equippedNameplate: null,
     equippedColour: null,
     equippedTitle: null,
     highestWantedLevelCleared: 0,
+    discoveredTiles: [],
+    discoveredArtifacts: [],
+    discoveredConsumables: [],
   };
   const r = remote ?? {
     reputation: 0,
@@ -746,11 +778,15 @@ function mergeMeta(
     unlocked_nameplates: [] as string[],
     unlocked_colours: [] as string[],
     unlocked_titles: [] as string[],
+    unlocked_tiles: [] as string[],
     equipped_skin: null,
     equipped_nameplate: null,
     equipped_colour: null,
     equipped_title: null,
     highest_wanted_level_cleared: 0,
+    discovered_tiles: [] as string[],
+    discovered_artifacts: [] as string[],
+    discovered_consumables: [] as string[],
   };
 
   const n = (v: unknown, d = 0) => (typeof v === 'number' && Number.isFinite(v) ? v : d);
@@ -777,11 +813,15 @@ function mergeMeta(
     unlockedNameplates: union(l.unlockedNameplates, r.unlocked_nameplates),
     unlockedColours: union(l.unlockedColours, r.unlocked_colours),
     unlockedTitles: union(l.unlockedTitles, r.unlocked_titles),
+    unlockedTiles: union(l.unlockedTiles, r.unlocked_tiles),
     equippedSkin,
     equippedNameplate,
     equippedColour,
     equippedTitle,
     highestWantedLevelCleared,
+    discoveredTiles: union(l.discoveredTiles, r.discovered_tiles),
+    discoveredArtifacts: union(l.discoveredArtifacts, r.discovered_artifacts),
+    discoveredConsumables: union(l.discoveredConsumables, r.discovered_consumables),
   };
 }
 

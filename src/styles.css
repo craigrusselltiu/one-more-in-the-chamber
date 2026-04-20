@@ -23,23 +23,26 @@
 }
 .event-breathe { display: inline-block; animation: event-breathe 3s ease-in-out infinite; }
 
-/* Custom scrollbar for leaderboard */
-.leaderboard-scroll::-webkit-scrollbar {
+/* Thin scrollbar, used anywhere we want the leaderboard-style look.
+   scrollbar-gutter: stable reserves the gutter even when no thumb is needed,
+   so content doesn't jump horizontally when the scrollbar appears/disappears. */
+.thin-scroll::-webkit-scrollbar {
   width: 6px;
 }
-.leaderboard-scroll::-webkit-scrollbar-track {
+.thin-scroll::-webkit-scrollbar-track {
   background: rgba(28, 25, 23, 0.3);
 }
-.leaderboard-scroll::-webkit-scrollbar-thumb {
+.thin-scroll::-webkit-scrollbar-thumb {
   background: rgba(120, 113, 108, 0.5);
   border-radius: 3px;
 }
-.leaderboard-scroll::-webkit-scrollbar-thumb:hover {
+.thin-scroll::-webkit-scrollbar-thumb:hover {
   background: rgba(168, 162, 158, 0.6);
 }
-.leaderboard-scroll {
+.thin-scroll {
   scrollbar-width: thin;
   scrollbar-color: rgba(120, 113, 108, 0.5) rgba(28, 25, 23, 0.3);
+  scrollbar-gutter: stable;
 }
 
 /* Deadeye ability bar: pulsing glow when ready */

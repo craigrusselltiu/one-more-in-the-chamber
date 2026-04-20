@@ -195,7 +195,7 @@ export const CustomizeScreen = memo(function CustomizeScreen() {
       {/* Card grid -- nameplates render as full-width rows (image visible at
           real aspect, mirrors the shop); other categories use the small grid.
           pt-2 / pb-2 give hover/select translateY room so cards don't clip. */}
-      <div className="flex-1 overflow-y-auto w-full px-6" style={{ maxWidth: 860 }}>
+      <div className="flex-1 overflow-y-auto w-full px-6 thin-scroll" style={{ maxWidth: 860 }}>
         {visibleEntries.length === 0 ? (
           <p className="text-stone-500 text-xs text-center mt-12">
             Nothing unlocked here yet. Earn reputation and visit the shop.

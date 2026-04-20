@@ -182,6 +182,10 @@ export const MainMenu = memo(function MainMenu() {
     EventBus.emit(GameEvent.SCREEN_CHANGE, 'customize' satisfies Screen);
   };
 
+  const handleLedger = () => {
+    EventBus.emit(GameEvent.SCREEN_CHANGE, 'ledger' satisfies Screen);
+  };
+
   const handleLeaderboard = () => {
     EventBus.emit(GameEvent.SCREEN_CHANGE, 'leaderboard' satisfies Screen);
   };
@@ -260,6 +264,7 @@ export const MainMenu = memo(function MainMenu() {
           disabled={!auth.isLoggedIn}
           disabledTooltip={!auth.isLoggedIn ? 'Log in to customize your look.' : undefined}
         />
+        <MenuButton label="Ledger" onClick={handleLedger} />
         <MenuButton label="Leaderboard" onClick={handleLeaderboard} />
         <MenuButton label="Changelog" onClick={() => setShowChangelog(true)} />
         <MenuButton label="Settings" onClick={handleSettings} />

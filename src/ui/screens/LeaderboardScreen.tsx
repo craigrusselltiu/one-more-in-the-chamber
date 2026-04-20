@@ -106,7 +106,7 @@ export const LeaderboardScreen = memo(function LeaderboardScreen() {
       </div>
 
       {/* Table */}
-      <div className="flex-1 overflow-y-auto w-full max-w-[820px] px-4 leaderboard-scroll">
+      <div className="flex-1 overflow-y-auto w-full max-w-[820px] px-4 thin-scroll">
         {loading && (
           <p className="text-stone-400 text-xs text-center mt-8">Loading...</p>
         )}

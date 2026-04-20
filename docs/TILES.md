@@ -109,16 +109,16 @@ NOTE: The tile pool for Acts 2, 3, and also the shop should be the Starter Tiles
 ### Axe
 - Flavor text: "Here's Johnny!"
 - Behaviour text: Deal 2 damage per tile. Deals double damage to enemies with block.
-- Upgrade text: +1 damage per tile per level
-- Resource formula: (2 damage + level * 1) * tiles
-- Single formula: 2 damage + level * 1
+- Upgrade text: +2 damage to match total per level
+- Resource formula: (2 damage * tiles) + (level * 2)
+- Single formula: 2 damage + floor(level * 2 / 3)
 
 ### Mace
 - Flavor text: "Armor's just in the way."
 - Behaviour text: Deal 2 damage per tile. Ignores block.
-- Upgrade text: +1 damage per tile per level
-- Resource formula: (2 damage + level * 1) * tiles
-- Single formula: 2 damage + level * 1
+- Upgrade text: +2 damage to match total per level
+- Resource formula: (2 damage * tiles) + (level * 2)
+- Single formula: 2 damage + floor(level * 2 / 3)
 
 ### Cactus
 - Flavor text: "Touch it. I dare you."

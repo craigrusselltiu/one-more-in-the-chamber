@@ -4,7 +4,9 @@ import { useRunStore } from '../../store/runStore';
 import { useTutorialStore } from '../../store/tutorialStore';
 import { TUTORIAL_TILE_SELECT } from '../../data/tutorials';
 import { STARTER_POOL, ADDITIONAL_POOL, TILE_DEFINITIONS } from '../../data/tiles';
-import { buildTileDescription } from '../components/KeywordText';
+import { SHOP_ITEMS } from '../../data/shopItems';
+import { useMetaStore } from '../../store/metaStore';
+import { buildTileDescription, KeywordSubTooltips, getReferencedKeywords } from '../components/KeywordText';
 import { TILE_FRAMES } from '../../data/spriteConfig';
 import { SpriteIcon } from '../components/SpriteIcon';
 import { Tooltip } from '../components/Tooltip';
@@ -19,6 +21,13 @@ interface OfferedTile {
   type: TileType;
   level: number;
 }
+
+/** Tile types that require a Reputation Shop purchase before they appear in
+ *  the run selection pool. Derived from SHOP_ITEMS so source of truth stays in
+ *  one place. */
+const GATED_TILES: Set<string> = new Set(
+  SHOP_ITEMS.filter((si) => si.category === 'tile').map((si) => si.unlockId),
+);
 
 /**
  * TileSelectScreen: Choose a tile at run start (1 of 3 from starter pool)
@@ -55,10 +64,14 @@ export const TileSelectScreen = memo(function TileSelectScreen() {
       return result;
     }
     const owned = run?.activeTileTypes ?? [];
-    let available = pool.filter((t) => !owned.includes(t));
+    const unlockedTiles = useMetaStore.getState().meta.unlockedTiles;
+    const isLocked = (t: TileType) => GATED_TILES.has(t) && !unlockedTiles.includes(t);
+    let available = pool.filter((t) => !owned.includes(t) && !isLocked(t));
     if (available.length < 3) {
       const otherPool = pool === STARTER_POOL ? ADDITIONAL_POOL : STARTER_POOL;
-      const backfill = otherPool.filter((t) => !owned.includes(t) && !available.includes(t));
+      const backfill = otherPool.filter(
+        (t) => !owned.includes(t) && !available.includes(t) && !isLocked(t),
+      );
       available = [...available, ...backfill];
     }
     const rand = createSeededRandom(`${run?.seed ?? ''}-tileselect-${run?.currentAct ?? 1}-${owned.length}`);
@@ -111,10 +124,13 @@ export const TileSelectScreen = memo(function TileSelectScreen() {
               <span className="text-amber-300">{def.upgradeText}</span>
             </div>
           ) : undefined;
+          const hasKeywords = getReferencedKeywords(def.description).length > 0;
+          const keywordTooltip = hasKeywords ? <KeywordSubTooltips text={def.description} /> : undefined;
           return (
             <Tooltip
               key={tileType}
               content={upgradeTooltip}
+              secondContent={keywordTooltip}
               position="bottom"
             >
               <button

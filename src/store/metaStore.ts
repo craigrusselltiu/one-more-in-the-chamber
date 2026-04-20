@@ -34,11 +34,15 @@ function pushMetaDebounced(meta: MetaProgression): void {
       unlockedNameplates: meta.unlockedNameplates,
       unlockedColours: meta.unlockedColours,
       unlockedTitles: meta.unlockedTitles,
+      unlockedTiles: meta.unlockedTiles,
       equippedSkin: meta.equippedSkin,
       equippedNameplate: meta.equippedNameplate,
       equippedColour: meta.equippedColour,
       equippedTitle: meta.equippedTitle,
       highestWantedLevelCleared: meta.highestWantedLevelCleared,
+      discoveredTiles: meta.discoveredTiles,
+      discoveredArtifacts: meta.discoveredArtifacts,
+      discoveredConsumables: meta.discoveredConsumables,
     }).catch((err) => console.error('[sync] pushMeta failed:', err));
   }, REMOTE_PUSH_DELAY_MS);
 }
@@ -54,6 +58,7 @@ interface MetaProgression {
   unlockedNameplates: string[];
   unlockedColours: string[];
   unlockedTitles: string[];
+  unlockedTiles: string[];
   equippedSkin: string | null;
   equippedNameplate: string | null;
   equippedColour: string | null;
@@ -63,6 +68,13 @@ interface MetaProgression {
   lastCharacter: string;
   playerName: string;
   completedTutorials: string[];
+  // Ledger discovery: content the player has ever encountered in a run.
+  // Separate from the shop-purchase `unlocked*` arrays so a ledger pickup
+  // doesn't make a shop item appear already-owned. Local-only for now;
+  // not pushed to Supabase until matching columns exist server-side.
+  discoveredTiles: string[];
+  discoveredArtifacts: string[];
+  discoveredConsumables: string[];
 }
 
 interface MetaStore {
@@ -74,6 +86,9 @@ interface MetaStore {
   unlockCosmetic: (id: string) => void;
   unlockLoadout: (id: string) => void;
   unlockCharacter: (id: string) => void;
+  discoverTile: (type: string) => void;
+  discoverArtifact: (id: string) => void;
+  discoverConsumable: (id: string) => void;
   /** Purchase a shop item: deducts reputation and unlocks into the correct category. */
   purchaseShopItem: (unlockId: string, cost: number, category: ShopCategory) => boolean;
   isUnlocked: (unlockId: string, category: ShopCategory) => boolean;
@@ -104,7 +119,8 @@ type UnlockArrayKey =
   | 'unlockedSkins'
   | 'unlockedNameplates'
   | 'unlockedColours'
-  | 'unlockedTitles';
+  | 'unlockedTitles'
+  | 'unlockedTiles';
 
 const CATEGORY_KEY: Record<ShopCategory, UnlockArrayKey> = {
   artifact: 'unlockedArtifacts',
@@ -116,6 +132,7 @@ const CATEGORY_KEY: Record<ShopCategory, UnlockArrayKey> = {
   nameplate: 'unlockedNameplates',
   colour: 'unlockedColours',
   title: 'unlockedTitles',
+  tile: 'unlockedTiles',
 };
 
 const DEFAULT_META: MetaProgression = {
@@ -129,6 +146,7 @@ const DEFAULT_META: MetaProgression = {
   unlockedNameplates: [],
   unlockedColours: [],
   unlockedTitles: [],
+  unlockedTiles: [],
   equippedSkin: null,
   equippedNameplate: null,
   equippedColour: null,
@@ -138,6 +156,9 @@ const DEFAULT_META: MetaProgression = {
   lastCharacter: 'red_panda',
   playerName: '',
   completedTutorials: [],
+  discoveredTiles: [],
+  discoveredArtifacts: [],
+  discoveredConsumables: [],
 };
 
 function loadMeta(): MetaProgression {
@@ -253,6 +274,30 @@ export const useMetaStore = create<MetaStore>((set, get) => ({
     set((state) => {
       if (state.meta.unlockedCharacters.includes(id)) return state;
       const meta = { ...state.meta, unlockedCharacters: [...state.meta.unlockedCharacters, id] };
+      persistMeta(meta);
+      return { meta };
+    }),
+
+  discoverTile: (type) =>
+    set((state) => {
+      if (state.meta.discoveredTiles.includes(type)) return state;
+      const meta = { ...state.meta, discoveredTiles: [...state.meta.discoveredTiles, type] };
+      persistMeta(meta);
+      return { meta };
+    }),
+
+  discoverArtifact: (id) =>
+    set((state) => {
+      if (state.meta.discoveredArtifacts.includes(id)) return state;
+      const meta = { ...state.meta, discoveredArtifacts: [...state.meta.discoveredArtifacts, id] };
+      persistMeta(meta);
+      return { meta };
+    }),
+
+  discoverConsumable: (id) =>
+    set((state) => {
+      if (state.meta.discoveredConsumables.includes(id)) return state;
+      const meta = { ...state.meta, discoveredConsumables: [...state.meta.discoveredConsumables, id] };
       persistMeta(meta);
       return { meta };
     }),

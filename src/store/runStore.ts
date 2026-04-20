@@ -231,6 +231,11 @@ export const useRunStore = create<RunStore>((set, get) => ({
         status: 'active',
       },
     });
+
+    const meta = useMetaStore.getState();
+    for (const t of coreTiles) meta.discoverTile(t);
+    for (const a of artifacts) meta.discoverArtifact(a.id);
+    for (const c of consumables) meta.discoverConsumable(c.id);
   },
 
   updateHealth: (delta) =>
@@ -283,6 +288,7 @@ export const useRunStore = create<RunStore>((set, get) => ({
         goldObtained += 333;
       }
       const artifactsObtained = state.run.artifactsObtained + 1;
+      useMetaStore.getState().discoverArtifact(artifact.id);
       return { run: { ...state.run, artifacts, traitCounts, gold, goldObtained, artifactsObtained } };
     }),
 
@@ -304,6 +310,8 @@ export const useRunStore = create<RunStore>((set, get) => ({
   addConsumable: (consumable) =>
     set((state) => {
       if (!state.run) return state;
+      // Record discovery even when the slot is full - player still encountered the item.
+      useMetaStore.getState().discoverConsumable(consumable.id);
       const maxSlots = getMaxConsumableSlots(state.run);
       if (state.run.consumables.length >= maxSlots) return state;
       return { run: { ...state.run, consumables: [...state.run.consumables, consumable] } };
@@ -319,6 +327,7 @@ export const useRunStore = create<RunStore>((set, get) => ({
   addTileType: (type) =>
     set((state) => {
       if (!state.run) return state;
+      useMetaStore.getState().discoverTile(type);
       if (state.run.activeTileTypes.includes(type)) return state;
       return { run: { ...state.run, activeTileTypes: [...state.run.activeTileTypes, type] } };
     }),
@@ -341,6 +350,7 @@ export const useRunStore = create<RunStore>((set, get) => ({
       const tileUpgrades = { ...state.run.tileUpgrades };
       delete tileUpgrades[oldType];
       if (newLevel && newLevel > 0) tileUpgrades[newType] = newLevel;
+      useMetaStore.getState().discoverTile(newType);
       return { run: { ...state.run, activeTileTypes, tileUpgrades } };
     }),
 

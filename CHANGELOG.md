@@ -4,6 +4,25 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## v0.7.2
+
+### Added
+- Reputation Shop "Tiles" tab between Skins and Artifacts. Ten tiles now locked by default and unlocked via rep purchases: Loot / Hourglass / Milk (3,000), Axe / Mace / Cactus / Nunchucks / Chainsaw (5,000), Jackhammer / Sacrificial Blade (8,000). Tile shop cards mirror the in-run TileSelect layout (sprite + label + behaviour + flavor). Gated tiles never appear in run tile selections until purchased. New `unlockedTiles` array on `MetaProgression` plus `unlocked_tiles` column on `meta_progression` (migration `20260420_unlocked_tiles.sql`).
+- Ledger lock overlay: tiles/artifacts gated behind a Reputation Shop purchase render the combat lock icon centered over their sprite when not yet unlocked. Locked entries also gain an "Unlock in the Reputation Shop" hint in their tooltip. Uses `SpriteIcon` canvas outline instead of CSS filter chains to avoid scroll lag on the 100+ artifact grid.
+- `Obsidian` and `Cheese` registered as keywords. Charcoal and Milk tooltips (TileSelect and Merchant) now surface the Obsidian/Cheese tile descriptions as nested sub-tooltips via the existing `secondContent` / `KeywordSubTooltips` pattern.
+- Tooltip auto-flip vertically: when a `position="bottom"` tooltip would overflow the viewport bottom (or a top tooltip overflows the top), it flips to the other side. Fixes Ledger bottom-row tooltips getting clipped.
+
+### Changed
+- Axe and Mace upgrades converted from per-tile to flat-match-total: `upgradeValue` 1 -> 2, removed from `PER_TILE_UPGRADE`. Upgrade text now reads "+2 damage to match total per level". Tooltip previews use the flat `plus N` pattern.
+- Milk description now says "On turn 4, transform into Cheese" (was turn 5).
+- Dry Atmosphere healing reduction 10% -> 20%. Applied in `healAdjust`, `ArtifactSystem.healMultiplier`, and the artifact effect text.
+- Lethargic effect text reworded from "first swap" to "first match" to match actual behaviour.
+- Reputation Shop cost indicators now show just the formatted number (removed the trailing "Reputation" suffix on both `ShopCard` and `NameplateShopCard`).
+
+### Fixed
+- Lethargic no longer consumed on invalid swaps. Previously the pending flag was cleared at swap start before lasso/validity checks, so a failed first swap would "use up" Lethargic on zero matches. Now the suppression flag is tentative and only officially consumed once the swap passes all validity checks; the float animation and combat-store state update happen at the same point. Invalid swaps leave `lethargicPending = true` for the next attempt.
+- Cavalry upgrade preview text fixed from "+1 damage per tile" to "Gain 2 block per tile" (Cavalry grants block, not damage).
+
 ## v0.7.1
 
 ### Added
