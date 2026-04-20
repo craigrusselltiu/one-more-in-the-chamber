@@ -23,6 +23,7 @@ const TRAIT_NAMES: Record<string, string> = {
   rattlesnake: 'Rattlesnake', corrupt: 'Corrupt',
 };
 import { playTreasure } from '../../services/sfx';
+import { forceSaveRun } from '../../services/runPersistence';
 import { createSeededRandom } from '../../utils/seededRandom';
 import { pickArtifactForRun, pickArtifactsForRun } from '../../utils/artifactSelection';
 import type { Screen } from '../../App';
@@ -86,6 +87,14 @@ export const ArtifactScreen = memo(function ArtifactScreen() {
     if (initialLegendaryReward) useRunStore.getState().setPendingLegendaryReward(false);
     // Clear any event-driven choice count.
     if (initialEventChoiceCount != null) useRunStore.getState().setPendingEventArtifactChoiceCount(undefined);
+    if (currentNode?.type === 'artifact') {
+      useRunStore.getState().markNodeCompleted(currentNode.id);
+    }
+    if (currentNode?.type === 'event') {
+      useRunStore.getState().setPendingEventResumeScreen(undefined);
+      useRunStore.getState().markNodeCompleted(currentNode.id);
+    }
+    forceSaveRun();
   };
 
   const takenRef = useRef(false);

@@ -43,7 +43,7 @@ import { pushCombatSnapshot, clearRemoteCombatSnapshot } from './services/syncSe
 import { initSfx } from './services/sfx';
 import { consumePendingSnapshot } from './services/combatResume';
 import { setCombatSceneData } from './game/scenes/CombatScene';
-import { loadPersistedRun, startRunPersistence } from './services/runPersistence';
+import { forceSaveRun, loadPersistedRun, startRunPersistence } from './services/runPersistence';
 import {
   rollAct1Encounter,
   rollAct1EliteEncounter,
@@ -364,6 +364,7 @@ export default function App() {
         // Fresh combat: build config from run state and start CombatScene
         const run = useRunStore.getState().run;
         if (run) {
+          const isPendingEventCombat = run.pendingEventResumeScreen === 'combat';
           const currentNode = run.mapState?.nodes.find((n) => n.id === run.currentNodeId);
           const nodeType = currentNode?.type ?? 'combat';
           const nodeRow = currentNode?.row ?? 99;
@@ -384,7 +385,7 @@ export default function App() {
                 run.currentAct, nodeType, run.seed, run.currentNodeId ?? undefined, nodeRow, outlawKingAvailable,
                 ascMods.outlawKingChanceMultiplier,
               );
-          if (forcedIds && forcedIds.length > 0) {
+          if (forcedIds && forcedIds.length > 0 && !isPendingEventCombat) {
             useRunStore.getState().setForcedCombatEnemies(undefined);
           }
           // Once-per-run: mark Outlaw King encountered if he was rolled.
@@ -472,6 +473,9 @@ export default function App() {
           if (nodeId) {
             useRunStore.getState().markNodeVisited(nodeId);
           }
+          if (isPendingEventCombat) {
+            forceSaveRun();
+          }
         }
       }
     } else if (screen !== 'combat' && prevScreenRef.current === 'combat') {
@@ -484,11 +488,43 @@ export default function App() {
     prevScreenRef.current = screen;
   }, [screen, bootComplete]);
 
+  // Event redirects checkpoint only after the destination has actually opened.
+  useEffect(() => {
+    if (screen !== 'artifact') return;
+    const run = useRunStore.getState().run;
+    if (run?.pendingEventResumeScreen !== 'artifact') return;
+    forceSaveRun();
+  }, [screen]);
+
+  useEffect(() => {
+    if (screen !== 'map') return;
+    const store = useRunStore.getState();
+    const run = store.run;
+    const currentNode = run?.mapState?.nodes.find((n) => n.id === run?.currentNodeId);
+    if (currentNode?.type === 'event') {
+      if (run?.pendingEventResumeScreen) {
+        store.setPendingEventResumeScreen(undefined);
+      }
+      forceSaveRun();
+      return;
+    }
+    if (currentNode?.type === 'campfire') {
+      if (run?.pendingCampfireOutcome) {
+        store.setPendingCampfireOutcome(undefined);
+      }
+      forceSaveRun();
+    }
+  }, [screen]);
+
   // Handle combat end: sync results to run store and return to map
   useEffect(() => {
     const handleCombatEnd = (...args: unknown[]) => {
       const result = args[0] as CombatResult;
       const store = useRunStore.getState();
+      const runAtCombatEnd = store.run;
+      const currentNodeId = runAtCombatEnd?.currentNodeId;
+      const currentNode = runAtCombatEnd?.mapState?.nodes.find((n) => n.id === currentNodeId);
+      const wasPendingEventCombat = runAtCombatEnd?.pendingEventResumeScreen === 'combat';
 
       // Always track stats (even on defeat)
       store.addDamageDealt(result.damageDealt);
@@ -507,10 +543,13 @@ export default function App() {
       // Always sync ability charge (persists between combats)
       store.syncAbilityCharge(result.abilityCharge);
 
+      if (wasPendingEventCombat) {
+        store.setPendingEventResumeScreen(undefined);
+        store.setForcedCombatEnemies(undefined);
+      }
+
       if (result.victory) {
         // Mark the current node as completed
-        const currentNodeId = store.run?.currentNodeId;
-        const currentNode = store.run?.mapState?.nodes.find((n) => n.id === currentNodeId);
         if (currentNodeId) store.markNodeCompleted(currentNodeId);
 
         // Track persistent clear counts (mapState resets each act, so counters must be separate)
@@ -541,7 +580,7 @@ export default function App() {
 
         // Check if the just-completed fight was a boss
         const currentRun = store.run;
-        const currentNode = currentRun?.mapState?.nodes.find((n) => n.id === currentRun?.currentNodeId);
+        const latestNode = currentRun?.mapState?.nodes.find((n) => n.id === currentRun?.currentNodeId);
 
         // Outlaw King defeat guarantees a legendary artifact reward.
         // Flag the run so ArtifactScreen forces legendary on the next visit.
@@ -549,7 +588,7 @@ export default function App() {
           store.setPendingLegendaryReward(true);
         }
 
-        if (currentNode && currentNode.type === 'boss') {
+        if (latestNode && latestNode.type === 'boss') {
           store.addBossDefeated();
 
           // Remove tumbleweed after Act 1 boss (notification shows on Act 2 map)
@@ -565,7 +604,7 @@ export default function App() {
             // Non-final boss: artifact reward first, then tile-select
             EventBus.emit(GameEvent.SCREEN_CHANGE, 'artifact');
           }
-        } else if (currentNode && currentNode.type === 'elite') {
+        } else if (latestNode && latestNode.type === 'elite') {
           // Elite victory: artifact reward before returning to map
           EventBus.emit(GameEvent.SCREEN_CHANGE, 'artifact');
         } else if (result.defeatedOutlawKing) {
@@ -720,6 +759,7 @@ export default function App() {
 
       {/* Scaled overlay: 960x540 virtual pixels, CSS-transformed to match Phaser canvas */}
       <div
+        data-tooltip-root
         className={`absolute overflow-hidden select-none ${showTopBar ? 'flex flex-col' : ''}`}
         style={{
           width: UI_WIDTH,

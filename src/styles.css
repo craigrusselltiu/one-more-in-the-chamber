@@ -53,6 +53,13 @@
 .ability-segment-ready {
   animation: ability-pulse 1.2s ease-in-out infinite;
 }
+@keyframes chamber-ready-pulse {
+  0%, 100% { box-shadow: 0 0 0 2px #FFD700, 0 0 4px #FFD70080; }
+  50% { box-shadow: 0 0 0 2px #FFD700, 0 0 10px #FFD700CC; }
+}
+.chamber-ready {
+  animation: chamber-ready-pulse 1.2s ease-in-out infinite;
+}
 @keyframes ready-breathe {
   0%, 100% { opacity: 0.6; }
   50% { opacity: 1; }

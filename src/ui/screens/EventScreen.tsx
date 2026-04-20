@@ -178,6 +178,7 @@ export const EventScreen = memo(function EventScreen() {
   const addArtifact = useRunStore((s) => s.addArtifact);
   const addConsumable = useRunStore((s) => s.addConsumable);
   const setEventBag = useRunStore((s) => s.setEventBag);
+  const setPendingEventResumeScreen = useRunStore((s) => s.setPendingEventResumeScreen);
 
   const { event, newBag } = useMemo(() =>
     pickEventFromBag(
@@ -293,7 +294,7 @@ export const EventScreen = memo(function EventScreen() {
     } else {
       completedRef.current = true;
       commitBag();
-      forceSaveRun();
+      setPendingEventResumeScreen(nextScreen === 'artifact' || nextScreen === 'combat' ? nextScreen : undefined);
       EventBus.emit(GameEvent.SCREEN_CHANGE, nextScreen);
     }
   };
@@ -537,7 +538,11 @@ export const EventScreen = memo(function EventScreen() {
   const handleResultContinue = () => {
     completedRef.current = true;
     commitBag();
-    forceSaveRun();
+    setPendingEventResumeScreen(
+      postResultScreen === 'artifact' || postResultScreen === 'combat'
+        ? postResultScreen
+        : undefined,
+    );
     EventBus.emit(GameEvent.SCREEN_CHANGE, postResultScreen);
   };
 
@@ -653,7 +658,7 @@ export const EventScreen = memo(function EventScreen() {
   const handleContinue = () => {
     completedRef.current = true;
     commitBag();
-    forceSaveRun();
+    setPendingEventResumeScreen(undefined);
     EventBus.emit(GameEvent.SCREEN_CHANGE, 'map' satisfies Screen);
   };
 

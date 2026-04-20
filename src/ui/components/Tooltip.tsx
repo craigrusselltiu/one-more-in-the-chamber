@@ -1,6 +1,8 @@
 import { memo, useState, useRef, useEffect, useCallback, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 
+const TOOLTIP_ROOT_WIDTH = 960;
+
 interface TooltipProps {
   /** Simple string tooltip text. */
   text?: string;
@@ -39,13 +41,20 @@ export const Tooltip = memo(function Tooltip({ text, content, secondContent, chi
 
   const tooltipBody = content ?? text;
 
+  const getPortalTarget = useCallback((): HTMLElement | null => {
+    if (!wrapperRef.current) return null;
+    return (wrapperRef.current.closest('[data-tooltip-root]') as HTMLElement | null)
+      ?? (wrapperRef.current.closest('.overflow-hidden') as HTMLElement | null);
+  }, []);
+
   // Position the portal tooltip and clamp to viewport bounds
   useEffect(() => {
     if (!visible || !wrapperRef.current) return;
+    const viewport = getPortalTarget();
+    if (!viewport) return;
     const rect = wrapperRef.current.getBoundingClientRect();
-    const viewport = wrapperRef.current.closest('.overflow-hidden') as HTMLElement | null;
     const vRect = viewport?.getBoundingClientRect();
-    const scale = vRect ? vRect.width / 960 : 1;
+    const scale = vRect ? vRect.width / TOOLTIP_ROOT_WIDTH : 1;
 
     const x = align === 'left'
       ? (rect.left - (vRect?.left ?? 0)) / scale
@@ -86,13 +95,7 @@ export const Tooltip = memo(function Tooltip({ text, content, secondContent, chi
         setEffectivePosition('bottom');
       }
     });
-  }, [visible, effectivePosition, align]);
-
-  // Find the portal target (the scaled viewport container)
-  const getPortalTarget = (): HTMLElement | null => {
-    if (!wrapperRef.current) return null;
-    return wrapperRef.current.closest('.overflow-hidden') as HTMLElement | null;
-  };
+  }, [visible, effectivePosition, align, getPortalTarget]);
 
   const portalTarget = visible ? getPortalTarget() : null;
 

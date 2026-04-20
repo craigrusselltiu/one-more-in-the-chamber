@@ -42,4 +42,5 @@ todo:
 - got a random bomb on the board fighting dusty? should not be possible.
 - adjust healthbars
 - improve ability indicator
-- swap starts with no possible moves.
+- hovering over Reno should show tooltip that says "Unlock in Reputation Shop"
+- tooltips are in weird places in leaderboard

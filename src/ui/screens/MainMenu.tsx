@@ -124,8 +124,22 @@ export const MainMenu = memo(function MainMenu() {
       return;
     }
 
-    // Check if player was at an incomplete node
     const currentRun = useRunStore.getState().run;
+    const pendingEventResumeScreen = currentRun?.pendingEventResumeScreen;
+    if (pendingEventResumeScreen) {
+      EventBus.emit(GameEvent.SCREEN_CHANGE, pendingEventResumeScreen);
+      return;
+    }
+    if (currentRun?.pendingCampfireOutcome) {
+      EventBus.emit(GameEvent.SCREEN_CHANGE, 'campfire');
+      return;
+    }
+    if (currentRun?.pendingLegendaryReward) {
+      EventBus.emit(GameEvent.SCREEN_CHANGE, 'artifact');
+      return;
+    }
+
+    // Check if player was at an incomplete node
     const currentNode = currentRun?.mapState?.nodes.find((n) => n.id === currentRun?.currentNodeId);
     if (currentNode && currentNode.visited && !currentNode.completed) {
       const screenMap: Record<string, Screen> = {

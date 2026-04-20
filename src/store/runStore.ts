@@ -1,5 +1,15 @@
 import { create } from 'zustand';
-import type { RunState, TileType, ArtifactInstance, ConsumableInstance, Act, MapState, CharacterId } from '../types/game';
+import type {
+  RunState,
+  TileType,
+  ArtifactInstance,
+  ConsumableInstance,
+  Act,
+  MapState,
+  CharacterId,
+  MerchantSnapshot,
+  PendingCampfireOutcome,
+} from '../types/game';
 import { generateMap } from '../game/map/MapGenerator';
 import { useMetaStore } from './metaStore';
 import { useSettingsStore } from './settingsStore';
@@ -52,18 +62,20 @@ interface RunStore {
   resetNodeVisited: (nodeId: string) => void;
   markNodeCompleted: (nodeId: string) => void;
   addMerchantPurchase: (nodeId: string, itemId: string) => void;
-  setMerchantSnapshot: (nodeId: string, snapshot: { ownedArtifactIds: string[]; activeTileTypes: TileType[] }) => void;
+  setMerchantSnapshot: (nodeId: string, snapshot: MerchantSnapshot) => void;
   markBossRewardTaken: () => void;
   markEliteRewardTaken: () => void;
   markOutlawKingEncountered: () => void;
   setPendingLegendaryReward: (value: boolean) => void;
   setEventBag: (ids: string[]) => void;
   setForcedCombatEnemies: (ids: string[] | undefined) => void;
+  setPendingEventResumeScreen: (screen: 'artifact' | 'combat' | undefined) => void;
   setNextMerchantDiscount: (discount: number | undefined) => void;
   setPendingEventArtifactChoiceCount: (count: number | undefined) => void;
   setPendingActBossHpBonus: (amount: number | undefined) => void;
   setPendingNextFightGrace: (amount: number | undefined) => void;
   setPendingNextFightSwapBonus: (amount: number | undefined) => void;
+  setPendingCampfireOutcome: (outcome: PendingCampfireOutcome | undefined) => void;
   incrementMerchantUpgradesPurchased: () => void;
   setActMerchantSurcharge: (amount: number | undefined) => void;
   advanceAct: () => void;
@@ -560,6 +572,12 @@ export const useRunStore = create<RunStore>((set, get) => ({
       return { run: { ...state.run, forcedCombatEnemies: ids } };
     }),
 
+  setPendingEventResumeScreen: (screen) =>
+    set((state) => {
+      if (!state.run) return state;
+      return { run: { ...state.run, pendingEventResumeScreen: screen } };
+    }),
+
   setNextMerchantDiscount: (discount) =>
     set((state) => {
       if (!state.run) return state;
@@ -588,6 +606,12 @@ export const useRunStore = create<RunStore>((set, get) => ({
     set((state) => {
       if (!state.run) return state;
       return { run: { ...state.run, pendingNextFightSwapBonus: amount } };
+    }),
+
+  setPendingCampfireOutcome: (outcome) =>
+    set((state) => {
+      if (!state.run) return state;
+      return { run: { ...state.run, pendingCampfireOutcome: outcome } };
     }),
 
   incrementMerchantUpgradesPurchased: () =>

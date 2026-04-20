@@ -18,6 +18,7 @@ import type { Screen } from '../../App';
 import { getWantedLevelMutations } from '../../data/wantedLevel';
 import { getMaxConsumableSlots } from '../../utils/consumableSlots';
 import { rollTileRewardLevel } from '../../utils/tileRewardLevel';
+import { forceSaveRun } from '../../services/runPersistence';
 
 const TRAIT_COLORS: Record<TraitId, string> = {
   outlaw: '#D04040', sheriff: '#6888A0', prospector: '#E0C880', sapper: '#D4A030',
@@ -78,29 +79,40 @@ export const MerchantScreen = memo(function MerchantScreen() {
   // On remount (quit+resume), use the saved snapshot so stock doesn't re-roll.
   const merchantSnapshots = useRunStore((s) => s.run?.merchantSnapshots);
   const setMerchantSnapshot = useRunStore((s) => s.setMerchantSnapshot);
+  const setNextMerchantDiscount = useRunStore((s) => s.setNextMerchantDiscount);
 
   const snapshot = useMemo(() => {
     if (!run || !nodeId) return null;
-    const existing = merchantSnapshots?.[nodeId];
-    if (existing) return existing;
-    const snap = {
+    return merchantSnapshots?.[nodeId] ?? {
       ownedArtifactIds: run.artifacts.map(a => a.id),
       activeTileTypes: [...run.activeTileTypes],
+      discount: run.nextMerchantDiscount ?? 0,
+      surcharge: run.actMerchantSurcharge ?? 0,
     };
-    setMerchantSnapshot(nodeId, snap);
-    return snap;
-  }, [nodeId]);
+  }, [merchantSnapshots, nodeId, run]);
+
+  useEffect(() => {
+    if (!run || !nodeId || merchantSnapshots?.[nodeId]) return;
+    const entrySnapshot = {
+      ownedArtifactIds: run.artifacts.map((a) => a.id),
+      activeTileTypes: [...run.activeTileTypes],
+      discount: run.nextMerchantDiscount ?? 0,
+      surcharge: run.actMerchantSurcharge ?? 0,
+    };
+    setMerchantSnapshot(nodeId, entrySnapshot);
+    if (entrySnapshot.discount > 0) {
+      setNextMerchantDiscount(undefined);
+    }
+    forceSaveRun();
+  }, [merchantSnapshots, nodeId, run, setMerchantSnapshot, setNextMerchantDiscount]);
 
   const stock = useMemo(() => {
     if (!run || !snapshot) return { consumables: [] as MerchantItem[], artifacts: [] as MerchantItem[], tiles: [] as MerchantItem[] };
     const rand = createSeededRandom(`${run.seed}-merchant-${run.currentNodeId}`);
     const ascPriceMult = getWantedLevelMutations(run.wantedLevel).merchantPriceMultiplier;
-    // One-shot discount from events (e.g. Train Wreck "Check for survivors"). Consumed on first stock computation.
-    const discount = run.nextMerchantDiscount ?? 0;
-    // Act-wide surcharge from events (e.g. Medicine Wagon "Threaten him"). Cleared on act advance.
-    const surcharge = run.actMerchantSurcharge ?? 0;
+    const discount = snapshot.discount ?? 0;
+    const surcharge = snapshot.surcharge ?? 0;
     const priceMult = ascPriceMult * (1 - discount) * (1 + surcharge);
-    if (discount > 0) useRunStore.getState().setNextMerchantDiscount(undefined);
 
     const consumables: MerchantItem[] = [];
     const shuffledConsumables = seededShuffle(CONSUMABLES, rand);
@@ -203,7 +215,7 @@ export const MerchantScreen = memo(function MerchantScreen() {
 
     return { consumables, artifacts, tiles };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [run?.seed, run?.currentNodeId, run?.character, snapshot]);
+  }, [run?.seed, run?.currentNodeId, run?.character, run?.wantedLevel, snapshot]);
 
   const swappableTiles = useMemo(() => {
     if (!run) return [];

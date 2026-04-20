@@ -8,6 +8,7 @@ import { SpriteIcon } from '../components/SpriteIcon';
 import { Tooltip } from '../components/Tooltip';
 import { KeywordSubTooltips, getReferencedKeywords, buildUpgradePreview } from '../components/KeywordText';
 import { adjustHeal } from '../../utils/healAdjust';
+import { forceSaveRun } from '../../services/runPersistence';
 import type { TileType } from '../../types/game';
 import type { Screen } from '../../App';
 
@@ -18,8 +19,18 @@ export const CampfireScreen = memo(function CampfireScreen() {
   const run = useRunStore((s) => s.run);
   const updateHealth = useRunStore((s) => s.updateHealth);
   const upgradeTile = useRunStore((s) => s.upgradeTile);
-  const [choice, setChoice] = useState<'none' | 'rest' | 'upgrade' | 'upgraded'>('none');
-  const [selectedTile, setSelectedTile] = useState<TileType | null>(null);
+  const setPendingCampfireOutcome = useRunStore((s) => s.setPendingCampfireOutcome);
+  const initialOutcome = run?.pendingCampfireOutcome;
+  const [choice, setChoice] = useState<'none' | 'rest' | 'upgrade' | 'upgraded'>(
+    initialOutcome?.type === 'rest'
+      ? 'rest'
+      : initialOutcome?.type === 'upgrade'
+      ? 'upgraded'
+      : 'none',
+  );
+  const [selectedTile, setSelectedTile] = useState<TileType | null>(
+    initialOutcome?.type === 'upgrade' ? initialOutcome.tileType : null,
+  );
 
   useEffect(() => { playCampfire(); return () => stopCampfire(); }, []);
 
@@ -27,10 +38,16 @@ export const CampfireScreen = memo(function CampfireScreen() {
 
   const healAmount = adjustHeal(run, Math.floor(run.maxHealth * 0.3));
   const isFullHealth = run.health >= run.maxHealth;
+  const displayedHealAmount =
+    run.pendingCampfireOutcome?.type === 'rest'
+      ? run.pendingCampfireOutcome.healAmount
+      : healAmount;
 
   const handleRest = () => {
+    setPendingCampfireOutcome({ type: 'rest', healAmount });
     updateHealth(healAmount);
     setChoice('rest');
+    forceSaveRun();
   };
 
   const handleUpgrade = () => {
@@ -39,9 +56,11 @@ export const CampfireScreen = memo(function CampfireScreen() {
 
   const handleConfirmUpgrade = () => {
     if (!selectedTile) return;
+    setPendingCampfireOutcome({ type: 'upgrade', tileType: selectedTile });
     upgradeTile(selectedTile);
     playUpgrade();
     setChoice('upgraded');
+    forceSaveRun();
   };
 
   const handleLeave = () => {
@@ -55,7 +74,7 @@ export const CampfireScreen = memo(function CampfireScreen() {
         <div className="mb-4"><SpriteIcon frame={NODE_FRAMES.campfire} scale={3} /></div>
         <h2 className="text-xl text-amber-400 mb-2 font-bold uppercase" style={{ WebkitTextStroke: '4px #000', paintOrder: 'stroke fill' }}>Rested</h2>
         <p className="text-stone-300 text-sm mb-4">
-          You rest by the fire. Healed {healAmount} HP.
+          You rest by the fire. Healed {displayedHealAmount} HP.
         </p>
         <p className="text-red-400 text-xs mb-6">
           HP: {run.health}/{run.maxHealth}

@@ -35,7 +35,7 @@ export interface RunState {
   /** Tracks purchased item IDs per merchant node to persist across remounts. */
   merchantPurchases?: Record<string, string[]>;
   /** Snapshot of owned artifact IDs + active tile types at first merchant visit, keyed by nodeId. */
-  merchantSnapshots?: Record<string, { ownedArtifactIds: string[]; activeTileTypes: TileType[] }>;
+  merchantSnapshots?: Record<string, MerchantSnapshot>;
   /** True after boss treasure is taken/skipped but before act advances. */
   bossRewardTaken?: boolean;
   /** True after elite treasure is taken/skipped. */
@@ -46,8 +46,10 @@ export interface RunState {
   pendingLegendaryReward?: boolean;
   /** Shuffle bag of event IDs remaining for this cycle. Refills from the current act's pool when empty. */
   eventBag?: string[];
-  /** When set, the next combat uses these enemy type IDs instead of rolling a normal encounter. Cleared on combat start. */
+  /** When set, the next combat uses these enemy type IDs instead of rolling a normal encounter. */
   forcedCombatEnemies?: string[];
+  /** When set, Continue resumes an event redirect destination instead of re-entering the event screen. */
+  pendingEventResumeScreen?: 'artifact' | 'combat';
   /** One-shot discount (0-1, e.g. 0.25 = 25% off) applied to the next merchant's prices. Cleared after the merchant snapshot is taken. */
   nextMerchantDiscount?: number;
   /** When set, the next ArtifactScreen visit is an event-driven choice of this many artifacts. Cleared after pick/skip. */
@@ -58,6 +60,8 @@ export interface RunState {
   pendingNextFightGrace?: number;
   /** Extra swaps per turn granted at the start of the next combat (e.g. Campfire Stranger "Keep walking"). Cleared on consume. */
   pendingNextFightSwapBonus?: number;
+  /** Persisted campfire result so quitting before returning to map can't replay the node. */
+  pendingCampfireOutcome?: PendingCampfireOutcome;
   /** Total number of merchant "Upgrade" cards purchased so far this run. Each purchase raises the upgrade price in future shops by 50 gold. */
   merchantUpgradesPurchased?: number;
   /** Additive surcharge (fraction, e.g. 0.2 = +20%) applied to merchant prices for the rest of the current act (Medicine Wagon "Threaten him"). Cleared on advanceAct. */
@@ -142,6 +146,17 @@ export interface ArtifactInstance {
   /** True once the artifact's one-shot effect has been spent (e.g. Shed Skin triggered, Gold Tooth picked up). */
   used?: boolean;
 }
+
+export interface MerchantSnapshot {
+  ownedArtifactIds: string[];
+  activeTileTypes: TileType[];
+  discount: number;
+  surcharge: number;
+}
+
+export type PendingCampfireOutcome =
+  | { type: 'rest'; healAmount: number }
+  | { type: 'upgrade'; tileType: TileType };
 
 export interface ConsumableInstance {
   id: string;

@@ -108,6 +108,8 @@ export class CombatManager {
   private isDeadeyeActive = false;
   private deadeyeShotsRemaining = 0;
   private deadeyeMaxShots: number;
+  /** Ability charges earned while Deadeye is active; rolled into abilityCharge on endDeadeye. */
+  private pendingAbilityCharge = 0;
   private isBoss: boolean;
   /** Next match multiplier from consumables (Moonshine 2x, Strong Coffee 1.5x). */
   private nextMatchMultiplier = 1.0;
@@ -357,6 +359,10 @@ export class CombatManager {
     });
 
     on(GameEvent.ACTIVATE_ABILITY, () => {
+      if (this.isDeadeyeActive) {
+        this.cancelAbility();
+        return;
+      }
       if (this.character === 'reno') {
         this.activateShuffle();
       } else {
@@ -699,8 +705,10 @@ export class CombatManager {
       }
     }
 
-    // Per-turn: +1 ability charge (capped at threshold)
-    if (this.player.abilityCharge < this.player.abilityThreshold) {
+    // Per-turn: +1 ability charge (capped at threshold). Defer while Deadeye is active.
+    if (this.isDeadeyeActive) {
+      this.pendingAbilityCharge++;
+    } else if (this.player.abilityCharge < this.player.abilityThreshold) {
       this.player.abilityCharge++;
       if (this.player.abilityCharge >= this.player.abilityThreshold) playAbilityReady();
     }
@@ -996,7 +1004,7 @@ export class CombatManager {
    */
   activateDeadeye(): boolean {
     if (this.phase !== 'swap-phase' && this.phase !== 'consumable-window') return false;
-    if (!this.player.activateDeadeye()) return false;
+    if (!this.player.isDeadeyeReady()) return false;
 
     this.isDeadeyeActive = true;
     this.deadeyeShotsRemaining = this.deadeyeMaxShots;
@@ -1038,6 +1046,8 @@ export class CombatManager {
     this.resolveDestroyedTiles(destroyed);
 
     this.deadeyeShotsRemaining--;
+    if (this.player.abilityCharge > 0) this.player.abilityCharge--;
+    EventBus.emit(GameEvent.ABILITY_CHARGE_CHANGE, this.player.abilityCharge, this.player.abilityThreshold);
     if (this.deadeyeShotsRemaining <= 0) {
       this.board.setDeadeyeMode(false);
       document.body.classList.remove('cursor-crosshair');
@@ -1108,6 +1118,8 @@ export class CombatManager {
     this.emitEnemyHpChanges();
 
     this.deadeyeShotsRemaining = 0;
+    if (this.player.abilityCharge > 0) this.player.abilityCharge--;
+    EventBus.emit(GameEvent.ABILITY_CHARGE_CHANGE, this.player.abilityCharge, this.player.abilityThreshold);
     this.board.setDeadeyeMode(false);
     document.body.classList.remove('cursor-crosshair');
     this.emitFullState();
@@ -1124,14 +1136,16 @@ export class CombatManager {
   private endDeadeye(): void {
     this.isDeadeyeActive = false;
     this.deadeyeShotsRemaining = 0;
-    this.player.abilityCharge = 0;
+    const rollover = Math.min(this.player.abilityThreshold, this.pendingAbilityCharge);
+    this.pendingAbilityCharge = 0;
+    this.player.abilityCharge = rollover;
     this.board.setDeadeyeMode(false);
     document.body.classList.remove('cursor-crosshair');
     EventBus.emit(GameEvent.ABILITY_CHARGE_CHANGE, this.player.abilityCharge, this.player.abilityThreshold);
     this.emitFullState();
   }
 
-  /** Cancel the active ability. Retain charges if unused, reset to 0 if partly used. */
+  /** Cancel the active ability. Retain charges if unused, clear remaining if partly used. */
   private cancelAbility(): void {
     if (this.isDeadeyeActive) {
       const usedShots = this.deadeyeMaxShots - this.deadeyeShotsRemaining;
@@ -1140,11 +1154,15 @@ export class CombatManager {
       this.board.setDeadeyeMode(false);
       document.body.classList.remove('cursor-crosshair');
       if (usedShots > 0) {
-        this.player.abilityCharge = 0;
+        const rollover = Math.min(this.player.abilityThreshold, this.pendingAbilityCharge);
+        this.player.abilityCharge = rollover;
       } else {
-        // No shots fired: restore charges consumed on activation
-        this.player.abilityCharge = this.player.abilityThreshold;
+        this.player.abilityCharge = Math.min(
+          this.player.abilityThreshold,
+          this.player.abilityCharge + this.pendingAbilityCharge,
+        );
       }
+      this.pendingAbilityCharge = 0;
       EventBus.emit(GameEvent.ABILITY_CHARGE_CHANGE, this.player.abilityCharge, this.player.abilityThreshold);
       this.emitFullState();
     }
@@ -2046,15 +2064,20 @@ export class CombatManager {
       }
     }
 
-    // Ability charges (capped at threshold)
+    // Ability charges (capped at threshold). Defer into pending bucket while Deadeye is active
+    // so the chamber visual doesn't gain bullets mid-ability.
     if (output.abilityCharges > 0) {
-      const wasFull = this.player.abilityCharge >= this.player.abilityThreshold;
-      this.player.abilityCharge = Math.min(
-        this.player.abilityThreshold,
-        this.player.abilityCharge + output.abilityCharges,
-      );
-      if (!wasFull && this.player.abilityCharge >= this.player.abilityThreshold) playAbilityReady();
-      EventBus.emit(GameEvent.ABILITY_CHARGE_CHANGE, this.player.abilityCharge, this.player.abilityThreshold);
+      if (this.isDeadeyeActive) {
+        this.pendingAbilityCharge += output.abilityCharges;
+      } else {
+        const wasFull = this.player.abilityCharge >= this.player.abilityThreshold;
+        this.player.abilityCharge = Math.min(
+          this.player.abilityThreshold,
+          this.player.abilityCharge + output.abilityCharges,
+        );
+        if (!wasFull && this.player.abilityCharge >= this.player.abilityThreshold) playAbilityReady();
+        EventBus.emit(GameEvent.ABILITY_CHARGE_CHANGE, this.player.abilityCharge, this.player.abilityThreshold);
+      }
     }
 
     // Venom

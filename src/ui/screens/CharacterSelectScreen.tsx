@@ -125,7 +125,7 @@ export const CharacterSelectScreen = memo(function CharacterSelectScreen() {
         {CHARACTERS.map((c) => {
           const isSelected = selectedCharacter === c.id;
           const locked = isLocked(c.id);
-          return (
+          const button = (
             <button
               key={c.id}
               onClick={() => { if (!locked) setSelectedCharacter(c.id); }}
@@ -179,7 +179,62 @@ export const CharacterSelectScreen = memo(function CharacterSelectScreen() {
               </span>
             </button>
           );
+          return locked ? (
+            <Tooltip key={c.id} text="Unlock in Reputation Shop" position="top">
+              {button}
+            </Tooltip>
+          ) : button;
         })}
+        <Tooltip text="Coming soon" position="top">
+          <button
+            disabled
+            className="flex items-center gap-2"
+            style={{
+              padding: '10px 16px 10px 48px',
+              backgroundColor: 'rgba(28, 25, 23, 0.8)',
+              borderRadius: '0 6px 6px 0',
+              transform: 'translateX(-20px)',
+              minWidth: 170,
+              cursor: 'not-allowed',
+            }}
+          >
+            <div className="relative" style={{ width: 40, height: 40 }}>
+              <img
+                src={`${import.meta.env.BASE_URL}assets/sprites/rust.png`}
+                alt="???"
+                style={{
+                  width: 40,
+                  height: 40,
+                  imageRendering: 'pixelated',
+                  objectFit: 'cover',
+                  filter: 'brightness(0)',
+                }}
+              />
+              <div
+                style={{
+                  position: 'absolute',
+                  inset: 0,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  pointerEvents: 'none',
+                }}
+              >
+                <SpriteIcon frame={HAZARD_FRAMES.lock} scale={1} outline="#000" outlineWidth={2} />
+              </div>
+            </div>
+            <span
+              className="text-sm font-bold"
+              style={{
+                color: '#57534e',
+                WebkitTextStroke: '2px #000',
+                paintOrder: 'stroke fill',
+              }}
+            >
+              ???
+            </span>
+          </button>
+        </Tooltip>
       </div>
 
       {/* Character info - center bottom */}

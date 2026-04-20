@@ -4,6 +4,23 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## v0.7.4
+
+### Added
+- Ability meter reworked into a rotating revolver chamber HUD with new chamber art. Rust now shows a six-shot chamber, Reno shows a five-shot chamber with one blocked slot, and Deadeye still exposes a cancel affordance plus per-shot pips while active.
+- Character Select now shows a locked Reno tooltip ("Unlock in Reputation Shop") and a placeholder locked future character slot marked "Coming soon".
+
+### Changed
+- Deadeye charge handling was reworked to match the new chamber HUD: activating Deadeye no longer zeroes the meter up front, each shot/cancel consumes chamber bullets directly, and charges earned while Deadeye is active are deferred until the ability ends so the chamber state stays stable.
+
+### Fixed
+- Artifact-column tooltips now anchor against the shared 960x540 UI overlay instead of whichever clipped container is nearest. This fixes tooltip Y-offset drift on screens like the merchant/leaderboard artifact columns where the tooltip was rendering too low.
+- Event rewards now checkpoint at the destination screen instead of on the event result screen, closing refresh exploits where permanent rewards could be kept before the follow-up branch actually started.
+- Coyote Den now restarts cleanly if you quit before the coyote fight begins, but resumes at the fight with the granted artifact once combat has actually started.
+- Other event branches with the same persistence hole were fixed as well: Ghost Town Saloon's bandit ambush, Train Wreck's artifact redirect, and direct-to-map event outcomes no longer save their rewards too early.
+- Campfire results, plain artifact nodes, and Outlaw King's pending legendary reward now resume from durable checkpoints instead of replaying the node after a reload.
+- Merchant entry snapshots are now checkpointed explicitly on first visit, so seeded stock and one-shot discounts no longer depend on render-time side effects.
+
 ## v0.7.3
 
 ### Added
