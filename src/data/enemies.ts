@@ -590,9 +590,9 @@ function getBag(key: string, size: number): EncounterBag {
  *  Act 1 stays rare; chance ramps up through later acts so players don't reach
  *  Act 3 having never seen him. */
 export const OUTLAW_KING_ENCOUNTER_CHANCE_BY_ACT: Record<1 | 2 | 3, number> = {
-  1: 0.005,
-  2: 0.01,
-  3: 0.02,
+  1: 0.002,
+  2: 0.004,
+  3: 0.006,
 };
 
 /** Build an Outlaw King encounter scaled to the given act, including his companions. */
