@@ -2,8 +2,10 @@ import { memo, useEffect, useMemo, useState } from 'react';
 import { playMerchant, playUpgrade } from '../../services/sfx';
 import { EventBus, GameEvent } from '../../game/EventBus';
 import { useRunStore } from '../../store/runStore';
+import { useMetaStore } from '../../store/metaStore';
 import { ARTIFACTS, RARITY_COLORS_DIM, RARITY_LABELS, RARITY_BREATHE_CLASS } from '../../data/artifacts';
 import { CONSUMABLES } from '../../data/consumables';
+import { SHOP_ITEMS } from '../../data/shopItems';
 import { ADDITIONAL_POOL, STARTER_POOL, TILE_DEFINITIONS } from '../../data/tiles';
 import { TILE_FRAMES, UI_FRAMES, CONSUMABLE_FRAMES, ARTIFACT_FRAMES } from '../../data/spriteConfig';
 import { SpriteIcon } from '../components/SpriteIcon';
@@ -30,6 +32,12 @@ const TRAIT_NAMES: Record<string, string> = {
   tracker: 'Tracker', preacher: 'Preacher', antivenom: 'Antivenom', undertaker: 'Undertaker',
   rattlesnake: 'Rattlesnake', corrupt: 'Corrupt',
 };
+
+/** Tile types gated behind a Reputation Shop purchase -- matches TileSelectScreen's
+ *  filter so merchant offers stay in sync with run-start/act-break selections. */
+const GATED_TILES: Set<string> = new Set(
+  SHOP_ITEMS.filter((si) => si.category === 'tile').map((si) => si.unlockId),
+);
 
 interface MerchantItem {
   type: 'artifact' | 'consumable' | 'tile_swap' | 'upgrade';
@@ -157,7 +165,9 @@ export const MerchantScreen = memo(function MerchantScreen() {
     );
     if (swappableTiles.length > 0) {
       const tilePool = [...STARTER_POOL, ...ADDITIONAL_POOL];
-      const available = tilePool.filter((t) => !snapTileTypes.includes(t));
+      const unlockedTiles = useMetaStore.getState().meta.unlockedTiles;
+      const isLocked = (t: TileType) => GATED_TILES.has(t) && !unlockedTiles.includes(t);
+      const available = tilePool.filter((t) => !snapTileTypes.includes(t) && !isLocked(t));
       // Offer up to 2 distinct swap tiles.
       const picks = seededShuffle(available, rand).slice(0, 2);
       for (const swapTile of picks) {

@@ -24,6 +24,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 - Version label is now global (always visible, including main menu + non-run screens).
 
 ### Fixed
+- Merchant tile-swap pool now excludes reputation-gated tiles (Axe, Mace, Cactus, Nunchucks, Chainsaw, Jackhammer, Sacrificial Blade, Loot, Hourglass, Milk) until purchased in the Reputation Shop, matching the Tile Select filter.
+- Version label restored to the bottom-right of the 960x540 game container (was rendering outside the game bounds against the browser window corner).
 - Twin Revolvers now modifies all bullet-type tile matches (not just Bullet) and missed shots no longer apply Envenomed Ammo's poison.
 - Boulder no longer appears as an upgraded offer (Lv 2+) in Tile Select or Merchant: reward-level rolls now clamp to Lv 1 for tiles without upgrade text.
 - Removed unused Medicine Wagon delayed-potion plumbing (`pendingNextFightPotion`) which was no longer reachable from the event UI.
