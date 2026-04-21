@@ -1,4 +1,4 @@
-import { memo, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { memo, useEffect, useMemo, useRef, useState } from 'react';
 import { EventBus, GameEvent } from '../../game/EventBus';
 import { useRunStore } from '../../store/runStore';
 import { pickEventFromBag, type EventChoice } from '../../data/events';
@@ -11,6 +11,8 @@ import { pickArtifactForRun, pickArtifactByTag } from '../../utils/artifactSelec
 import { adjustHeal } from '../../utils/healAdjust';
 import { CONSUMABLES } from '../../data/consumables';
 import { TILE_DEFINITIONS } from '../../data/tiles';
+import { renderNarrativeText } from '../components/AnimatedNarrativeText';
+import { playUpgrade } from '../../services/sfx';
 import type { RunState, TraitId } from '../../types/game';
 import type { Screen } from '../../App';
 
@@ -43,84 +45,6 @@ const MINE_LEVELS: Array<{ label: string; description: string; hpPct: number; ch
   { label: 'Go deeper', description: 'Lose 10% HP for artifact. (50%)', hpPct: 0.10, chance: 0.50, hpBase: 'current' },
   { label: 'Go deeper', description: 'Lose 15% HP for artifact. (100%)', hpPct: 0.15, chance: 1.00, hpBase: 'current' },
 ];
-
-function renderEventParagraph(text: string, baseKey: number): ReactNode[] {
-  const pattern = /\{\{(green|red|blue|yellow):([^}]+)\}\}/g;
-  const parts: ReactNode[] = [];
-  let lastIdx = 0;
-  let match: RegExpExecArray | null;
-  let key = baseKey;
-  while ((match = pattern.exec(text)) !== null) {
-    if (match.index > lastIdx) parts.push(text.slice(lastIdx, match.index));
-    const color = match[1] as 'green' | 'red' | 'blue' | 'yellow';
-    const content = match[2];
-    if (color === 'green' || color === 'yellow') {
-      const colorClass = color === 'green' ? 'text-green-400' : 'text-yellow-400';
-      parts.push(
-        <span key={key++} className={`event-wiggle ${colorClass}`}>{content}</span>,
-      );
-    } else if (color === 'blue') {
-      parts.push(
-        <span key={key++} className="event-breathe text-sky-400">{content}</span>,
-      );
-    } else {
-      // Red: per-character jump animation. Each char is an inline-block, so
-      // without word grouping the browser can break lines between any two
-      // chars (producing "cr<newline>oss"). Wrap each word in a nowrap span
-      // so words stay intact; only the spaces between them are breakable.
-      const tokens: ReactNode[] = [];
-      const segments = content.split(/(\s+)/); // preserve whitespace runs
-      let charCounter = 0;
-      for (let s = 0; s < segments.length; s++) {
-        const segment = segments[s];
-        if (/^\s+$/.test(segment)) {
-          tokens.push(segment);
-          continue;
-        }
-        if (segment.length === 0) continue;
-        const localStart = charCounter;
-        const chars = segment.split('').map((ch, i) => (
-          <span
-            key={`${s}-${i}`}
-            className="event-char-jump"
-            style={{ animationDelay: `${(localStart + i) * 0.08}s` }}
-          >
-            {ch}
-          </span>
-        ));
-        charCounter += segment.length;
-        tokens.push(
-          <span key={`w-${s}`} style={{ whiteSpace: 'nowrap' }}>
-            {chars}
-          </span>,
-        );
-      }
-      parts.push(
-        <span key={key++} className="text-red-400">
-          {tokens}
-        </span>,
-      );
-    }
-    lastIdx = match.index + match[0].length;
-  }
-  if (lastIdx < text.length) parts.push(text.slice(lastIdx));
-  return parts;
-}
-
-function renderEventText(text: string): ReactNode[] {
-  const paragraphs = text.split('\n');
-  return paragraphs.map((para, i) => (
-    <span
-      key={i}
-      style={{
-        display: 'block',
-        marginBottom: i < paragraphs.length - 1 ? 16 : 0,
-      }}
-    >
-      {renderEventParagraph(para, i * 1000)}
-    </span>
-  ));
-}
 
 function generateRewards(
   gameType: GameType,
@@ -173,7 +97,7 @@ function generateRewards(
 export const EventScreen = memo(function EventScreen() {
   const run = useRunStore((s) => s.run);
   const updateGold = useRunStore((s) => s.updateGold);
-  const addGoldObtained = useRunStore((s) => s.addGoldObtained);
+  const gainGold = useRunStore((s) => s.gainGold);
   const updateHealth = useRunStore((s) => s.updateHealth);
   const syncHealth = useRunStore((s) => s.syncHealth);
   const addArtifact = useRunStore((s) => s.addArtifact);
@@ -327,22 +251,19 @@ export const EventScreen = memo(function EventScreen() {
       }
       case 'well_climb': {
         if (applyHpLoss(18)) return;
-        updateGold(142);
-        addGoldObtained(142);
+        gainGold(142);
         const pool = CONSUMABLES.map((c) => c.id);
         addConsumable({ id: pool[Math.floor(Math.random() * pool.length)] });
         finishChoice(choice);
         return;
       }
       case 'well_bucket': {
-        updateGold(45);
-        addGoldObtained(45);
+        gainGold(45);
         finishChoice(choice);
         return;
       }
       case 'train_loot': {
-        updateGold(20);
-        addGoldObtained(20);
+        gainGold(20);
         const consumablePool = CONSUMABLES.map((c) => c.id);
         addConsumable({ id: consumablePool[Math.floor(Math.random() * consumablePool.length)] });
         const artifact = pickRandomArtifact();
@@ -384,6 +305,7 @@ export const EventScreen = memo(function EventScreen() {
         if (tiles.length > 0) {
           const pick = tiles[Math.floor(Math.random() * tiles.length)];
           useRunStore.getState().upgradeTile(pick);
+          playUpgrade();
         }
         const pool = CONSUMABLES.map((c) => c.id);
         for (let i = 0; i < 2; i++) {
@@ -396,8 +318,7 @@ export const EventScreen = memo(function EventScreen() {
       case 'vulture_bury': {
         const heal = adjustHeal(run, 16);
         syncHealth(Math.min(run.maxHealth, run.health + heal), run.maxHealth);
-        updateGold(33);
-        addGoldObtained(33);
+        gainGold(33);
         finishChoice(choice);
         return;
       }
@@ -412,8 +333,7 @@ export const EventScreen = memo(function EventScreen() {
         return;
       }
       case 'preacher_draw': {
-        updateGold(166);
-        addGoldObtained(166);
+        gainGold(166);
         const corrupt = pickArtifactByTag(run, 'corrupt', Math.random);
         if (corrupt) addArtifact({ id: corrupt.id, tags: corrupt.tags });
         const preacher = pickArtifactByTag(run, 'preacher', Math.random);
@@ -478,8 +398,7 @@ export const EventScreen = memo(function EventScreen() {
       case 'medicine_threaten': {
         addConsumable({ id: 'bandage' });
         addConsumable({ id: 'snake_oil' });
-        updateGold(129);
-        addGoldObtained(129);
+        gainGold(129);
         useRunStore.getState().setActMerchantSurcharge(0.20);
         finishChoice(choice);
         return;
@@ -515,8 +434,7 @@ export const EventScreen = memo(function EventScreen() {
         return;
       }
       case 'saloon_move_on': {
-        updateGold(39);
-        addGoldObtained(39);
+        gainGold(39);
         finishChoice(choice);
         return;
       }
@@ -559,8 +477,7 @@ export const EventScreen = memo(function EventScreen() {
     switch (reward.kind) {
       case 'gold':
         if (reward.amount > 0) {
-          updateGold(reward.amount);
-          addGoldObtained(reward.amount);
+          gainGold(reward.amount);
         }
         return;
       case 'artifact':
@@ -809,7 +726,7 @@ export const EventScreen = memo(function EventScreen() {
                   whiteSpace: 'pre-line',
                 }}
               >
-                {phase === 'result' ? resultText : renderEventText(event.flavourText)}
+                {phase === 'result' ? resultText : renderNarrativeText(event.flavourText)}
               </p>
             </div>
 

@@ -36,8 +36,4 @@ todo:
 - achievements + unlocks based on achievements
 - NPCs
 - dialogue
-- damage lines changed to come out of player sprite instead of tiles itself
-- turn indicator - add to combat state
 - update Hardened - should be every damage taken reduces hardened. when 0 become incincible.
-- got a random bomb on the board fighting dusty? should not be possible.
-- adjust healthbars

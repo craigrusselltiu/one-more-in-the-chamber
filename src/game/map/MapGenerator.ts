@@ -20,9 +20,9 @@ function hashString(s: string): number {
 }
 
 const ACT_NAMES: Record<Act, string> = {
-  1: 'The Dusty Trail',
-  2: 'The Canyon',
-  3: 'The Town',
+  1: 'the dusty trail',
+  2: 'the canyon',
+  3: 'the town',
 };
 
 const ROWS_PER_ACT = 15;

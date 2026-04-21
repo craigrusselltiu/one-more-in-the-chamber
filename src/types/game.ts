@@ -52,6 +52,8 @@ export interface RunState {
   pendingEventResumeScreen?: 'artifact' | 'combat';
   /** One-shot discount (0-1, e.g. 0.25 = 25% off) applied to the next merchant's prices. Cleared after the merchant snapshot is taken. */
   nextMerchantDiscount?: number;
+  /** If true, the next merchant discounts every artifact card as a sale item. Cleared after the merchant snapshot is taken. */
+  nextMerchantAllArtifactsOnSale?: boolean;
   /** When set, the next ArtifactScreen visit is an event-driven choice of this many artifacts. Cleared after pick/skip. */
   pendingEventArtifactChoiceCount?: number;
   /** Additive HP multiplier applied to the current act's boss (e.g. 0.1 = +10% max HP). Cleared after the boss encounter rolls. */
@@ -68,7 +70,21 @@ export interface RunState {
   actMerchantSurcharge?: number;
   /** What killed the player on defeat -- enemy name, event title, or a generic tag like "Poison". Populated when endRun(false) is called; null/undefined for victories. */
   deathCause?: string;
+  /** True once the pre-run starter encounter has been completed. Guards against re-trigger on later map visits. */
+  starterEncountered?: boolean;
+  /** Persisted reward-ID triplet so quitting mid-starter-screen doesn't let the player re-roll offers. */
+  pendingStarterOffer?: { tileId: string; upgradeId: string; sacrificeId: string };
   status: 'active' | 'completed' | 'abandoned';
+}
+
+export interface LastRunSummary {
+  character: CharacterId;
+  wantedLevel: number;
+  actReached: Act;
+  outcome: 'victory' | 'defeat';
+  deathCause?: string;
+  combatsCleared: number;
+  endedAt: number;
 }
 
 export type CharacterId = 'red_panda' | 'reno';
@@ -152,6 +168,7 @@ export interface MerchantSnapshot {
   activeTileTypes: TileType[];
   discount: number;
   surcharge: number;
+  allArtifactSales?: boolean;
 }
 
 export type PendingCampfireOutcome =

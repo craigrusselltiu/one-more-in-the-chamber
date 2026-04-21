@@ -1,11 +1,10 @@
 import { memo } from 'react';
 import { useRunStore } from '../../store/runStore';
-import { ARTIFACTS, RARITY_BREATHE_CLASS } from '../../data/artifacts';
+import { ARTIFACTS } from '../../data/artifacts';
 import { ARTIFACT_FRAMES } from '../../data/spriteConfig';
 import { SpriteIcon } from '../components/SpriteIcon';
 import { Tooltip } from '../components/Tooltip';
-import { colorizeKeywords } from '../components/KeywordText';
-import { KEYWORDS } from '../../data/keywords';
+import { ArtifactTooltipContent } from '../components/ArtifactTooltipContent';
 import type { ArtifactInstance, TraitId } from '../../types/game';
 
 const EMPTY_ARTIFACTS: ArtifactInstance[] = [];
@@ -30,37 +29,7 @@ const TRAIT_COLORS: Record<TraitId, string> = {
   corrupt: '#8B3A9B',
 };
 
-const TRAIT_NAMES: Record<string, string> = {
-  outlaw: 'Outlaw',
-  sheriff: 'Sheriff',
-  prospector: 'Prospector',
-  sapper: 'Sapper',
-  mustang: 'Mustang',
-  gunslinger: 'Gunslinger',
-  saloon_keeper: 'Saloon Keeper',
-  desperado: 'Desperado',
-  sniper: 'Sniper',
-  dead_man_walking: 'Dead Man Walking',
-  tracker: 'Tracker',
-  preacher: 'Preacher',
-  antivenom: 'Antivenom',
-  undertaker: 'Undertaker',
-  rattlesnake: 'Rattlesnake',
-  corrupt: 'Corrupt',
-};
-
 const DEFAULT_COLOR = '#808080';
-
-const KEYWORD_NAMES = Object.keys(KEYWORDS);
-const KEYWORD_REGEX = new RegExp(`\\b(${KEYWORD_NAMES.join('|')})\\b`, 'g');
-
-function extractKeywords(text: string): string[] {
-  const found = new Set<string>();
-  let match: RegExpExecArray | null;
-  const regex = new RegExp(KEYWORD_REGEX.source, 'g');
-  while ((match = regex.exec(text)) !== null) found.add(match[1]);
-  return [...found];
-}
 
 /**
  * ArtifactBar: left-aligned row of small 14x14 colored squares.
@@ -82,41 +51,7 @@ export const ArtifactBar = memo(function ArtifactBar() {
             : DEFAULT_COLOR;
 
         return (
-          <Tooltip key={`${inst.id}-${i}`} position="bottom" content={def ? (
-            <div className="flex flex-col gap-0.5">
-              <div className="whitespace-nowrap" style={{ fontSize: '10px' }}>
-                <span className={RARITY_BREATHE_CLASS[def.rarity ?? 'common']}>{def.name}</span>
-                {inst.tags.length > 0 && (
-                  <span className="font-normal ml-1">
-                    ({inst.tags.map((t, ti) => (
-                      <span key={t}>
-                        {ti > 0 && <span className="text-stone-500">, </span>}
-                        <span style={{ color: TRAIT_COLORS[t] ?? '#a8a29e' }}>{TRAIT_NAMES[t] ?? t}</span>
-                      </span>
-                    ))})
-                  </span>
-                )}
-              </div>
-              <div className="text-stone-200 whitespace-nowrap" style={{ fontSize: '9px' }}>{colorizeKeywords(def.effect)}</div>
-              {def.description && (
-                <div className="text-stone-500 italic whitespace-nowrap" style={{ fontSize: '8px' }}>"{def.description}"</div>
-              )}
-              {(() => {
-                const kws = extractKeywords(def.effect);
-                if (kws.length === 0) return null;
-                return (
-                  <div className="flex flex-col gap-px mt-0.5 pt-0.5" style={{ borderTop: '1px solid #44403c' }}>
-                    {kws.map(kw => (
-                      <div key={kw} className="whitespace-nowrap" style={{ fontSize: '8px' }}>
-                        <span style={{ color: KEYWORDS[kw].color, fontWeight: 'bold' }}>{kw}</span>
-                        <span className="text-stone-400"> - {KEYWORDS[kw].description}</span>
-                      </div>
-                    ))}
-                  </div>
-                );
-              })()}
-            </div>
-          ) : undefined} text={def ? undefined : inst.id}>
+          <Tooltip key={`${inst.id}-${i}`} position="bottom" content={def ? <ArtifactTooltipContent artifact={def} tags={inst.tags} /> : undefined} text={def ? undefined : inst.id}>
             <div style={inst.used ? { filter: 'grayscale(1) brightness(0.55)' } : undefined}>
               {ARTIFACT_FRAMES[inst.id] != null ? (
                 <div className="relative" style={{ width: 16, height: 16 }}>

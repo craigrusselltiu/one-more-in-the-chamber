@@ -1,7 +1,6 @@
 import { memo, useState, useEffect } from 'react';
 import { useRunStore } from '../../store/runStore';
 import { useCombatStore } from '../../store/combatStore';
-import { getActName } from '../../game/map/MapGenerator';
 import { EventBus, GameEvent } from '../../game/EventBus';
 import { MapScreen } from '../screens/MapScreen';
 import { CombatSettingsPopup } from '../screens/SettingsScreen';
@@ -101,7 +100,7 @@ export const TopBar = memo(function TopBar({ mapDisabled }: { showMapButton?: bo
       <div className="relative z-20 flex justify-between items-center px-2 bg-black/50 text-[8px] pointer-events-auto" style={{ height: 28 }}>
         <div className="flex items-center gap-3">
           <span className="text-amber-400 font-bold">
-            Act {act} - {getActName(act)}
+            Act {act}
           </span>
           <div style={{ position: 'relative', top: 2 }}>
             <ConsumableSlots />

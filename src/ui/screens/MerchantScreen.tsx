@@ -81,6 +81,7 @@ export const MerchantScreen = memo(function MerchantScreen() {
   const merchantSnapshots = useRunStore((s) => s.run?.merchantSnapshots);
   const setMerchantSnapshot = useRunStore((s) => s.setMerchantSnapshot);
   const setNextMerchantDiscount = useRunStore((s) => s.setNextMerchantDiscount);
+  const setNextMerchantAllArtifactsOnSale = useRunStore((s) => s.setNextMerchantAllArtifactsOnSale);
 
   const snapshot = useMemo(() => {
     if (!run || !nodeId) return null;
@@ -89,6 +90,7 @@ export const MerchantScreen = memo(function MerchantScreen() {
       activeTileTypes: [...run.activeTileTypes],
       discount: run.nextMerchantDiscount ?? 0,
       surcharge: run.actMerchantSurcharge ?? 0,
+      allArtifactSales: run.nextMerchantAllArtifactsOnSale ?? false,
     };
   }, [merchantSnapshots, nodeId, run]);
 
@@ -99,13 +101,17 @@ export const MerchantScreen = memo(function MerchantScreen() {
       activeTileTypes: [...run.activeTileTypes],
       discount: run.nextMerchantDiscount ?? 0,
       surcharge: run.actMerchantSurcharge ?? 0,
+      allArtifactSales: run.nextMerchantAllArtifactsOnSale ?? false,
     };
     setMerchantSnapshot(nodeId, entrySnapshot);
     if (entrySnapshot.discount > 0) {
       setNextMerchantDiscount(undefined);
     }
+    if (entrySnapshot.allArtifactSales) {
+      setNextMerchantAllArtifactsOnSale(undefined);
+    }
     forceSaveRun();
-  }, [merchantSnapshots, nodeId, run, setMerchantSnapshot, setNextMerchantDiscount]);
+  }, [merchantSnapshots, nodeId, run, setMerchantSnapshot, setNextMerchantAllArtifactsOnSale, setNextMerchantDiscount]);
 
   const stock = useMemo(() => {
     if (!run || !snapshot) return { consumables: [] as MerchantItem[], artifacts: [] as MerchantItem[], tiles: [] as MerchantItem[] };
@@ -158,7 +164,8 @@ export const MerchantScreen = memo(function MerchantScreen() {
     // One random artifact in the stock gets a 75%-off tag. L21 disables
     // sales entirely for the rest of the run.
     const salesDisabled = getWantedLevelMutations(run.wantedLevel).disableMerchantSales;
-    const saleIndex = !salesDisabled && pickedArtifacts.length > 0
+    const allArtifactSales = snapshot.allArtifactSales ?? false;
+    const saleIndex = !allArtifactSales && !salesDisabled && pickedArtifacts.length > 0
       ? Math.floor(rand() * pickedArtifacts.length)
       : -1;
     for (let i = 0; i < pickedArtifacts.length; i++) {
@@ -166,7 +173,7 @@ export const MerchantScreen = memo(function MerchantScreen() {
       const tier = RARITY_PRICE[a.rarity ?? 'common'] ?? RARITY_PRICE.common;
       const basePrice = tier.min + Math.floor(rand() * tier.range);
       const fullPrice = Math.round(basePrice * priceMult);
-      const onSale = i === saleIndex;
+      const onSale = allArtifactSales || i === saleIndex;
       artifacts.push({
         type: 'artifact',
         id: `art-${a.id}`,

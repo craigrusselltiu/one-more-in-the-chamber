@@ -6,10 +6,11 @@ import { NAMEPLATE_BY_ID, COLOUR_BY_ID } from '../../data/cosmetics';
 import { TILE_FRAMES } from '../../data/spriteConfig';
 import { TILE_DEFINITIONS } from '../../data/tiles';
 import { SpriteIcon } from '../components/SpriteIcon';
+import { CharacterSheetSprite } from '../components/CharacterSheetSprite';
 import { buildTileDescription } from '../components/KeywordText';
 import { playHover } from '../../services/sfx';
 import type { Screen } from '../../App';
-import type { TileType } from '../../types/game';
+import type { CharacterId, TileType } from '../../types/game';
 
 type TabKey = 'featured' | ShopCategory;
 
@@ -49,12 +50,6 @@ const FEATURED_NAMEPLATE_IDS: string[] = [
   'shop_nameplate_golden_laurels',
   'shop_nameplate_bubble_tea',
 ];
-
-/** Character portrait lookup for the Characters tab. unlockId -> sprite filename
- *  in /assets/sprites/. Keep in sync with CharacterSelectScreen's CHARACTERS list. */
-const CHARACTER_SPRITES: Record<string, string> = {
-  reno: 'reno.png',
-};
 
 export const ReputationShopScreen = memo(function ReputationShopScreen() {
   const reputation = useMetaStore((s) => s.meta.reputation);
@@ -528,8 +523,7 @@ function CharacterShopCard({
   onSelect: () => void;
 }) {
   const disabled = owned;
-  const sprite = CHARACTER_SPRITES[item.unlockId];
-  const base = import.meta.env.BASE_URL;
+  const character = item.unlockId as CharacterId;
   return (
     <button
       onClick={onSelect}
@@ -562,14 +556,7 @@ function CharacterShopCard({
       >
         {owned ? 'OWNED' : item.cost.toLocaleString()}
       </span>
-      {sprite && (
-        <img
-          src={`${base}assets/sprites/${sprite}`}
-          alt={item.name}
-          style={{ width: 48, height: 48, imageRendering: 'pixelated', objectFit: 'cover' }}
-          className="mb-1.5"
-        />
-      )}
+      <CharacterSheetSprite character={character} size={48} alt={item.name} className="mb-1.5" />
       <span className="text-amber-300 text-xs font-bold">{item.name}</span>
       <span className="text-stone-300 text-center mt-1 leading-tight" style={{ fontSize: '9px' }}>
         {item.description}

@@ -5,6 +5,7 @@ import { EventBus, GameEvent } from '../../game/EventBus';
 import { useRunStore } from '../../store/runStore';
 import { useMetaStore } from '../../store/metaStore';
 import { SpriteIcon } from '../components/SpriteIcon';
+import { CharacterSheetSprite } from '../components/CharacterSheetSprite';
 import { Tooltip } from '../components/Tooltip';
 import { UI_FRAMES, ARTIFACT_FRAMES, TILE_FRAMES, HAZARD_FRAMES } from '../../data/spriteConfig';
 import { ARTIFACTS, RARITY_BREATHE_CLASS } from '../../data/artifacts';
@@ -23,7 +24,6 @@ interface CharacterInfo {
   ability: string;
   abilityCharge: number;
   abilityDescription: string;
-  sprite: string;
   bg: string;
   exclusiveArtifactId: string;
   exclusiveTileType: TileType;
@@ -38,7 +38,6 @@ const CHARACTERS: CharacterInfo[] = [
     abilityCharge: 6,
     abilityDescription:
       'Shoot any 3 tiles on the board. Each tile destroyed generates its resources.',
-    sprite: 'rust.png',
     bg: 'backgrounds/rust_bg.png',
     exclusiveArtifactId: 'bamboo_canteen',
     exclusiveTileType: 'bounty',
@@ -51,7 +50,6 @@ const CHARACTERS: CharacterInfo[] = [
     abilityCharge: 5,
     abilityDescription:
       'Shuffle the board.',
-    sprite: 'reno.png',
     bg: 'backgrounds/reno_bg.png',
     exclusiveArtifactId: 'rigged_deck',
     exclusiveTileType: 'chip',
@@ -141,14 +139,11 @@ export const CharacterSelectScreen = memo(function CharacterSelectScreen() {
               }}
             >
               <div className="relative" style={{ width: 40, height: 40 }}>
-                <img
-                  src={`${import.meta.env.BASE_URL}assets/sprites/${c.sprite}`}
+                <CharacterSheetSprite
+                  character={c.id}
+                  size={40}
                   alt={c.name}
                   style={{
-                    width: 40,
-                    height: 40,
-                    imageRendering: 'pixelated',
-                    objectFit: 'cover',
                     filter: locked ? 'brightness(0)' : undefined,
                   }}
                 />
@@ -197,18 +192,13 @@ export const CharacterSelectScreen = memo(function CharacterSelectScreen() {
               minWidth: 170,
               cursor: 'not-allowed',
             }}
-          >
-            <div className="relative" style={{ width: 40, height: 40 }}>
-              <img
-                src={`${import.meta.env.BASE_URL}assets/sprites/rust.png`}
+            >
+              <div className="relative" style={{ width: 40, height: 40 }}>
+              <CharacterSheetSprite
+                character="red_panda"
+                size={40}
                 alt="???"
-                style={{
-                  width: 40,
-                  height: 40,
-                  imageRendering: 'pixelated',
-                  objectFit: 'cover',
-                  filter: 'brightness(0)',
-                }}
+                style={{ filter: 'brightness(0)' }}
               />
               <div
                 style={{

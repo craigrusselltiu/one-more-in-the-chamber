@@ -118,6 +118,7 @@ export const ARTIFACT_FRAMES: Record<string, number> = {
   lethargic: 1224,
   dry_atmosphere: 1195,
   tinnitus: 862,
+  greed: 558,
 };
 
 /** Consumable sprite frames (by consumable ID). */

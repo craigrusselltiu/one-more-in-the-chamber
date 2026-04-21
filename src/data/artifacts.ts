@@ -624,4 +624,12 @@ export const ARTIFACTS: ArtifactDefinition[] = [
     effect: 'Enemy intents are hidden on the first turn of each combat.',
     rarity: 'corrupt',
   },
+  {
+    id: 'greed',
+    name: 'Greed',
+    description: 'Greed never leaves you richer, only hungrier.',
+    tags: ['corrupt'],
+    effect: 'All gold gain is reduced by 10%.',
+    rarity: 'corrupt',
+  },
 ];

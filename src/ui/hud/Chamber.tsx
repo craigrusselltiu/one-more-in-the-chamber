@@ -1,4 +1,4 @@
-import { memo } from 'react';
+import { memo, useEffect, useRef, useState } from 'react';
 
 const SRC = `${import.meta.env.BASE_URL}assets/chamber.png`;
 const FRAME = 128;
@@ -23,10 +23,11 @@ interface Props {
   charge: number;
   threshold: number;
   ready: boolean;
+  spinTrigger?: number;
   size?: number;
 }
 
-export const Chamber = memo(function Chamber({ charge, threshold, ready, size = 80 }: Props) {
+export const Chamber = memo(function Chamber({ charge, threshold, ready, spinTrigger = 0, size = 80 }: Props) {
   const blocked = Math.max(0, 6 - threshold);
   const usable = 6 - blocked;
   const filled = Math.min(charge, usable);
@@ -38,6 +39,23 @@ export const Chamber = memo(function Chamber({ charge, threshold, ready, size = 
   for (let i = 0; i < blocked; i++) holes.push('blocked');
 
   const scale = size / FRAME;
+  const baseAngle = -charge * 60;
+  const [spinBonus, setSpinBonus] = useState(0);
+  const [isFinishSpinAnimating, setIsFinishSpinAnimating] = useState(false);
+  const prevSpinTriggerRef = useRef(spinTrigger);
+
+  useEffect(() => {
+    let timeoutId: ReturnType<typeof setTimeout> | undefined;
+    if (spinTrigger !== prevSpinTriggerRef.current) {
+      setSpinBonus((current) => current - 1080);
+      setIsFinishSpinAnimating(true);
+      timeoutId = setTimeout(() => setIsFinishSpinAnimating(false), 780);
+    }
+    prevSpinTriggerRef.current = spinTrigger;
+    return () => {
+      if (timeoutId) clearTimeout(timeoutId);
+    };
+  }, [spinTrigger]);
 
   return (
     <div
@@ -56,15 +74,17 @@ export const Chamber = memo(function Chamber({ charge, threshold, ready, size = 
         }}
       >
         <div
-          style={{
-            width: FRAME,
-            height: FRAME,
-            position: 'relative',
-            transformOrigin: 'center',
-            transform: `rotate(${-charge * 60}deg)`,
-            transition: 'transform 420ms cubic-bezier(0.34, 1.56, 0.64, 1)',
-            imageRendering: 'pixelated',
-          }}
+        style={{
+          width: FRAME,
+          height: FRAME,
+          position: 'relative',
+          transformOrigin: 'center',
+          transform: `rotate(${baseAngle + spinBonus}deg)`,
+          transition: isFinishSpinAnimating
+            ? 'transform 780ms cubic-bezier(0.08, 0.9, 0.18, 1)'
+            : 'transform 420ms cubic-bezier(0.34, 1.56, 0.64, 1)',
+          imageRendering: 'pixelated',
+        }}
         >
           <div
             style={{

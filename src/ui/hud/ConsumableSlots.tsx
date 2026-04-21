@@ -38,8 +38,7 @@ function useConsumableOnMap(consumableId: string): boolean {
           store.syncHealth(Math.min(run.maxHealth + 6, run.health + heal), run.maxHealth + 6);
         }
       } else if (roll < 0.6) {
-        store.updateGold(100);
-        store.addGoldObtained(100);
+        store.gainGold(100);
       } else if (roll < 0.8) {
         store.updateHealth(-14);
       } else {

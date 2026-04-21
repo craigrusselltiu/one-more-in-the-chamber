@@ -40,6 +40,7 @@ export interface CombatState {
   isDeadeyeActive: boolean;
   deadeyeShotsRemaining: number;
   deadeyeMaxShots: number;
+  deadeyeFinishSpinTrigger: number;
   /** Bounty Hunter(2): last deadeye shot can target an enemy. */
   canDeadeyeShootEnemy: boolean;
   /** False Shuffle (Reno): hold mode is active. */

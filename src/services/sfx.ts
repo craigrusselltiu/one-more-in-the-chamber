@@ -87,6 +87,14 @@ export function playUpgrade(): void {
   setTimeout(() => play('sfx_upgrade', 0.5), 400);
 }
 
+export function playShuffle(): void {
+  play('sfx_shuffle', 0.5);
+}
+
+export function playRevolverSpin(): void {
+  play('sfx_revolver_spin', 0.5);
+}
+
 let lastBlockTime = 0;
 export function playBlock(): void {
   const now = Date.now();

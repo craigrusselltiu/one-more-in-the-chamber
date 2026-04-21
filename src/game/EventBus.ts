@@ -76,6 +76,8 @@ export const GameEvent = {
   FLOATING_NUMBER: 'vfx:floating-number',
   /** Player dealt damage to an enemy (for attack sprite animation). */
   PLAYER_ATTACK: 'vfx:player-attack',
+  /** Player was hit by an enemy attack or hostile enemy effect (for hit sprite animation). */
+  PLAYER_HIT: 'vfx:player-hit',
   /** Player dealt damage to an enemy (for player->enemy line VFX). Payload: enemyId */
   PLAYER_DAMAGE_LINE: 'vfx:player-damage-line',
 
@@ -130,6 +132,7 @@ export interface EventPayloads {
   [GameEvent.RUN_STARTED]: [];
   [GameEvent.RUN_ENDED]: [completed: boolean];
   [GameEvent.PLAYER_ATTACK]: [];
+  [GameEvent.PLAYER_HIT]: [];
   [GameEvent.ARTIFACT_USED]: [artifactId: string];
   [GameEvent.PLAYER_DAMAGE_LINE]: [enemyId: string];
 }

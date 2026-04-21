@@ -38,6 +38,7 @@ interface CombatStore {
   isDeadeyeActive: boolean;
   deadeyeShotsRemaining: number;
   deadeyeMaxShots: number;
+  deadeyeFinishSpinTrigger: number;
   canDeadeyeShootEnemy: boolean;
   isShuffleHoldMode: boolean;
   shuffleHoldsRemaining: number;
@@ -106,6 +107,7 @@ const initialState = {
   isDeadeyeActive: false,
   deadeyeShotsRemaining: 0,
   deadeyeMaxShots: 3,
+  deadeyeFinishSpinTrigger: 0,
   canDeadeyeShootEnemy: false,
   isShuffleHoldMode: false,
   shuffleHoldsRemaining: 0,
@@ -155,6 +157,7 @@ export const useCombatStore = create<CombatStore>((set) => ({
       isDeadeyeActive: state.isDeadeyeActive,
       deadeyeShotsRemaining: state.deadeyeShotsRemaining,
       deadeyeMaxShots: state.deadeyeMaxShots,
+      deadeyeFinishSpinTrigger: state.deadeyeFinishSpinTrigger,
       canDeadeyeShootEnemy: state.canDeadeyeShootEnemy,
       isShuffleHoldMode: state.isShuffleHoldMode,
       shuffleHoldsRemaining: state.shuffleHoldsRemaining,

@@ -15,7 +15,7 @@ export type BossPhase = 1 | 2 | 3;
  *   Phase 1 (100-50%): Locks 1/turn, 10-15 damage. Can summon coyote minion (10 HP).
  *   Transition (50%): Barricade row + 10 block. One-time event.
  *   Phase 2 (50-25%): Locks 3/turn, 15-20 damage. Periodic blocks.
- *   Phase 3 (25-0%): Bomb tile every turn + locks. No blocking. 15-20 damage.
+ *   Phase 3 (25-0%): Locks every turn. No blocking. 15-20 damage.
  *
  * "Copperhead" Cassidy -- Act 2 Boss (200 HP):
  *   Phase 1 (100-50%): Poison 4 tiles/turn. Alternates brew (more poison) / strike
@@ -152,7 +152,6 @@ export class BossController {
         hazardManager.placeRandomLocks(3);
         break;
       case 3:
-        hazardManager.placeRandomBombs(1);
         hazardManager.placeRandomLocks(1);
         break;
     }

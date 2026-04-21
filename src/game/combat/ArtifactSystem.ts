@@ -3,6 +3,7 @@ import type { MatchResult } from '../../types/combat';
 import type { ResourceOutput } from './ResourceResolver';
 import type { Player } from './Player';
 import type { Enemy } from './Enemy';
+import { getArtifactGoldGainMultiplier } from '../../utils/goldGain';
 
 /**
  * ArtifactSystem: applies individual artifact effects at combat hook points.
@@ -597,10 +598,7 @@ export class ArtifactSystem {
   // ---------------------------------------------------------------------------
 
   getGoldGainMultiplier(): number {
-    let mult = 1.0;
-    if (this.has('golden_scarab')) mult += 0.3;
-    if (this.has('golden_pickaxe')) mult += 0.1;
-    return mult;
+    return getArtifactGoldGainMultiplier(this.artifactInstances);
   }
 
   // ---------------------------------------------------------------------------

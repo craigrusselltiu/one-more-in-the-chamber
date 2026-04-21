@@ -17,6 +17,9 @@ export const AbilityMeter = memo(function AbilityMeter() {
   const charge = useCombatStore((s) => s.abilityCharge);
   const threshold = useCombatStore((s) => s.abilityThreshold);
   const isDeadeyeActive = useCombatStore((s) => s.isDeadeyeActive);
+  const deadeyeShotsRemaining = useCombatStore((s) => s.deadeyeShotsRemaining);
+  const deadeyeMaxShots = useCombatStore((s) => s.deadeyeMaxShots);
+  const deadeyeFinishSpinTrigger = useCombatStore((s) => s.deadeyeFinishSpinTrigger);
   const phase = useCombatStore((s) => s.phase);
   const turnNumber = useCombatStore((s) => s.turnNumber);
   const swapsRemaining = useCombatStore((s) => s.swapsRemaining);
@@ -25,6 +28,8 @@ export const AbilityMeter = memo(function AbilityMeter() {
 
   const ready = charge >= threshold && !isDeadeyeActive;
   const canActivate = ready && (phase === 'swap-phase' || phase === 'consumable-window');
+  const chamberCharge = isDeadeyeActive ? deadeyeShotsRemaining : charge;
+  const chamberThreshold = isDeadeyeActive ? deadeyeMaxShots : threshold;
 
   const handleActivate = useCallback(() => {
     if (canActivate) {
@@ -38,12 +43,14 @@ export const AbilityMeter = memo(function AbilityMeter() {
 
   const isReno = character === 'reno';
   const abilityName = (isReno ? 'False Shuffle' : 'Deadeye').toUpperCase();
+  const displayedSwapTotal = Math.max(swapsPerTurn, swapsRemaining, swapIconSources.length);
 
   const tooltipText = isDeadeyeActive
     ? 'Cancel Deadeye (Space)'
     : ready
       ? `Activate ${abilityName} (Space)`
       : `${charge}/${threshold} charges`;
+  const swapTooltipText = `${swapsRemaining}/${displayedSwapTotal} ${displayedSwapTotal === 1 ? 'swap' : 'swaps'}`;
 
   return (
     <div className="flex flex-col items-start gap-1" style={{ position: 'relative', top: -5 }}>
@@ -54,7 +61,12 @@ export const AbilityMeter = memo(function AbilityMeter() {
           onClick={handleActivate}
           disabled={!canActivate}
         >
-          <Chamber charge={charge} threshold={threshold} ready={ready} />
+          <Chamber
+            charge={chamberCharge}
+            threshold={chamberThreshold}
+            ready={ready}
+            spinTrigger={deadeyeFinishSpinTrigger}
+          />
         </button>
       </Tooltip>
 
@@ -67,9 +79,11 @@ export const AbilityMeter = memo(function AbilityMeter() {
             onCancel={handleCancel}
           />
         </div>
-        <div className="flex items-center" style={{ height: 24 }}>
-          <SwapsRow remaining={swapsRemaining} total={swapsPerTurn} sources={swapIconSources} />
-        </div>
+        <Tooltip text={swapTooltipText} position="top">
+          <div className="flex items-center" style={{ height: 24 }}>
+            <SwapsRow remaining={swapsRemaining} total={swapsPerTurn} sources={swapIconSources} />
+          </div>
+        </Tooltip>
         <div className="flex items-center" style={{ height: 16, position: 'relative', top: -5 }}>
           <EndTurnButton />
         </div>
@@ -202,7 +216,7 @@ const SwapsRow = memo(function SwapsRow({ remaining, total, sources }: SwapsRowP
       >
         SWAPS REMAINING
       </span>
-      <div className="absolute left-0 flex items-center gap-px" style={{ top: 0 }}>
+      <div className="absolute left-0 flex items-center" style={{ top: 0 }}>
         {Array.from({ length: displayTotal }, (_, i) => {
           const used = i >= remaining;
           const source = sources[i] ?? 'default';
@@ -211,13 +225,14 @@ const SwapsRow = memo(function SwapsRow({ remaining, total, sources }: SwapsRowP
             ? source === 'default' ? 0.7 : 0.8
             : 0;
           return (
-            <SpriteIcon
-              key={i}
-              frame={frame}
-              scale={1}
-              tint={used ? '#000000' : undefined}
-              tintAlpha={tintAlpha}
-            />
+            <div key={i} style={{ marginLeft: i === 0 ? 0 : -2 }}>
+              <SpriteIcon
+                frame={frame}
+                scale={1}
+                tint={used ? '#000000' : undefined}
+                tintAlpha={tintAlpha}
+              />
+            </div>
           );
         })}
       </div>

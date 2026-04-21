@@ -71,6 +71,8 @@ export class BootScene extends Phaser.Scene {
     this.load.audio('sfx_treasure', `${base}assets/audio/sfx/treasure.wav`);
     this.load.audio('sfx_shop', `${base}assets/audio/sfx/shop.wav`);
     this.load.audio('sfx_upgrade', `${base}assets/audio/sfx/upgrade.wav`);
+    this.load.audio('sfx_shuffle', `${base}assets/audio/sfx/shuffle.wav`);
+    this.load.audio('sfx_revolver_spin', `${base}assets/audio/sfx/revolver_spin.wav`);
     // Backgrounds
     this.load.image('act1_bg', `${base}assets/backgrounds/act1_bg.png`);
     this.load.image('act2_bg', `${base}assets/backgrounds/act2_bg.png`);
@@ -122,7 +124,7 @@ export class BootScene extends Phaser.Scene {
       'coyote', 'dust_devil', 'dusty', 'guard_dog', 'hangman', 'hellfire_preacher',
       'ironeye', 'ironeye_alt', 'mad_prospector', 'minecart', 'mining_foreman',
       'ore_golem', 'outlaw_king', 'pack_mule', 'powder_monkey', 'rattlesnake',
-      'reno', 'reno_attack', 'rust', 'rust_attack', 'rust_sheet', 'saloon_brawler', 'shadow',
+      'reno_sheet', 'rust_sheet', 'saloon_brawler', 'shadow',
       'sheriffs_shadow', 'train_guard', 'tumbleweed_golem', 'tunnel_rat', 'vulture',
     ];
     for (const name of SPRITE_IMAGES) {

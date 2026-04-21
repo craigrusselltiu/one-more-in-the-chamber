@@ -509,3 +509,9 @@ Diagonal = single-trait artifacts. Off-diagonal = artifacts with both traits.
 - Rarity: Corrupt
 - Effect: Enemy intents are hidden on the first turn of each combat.
 - Flavor: "The first shot always rings twice."
+
+### Greed
+- Tags: Corrupt
+- Rarity: Corrupt
+- Effect: All gold gain is reduced by 10%.
+- Flavor: "Greed never leaves you richer, only hungrier."

@@ -17,8 +17,10 @@ import { ARTIFACTS } from '../data/artifacts';
 import { CHARACTER_TILES, TILE_DEFINITIONS } from '../data/tiles';
 import { getWantedLevelMutations } from '../data/wantedLevel';
 import { getMaxConsumableSlots } from '../utils/consumableSlots';
+import { applyArtifactGoldGainModifier } from '../utils/goldGain';
 import { deleteRun as deleteRunFromDB, clearCombatSnapshot } from '../services/localSave';
 import { abandonOtherActiveRuns, clearRemoteCombatSnapshot } from '../services/syncService';
+import { saveLastRunSummary } from '../services/lastRunSummary';
 
 interface PendingNewGame {
   character: CharacterId;
@@ -37,6 +39,7 @@ interface RunStore {
   startRun: (seed: string, wantedLevel?: number) => void;
   updateHealth: (delta: number) => void;
   updateGold: (delta: number) => void;
+  gainGold: (amount: number) => void;
   syncHealth: (current: number, max: number) => void;
   syncGold: (amount: number) => void;
   syncAbilityCharge: (charge: number) => void;
@@ -71,11 +74,14 @@ interface RunStore {
   setForcedCombatEnemies: (ids: string[] | undefined) => void;
   setPendingEventResumeScreen: (screen: 'artifact' | 'combat' | undefined) => void;
   setNextMerchantDiscount: (discount: number | undefined) => void;
+  setNextMerchantAllArtifactsOnSale: (value: boolean | undefined) => void;
   setPendingEventArtifactChoiceCount: (count: number | undefined) => void;
   setPendingActBossHpBonus: (amount: number | undefined) => void;
   setPendingNextFightGrace: (amount: number | undefined) => void;
   setPendingNextFightSwapBonus: (amount: number | undefined) => void;
   setPendingCampfireOutcome: (outcome: PendingCampfireOutcome | undefined) => void;
+  setPendingStarterOffer: (offer: { tileId: string; upgradeId: string; sacrificeId: string } | undefined) => void;
+  markStarterEncountered: () => void;
   incrementMerchantUpgradesPurchased: () => void;
   setActMerchantSurcharge: (amount: number | undefined) => void;
   advanceAct: () => void;
@@ -126,6 +132,13 @@ export const useRunStore = create<RunStore>((set, get) => ({
     if (migrated.goldObtained == null) migrated.goldObtained = Math.max(0, migrated.gold - 100);
     if (migrated.artifactsObtained == null) {
       migrated.artifactsObtained = Math.max(0, migrated.artifacts.length - 1);
+    }
+
+    // Pre-existing runs predate the starter encounter and should not be
+    // re-interrupted with it on resume. Mark them encountered so the intercept
+    // in App.tsx is skipped on the next map transition.
+    if (migrated.starterEncountered == null) {
+      migrated.starterEncountered = true;
     }
 
     // Rename 'treasure' map node type to 'artifact'
@@ -269,6 +282,19 @@ export const useRunStore = create<RunStore>((set, get) => ({
       return { run: { ...state.run, gold: Math.max(0, state.run.gold + delta) } };
     }),
 
+  gainGold: (amount) =>
+    set((state) => {
+      if (!state.run || amount <= 0) return state;
+      const adjusted = applyArtifactGoldGainModifier(amount, state.run.artifacts);
+      return {
+        run: {
+          ...state.run,
+          gold: state.run.gold + adjusted,
+          goldObtained: state.run.goldObtained + adjusted,
+        },
+      };
+    }),
+
   syncHealth: (current, max) =>
     set((state) => {
       if (!state.run) return state;
@@ -302,8 +328,9 @@ export const useRunStore = create<RunStore>((set, get) => ({
       let gold = state.run.gold;
       let goldObtained = state.run.goldObtained;
       if (artifact.id === 'gold_tooth') {
-        gold += 333;
-        goldObtained += 333;
+        const payout = applyArtifactGoldGainModifier(333, state.run.artifacts);
+        gold += payout;
+        goldObtained += payout;
       }
       const artifactsObtained = state.run.artifactsObtained + 1;
       useMetaStore.getState().discoverArtifact(artifact.id);
@@ -586,6 +613,12 @@ export const useRunStore = create<RunStore>((set, get) => ({
       return { run: { ...state.run, nextMerchantDiscount: discount } };
     }),
 
+  setNextMerchantAllArtifactsOnSale: (value) =>
+    set((state) => {
+      if (!state.run) return state;
+      return { run: { ...state.run, nextMerchantAllArtifactsOnSale: value } };
+    }),
+
   setPendingEventArtifactChoiceCount: (count) =>
     set((state) => {
       if (!state.run) return state;
@@ -614,6 +647,18 @@ export const useRunStore = create<RunStore>((set, get) => ({
     set((state) => {
       if (!state.run) return state;
       return { run: { ...state.run, pendingCampfireOutcome: outcome } };
+    }),
+
+  setPendingStarterOffer: (offer) =>
+    set((state) => {
+      if (!state.run) return state;
+      return { run: { ...state.run, pendingStarterOffer: offer } };
+    }),
+
+  markStarterEncountered: () =>
+    set((state) => {
+      if (!state.run) return state;
+      return { run: { ...state.run, starterEncountered: true, pendingStarterOffer: undefined } };
     }),
 
   incrementMerchantUpgradesPurchased: () =>
@@ -662,7 +707,19 @@ export const useRunStore = create<RunStore>((set, get) => ({
   endRun: (completed) =>
     set((state) => {
       if (!state.run) return state;
-      return { run: { ...state.run, status: completed ? 'completed' : 'abandoned' } };
+      const run = state.run;
+      // Fire-and-forget: persist a summary so the next run's starter screen
+      // can reference the outcome. Skips failures silently.
+      void saveLastRunSummary({
+        character: run.character,
+        wantedLevel: run.wantedLevel,
+        actReached: run.currentAct,
+        outcome: completed ? 'victory' : 'defeat',
+        deathCause: run.deathCause,
+        combatsCleared: run.combatsCleared,
+        endedAt: Date.now(),
+      });
+      return { run: { ...run, status: completed ? 'completed' : 'abandoned' } };
     }),
 
   setDeathCause: (cause) =>

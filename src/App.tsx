@@ -4,6 +4,7 @@ import { gameConfig } from './game/GameConfig';
 import { MainMenu } from './ui/screens/MainMenu';
 import { CharacterSelectScreen } from './ui/screens/CharacterSelectScreen';
 import { TileSelectScreen } from './ui/screens/TileSelectScreen';
+import { StarterScreen } from './ui/screens/StarterScreen';
 import { MapScreen } from './ui/screens/MapScreen';
 import { MerchantScreen } from './ui/screens/MerchantScreen';
 import { CampfireScreen } from './ui/screens/CampfireScreen';
@@ -67,6 +68,7 @@ import { APP_VERSION_LABEL } from './version';
 export type Screen =
   | 'main-menu'
   | 'character-select'
+  | 'starter'
   | 'tile-select'
   | 'combat'
   | 'map'
@@ -241,6 +243,15 @@ export default function App() {
 
       lastAppliedScreen = next;
       setScreen(next);
+
+      // Act 1: pre-run starter encounter before anything else.
+      if (next === 'map') {
+        const run = useRunStore.getState().run;
+        if (run && run.currentAct === 1 && !run.starterEncountered) {
+          setScreen('starter');
+          return;
+        }
+      }
 
       // Act 1: choose 5th tile before first map visit
       if (next === 'map') {
@@ -714,7 +725,7 @@ export default function App() {
 
   // Screens that show the unified TopBar + ArtifactBar (all in-run screens)
   const IN_RUN_SCREENS: Set<Screen> = new Set([
-    'combat', 'map', 'merchant', 'campfire', 'event', 'artifact', 'tile-select',
+    'combat', 'map', 'merchant', 'campfire', 'event', 'artifact', 'tile-select', 'starter',
   ]);
   const showTopBar = IN_RUN_SCREENS.has(screen);
 
@@ -791,6 +802,11 @@ export default function App() {
             <TileSelectScreen />
           </div>
         )}
+        {screen === 'starter' && (
+          <div className="absolute inset-0">
+            <StarterScreen />
+          </div>
+        )}
 
         {/* Unified TopBar + ArtifactBar for all in-run screens */}
         {showTopBar && (
@@ -808,7 +824,7 @@ export default function App() {
         {screen === 'combat' && <CombatHUD />}
 
         {/* Non-combat screen content fills remaining space below TopBar */}
-        {screen !== 'combat' && screen !== 'artifact' && screen !== 'tile-select' && (
+        {screen !== 'combat' && screen !== 'artifact' && screen !== 'tile-select' && screen !== 'starter' && (
           <div className={showTopBar ? 'flex-1 overflow-hidden' : 'h-full'}>
             {screen === 'main-menu' && <MainMenu />}
             {screen === 'character-select' && <CharacterSelectScreen />}

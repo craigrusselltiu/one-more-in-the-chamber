@@ -15,7 +15,7 @@ import { BoardHazardManager } from '../board/BoardHazardManager';
 import { TILE_COLORS, TILE_DEFINITIONS } from '../../data/tiles';
 import { chooseEnemyIntent } from './EnemyAI';
 import { BossController } from './BossController';
-import { playSwapFail, playMatch, playDeadeyeShot, playHit, playBlock, playAbilityReady } from '../../services/sfx';
+import { playSwapFail, playMatch, playDeadeyeShot, playHit, playBlock, playAbilityReady, playShuffle, playRevolverSpin } from '../../services/sfx';
 import { useRunStore } from '../../store/runStore';
 import { useCombatStore } from '../../store/combatStore';
 import { CONSUMABLES } from '../../data/consumables';
@@ -110,6 +110,7 @@ export class CombatManager {
   private isDeadeyeActive = false;
   private deadeyeShotsRemaining = 0;
   private deadeyeMaxShots: number;
+  private deadeyeFinishSpinTrigger = 0;
   /** Ability charges earned while Deadeye is active; rolled into abilityCharge on endDeadeye. */
   private pendingAbilityCharge = 0;
   private isBoss: boolean;
@@ -1167,7 +1168,7 @@ export class CombatManager {
     EventBus.emit(GameEvent.COMBO_UPDATE, 0);
 
     if (this.deadeyeShotsRemaining <= 0) {
-      this.endDeadeye();
+      this.endDeadeye(true);
     }
 
     if (this.isCombatOver()) {
@@ -1201,7 +1202,7 @@ export class CombatManager {
     document.body.classList.remove('cursor-crosshair');
     this.emitFullState();
 
-    this.endDeadeye();
+    this.endDeadeye(true);
 
     if (this.isCombatOver()) {
       this.endCombat();
@@ -1210,7 +1211,11 @@ export class CombatManager {
     this.emitFullState();
   }
 
-  private endDeadeye(): void {
+  private endDeadeye(playSpin = false): void {
+    if (playSpin) {
+      playRevolverSpin();
+      this.deadeyeFinishSpinTrigger++;
+    }
     this.isDeadeyeActive = false;
     this.deadeyeShotsRemaining = 0;
     const rollover = Math.min(this.player.abilityThreshold, this.pendingAbilityCharge);
@@ -1256,6 +1261,7 @@ export class CombatManager {
     if (this.phase !== 'swap-phase' && this.phase !== 'consumable-window') return;
     if (!this.player.isDeadeyeReady()) return;
     this.player.activateDeadeye(); // consume charges
+    playShuffle();
 
     this.emitFullState();
     EventBus.emit(GameEvent.ABILITY_CHARGE_CHANGE, this.player.abilityCharge, this.player.abilityThreshold);
@@ -1960,6 +1966,7 @@ export class CombatManager {
     // Enemy thorns: reflect damage back to player
     if (enemy.state.thorns > 0 && damage > 0) {
       const thornsDmg = this.player.takeDamage(enemy.state.thorns);
+      if (thornsDmg.hpLost > 0 || thornsDmg.blocked > 0) EventBus.emit(GameEvent.PLAYER_HIT);
       if (thornsDmg.hpLost > 0) {
         this.floatOnPlayer(`-${thornsDmg.hpLost}`, '#C04040');
         this.playerTookDamageThisFight = true;
@@ -2430,6 +2437,7 @@ export class CombatManager {
       const bombResult = this.hazardManager.tickBombs();
       if (bombResult.totalDamage > 0) {
         const bombDmg = this.player.takeDamage(bombResult.totalDamage);
+        if (bombDmg.hpLost > 0 || bombDmg.blocked > 0) EventBus.emit(GameEvent.PLAYER_HIT);
         if (bombDmg.hpLost > 0) { playHit(); this.playerTookDamageThisFight = true; this.lastDamageSource = 'Bomb'; }
         if (bombDmg.blocked > 0) { playBlock(); }
         EventBus.emit(GameEvent.PLAYER_HP_CHANGE, this.player.health, this.player.maxHealth);
@@ -2448,7 +2456,9 @@ export class CombatManager {
           if (enemy.state.fuse === 0) {
             const fuseDamage = enemy.getDefinition().fuseDamage ?? 0;
             if (fuseDamage > 0) {
-              if (this.player.takeDamage(fuseDamage).hpLost > 0) {
+              const fuseResult = this.player.takeDamage(fuseDamage);
+              if (fuseResult.hpLost > 0 || fuseResult.blocked > 0) EventBus.emit(GameEvent.PLAYER_HIT);
+              if (fuseResult.hpLost > 0) {
                 this.playerTookDamageThisFight = true;
                 this.lastDamageSource = enemy.getDefinition().name;
               }
@@ -2866,6 +2876,7 @@ export class CombatManager {
     const preacherReduction = this.traits.getPreacherDamageReduction(enemy.state.health, this.player.health);
     if (preacherReduction > 0) adjustedDamage = Math.round(adjustedDamage * (1 - preacherReduction));
     const { hpLost, blocked, thornsDamage } = this.player.takeDamage(adjustedDamage);
+    if (hpLost > 0 || blocked > 0) EventBus.emit(GameEvent.PLAYER_HIT);
     if (hpLost > 0) { playHit(); this.playerTookDamageThisFight = true; this.lastDamageSource = enemy.getDefinition().name; }
     if (blocked > 0) { playBlock(); this.floatOnPlayer(`-${blocked}`, '#6888A0'); }
     if (hpLost > 0) this.floatOnPlayer(`-${hpLost}`, '#ff4444');
@@ -3157,6 +3168,7 @@ export class CombatManager {
       isDeadeyeActive: this.isDeadeyeActive,
       deadeyeShotsRemaining: this.deadeyeShotsRemaining,
       deadeyeMaxShots: this.deadeyeMaxShots,
+      deadeyeFinishSpinTrigger: this.deadeyeFinishSpinTrigger,
       canDeadeyeShootEnemy: this.isDeadeyeActive
         && this.deadeyeShotsRemaining === 1
         && this.artifacts.has('rusts_cylinder'),
