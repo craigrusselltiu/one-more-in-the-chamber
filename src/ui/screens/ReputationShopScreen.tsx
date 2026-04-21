@@ -104,7 +104,7 @@ export const ReputationShopScreen = memo(function ReputationShopScreen() {
       style={{
         width: 960,
         height: 540,
-        backgroundImage: `url(${import.meta.env.BASE_URL}assets/backgrounds/reputation.png)`,
+        backgroundImage: `linear-gradient(rgba(0,0,0,0.18), rgba(0,0,0,0.18)), url(${import.meta.env.BASE_URL}assets/backgrounds/reputation.png)`,
         backgroundSize: 'cover',
         backgroundPosition: 'center',
       }}

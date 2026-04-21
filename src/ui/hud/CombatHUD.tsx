@@ -1,12 +1,11 @@
-import { memo, useState, useEffect } from 'react';
+import { memo, useState, useEffect, useRef } from 'react';
 import { CombatBridge } from './CombatBridge';
 import { PlayerPanel } from './PlayerPanel';
 import { EnemyTargeting } from './EnemyTargeting';
 import { ComboDisplay } from './ComboDisplay';
 import { AbilityMeter } from './AbilityMeter';
-import { EndTurnButton } from './EndTurnButton';
+import { CombatAttackLines } from './CombatAttackLines';
 
-import { useCombatStore } from '../../store/combatStore';
 import { EventBus, GameEvent } from '../../game/EventBus';
 
 /**
@@ -25,42 +24,32 @@ import { EventBus, GameEvent } from '../../game/EventBus';
  * Bottom-left: swap count + end turn button.
  */
 export const CombatHUD = memo(function CombatHUD() {
-  const swapsRemaining = useCombatStore((s) => s.swapsRemaining);
-  const swapsPerTurn = useCombatStore((s) => s.swapsPerTurn);
+  const rootRef = useRef<HTMLDivElement>(null);
 
   return (
-    <div className="pointer-events-none text-xs select-none" style={{ width: 960, height: 540, position: 'relative' }}>
+    <div ref={rootRef} className="pointer-events-none text-xs select-none" style={{ width: 960, height: 540, position: 'relative' }}>
       {/* EventBus -> Zustand bridge (invisible) */}
       <CombatBridge />
 
+      {/* Player->enemy damage lines (rendered in React so it can anchor to sprite DOM bounds) */}
+      <CombatAttackLines containerRef={rootRef} />
+
+      {/* Combo display: anchored to the board top-center. */}
+      <div
+        className="absolute pointer-events-none"
+        style={{ left: 480, top: 58, transform: 'translateX(-50%)', zIndex: 5 }}
+      >
+        <ComboDisplay />
+      </div>
+
       {/* Main combat area - starts below top bar (28px) + artifact bar */}
       <div className="absolute inset-x-0 bottom-0 flex" style={{ top: 36 }}>
-        {/* Player area -- combo has fixed height so it doesn't shift the sprite */}
+        {/* Player area */}
         <div
           className="relative flex flex-col items-center justify-center px-1 pointer-events-auto"
           style={{ width: '26.67%' }}
         >
           <PlayerPanel />
-          {/* Combo + Swap count + end turn - absolute above player */}
-          <div className="absolute top-10 left-1/2 -translate-x-1/2 flex flex-col items-center gap-1">
-            <div style={{ height: 16 }}>
-              <ComboDisplay />
-            </div>
-            <span
-              className="text-sm text-stone-200 font-bold"
-              style={{
-                WebkitTextStroke: '3px #000',
-                paintOrder: 'stroke fill',
-              }}
-            >
-              SWAPS {swapsRemaining}/{swapsPerTurn}
-            </span>
-            <EndTurnButton />
-          </div>
-          {/* Ability meter - fixed position below player */}
-          <div className="absolute bottom-12 left-1/2 -translate-x-1/2 flex flex-col items-center">
-            <AbilityMeter />
-          </div>
         </div>
 
         {/* Board area (center, Phaser renders the board here) */}
@@ -73,6 +62,16 @@ export const CombatHUD = memo(function CombatHUD() {
         >
           <EnemyTargeting />
         </div>
+      </div>
+
+      {/* Ability meter bar: container centered between screen-left (x=0) and
+          board-left (~x=264 in the 960-wide UI, since Phaser is 640 wide and
+          the 288-wide board is centered -> boardX=176 scaled 1.5x = 264). */}
+      <div
+        className="absolute pointer-events-auto flex items-center"
+        style={{ bottom: 48, left: 150, transform: 'translateX(-50%)' }}
+      >
+        <AbilityMeter />
       </div>
 
       <TurnBanner />

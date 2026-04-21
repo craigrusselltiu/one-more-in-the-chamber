@@ -39,6 +39,7 @@ const TRAIT_NAMES: Record<string, string> = {
 const GATED_TILES: Set<string> = new Set(
   SHOP_ITEMS.filter((si) => si.category === 'tile').map((si) => si.unlockId),
 );
+const MERCHANT_TOOLTIP_GAP = 10;
 
 interface MerchantItem {
   type: 'artifact' | 'consumable' | 'tile_swap' | 'upgrade';
@@ -133,7 +134,13 @@ export const MerchantScreen = memo(function MerchantScreen() {
     const artifacts: MerchantItem[] = [];
     const ownedIds = new Set(snapshot.ownedArtifactIds);
     // Corrupt-tagged artifacts are event-only rewards; never stocked by merchants.
-    const availableArtifacts = ARTIFACTS.filter((a) => !ownedIds.has(a.id) && !a.tags.includes('corrupt') && (!a.exclusive || a.exclusive === run.character));
+    // Gold Tooth is also excluded from merchant stock by design.
+    const availableArtifacts = ARTIFACTS.filter((a) =>
+      !ownedIds.has(a.id)
+      && a.id !== 'gold_tooth'
+      && !a.tags.includes('corrupt')
+      && (!a.exclusive || a.exclusive === run.character),
+    );
     const desperadoActive = (run.traitCounts?.desperado ?? 0) >= 2;
     const legendaryWeight = getWantedLevelMutations(run.wantedLevel).legendaryWeight;
     const pickedArtifacts = weightedArtifactPickN(availableArtifacts, 4, rand, desperadoActive, legendaryWeight);
@@ -148,7 +155,7 @@ export const MerchantScreen = memo(function MerchantScreen() {
       rare: { min: 181, range: 40 },
       legendary: { min: 261, range: 40 },
     };
-    // One random artifact in the stock gets a 50%-off SALE tag. L21 disables
+    // One random artifact in the stock gets a 75%-off tag. L21 disables
     // sales entirely for the rest of the run.
     const salesDisabled = getWantedLevelMutations(run.wantedLevel).disableMerchantSales;
     const saleIndex = !salesDisabled && pickedArtifacts.length > 0
@@ -165,7 +172,7 @@ export const MerchantScreen = memo(function MerchantScreen() {
         id: `art-${a.id}`,
         name: a.name,
         description: a.effect,
-        price: onSale ? Math.max(1, Math.round(fullPrice * 0.5)) : fullPrice,
+        price: onSale ? Math.max(1, Math.round(fullPrice * 0.25)) : fullPrice,
         originalPrice: onSale ? fullPrice : undefined,
       });
     }
@@ -310,7 +317,7 @@ export const MerchantScreen = memo(function MerchantScreen() {
               ) : undefined;
               const iconEl = artFrame != null ? <SpriteIcon frame={artFrame} scale={2} /> : <span className="text-lg text-purple-400">{'\u2726'}</span>;
               return (
-                <Tooltip key={item.id} content={traitTooltip} position="bottom" gap={30}>
+                <Tooltip key={item.id} content={traitTooltip} position="bottom" gap={MERCHANT_TOOLTIP_GAP}>
                   <MerchantCard
                     icon={iconEl}
                     name={item.name}
@@ -318,6 +325,7 @@ export const MerchantScreen = memo(function MerchantScreen() {
                     subtitle={RARITY_LABELS[artDef?.rarity ?? 'common']}
                     subtitleColor={RARITY_COLORS_DIM[artDef?.rarity ?? 'common']}
                     description={<>{colorizeKeywords(item.description)}</>}
+                    flavor={artDef?.description}
                     price={item.price}
                     originalPrice={item.originalPrice}
                     sold={isSold}
@@ -365,6 +373,7 @@ export const MerchantScreen = memo(function MerchantScreen() {
                   icon={frame != null ? <SpriteIcon frame={frame} scale={2} /> : <span className="text-lg text-green-400">{'\u2764'}</span>}
                   name={item.name}
                   description={<>{colorizeKeywords(item.description)}</>}
+                  flavor={CONSUMABLES.find((c) => c.id === consId)?.description}
                   price={item.price}
                   sold={isSold}
                   disabled={isSold || !canAfford || full}
@@ -391,12 +400,13 @@ export const MerchantScreen = memo(function MerchantScreen() {
               const hasKeywords = getReferencedKeywords(def.description).length > 0;
               const keywordTooltip = hasKeywords ? <KeywordSubTooltips text={def.description} /> : undefined;
               return (
-                <Tooltip key={tileItem.id} content={upgradeTooltip} secondContent={keywordTooltip} position="bottom" gap={30}>
+                <Tooltip key={tileItem.id} content={upgradeTooltip} secondContent={keywordTooltip} position="bottom" gap={MERCHANT_TOOLTIP_GAP}>
                   <MerchantCard
                     icon={<SpriteIcon frame={TILE_FRAMES[tileType]} scale={2} />}
                     name={tileItem.name}
                     subtitle={level > 0 ? `Lv ${level + 1}` : undefined}
                     description={<>{buildTileDescription(tileType, level)}</>}
+                    flavor={def.flavor}
                     price={tileItem.price}
                     sold={isSold}
                     disabled={isSold || !canAfford}
@@ -545,7 +555,7 @@ export const MerchantScreen = memo(function MerchantScreen() {
                     </div>
                   );
                   return (
-                    <Tooltip key={tileType} content={previewTooltip} position="bottom" gap={30}>
+                    <Tooltip key={tileType} content={previewTooltip} position="bottom" gap={MERCHANT_TOOLTIP_GAP}>
                       <button
                         onClick={() => setUpgradeSelectedTile(tileType)}
                         className="flex flex-col items-center w-28 rounded-sm transition-all"
@@ -637,6 +647,7 @@ function MerchantCard({
   subtitle,
   subtitleColor,
   description,
+  flavor,
   price,
   originalPrice,
   sold,
@@ -649,6 +660,7 @@ function MerchantCard({
   subtitle?: string;
   subtitleColor?: string;
   description: React.ReactNode;
+  flavor?: React.ReactNode;
   price: number;
   /** When set, the card shows a strikethrough original + discounted price + SALE badge. */
   originalPrice?: number;
@@ -685,7 +697,7 @@ function MerchantCard({
             letterSpacing: '0.5px',
           }}
         >
-          SALE
+          75% OFF
         </span>
       )}
       <span className="absolute top-1 right-1.5 font-bold flex flex-col items-end leading-none" style={{ fontSize: '10px' }}>
@@ -710,6 +722,11 @@ function MerchantCard({
       <span className="text-stone-400 text-center mt-1 leading-tight" style={{ fontSize: '9px' }}>
         {description}
       </span>
+      {flavor && (
+        <span className="text-stone-600 text-center mt-1 leading-tight italic" style={{ fontSize: '8px' }}>
+          "{flavor}"
+        </span>
+      )}
     </button>
   );
 }

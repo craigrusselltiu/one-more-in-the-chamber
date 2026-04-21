@@ -145,7 +145,10 @@ export const EnemyTargeting = memo(function EnemyTargeting() {
           && (ENEMY_SPRITE_SCALE[enemy.enemyType] ?? 1) >= OVERSIZE_SCALE_THRESHOLD;
         const marginLeft = isOversizeSlot ? 40 : (SLOT_OFFSET[slotIdx] ?? 0);
         const marginTop = slotIdx > 0 ? -20 : 0;
-        const transform = hasOversize && slotIdx === 2 ? 'translateY(20px)' : undefined;
+        // Slot 2 is visually pushed down via transform so it doesn't grow the
+        // flex column and shift slots 0/1 up. Oversize encounters push further.
+        const slotShiftY = slotIdx === 2 ? (hasOversize ? 20 : 15) : 0;
+        const transform = slotShiftY ? `translateY(${slotShiftY}px)` : undefined;
         return (
           <div key={slotIdx} style={{ marginLeft, marginTop, transform }}>
             <EnemySlot
@@ -239,6 +242,7 @@ const EnemySlot = memo(function EnemySlot({
             <img
               src={`${import.meta.env.BASE_URL}assets/sprites/${getEnemySprite(enemy)}`}
               alt={enemy.enemyType}
+              data-enemy-sprite-id={enemy.id}
               style={{
                 width: 96,
                 height: 96,
@@ -287,13 +291,13 @@ const EnemySlot = memo(function EnemySlot({
 
       {/* HP bar centered, block badge overlaid to the left */}
       <div className="relative">
-        <div className="absolute right-full top-0 mr-1.5 flex items-center" style={{ height: '100%' }}>
+        <div className="absolute right-full mr-1.5 flex items-center" style={{ height: '100%', top: -1 }}>
           {enemy.block > 0 && <BlockBadge value={enemy.block} />}
         </div>
         <HealthBar
           current={enemy.health}
           max={enemy.maxHealth}
-          width={70}
+          width={100}
           color="#D04040"
         />
       </div>

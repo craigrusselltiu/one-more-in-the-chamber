@@ -45,9 +45,7 @@ export const Chamber = memo(function Chamber({ charge, threshold, ready, size = 
         width: size,
         height: size,
         position: 'relative',
-        borderRadius: '50%',
       }}
-      className={ready ? 'chamber-ready' : undefined}
     >
       <div
         style={{
@@ -79,6 +77,21 @@ export const Chamber = memo(function Chamber({ charge, threshold, ready, size = 
               imageRendering: 'pixelated',
             }}
           />
+          {ready && (
+            <div
+              className="chamber-ready"
+              style={{
+                position: 'absolute',
+                inset: 0,
+                backgroundImage: `url(${SRC})`,
+                backgroundSize: `${SHEET_W}px ${SHEET_H}px`,
+                backgroundPosition: '0 0',
+                backgroundRepeat: 'no-repeat',
+                imageRendering: 'pixelated',
+                filter: 'url(#chamber-ready-outline)',
+              }}
+            />
+          )}
           {HOLE_POSITIONS.map(([x, y], i) => {
             const state = holes[i];
             if (!state || state === 'empty') return null;

@@ -10,6 +10,7 @@ import { ARTIFACTS, RARITY_COLORS_DIM, type ArtifactDefinition } from '../../dat
 import { pickArtifactForRun, pickArtifactByTag } from '../../utils/artifactSelection';
 import { adjustHeal } from '../../utils/healAdjust';
 import { CONSUMABLES } from '../../data/consumables';
+import { TILE_DEFINITIONS } from '../../data/tiles';
 import type { RunState, TraitId } from '../../types/game';
 import type { Screen } from '../../App';
 
@@ -379,7 +380,7 @@ export const EventScreen = memo(function EventScreen() {
         return;
       }
       case 'vulture_take': {
-        const tiles = run.activeTileTypes;
+        const tiles = run.activeTileTypes.filter((tileType) => TILE_DEFINITIONS[tileType]?.upgradeText);
         if (tiles.length > 0) {
           const pick = tiles[Math.floor(Math.random() * tiles.length)];
           useRunStore.getState().upgradeTile(pick);

@@ -242,7 +242,17 @@ export const EnemyIntent = memo(function EnemyIntent({ intent, rageful = 0 }: En
         const desc = describeAction(action, rageful);
 
         return (
-          <Tooltip key={i} text={`${name}: ${desc}`} position="bottom">
+          <Tooltip
+            key={i}
+            content={
+              <span className="whitespace-nowrap">
+                <span style={{ color: vfxColor, fontWeight: 'bold' }}>{name}</span>
+                {' - '}
+                {desc}
+              </span>
+            }
+            position="bottom"
+          >
             <div
               className="relative intent-pop-in intent-vfx"
               style={{

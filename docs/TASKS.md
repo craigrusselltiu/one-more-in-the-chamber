@@ -41,6 +41,3 @@ todo:
 - update Hardened - should be every damage taken reduces hardened. when 0 become incincible.
 - got a random bomb on the board fighting dusty? should not be possible.
 - adjust healthbars
-- improve ability indicator
-- hovering over Reno should show tooltip that says "Unlock in Reputation Shop"
-- tooltips are in weird places in leaderboard

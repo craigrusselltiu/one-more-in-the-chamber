@@ -517,7 +517,7 @@ export const TILE_DEFINITIONS: Record<TileType, TileDefinition> = {
     baseValue: 0,
     upgradeValue: 0,
     pool: 'special',
-    description: 'Does nothing.',
+    description: 'Does nothing. Cannot be upgraded.',
     flavor: 'Just passing through. Taking up space.',
   },
   fools_gold: {

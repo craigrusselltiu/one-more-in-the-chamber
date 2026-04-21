@@ -77,8 +77,8 @@ export class Player {
     this.maxHealth = maxHealth;
     this.abilityCharge = abilityCharge;
     this.abilityThreshold = abilityThreshold;
-    this.activeTileTypes = activeTileTypes;
-    this.tileUpgrades = tileUpgrades;
+    this.activeTileTypes = [...activeTileTypes];
+    this.tileUpgrades = { ...tileUpgrades };
     this.gold = gold;
   }
 

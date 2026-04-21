@@ -92,6 +92,8 @@ export class BootScene extends Phaser.Scene {
     this.load.image('victory', `${base}assets/backgrounds/victory.png`);
     this.load.image('leaderboard', `${base}assets/backgrounds/leaderboard.png`);
     this.load.image('reputation', `${base}assets/backgrounds/reputation.png`);
+    this.load.image('customize', `${base}assets/backgrounds/customize.png`);
+    this.load.image('ledger', `${base}assets/backgrounds/ledger.png`);
     this.load.image('event_bridge', `${base}assets/events/event_bridge.png`);
     this.load.image('event_stranger', `${base}assets/events/event_stranger.png`);
     this.load.image('event_card', `${base}assets/events/event_card.png`);
@@ -120,7 +122,7 @@ export class BootScene extends Phaser.Scene {
       'coyote', 'dust_devil', 'dusty', 'guard_dog', 'hangman', 'hellfire_preacher',
       'ironeye', 'ironeye_alt', 'mad_prospector', 'minecart', 'mining_foreman',
       'ore_golem', 'outlaw_king', 'pack_mule', 'powder_monkey', 'rattlesnake',
-      'reno', 'reno_attack', 'rust', 'rust_attack', 'saloon_brawler', 'shadow',
+      'reno', 'reno_attack', 'rust', 'rust_attack', 'rust_sheet', 'saloon_brawler', 'shadow',
       'sheriffs_shadow', 'train_guard', 'tumbleweed_golem', 'tunnel_rat', 'vulture',
     ];
     for (const name of SPRITE_IMAGES) {

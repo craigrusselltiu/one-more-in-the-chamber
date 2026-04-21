@@ -1,12 +1,14 @@
 import type { TileType, CharacterId } from './game';
 
 /** Combat-specific types. */
+export type CombatSwapSource = 'default' | 'mustang' | 'dans_feather' | 'pocket_watch';
 
 export interface CombatState {
   character: CharacterId;
   turnNumber: number;
   swapsRemaining: number;
   swapsPerTurn: number;
+  swapIconSources: CombatSwapSource[];
   playerBlock: number;
   aceStacks: number;
   aceMultiplier: number;

@@ -155,7 +155,7 @@ export const CustomizeScreen = memo(function CustomizeScreen() {
       style={{
         width: 960,
         height: 540,
-        backgroundImage: `url(${import.meta.env.BASE_URL}assets/backgrounds/reputation.png)`,
+        backgroundImage: `linear-gradient(rgba(0,0,0,0.18), rgba(0,0,0,0.18)), url(${import.meta.env.BASE_URL}assets/backgrounds/customize.png)`,
         backgroundSize: 'cover',
         backgroundPosition: 'center',
       }}

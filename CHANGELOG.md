@@ -4,6 +4,36 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## v0.7.5
+
+### Added
+- Combat now shows a `Turn N` indicator above the player sprite so the current turn count stays visible without covering the board.
+
+### Changed
+- Combat damage line VFX now renders from the player sprite to the struck enemy sprite, instead of drawing tile-to-enemy lines. Showdown and ricochet tile-to-tile lines remain unchanged.
+- The combo indicator now sits dead-center above the board with larger bold text and a stronger drop shadow for readability during cascades.
+- Rust's combat sprite now animates from `rust_sheet.png`: the four-frame idle loop cycles while idle, and attacks use the dedicated row-two attack frame.
+- The chamber ready state now uses a dedicated gold sprite-outline overlay instead of the previous box-shadow pulse.
+- Player and enemy health bars are now slimmer, slightly wider, and show a delayed ghost bar after taking damage.
+- The combat turn indicator now sits below the chamber / ability / swaps / end-turn HUD stack instead of above the player sprite.
+- Merchant cards now show flavor text for artifact, consumable, and tile offers, and merchant-screen tooltips sit higher without changing tooltip placement elsewhere.
+- Merchant sale artifacts are now 75% off, and the sale badge now reads `75% OFF` in red.
+- The Customize screen now uses `assets/backgrounds/customize.png` as its background.
+- The Customize and Reputation Shop screens now use a light black overlay over their backgrounds for better foreground readability.
+- The loading/preload scene now includes the missing `customize` and `ledger` backgrounds so those screens are warmed into cache with the rest of the UI assets.
+- The main-menu `Signed In` label now sits slightly closer to the bottom-right corner.
+- `SWAPS REMAINING` now shows bonus-swap icons correctly: next-fight event swaps appear as extra slots on turn 1, and `Pocket Watch` only adds a new watch slot when it pushes past your current unused capacity.
+- Removed completed HUD follow-up items from `docs/TASKS.md` now that the ability indicator, Reno unlock tooltip, and leaderboard tooltip positioning work are already present in the local tree.
+
+### Fixed
+- Milk now actually transforms into Cheese on turn 4 in combat, including existing board tiles, future refills, and restored mid-combat snapshots.
+- Milk upgrades now persist correctly through combat: transforming to Cheese no longer leaks into the run state, and combat Cheese keeps Milk's upgrade level for that fight.
+- Tumbleweed now explicitly reads `Does nothing. Cannot be upgraded.`, and non-upgradeable tiles are excluded from random upgrade effects like Vulture Circle.
+- Gold Tooth is now excluded from the merchant artifact pool only.
+- Lasso is no longer consumed by invalid swap attempts; it now stays active until a valid swap actually resolves.
+- Summoned enemy deaths now consistently trigger on-death hooks (Corpse Explosion, Burial Rites, Detonator, etc.) even when the kill comes from non-match sources like venom ticks, fuse expiry, consumable damage, or the "only summoned enemies remain" auto-cull.
+- Bounty execution is now checked after more non-standard damage sources (corpse explosion damage, shadow bolts, buried-reveal damage, thorns/reflect, consumable bonus damage), including against summoned enemies.
+
 ## v0.7.4
 
 ### Added

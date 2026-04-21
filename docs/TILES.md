@@ -264,7 +264,7 @@ NOTE: The tile pool for Acts 2, 3, and also the shop should be the Starter Tiles
 
 ### Tumbleweed
 - Flavor text: "Just passing through. Taking up space."
-- Behaviour text: Does nothing.
+- Behaviour text: Does nothing. Cannot be upgraded.
 - Single formula: no resource generation
 
 ### Charcoal

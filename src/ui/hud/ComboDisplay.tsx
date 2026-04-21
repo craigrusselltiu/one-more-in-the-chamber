@@ -53,18 +53,24 @@ export const ComboDisplay = memo(function ComboDisplay() {
       }}
     >
       <span
-        className="text-[10px] font-bold"
+        className="text-[18px] font-bold leading-none"
         style={{
           color: displayCombo >= 5 ? '#FFD700' : displayCombo >= 3 ? '#D4A030' : '#C0C0C0',
+          WebkitTextStroke: '2px #000',
+          paintOrder: 'stroke fill',
+          textShadow: '2px 2px 0 rgba(0, 0, 0, 0.85), 0 0 4px rgba(0, 0, 0, 0.45)',
         }}
       >
         {displayCombo}x combo!
       </span>
       <span
-        className="text-[8px] ml-1"
+        className="text-[13px] font-bold ml-1 leading-none"
         style={{
           color: displayCombo >= 5 ? '#FFD700' : displayCombo >= 3 ? '#D4A030' : '#C0C0C0',
           opacity: 0.8,
+          WebkitTextStroke: '2px #000',
+          paintOrder: 'stroke fill',
+          textShadow: '2px 2px 0 rgba(0, 0, 0, 0.85), 0 0 3px rgba(0, 0, 0, 0.45)',
         }}
       >
         ({multiplier.toFixed(1)}x)

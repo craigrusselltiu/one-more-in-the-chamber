@@ -1,5 +1,5 @@
 import type { Board, SwapResult } from '../board/Board';
-import type { CombatState, CombatPhase, MatchResult, EnemyDefinition } from '../../types/combat';
+import type { CombatState, CombatPhase, MatchResult, EnemyDefinition, CombatSwapSource } from '../../types/combat';
 import { ALL_ENEMIES } from '../../data/enemies';
 import type { TileType, ArtifactInstance, TraitId, CharacterId } from '../../types/game';
 import type { CombatSnapshot, SerializedEnemy } from '../../types/combatSnapshot';
@@ -95,6 +95,8 @@ export class CombatManager {
   private turnNumber = 0;
   private swapsPerTurn: number;
   private swapsRemaining = 0;
+  private baseSwapIconSources: CombatSwapSource[] = ['default', 'default', 'default'];
+  private swapIconSources: CombatSwapSource[] = ['default', 'default', 'default'];
   /** One-shot swap adjustment applied to turn 1 only (e.g. Campfire Stranger "Keep walking" +2, Ghost Town Saloon "Drink" -1). */
   private turnOneSwapAdjustment = 0;
   /**
@@ -166,7 +168,15 @@ export class CombatManager {
     // ("Start the next fight with N extra swaps") rather than giving the
     // bonus every turn of the fight.
     const baseSwaps = config.swapsPerTurn ?? 3;
-    this.swapsPerTurn = baseSwaps + this.traits.getExtraSwapsPerTurn() + this.artifacts.getExtraSwapsPerTurn();
+    const traitSwapBonus = this.traits.getExtraSwapsPerTurn();
+    const artifactSwapBonus = this.artifacts.getExtraSwapsPerTurn();
+    this.swapsPerTurn = baseSwaps + traitSwapBonus + artifactSwapBonus;
+    this.baseSwapIconSources = [
+      ...Array.from({ length: baseSwaps }, () => 'default' as const),
+      ...Array.from({ length: traitSwapBonus }, () => 'mustang' as const),
+      ...Array.from({ length: artifactSwapBonus }, () => 'dans_feather' as const),
+    ];
+    this.swapIconSources = [...this.baseSwapIconSources];
     this.turnOneSwapAdjustment = useRunStore.getState().run?.pendingNextFightSwapBonus ?? 0;
     if (this.turnOneSwapAdjustment !== 0) {
       useRunStore.getState().setPendingNextFightSwapBonus(undefined);
@@ -460,6 +470,7 @@ export class CombatManager {
       turnNumber: this.turnNumber,
       swapsRemaining: this.swapsRemaining,
       swapsPerTurn: this.swapsPerTurn,
+      swapIconSources: [...this.swapIconSources],
       targetedEnemyIndex: this.targetedEnemyIndex,
       phase: this.phase,
       isDeadeyeActive: this.isDeadeyeActive,
@@ -584,6 +595,9 @@ export class CombatManager {
     this.turnNumber = snapshot.turnNumber;
     this.swapsRemaining = snapshot.swapsRemaining;
     this.swapsPerTurn = snapshot.swapsPerTurn;
+    this.swapIconSources = snapshot.swapIconSources
+      ? [...snapshot.swapIconSources]
+      : [...this.baseSwapIconSources];
     this.targetedEnemyIndex = snapshot.targetedEnemyIndex;
     this.phase = snapshot.phase;
     this.isDeadeyeActive = snapshot.isDeadeyeActive;
@@ -632,6 +646,8 @@ export class CombatManager {
       this.phase = this.swapsRemaining > 0 ? 'swap-phase' : 'consumable-window';
     }
 
+    this.ensureMilkHasTransformed();
+
     // Emit full state so React HUD syncs
     this.emitFullState();
     EventBus.emit(GameEvent.PLAYER_HP_CHANGE, this.player.health, this.player.maxHealth);
@@ -651,18 +667,14 @@ export class CombatManager {
     if (this.isCombatOver()) return;
 
     this.turnNumber++;
+    this.ensureMilkHasTransformed();
 
     // Tinnitus only hides intents on turn 1 -- reveal from turn 2 onward.
     if (this.turnNumber > 1) {
       useCombatStore.getState().setIntentsHidden(false);
     }
 
-    this.swapsRemaining = this.swapsPerTurn;
-    // Apply the one-shot event swap adjustment on turn 1 only. Clamp to >= 1
-    // so negative adjustments (Saloon "Drink") can't soft-lock the first turn.
-    if (this.turnNumber === 1 && this.turnOneSwapAdjustment !== 0) {
-      this.swapsRemaining = Math.max(1, this.swapsRemaining + this.turnOneSwapAdjustment);
-    }
+    this.resetTurnSwapState();
     this.nextMatchMultiplier = 1.0;
     this.swapsUsedThisTurn = 0;
     this.resolver.resetTurn();
@@ -772,6 +784,69 @@ export class CombatManager {
     EventBus.emit(GameEvent.COMBAT_SAVE_REQUESTED);
   }
 
+  private ensureMilkHasTransformed(): void {
+    if (this.turnNumber < 4) return;
+
+    const transformedTileTypes = Array.from(
+      new Set(this.player.activeTileTypes.map((type) => (type === 'milk' ? 'cheese' : type))),
+    );
+    const ownedTilesChanged = transformedTileTypes.length !== this.player.activeTileTypes.length
+      || transformedTileTypes.some((type, index) => type !== this.player.activeTileTypes[index]);
+
+    let boardTilesChanged = false;
+    for (const row of this.board.getGrid()) {
+      for (const tile of row) {
+        if (tile?.type === 'milk') {
+          tile.setType('cheese');
+          boardTilesChanged = true;
+        }
+      }
+    }
+
+    if (!ownedTilesChanged && !boardTilesChanged) return;
+
+    this.player.activeTileTypes = transformedTileTypes;
+    this.board.setActiveTileTypes(transformedTileTypes);
+
+    const milkUpgrade = this.player.tileUpgrades.milk;
+    if (milkUpgrade !== undefined) {
+      this.player.tileUpgrades.cheese = Math.max(this.player.tileUpgrades.cheese ?? 0, milkUpgrade);
+    }
+  }
+
+  private resetTurnSwapState(): void {
+    this.swapsRemaining = this.swapsPerTurn;
+    this.swapIconSources = [...this.baseSwapIconSources];
+
+    if (this.turnNumber === 1 && this.turnOneSwapAdjustment !== 0) {
+      if (this.turnOneSwapAdjustment > 0) {
+        this.swapsRemaining += this.turnOneSwapAdjustment;
+        this.swapIconSources.push(
+          ...Array.from({ length: this.turnOneSwapAdjustment }, () => 'default' as const),
+        );
+      } else {
+        this.swapsRemaining = Math.max(1, this.swapsRemaining + this.turnOneSwapAdjustment);
+      }
+    }
+  }
+
+  private grantBonusSwaps(count: number, source: CombatSwapSource = 'default'): void {
+    if (count <= 0) return;
+
+    const nextRemaining = this.swapsRemaining + count;
+    const extraIconsNeeded = Math.max(0, nextRemaining - this.swapIconSources.length);
+    this.swapsRemaining = nextRemaining;
+
+    if (extraIconsNeeded > 0) {
+      this.swapIconSources.push(
+        ...Array.from({ length: extraIconsNeeded }, () => source),
+      );
+      this.emitFullState();
+    }
+
+    EventBus.emit(GameEvent.SWAPS_CHANGE, this.swapsRemaining, this.swapsPerTurn);
+  }
+
   /**
    * Transition from consumable window to swap phase.
    * Called when the player is done using consumables (or immediately if none).
@@ -865,15 +940,9 @@ export class CombatManager {
       return;
     }
 
-    // Consume a lasso charge on any swap while lasso is active
+    // Lasso is only consumed after a VALID swap. Keep the mode/cursor active
+    // across invalid attempts (e.g. locked tiles, non-matches).
     const usingLasso = this.lassoSwapsRemaining > 0;
-    if (usingLasso) {
-      this.lassoSwapsRemaining--;
-      if (this.lassoSwapsRemaining <= 0) {
-        this.board.setLassoMode(false);
-        document.body.classList.remove('cursor-lasso');
-      }
-    }
 
     // Track trait/artifact swap hooks
     this.traits.onSwapPerformed();
@@ -903,6 +972,14 @@ export class CombatManager {
       this.setPhase('swap-phase');
       this.lethargicSuppressResources = false;
       return;
+    }
+
+    if (usingLasso) {
+      this.lassoSwapsRemaining--;
+      if (this.lassoSwapsRemaining <= 0) {
+        this.board.setLassoMode(false);
+        document.body.classList.remove('cursor-lasso');
+      }
     }
 
     // Valid swap -- officially consume Lethargic pending now.
@@ -1240,8 +1317,7 @@ export class CombatManager {
           this.nextMatchMultiplier = 2.0;
           break;
         case 'pocket_watch':
-          this.swapsRemaining++;
-          EventBus.emit(GameEvent.SWAPS_CHANGE, this.swapsRemaining, this.swapsPerTurn);
+          this.grantBonusSwaps(1, 'pocket_watch');
           break;
         case 'wanted_flyer': {
           const target = this.getTargetedAliveEnemy();
@@ -1319,9 +1395,7 @@ export class CombatManager {
         const alive = this.aliveEnemies();
         if (alive.length > 0) {
           const target = alive[Math.floor(Math.random() * alive.length)];
-          const { hpLost } = target.takeDamage(consumableArt.bonusDamage);
-          this.damageDealtThisFight += hpLost;
-          this.floatOnEnemy(target, `-${hpLost}`, '#D04040');
+          this.dealAuxiliaryDamageToEnemy(target, consumableArt.bonusDamage, '#D04040');
           EventBus.emit(GameEvent.ENEMY_HP_CHANGE, { ...target.state });
         }
       }
@@ -1464,9 +1538,7 @@ export class CombatManager {
           const alive = this.aliveEnemies();
           if (alive.length === 0) break;
           const target = alive[Math.floor(Math.random() * alive.length)];
-          const { hpLost } = target.takeDamage(10);
-          this.damageDealtThisFight += hpLost;
-          this.floatOnEnemy(target, `-${hpLost}`, '#6b2fa0');
+          this.dealAuxiliaryDamageToEnemy(target, 10, '#6b2fa0');
           EventBus.emit(GameEvent.ENEMY_HP_CHANGE, { ...target.state });
         }
       }
@@ -1669,15 +1741,6 @@ export class CombatManager {
         EventBus.emit(GameEvent.SCREEN_SHAKE, 'medium');
       }
 
-      // Flash a line from match to targeted enemy on damage
-      if (scaled.damage > 0 && !scaled.isAoE) {
-        const mid = match.tiles[Math.floor(match.tiles.length / 2)];
-        const alive = this.aliveEnemies();
-        const target = alive[this.targetedEnemyIndex];
-        const fullIdx = target ? this.enemies.indexOf(target) : 0;
-        EventBus.emit(GameEvent.FLASH_LINE_TO_ENEMY, mid, match.tileType, fullIdx, this.enemies.length);
-      }
-
       // Heliograph Shard: once/combat, on 5-match, apply 1 Blinded to random enemy
       if (this.artifacts.tryHeliographShard(match.length)) {
         const alive = this.aliveEnemies();
@@ -1747,65 +1810,7 @@ export class CombatManager {
         }
       }
 
-      // Check if an enemy died from this match + trait kill hooks
-      for (const enemy of this.enemies) {
-        if (enemy.state.isDead && !enemy.state._deathProcessed) {
-          this.enemyDiedThisSwap = true;
-          enemy.state._deathProcessed = true;
-          const ragefulGain = this.traits.onEnemyKilled();
-          if (ragefulGain > 0) {
-            this.player.ragefulStacks += ragefulGain;
-            this.floatOnPlayer(`+${ragefulGain} RAGEFUL`, '#D04040', 9);
-          }
-          // Undertaker(4): on enemy death, +1 max HP
-          if (this.traits.onEnemyKilledUndertaker()) {
-            EventBus.emit(GameEvent.PLAYER_HP_CHANGE, this.player.health, this.player.maxHealth);
-          }
-          // Reaper's Scythe: apply Shadow to 5 tiles
-          if (this.artifacts.has('reapers_scythe')) {
-            this.board.applyShadowToRandomTiles(5);
-          }
-          // Corpse Explosion: summoned enemy dies -> deal maxHP to ALL enemies
-          if (this.artifacts.hasCorpseExplosion() && enemy.summoned) {
-            const explosionDmg = enemy.getDefinition().health;
-            for (const alive of this.aliveEnemies()) {
-              const { hpLost } = alive.takeDamage(explosionDmg);
-              this.damageDealtThisFight += hpLost;
-              this.floatOnEnemy(alive, `-${hpLost}`, '#D06060');
-            }
-            this.emitEnemyHpChanges();
-            EventBus.emit(GameEvent.SCREEN_SHAKE, 'medium');
-          }
-          // Kill Confirmed, Detonator, Burial Rites
-          const killArt = this.artifacts.onEnemyKilled(match, enemy.summoned);
-          if (killArt.killGrantsSwap) {
-            this.swapsRemaining++;
-            EventBus.emit(GameEvent.SWAPS_CHANGE, this.swapsRemaining, this.swapsPerTurn);
-          }
-          if (killArt.spawnExplosive) {
-            this.board.spawnExplosiveOnRandomTile();
-          }
-          if (killArt.healAmount > 0) {
-            const healed = this.player.heal(killArt.healAmount);
-            if (healed > 0) {
-              this.floatOnPlayer(`+${healed}`, '#40D840');
-              EventBus.emit(GameEvent.PLAYER_HP_CHANGE, this.player.health, this.player.maxHealth);
-            }
-          }
-          // Scavenger: other alive enemies with scavenger heal 6 HP per stack
-          for (const ally of this.aliveEnemies()) {
-            if (ally.state.scavenger > 0) {
-              const scavengerHeal = ally.state.scavenger * 6;
-              const healAmt = Math.min(scavengerHeal, ally.state.maxHealth - ally.state.health);
-              if (healAmt > 0) {
-                ally.state.health += healAmt;
-                this.floatOnEnemy(ally, `+${healAmt}`, '#40D840');
-              }
-            }
-          }
-          this.emitEnemyHpChanges();
-        }
-      }
+      this.processEnemyDeaths(match);
 
       // Copperhead: update intent in real-time as poison tiles change
       for (const enemy of this.aliveEnemies()) {
@@ -1870,6 +1875,17 @@ export class CombatManager {
     EventBus.emit(GameEvent.FLOATING_NUMBER, 'enemy', this.enemies.indexOf(enemy), text, color, fontSize);
   }
 
+  /** Apply non-match damage and route any resulting executions/deaths through the shared hooks. */
+  private dealAuxiliaryDamageToEnemy(enemy: Enemy, damage: number, color: string, fontSize?: number): void {
+    const { hpLost } = enemy.takeDamage(damage);
+    this.damageDealtThisFight += hpLost;
+    if (hpLost > 0) {
+      this.floatOnEnemy(enemy, `-${hpLost}`, color, fontSize);
+    }
+    this.handleBountyKill(enemy);
+    this.processEnemyDeaths(null);
+  }
+
   /** Apply venom to an enemy, adding Rattlesnake Fang Necklace bonus. */
   private applyPoison(enemy: Enemy, stacks: number): void {
     const total = stacks + this.artifacts.getExtraPoisonStacks();
@@ -1930,6 +1946,11 @@ export class CombatManager {
     const critSize = isCrit ? 18 : undefined;
     const { hpLost, blocked } = enemy.takeDamage(damage, pierce);
     this.damageDealtThisFight += hpLost;
+
+    if (damage > 0 && (hpLost > 0 || blocked > 0)) {
+      EventBus.emit(GameEvent.PLAYER_DAMAGE_LINE, enemy.state.id);
+    }
+
     if (blocked > 0) { playBlock(); this.floatOnEnemy(enemy, `-${blocked}`, '#6888A0'); }
     if (hpLost > 0) {
       playHit();
@@ -1963,6 +1984,78 @@ export class CombatManager {
       return true;
     }
     return false;
+  }
+
+  /**
+   * Process newly-dead enemies and fire all death-triggered effects.
+   * This must run for both match kills and non-match damage sources.
+   */
+  private processEnemyDeaths(match: MatchResult | null): void {
+    let progressed = true;
+    while (progressed) {
+      progressed = false;
+      for (const enemy of this.enemies) {
+        if (!enemy.state.isDead || enemy.state._deathProcessed) continue;
+
+        progressed = true;
+        this.enemyDiedThisSwap = true;
+        enemy.state._deathProcessed = true;
+
+        const ragefulGain = this.traits.onEnemyKilled();
+        if (ragefulGain > 0) {
+          this.player.ragefulStacks += ragefulGain;
+          this.floatOnPlayer(`+${ragefulGain} RAGEFUL`, '#D04040', 9);
+        }
+        if (this.traits.onEnemyKilledUndertaker()) {
+          EventBus.emit(GameEvent.PLAYER_HP_CHANGE, this.player.health, this.player.maxHealth);
+        }
+        if (this.artifacts.has('reapers_scythe')) {
+          this.board.applyShadowToRandomTiles(5);
+        }
+
+        if (this.artifacts.hasCorpseExplosion() && enemy.summoned) {
+          const explosionDmg = enemy.getDefinition().health;
+          for (const alive of this.aliveEnemies()) {
+            const { hpLost } = alive.takeDamage(explosionDmg);
+            this.damageDealtThisFight += hpLost;
+            if (hpLost > 0) {
+              this.floatOnEnemy(alive, `-${hpLost}`, '#D06060');
+            }
+            this.handleBountyKill(alive);
+          }
+          this.emitEnemyHpChanges();
+          EventBus.emit(GameEvent.SCREEN_SHAKE, 'medium');
+        }
+
+        const killArt = this.artifacts.onEnemyKilled(match, enemy.summoned);
+        if (killArt.killGrantsSwap) {
+          this.grantBonusSwaps(1);
+        }
+        if (killArt.spawnExplosive) {
+          this.board.spawnExplosiveOnRandomTile();
+        }
+        if (killArt.healAmount > 0) {
+          const healed = this.player.heal(killArt.healAmount);
+          if (healed > 0) {
+            this.floatOnPlayer(`+${healed}`, '#40D840');
+            EventBus.emit(GameEvent.PLAYER_HP_CHANGE, this.player.health, this.player.maxHealth);
+          }
+        }
+
+        for (const ally of this.aliveEnemies()) {
+          if (ally.state.scavenger > 0) {
+            const scavengerHeal = ally.state.scavenger * 6;
+            const healAmt = Math.min(scavengerHeal, ally.state.maxHealth - ally.state.health);
+            if (healAmt > 0) {
+              ally.state.health += healAmt;
+              this.floatOnEnemy(ally, `+${healAmt}`, '#40D840');
+            }
+          }
+        }
+
+        this.emitEnemyHpChanges();
+      }
+    }
   }
 
   private applyResourceOutput(output: ResourceOutput, isCrit = false, isSingle = false): void {
@@ -2175,9 +2268,8 @@ export class CombatManager {
 
     // Bonus swaps (Cavalry 4+)
     if (output.bonusSwaps > 0) {
-      this.swapsRemaining += output.bonusSwaps;
+      this.grantBonusSwaps(output.bonusSwaps);
       this.floatOnPlayer(`+${output.bonusSwaps} SWAP`, '#70B0D0', 9);
-      EventBus.emit(GameEvent.SWAPS_CHANGE, this.swapsRemaining, this.swapsPerTurn);
     }
 
     // Chip miss/hit feedback
@@ -2287,9 +2379,7 @@ export class CombatManager {
             this.floatOnEnemy(rndEnemy, `+${buriedArt.vulnerableCount} VULNERABLE`, '#C070D0', 9);
           }
           if (buriedArt.damagePerReveal > 0) {
-            const { hpLost } = rndEnemy.takeDamage(buriedArt.damagePerReveal);
-            this.damageDealtThisFight += hpLost;
-            this.floatOnEnemy(rndEnemy, `-${hpLost}`, '#808080');
+            this.dealAuxiliaryDamageToEnemy(rndEnemy, buriedArt.damagePerReveal, '#808080');
           }
         }
         this.emitEnemyHpChanges();
@@ -2311,6 +2401,7 @@ export class CombatManager {
     if (bonusDamage > 0) {
       const hpAfter = targetEnemy ? targetEnemy.state.health : 0;
       this.damageDealtThisFight += Math.max(0, hpBefore - hpAfter);
+      this.processEnemyDeaths(null);
       this.emitEnemyHpChanges();
       EventBus.emit(GameEvent.GOLD_CHANGE, this.player.gold);
     }
@@ -2366,6 +2457,7 @@ export class CombatManager {
             }
             enemy.state.health = 0;
             enemy.state.isDead = true;
+            this.processEnemyDeaths(null);
             EventBus.emit(GameEvent.ENEMY_HP_CHANGE, { ...enemy.state });
             this.emitFullState();
             if (this.isCombatOver()) {
@@ -2433,6 +2525,7 @@ export class CombatManager {
         this.floatOnEnemy(enemy, `-${poisonDamage}`, '#40ff40');
         EventBus.emit(GameEvent.ENEMY_HP_CHANGE, { ...enemy.state });
         this.handleBountyKill(enemy);
+        this.processEnemyDeaths(null);
       }
       // Vulnerable decreases by 1 at end of turn (affects damage taken during player turn,
       // so decrement here is effectively end-of-player-turn and is correct)
@@ -2795,7 +2888,10 @@ export class CombatManager {
       EventBus.emit(GameEvent.SCREEN_SHAKE, 'light');
     }
     if (thornsDamage > 0) {
-      this.damageDealtThisFight += enemy.takeDamage(thornsDamage).hpLost;
+      const { hpLost } = enemy.takeDamage(thornsDamage);
+      this.damageDealtThisFight += hpLost;
+      this.handleBountyKill(enemy);
+      this.processEnemyDeaths(null);
       EventBus.emit(GameEvent.ENEMY_HP_CHANGE, { ...enemy.state });
     }
     // Sheriff(6): block reflects 100% of absorbed damage back to the attacker.
@@ -2803,6 +2899,8 @@ export class CombatManager {
       const reflected = enemy.takeDamage(blocked).hpLost;
       this.damageDealtThisFight += reflected;
       this.floatOnEnemy(enemy, `-${reflected}`, '#6888A0');
+      this.handleBountyKill(enemy);
+      this.processEnemyDeaths(null);
       EventBus.emit(GameEvent.ENEMY_HP_CHANGE, { ...enemy.state });
     }
   }
@@ -2861,6 +2959,7 @@ export class CombatManager {
     if (alive.every((e) => e.summoned)) {
       // Kill remaining summoned enemies
       for (const e of alive) e.state.isDead = true;
+      this.processEnemyDeaths(null);
       return true;
     }
     return false;
@@ -2977,9 +3076,7 @@ export class CombatManager {
             this.floatOnEnemy(rndEnemy, `+${buriedArt.vulnerableCount} VULNERABLE`, '#C070D0', 9);
           }
           if (buriedArt.damagePerReveal > 0) {
-            const { hpLost } = rndEnemy.takeDamage(buriedArt.damagePerReveal);
-            this.damageDealtThisFight += hpLost;
-            this.floatOnEnemy(rndEnemy, `-${hpLost}`, '#808080');
+            this.dealAuxiliaryDamageToEnemy(rndEnemy, buriedArt.damagePerReveal, '#808080');
           }
         }
         this.emitEnemyHpChanges();
@@ -3028,6 +3125,7 @@ export class CombatManager {
       turnNumber: this.turnNumber,
       swapsRemaining: this.swapsRemaining,
       swapsPerTurn: this.swapsPerTurn,
+      swapIconSources: this.swapIconSources,
       playerBlock: this.player.block,
       aceStacks: this.player.aceStacks,
       aceMultiplier: this.player.aceMultiplier,

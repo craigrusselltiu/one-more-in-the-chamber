@@ -735,6 +735,12 @@ export default function App() {
             <feFlood floodColor="white" result="white" />
             <feComposite in="white" in2="ring" operator="in" />
           </filter>
+          <filter id="chamber-ready-outline" x="-20%" y="-20%" width="140%" height="140%">
+            <feMorphology in="SourceAlpha" operator="dilate" radius="2" result="dilated" />
+            <feComposite in="dilated" in2="SourceAlpha" operator="out" result="ring" />
+            <feFlood floodColor="#FFD700" result="gold" />
+            <feComposite in="gold" in2="ring" operator="in" />
+          </filter>
           {/* Per-rarity artifact outline filters. Same dilate+subtract pattern as
               the enemy target outline, just with rarity-dim colors flooded in.
               Used by ArtifactBar to draw the HUD rarity ring. */}
@@ -879,7 +885,7 @@ export default function App() {
         {/* Global version label */}
         <span
           className="absolute right-2 bottom-1 pointer-events-none z-[60]"
-          style={{ fontSize: '9px', color: 'rgba(255,255,255,0.3)' }}
+          style={{ fontSize: '7px', color: 'rgba(255,255,255,0.3)' }}
         >
           {APP_VERSION_LABEL}
         </span>

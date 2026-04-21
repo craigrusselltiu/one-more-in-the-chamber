@@ -285,7 +285,7 @@ export const MainMenu = memo(function MainMenu() {
 
       {/* Account indicator -- bottom right: shows login button when logged out,
           "signed in as" label when logged in. */}
-      <div className="absolute right-6 bottom-6">
+      <div className="absolute right-4 bottom-4">
         {auth.isLoggedIn ? (
           <span
             style={{

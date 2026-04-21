@@ -70,13 +70,14 @@ export const GameEvent = {
 
   // Visual effects
   FLASH_LINE: 'vfx:flash-line',
-  FLASH_LINE_TO_ENEMY: 'vfx:flash-line-to-enemy',
   SCREEN_SHAKE: 'vfx:screen-shake',
   TILE_PARTICLES: 'vfx:tile-particles',
   /** Floating number: (target: 'player'|'enemy', index: number, text: string, color: string) */
   FLOATING_NUMBER: 'vfx:floating-number',
   /** Player dealt damage to an enemy (for attack sprite animation). */
   PLAYER_ATTACK: 'vfx:player-attack',
+  /** Player dealt damage to an enemy (for player->enemy line VFX). Payload: enemyId */
+  PLAYER_DAMAGE_LINE: 'vfx:player-damage-line',
 
   // Board input -> CombatManager
   SWAP_REQUESTED: 'board:swap-requested',
@@ -130,4 +131,5 @@ export interface EventPayloads {
   [GameEvent.RUN_ENDED]: [completed: boolean];
   [GameEvent.PLAYER_ATTACK]: [];
   [GameEvent.ARTIFACT_USED]: [artifactId: string];
+  [GameEvent.PLAYER_DAMAGE_LINE]: [enemyId: string];
 }

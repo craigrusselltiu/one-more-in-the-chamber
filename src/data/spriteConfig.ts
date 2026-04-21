@@ -231,6 +231,12 @@ export const INTENT_FRAMES: Record<string, number> = {
   gravity_shift: 305,
 };
 
+/** Swap icons for the turn bar (one per swapsPerTurn). */
+export const SWAP_FRAMES = {
+  unused: 908,
+  used: 910,
+};
+
 /** Intent action colors for number badges. */
 export const INTENT_COLORS: Record<string, string> = {
   attack: '#D04040',

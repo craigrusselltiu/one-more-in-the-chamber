@@ -13,16 +13,6 @@ import type { ShakeIntensity } from '../effects/ScreenShake';
 import type { GridPosition } from '../../types/combat';
 import type { TileType } from '../../types/game';
 import { useSettingsStore } from '../../store/settingsStore';
-
-/** Get the center position of an enemy slot in the 960x540 virtual space. */
-function getEnemySlotPosition(aliveIndex: number): { x: number; y: number } {
-  // Alive index -> visual slot: 0->center(1), 1->top(0), 2->bottom(2)
-  const SLOT_MAP = [1, 0, 2];
-  const slot = SLOT_MAP[aliveIndex] ?? 1;
-  const SLOT_X = [772, 920, 772];
-  const SLOT_Y = [150, 280, 410];
-  return { x: SLOT_X[slot] ?? 900, y: SLOT_Y[slot] ?? 280 };
-}
 import { useCombatStore } from '../../store/combatStore';
 import { useRunStore } from '../../store/runStore';
 
@@ -56,7 +46,6 @@ export class CombatScene extends Phaser.Scene {
   private screenShake!: ScreenShake;
   private boundOnCombatEnd: (...args: unknown[]) => void;
   private boundOnFlashLine: (...args: unknown[]) => void;
-  private boundOnFlashLineToEnemy: (...args: unknown[]) => void;
   private boundOnScreenShake: (...args: unknown[]) => void;
   private boundOnTileParticles: (...args: unknown[]) => void;
   private boundOnDeadeyeShotVfx: (...args: unknown[]) => void;
@@ -65,7 +54,6 @@ export class CombatScene extends Phaser.Scene {
     super({ key: 'CombatScene' });
     this.boundOnCombatEnd = this.onCombatEnd.bind(this);
     this.boundOnFlashLine = this.onFlashLine.bind(this);
-    this.boundOnFlashLineToEnemy = this.onFlashLineToEnemy.bind(this);
     this.boundOnScreenShake = this.onScreenShake.bind(this);
     this.boundOnTileParticles = this.onTileParticles.bind(this);
     this.boundOnDeadeyeShotVfx = this.onDeadeyeShotVfx.bind(this);
@@ -110,7 +98,6 @@ export class CombatScene extends Phaser.Scene {
     // Listen for events
     EventBus.on(GameEvent.COMBAT_END, this.boundOnCombatEnd);
     EventBus.on(GameEvent.FLASH_LINE, this.boundOnFlashLine);
-    EventBus.on(GameEvent.FLASH_LINE_TO_ENEMY, this.boundOnFlashLineToEnemy);
     EventBus.on(GameEvent.SCREEN_SHAKE, this.boundOnScreenShake);
     EventBus.on(GameEvent.TILE_PARTICLES, this.boundOnTileParticles);
     EventBus.on(GameEvent.DEADEYE_SHOT_VFX, this.boundOnDeadeyeShotVfx);
@@ -239,11 +226,18 @@ export class CombatScene extends Phaser.Scene {
 
   /** Draw an 8x8 checkered grid behind the board for visual clarity. */
   private drawCheckerboard(x: number, y: number, size: number): void {
-    // Board background image behind the checkerboard
+    // Board background image behind the checkerboard, with a 2px black outline
+    // via Phaser's preFX Glow pipeline (single FX, no duplicated sprites).
     if (this.textures.exists('board_bg')) {
-      const bg = this.add.image(Math.round(x + size / 2), Math.round(y + size / 2), 'board_bg');
+      const bg = this.add.image(
+        Math.round(x + size / 2),
+        Math.round(y + size / 2),
+        'board_bg',
+      );
       bg.setDisplaySize(size + 72, size + 72);
       bg.setDepth(-2);
+      // color, outerStrength, innerStrength, knockout, quality, distance
+      bg.preFX?.addGlow(0x000000, 2, 0, false, 0.1, 2);
     }
 
     const cellSize = size / 8;
@@ -288,20 +282,6 @@ export class CombatScene extends Phaser.Scene {
     const x2 = origin.x + to.col * TILE_SIZE + TILE_SIZE / 2;
     const y2 = origin.y + to.row * TILE_SIZE + TILE_SIZE / 2;
     this.drawFlashLine(x1, y1, x2, y2, tileType);
-  }
-
-  /** Flash a line from a board position to the targeted enemy's center. */
-  private onFlashLineToEnemy(...args: unknown[]): void {
-    if (!useSettingsStore.getState().juiceAnimationsEnabled) return;
-    const from = args[0] as GridPosition;
-    const tileType = args[1] as TileType;
-    const enemyIndex = (args[2] as number) ?? 0;
-    const origin = this.board.getOrigin();
-    const x1 = origin.x + from.col * TILE_SIZE + TILE_SIZE / 2;
-    const y1 = origin.y + from.row * TILE_SIZE + TILE_SIZE / 2;
-
-    const pos = getEnemySlotPosition(enemyIndex);
-    this.drawFlashLine(x1, y1, pos.x, pos.y, tileType);
   }
 
   private drawFlashLine(x1: number, y1: number, x2: number, y2: number, tileType: TileType): void {
@@ -415,7 +395,6 @@ export class CombatScene extends Phaser.Scene {
   shutdown(): void {
     EventBus.off(GameEvent.COMBAT_END, this.boundOnCombatEnd);
     EventBus.off(GameEvent.FLASH_LINE, this.boundOnFlashLine);
-    EventBus.off(GameEvent.FLASH_LINE_TO_ENEMY, this.boundOnFlashLineToEnemy);
     EventBus.off(GameEvent.SCREEN_SHAKE, this.boundOnScreenShake);
     EventBus.off(GameEvent.TILE_PARTICLES, this.boundOnTileParticles);
     EventBus.off(GameEvent.DEADEYE_SHOT_VFX, this.boundOnDeadeyeShotVfx);

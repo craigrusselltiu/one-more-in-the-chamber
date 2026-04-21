@@ -14,7 +14,7 @@ import { generateMap } from '../game/map/MapGenerator';
 import { useMetaStore } from './metaStore';
 import { useSettingsStore } from './settingsStore';
 import { ARTIFACTS } from '../data/artifacts';
-import { CHARACTER_TILES } from '../data/tiles';
+import { CHARACTER_TILES, TILE_DEFINITIONS } from '../data/tiles';
 import { getWantedLevelMutations } from '../data/wantedLevel';
 import { getMaxConsumableSlots } from '../utils/consumableSlots';
 import { deleteRun as deleteRunFromDB, clearCombatSnapshot } from '../services/localSave';
@@ -375,6 +375,7 @@ export const useRunStore = create<RunStore>((set, get) => ({
   upgradeTile: (type) =>
     set((state) => {
       if (!state.run) return state;
+      if (!TILE_DEFINITIONS[type]?.upgradeText) return state;
       const tileUpgrades = { ...state.run.tileUpgrades };
       const nextLevel = (tileUpgrades[type] ?? 0) + 1;
       tileUpgrades[type] = nextLevel;
@@ -390,6 +391,7 @@ export const useRunStore = create<RunStore>((set, get) => ({
   setTileUpgrade: (type, level) =>
     set((state) => {
       if (!state.run) return state;
+      if (!TILE_DEFINITIONS[type]?.upgradeText) return state;
       const tileUpgrades = { ...state.run.tileUpgrades };
       if (level > 0) tileUpgrades[type] = level;
       else delete tileUpgrades[type];

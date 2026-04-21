@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { CombatState, EnemyState, PlayerStatusEffect, EnemyStatusEffect, CombatPhase } from '../types/combat';
+import type { CombatState, EnemyState, PlayerStatusEffect, EnemyStatusEffect, CombatPhase, CombatSwapSource } from '../types/combat';
 import type { CharacterId } from '../types/game';
 
 /**
@@ -47,6 +47,7 @@ interface CombatStore {
   gold: number;
   swapsRemaining: number;
   swapsPerTurn: number;
+  swapIconSources: CombatSwapSource[];
 
   // Enemies
   enemies: EnemyState[];
@@ -112,6 +113,7 @@ const initialState = {
   gold: 0,
   swapsRemaining: 2,
   swapsPerTurn: 2,
+  swapIconSources: ['default', 'default'] as CombatSwapSource[],
   enemies: [] as EnemyState[],
   targetedEnemyIndex: 0,
   phase: 'turn-start' as CombatPhase,
@@ -159,6 +161,7 @@ export const useCombatStore = create<CombatStore>((set) => ({
       shuffleMaxHolds: state.shuffleMaxHolds,
       swapsRemaining: state.swapsRemaining,
       swapsPerTurn: state.swapsPerTurn,
+      swapIconSources: state.swapIconSources,
       enemies: state.enemies,
       targetedEnemyIndex: state.targetedEnemyIndex,
       phase: state.phase,

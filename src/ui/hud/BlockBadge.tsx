@@ -18,7 +18,7 @@ const OUTLINE_STYLE: React.CSSProperties = {
 export const BlockBadge = memo(function BlockBadge({ value }: BlockBadgeProps) {
   return (
     <div className="relative" style={{ width: 16, height: 16 }}>
-      <SpriteIcon frame={STATUS_FRAMES.block} scale={1} />
+      <SpriteIcon frame={STATUS_FRAMES.block} scale={1} outline="#000" outlineWidth={1} />
       <span
         className="absolute font-bold"
         style={{

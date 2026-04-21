@@ -6,7 +6,7 @@
  */
 
 import type { TileType, TraitId, ArtifactInstance, CharacterId } from './game';
-import type { CombatPhase, EnemyState, EnemyDefinition } from './combat';
+import type { CombatPhase, EnemyState, EnemyDefinition, CombatSwapSource } from './combat';
 import type { TileHazardState } from './tiles';
 import type { GravityDirection } from '../game/board/CascadeResolver';
 import type { EliteModifierId } from '../game/combat/EliteModifiers';
@@ -99,6 +99,7 @@ export interface CombatSnapshot {
   turnNumber: number;
   swapsRemaining: number;
   swapsPerTurn: number;
+  swapIconSources?: CombatSwapSource[];
   targetedEnemyIndex: number;
   phase: CombatPhase;
   isDeadeyeActive: boolean;
