@@ -11,6 +11,25 @@ import changelogRaw from '../../../CHANGELOG.md?raw';
 
 import type { Screen } from '../../App';
 
+function pickMainMenuMessage(playerName: string, isLoggedIn: boolean): { text: string; showGuestTag: boolean } {
+  const displayName = playerName || 'Challenger';
+  const messages = isLoggedIn
+    ? [
+        { text: `Welcome back, ${displayName}!`, showGuestTag: false },
+        { text: 'Unlock new tiles in the Reputation Shop!', showGuestTag: false },
+        { text: 'Check the Changelog to see what is new.', showGuestTag: false },
+        { text: 'Visit the Ledger to review your discoveries.', showGuestTag: false },
+      ]
+    : [
+        { text: `Welcome back, ${displayName}!`, showGuestTag: true },
+        { text: 'Unlock new tiles in the Reputation Shop!', showGuestTag: true },
+        { text: 'Check the Changelog to see what is new.', showGuestTag: true },
+        { text: 'Visit the Ledger to review your discoveries.', showGuestTag: true },
+      ];
+
+  return messages[Math.floor(Math.random() * messages.length)];
+}
+
 function MenuButton({
   label,
   onClick,
@@ -84,6 +103,7 @@ export const MainMenu = memo(function MainMenu() {
   const setPlayerName = useMetaStore((s) => s.setPlayerName);
   const [nameInput, setNameInput] = useState('');
   const [auth, setAuth] = useState<AuthState>(() => ({ ...getAuthState() }));
+  const [mainMenuMessage] = useState(() => pickMainMenuMessage(playerName, auth.isLoggedIn));
   useEffect(() => subscribeAuth(setAuth), []);
 
   const handleNewGame = () => {
@@ -247,14 +267,12 @@ export const MainMenu = memo(function MainMenu() {
               paintOrder: 'stroke fill',
             }}
           >
-            {auth.isLoggedIn ? (
-              <>Welcome back, {playerName}!</>
-            ) : (
-              <>
-                Welcome back, {playerName || 'Challenger'}!{' '}
+            <>
+              {mainMenuMessage.text}{' '}
+              {mainMenuMessage.showGuestTag && (
                 <span style={{ color: 'rgba(255,255,255,0.35)' }}>(Guest)</span>
-              </>
-            )}
+              )}
+            </>
           </span>
         </div>
       )}
