@@ -628,6 +628,7 @@ export class CombatManager {
     // Older snapshots do not record Lethargic state; default to consumed so a
     // one-time combat-start penalty is not incorrectly re-armed on resume.
     this.artifacts.restoreState(false, snapshot.turnNumber ?? 0, snapshot.lethargicPending ?? false);
+    useCombatStore.getState().setIntentsHidden(this.artifacts.has('tinnitus') && this.turnNumber <= 1);
     useCombatStore.getState().setLethargicActive(this.artifacts.lethargicPending);
 
     // Cancel deadeye on restore -- cursor/board state won't carry over
