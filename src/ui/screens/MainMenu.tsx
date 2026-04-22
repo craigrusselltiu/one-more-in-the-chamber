@@ -17,14 +17,10 @@ function pickMainMenuMessage(playerName: string, isLoggedIn: boolean): { text: s
     ? [
         { text: `Welcome back, ${displayName}!`, showGuestTag: false },
         { text: 'Unlock new tiles in the Reputation Shop!', showGuestTag: false },
-        { text: 'Check the Changelog to see what is new.', showGuestTag: false },
-        { text: 'Visit the Ledger to review your discoveries.', showGuestTag: false },
       ]
     : [
         { text: `Welcome back, ${displayName}!`, showGuestTag: true },
         { text: 'Unlock new tiles in the Reputation Shop!', showGuestTag: true },
-        { text: 'Check the Changelog to see what is new.', showGuestTag: true },
-        { text: 'Visit the Ledger to review your discoveries.', showGuestTag: true },
       ];
 
   return messages[Math.floor(Math.random() * messages.length)];
