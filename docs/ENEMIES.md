@@ -139,13 +139,13 @@ I want just the text prompt that I can copy straight into Gemini. No formatting,
 ## Normal Enemies Pool
 
 ### Powder Monkey
-- Base HP: 67
-- Start of fight: Bomb 2
+- Base HP: 62
+- Start of fight: Bomb 1
 - Moves:
     - Attack 11, Bomb 2
     - Multi-attack 3x3
     - Bomb 3
-    - Attack 8, Bomb 2, Bury 3
+    - Attack 8, Bomb 1, Bury 3
 
 ### Mining Canary
 - Base HP: 49

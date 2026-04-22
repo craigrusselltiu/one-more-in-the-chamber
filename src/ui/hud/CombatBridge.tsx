@@ -44,6 +44,7 @@ export function CombatBridge() {
     discoverIf('vulnerable', state.vulnerableStacks);
     discoverIf('protected', state.protectedStacks);
     discoverIf('dead_man_walking', state.deadManWalkingStacks);
+    discoverIf('jackhammer', state.jackhammerCombatLevel);
     discoverIf('loot', state.lootStacks);
 
     // Enemy statuses (fields on EnemyState)

@@ -133,6 +133,7 @@ export interface CombatSnapshot {
   matchCountThisFight: number;
   damageDealtThisTurn?: boolean;
   undertakerDoubleDamageReady?: boolean;
+  lethargicPending?: boolean;
   firstMatchThisFight: boolean;
   lassoUsedThisFight: boolean;
 

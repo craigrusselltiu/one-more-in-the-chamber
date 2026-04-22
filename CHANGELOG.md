@@ -4,6 +4,16 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## v1.0.1
+
+### Changed
+- Lowered tile unlock prices in the Reputation Shop.
+- Rebalanced Powder Monkey with lower HP and lighter bomb pressure at the start of the fight and on its bury attack.
+- Removed the extra full-card keyword tooltip from merchant and tile selection tiles, so keyword explanations only appear when hovering the highlighted keywords themselves.
+
+### Fixed
+- Attempted to fix an issue where combat sometimes failed to load after leaving a campfire or event.
+
 ## v1.0.0
 
 ### Added

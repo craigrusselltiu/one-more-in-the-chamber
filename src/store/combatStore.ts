@@ -211,6 +211,7 @@ export function getPlayerStatusEffects(store: CombatStore): PlayerStatusEffect[]
   if (store.duelStacks > 0) effects.push({ type: 'duel', value: store.duelStacks });
   if (store.chainStacks > 0) effects.push({ type: 'chain', value: store.chainStacks });
   if (store.lootStacks > 0) effects.push({ type: 'loot', value: store.lootStacks });
+  if (store.jackhammerCombatLevel > 0) effects.push({ type: 'jackhammer', value: store.jackhammerCombatLevel });
   if (store.terrifiedStacks > 0) effects.push({ type: 'terrified', value: store.terrifiedStacks });
   if (store.vulnerableStacks > 0) effects.push({ type: 'vulnerable', value: store.vulnerableStacks });
   if (store.thorns > 0) effects.push({ type: 'thorns', value: store.thorns });

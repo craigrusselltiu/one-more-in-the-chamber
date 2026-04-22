@@ -62,9 +62,10 @@ export class ArtifactSystem {
   }
 
   /** Restore internal state from a mid-combat snapshot. */
-  restoreState(gillieSuitUsed = false, turnNumber = 0): void {
+  restoreState(gillieSuitUsed = false, turnNumber = 0, lethargicPending = this.lethargicPending): void {
     this.gillieSuitUsedThisFight = gillieSuitUsed;
     this.turnNumber = turnNumber;
+    this.lethargicPending = lethargicPending;
   }
 
   // ---------------------------------------------------------------------------

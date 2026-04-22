@@ -316,8 +316,8 @@ export class CombatManager {
 
     // Tinnitus: hide enemy intents on turn 1. Cleared at the start of turn 2.
     useCombatStore.getState().setIntentsHidden(this.artifacts.has('tinnitus'));
-    // Lethargic: arm the status icon until the first swap consumes it.
-    useCombatStore.getState().setLethargicActive(this.artifacts.has('lethargic'));
+    // Lethargic: show the status only while the first-swap penalty is still pending.
+    useCombatStore.getState().setLethargicActive(this.artifacts.lethargicPending);
 
     // Set trait-driven player flags
     this.player.damageReduction = this.traits.getDamageReduction();
@@ -521,6 +521,7 @@ export class CombatManager {
       matchCountThisFight: this.traits.getMatchCountThisFight(),
       damageDealtThisTurn: this.traits.getDamageDealtThisTurn(),
       undertakerDoubleDamageReady: this.traits.getUndertakerBonusDamageReady(),
+      lethargicPending: this.artifacts.lethargicPending,
       firstMatchThisFight: false,
       lassoUsedThisFight: false,
       artifacts: this.artifacts.getArtifacts(),
@@ -624,7 +625,10 @@ export class CombatManager {
       snapshot.damageDealtThisTurn ?? false,
       snapshot.undertakerDoubleDamageReady ?? false,
     );
-    this.artifacts.restoreState(false, snapshot.turnNumber ?? 0);
+    // Older snapshots do not record Lethargic state; default to consumed so a
+    // one-time combat-start penalty is not incorrectly re-armed on resume.
+    this.artifacts.restoreState(false, snapshot.turnNumber ?? 0, snapshot.lethargicPending ?? false);
+    useCombatStore.getState().setLethargicActive(this.artifacts.lethargicPending);
 
     // Cancel deadeye on restore -- cursor/board state won't carry over
     if (this.isDeadeyeActive) {
@@ -1176,6 +1180,9 @@ export class CombatManager {
     }
 
     this.emitFullState();
+    if (this.deadeyeShotsRemaining <= 0) {
+      this.requestCombatSaveIfStable();
+    }
   }
 
   /**
@@ -1209,12 +1216,12 @@ export class CombatManager {
     }
 
     this.emitFullState();
+    this.requestCombatSaveIfStable();
   }
 
   private endDeadeye(playSpin = false): void {
     if (playSpin) {
-      playRevolverSpin();
-      this.deadeyeFinishSpinTrigger++;
+      this.triggerAbilityFinishSpin();
     }
     this.isDeadeyeActive = false;
     this.deadeyeShotsRemaining = 0;
@@ -1286,6 +1293,7 @@ export class CombatManager {
 
     this.board.setIsResolving(false);
     EventBus.emit(GameEvent.COMBO_UPDATE, 0);
+    this.triggerAbilityFinishSpin();
 
     if (this.isCombatOver()) {
       this.endCombat();
@@ -1293,6 +1301,21 @@ export class CombatManager {
 
     this.emitFullState();
     this.ensureSwapPhaseHasValidMoves();
+    this.requestCombatSaveIfStable();
+  }
+
+  /** Trigger the shared chamber finisher animation/SFX used when an ability fully resolves. */
+  private triggerAbilityFinishSpin(): void {
+    playRevolverSpin();
+    this.deadeyeFinishSpinTrigger++;
+  }
+
+  /** Request a combat snapshot once the board is back at a safe interactive point. */
+  private requestCombatSaveIfStable(): void {
+    if (this.isCombatOver()) return;
+    if (this.board.getIsResolving()) return;
+    if (this.ensureSwapPhaseMovesPromise) return;
+    EventBus.emit(GameEvent.COMBAT_SAVE_REQUESTED);
   }
 
   // ---------------------------------------------------------------------------
@@ -1419,6 +1442,8 @@ export class CombatManager {
     if (this.isCombatOver()) {
       this.endCombat();
     }
+
+    this.requestCombatSaveIfStable();
 
     return true;
   }
@@ -2006,6 +2031,10 @@ export class CombatManager {
 
         progressed = true;
         this.enemyDiedThisSwap = true;
+        EventBus.emit(GameEvent.ENEMY_DIED, {
+          enemyId: enemy.state.id,
+          enemyIndex: this.enemies.indexOf(enemy),
+        });
         enemy.state._deathProcessed = true;
 
         const ragefulGain = this.traits.onEnemyKilled();

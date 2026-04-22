@@ -1,4 +1,6 @@
 import type { CombatState, EnemyState } from '../types/combat';
+import type { CombatSnapshot } from '../types/combatSnapshot';
+import type { CombatConfig } from './combat/CombatManager';
 
 type Listener = (...args: unknown[]) => void;
 
@@ -100,6 +102,8 @@ export const GameEvent = {
 
   // Mid-combat save
   COMBAT_SAVE_REQUESTED: 'combat:save-requested',
+  COMBAT_SCENE_RUN: 'combat:scene-run',
+  COMBAT_SCENE_STOP: 'combat:scene-stop',
 
   // Music control
   MUSIC_FADE_OUT: 'music:fade-out',
@@ -131,6 +135,9 @@ export interface EventPayloads {
   [GameEvent.NODE_SELECTED]: [nodeId: string];
   [GameEvent.RUN_STARTED]: [];
   [GameEvent.RUN_ENDED]: [completed: boolean];
+  [GameEvent.COMBAT_SCENE_RUN]: [payload: { config?: CombatConfig; snapshot?: CombatSnapshot }];
+  [GameEvent.COMBAT_SCENE_STOP]: [];
+  [GameEvent.ENEMY_DIED]: [payload: { enemyId: string; enemyIndex: number }];
   [GameEvent.PLAYER_ATTACK]: [];
   [GameEvent.PLAYER_HIT]: [];
   [GameEvent.ARTIFACT_USED]: [artifactId: string];

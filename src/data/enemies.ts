@@ -186,15 +186,15 @@ export const ACT2_NORMAL: Record<string, EnemyDefinition> = {
   powder_monkey: {
     type: 'powder_monkey',
     name: 'Powder Monkey',
-    health: 67,
+    health: 62,
     minDamage: 3, maxDamage: 15,
     abilities: ['bomb', 'bury'],
-    startOfFight: [bomb(2)],
+    startOfFight: [bomb(1)],
     moves: [
       m(atk(11), bomb(2)),
       m(multiAtk(3, 3)),
       m(bomb(3)),
-      m(atk(8), bomb(2), bury(3)),
+      m(atk(8), bomb(1), bury(3)),
     ],
   },
   mining_canary: {

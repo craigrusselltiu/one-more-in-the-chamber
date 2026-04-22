@@ -130,6 +130,7 @@ export type PlayerStatusEffect =
   | { type: 'lethargic'; value: number }
   | { type: 'tinnitus'; value: number }
   | { type: 'dead_man_walking'; value: number }
+  | { type: 'jackhammer'; value: number }
   | { type: 'loot'; value: number };
 
 export type EnemyStatusEffect =

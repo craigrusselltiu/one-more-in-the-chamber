@@ -32,6 +32,7 @@ const STATUS_TO_KEYWORD: Record<string, string> = {
   duel: 'Duel',
   chain: 'Chain',
   loot: 'Loot',
+  jackhammer: 'Jackhammer',
   protected: 'Protected',
 };
 

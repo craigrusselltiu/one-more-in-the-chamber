@@ -17,13 +17,13 @@ import { useCombatStore } from '../../store/combatStore';
 import { useRunStore } from '../../store/runStore';
 
 /**
- * Workaround for Phaser scene.start() not reliably passing data to create()
- * when restarting a previously-stopped scene. Store data before starting,
- * read in create() if the parameter is missing.
+ * Workaround for scene restart paths not reliably passing data to create().
+ * Store data before requesting a run/restart, read in create() if the
+ * parameter is missing.
  */
 let pendingSceneData: { config?: CombatConfig; snapshot?: CombatSnapshot } | null = null;
 
-/** Set scene data before calling game.scene.start('CombatScene'). */
+/** Set scene data before requesting CombatScene to run or restart. */
 export function setCombatSceneData(data: { config?: CombatConfig; snapshot?: CombatSnapshot }): void {
   pendingSceneData = data;
 }
@@ -60,76 +60,95 @@ export class CombatScene extends Phaser.Scene {
   }
 
   create(data?: { config?: CombatConfig; snapshot?: CombatSnapshot }): void {
-    // Phaser may not pass data on scene restart; use module-level fallback
-    if (!data?.config && !data?.snapshot && pendingSceneData) {
-      data = pendingSceneData;
-    }
+    const hadCreateArgData = !!data?.config || !!data?.snapshot;
+    const hadPendingSceneData = !!pendingSceneData;
+    const resolvedData = hadCreateArgData ? data : pendingSceneData ?? data;
     pendingSceneData = null;
 
-    this.cameras.main.setRoundPixels(true);
-    this.cameras.main.setBackgroundColor('#2a1a0e');
-
-    // Combat background: boss-specific bg per act, regular uses act bg
-    const isBoss = data?.config?.isBoss || data?.snapshot?.isBoss;
     const act = useRunStore.getState().run?.currentAct ?? 1;
-    const actBg = `act${act}_bg`;
-    const bossBgMap: Record<number, string> = { 1: 'dusty_bg', 2: 'copperhead_bg', 3: 'ironeye_bg' };
-    const bgCandidates = isBoss ? [bossBgMap[act], actBg] : [actBg, 'act1_bg'];
-    const bgKey = bgCandidates.find(k => this.textures.exists(k));
-    if (bgKey) {
-      const bg = this.add.image(GAME_WIDTH / 2, GAME_HEIGHT / 2, bgKey);
-      bg.setDisplaySize(GAME_WIDTH, GAME_HEIGHT);
-      bg.setDepth(-10);
-      bg.setAlpha(0.4);
-      // Photographic backgrounds look aliased under nearest-neighbor sampling
-      // (pixelArt is scene-global); force LINEAR for this sprite only.
-      bg.texture.setFilter(Phaser.Textures.FilterMode.LINEAR);
-    } else {
-      // Fallback: solid color rectangle if no background texture loaded
-      const fallback = this.add.rectangle(GAME_WIDTH / 2, GAME_HEIGHT / 2, GAME_WIDTH, GAME_HEIGHT, 0x3a2a1e);
-      fallback.setDepth(-10);
-    }
+    const bootstrapMeta = {
+      source: hadCreateArgData ? 'create-arg' : hadPendingSceneData ? 'pending-scene-data' : 'none',
+      hasConfig: !!resolvedData?.config,
+      hasSnapshot: !!resolvedData?.snapshot,
+      sceneStatus: this.sys.settings.status,
+      isSceneActive: this.scene.isActive(),
+      act,
+      hasActBackground: this.textures.exists(`act${act}_bg`),
+      hasBoardBackground: this.textures.exists('board_bg'),
+    };
 
-    this.screenShake = new ScreenShake(this);
+    console.info('[combat] bootstrap start', bootstrapMeta);
 
-    // Clean up EventBus listeners when scene is stopped/restarted
-    this.events.on('shutdown', this.shutdown, this);
+    try {
+      data = resolvedData;
 
-    // Listen for events
-    EventBus.on(GameEvent.COMBAT_END, this.boundOnCombatEnd);
-    EventBus.on(GameEvent.FLASH_LINE, this.boundOnFlashLine);
-    EventBus.on(GameEvent.SCREEN_SHAKE, this.boundOnScreenShake);
-    EventBus.on(GameEvent.TILE_PARTICLES, this.boundOnTileParticles);
-    EventBus.on(GameEvent.DEADEYE_SHOT_VFX, this.boundOnDeadeyeShotVfx);
+      this.cameras.main.setRoundPixels(true);
+      this.cameras.main.setBackgroundColor('#2a1a0e');
 
-    // Spacebar activates deadeye ability.
-    // Also prevent default so space doesn't trigger focused UI buttons.
-    this.input.keyboard?.on('keydown-SPACE', (event: KeyboardEvent) => {
-      event.preventDefault();
-      EventBus.emit(GameEvent.ACTIVATE_ABILITY);
-    });
-
-    // Tab cycles enemy targets
-    this.input.keyboard?.on('keydown-TAB', (event: KeyboardEvent) => {
-      event.preventDefault();
-      const store = useCombatStore.getState();
-      const alive = store.enemies.filter((e) => !e.isDead);
-      if (alive.length <= 1) return;
-      const currentIdx = store.targetedEnemyIndex;
-      const nextIdx = (currentIdx + 1) % store.enemies.length;
-      // Skip dead enemies
-      let idx = nextIdx;
-      for (let i = 0; i < store.enemies.length; i++) {
-        if (!store.enemies[idx]?.isDead) break;
-        idx = (idx + 1) % store.enemies.length;
+      // Combat background: boss-specific bg per act, regular uses act bg
+      const isBoss = data?.config?.isBoss || data?.snapshot?.isBoss;
+      const actBg = `act${act}_bg`;
+      const bossBgMap: Record<number, string> = { 1: 'dusty_bg', 2: 'copperhead_bg', 3: 'ironeye_bg' };
+      const bgCandidates = isBoss ? [bossBgMap[act], actBg] : [actBg, 'act1_bg'];
+      const bgKey = bgCandidates.find(k => this.textures.exists(k));
+      if (bgKey) {
+        const bg = this.add.image(GAME_WIDTH / 2, GAME_HEIGHT / 2, bgKey);
+        bg.setDisplaySize(GAME_WIDTH, GAME_HEIGHT);
+        bg.setDepth(-10);
+        bg.setAlpha(0.4);
+        // Photographic backgrounds look aliased under nearest-neighbor sampling
+        // (pixelArt is scene-global); force LINEAR for this sprite only.
+        bg.texture.setFilter(Phaser.Textures.FilterMode.LINEAR);
+      } else {
+        // Fallback: solid color rectangle if no background texture loaded
+        const fallback = this.add.rectangle(GAME_WIDTH / 2, GAME_HEIGHT / 2, GAME_WIDTH, GAME_HEIGHT, 0x3a2a1e);
+        fallback.setDepth(-10);
       }
-      EventBus.emit(GameEvent.TARGET_ENEMY, idx);
-    });
 
-    if (data?.snapshot) {
-      this.restoreFromSnapshot(data.snapshot);
-    } else {
-      this.startFresh(data?.config);
+      this.screenShake = new ScreenShake(this);
+
+      // Clean up EventBus listeners when scene is stopped/restarted
+      this.events.once('shutdown', this.shutdown, this);
+
+      // Listen for events
+      EventBus.on(GameEvent.COMBAT_END, this.boundOnCombatEnd);
+      EventBus.on(GameEvent.FLASH_LINE, this.boundOnFlashLine);
+      EventBus.on(GameEvent.SCREEN_SHAKE, this.boundOnScreenShake);
+      EventBus.on(GameEvent.TILE_PARTICLES, this.boundOnTileParticles);
+      EventBus.on(GameEvent.DEADEYE_SHOT_VFX, this.boundOnDeadeyeShotVfx);
+
+      // Spacebar activates deadeye ability.
+      // Also prevent default so space doesn't trigger focused UI buttons.
+      this.input.keyboard?.on('keydown-SPACE', (event: KeyboardEvent) => {
+        event.preventDefault();
+        EventBus.emit(GameEvent.ACTIVATE_ABILITY);
+      });
+
+      // Tab cycles enemy targets
+      this.input.keyboard?.on('keydown-TAB', (event: KeyboardEvent) => {
+        event.preventDefault();
+        const store = useCombatStore.getState();
+        const alive = store.enemies.filter((e) => !e.isDead);
+        if (alive.length <= 1) return;
+        const currentIdx = store.targetedEnemyIndex;
+        const nextIdx = (currentIdx + 1) % store.enemies.length;
+        // Skip dead enemies
+        let idx = nextIdx;
+        for (let i = 0; i < store.enemies.length; i++) {
+          if (!store.enemies[idx]?.isDead) break;
+          idx = (idx + 1) % store.enemies.length;
+        }
+        EventBus.emit(GameEvent.TARGET_ENEMY, idx);
+      });
+
+      if (data?.snapshot) {
+        this.restoreFromSnapshot(data.snapshot);
+      } else {
+        this.startFresh(data?.config);
+      }
+    } catch (error) {
+      console.error('[combat] bootstrap failed', bootstrapMeta, error);
+      throw error;
     }
   }
 
@@ -393,6 +412,10 @@ export class CombatScene extends Phaser.Scene {
   // Floating numbers are rendered by React (FloatingNumbers component in CombatHUD)
 
   shutdown(): void {
+    console.info('[combat] shutdown', {
+      sceneStatus: this.sys.settings.status,
+      isSceneActive: this.scene.isActive(),
+    });
     EventBus.off(GameEvent.COMBAT_END, this.boundOnCombatEnd);
     EventBus.off(GameEvent.FLASH_LINE, this.boundOnFlashLine);
     EventBus.off(GameEvent.SCREEN_SHAKE, this.boundOnScreenShake);

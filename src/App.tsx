@@ -101,6 +101,49 @@ interface EncounterInfo {
   isBoss: boolean;
 }
 
+type CombatScenePayload = { config?: CombatConfig; snapshot?: CombatSnapshot };
+type CombatRuntimeScene = Phaser.Scene & {
+  combatManager?: { createSnapshot: (runId: string) => CombatSnapshot };
+};
+
+function getCombatScene(game: Phaser.Game): CombatRuntimeScene | null {
+  try {
+    return game.scene.getScene('CombatScene') as CombatRuntimeScene;
+  } catch {
+    return null;
+  }
+}
+
+function getCombatSceneStatus(game: Phaser.Game): number | null {
+  return getCombatScene(game)?.sys.settings.status ?? null;
+}
+
+function isCombatSceneBootstrapping(status: number | null): boolean {
+  return status === Phaser.Scenes.INIT
+    || status === Phaser.Scenes.START
+    || status === Phaser.Scenes.LOADING
+    || status === Phaser.Scenes.CREATING;
+}
+
+function isCombatSceneRunningLike(game: Phaser.Game, status: number | null): boolean {
+  return game.scene.isActive('CombatScene')
+    || status === Phaser.Scenes.RUNNING
+    || status === Phaser.Scenes.PAUSED
+    || status === Phaser.Scenes.SLEEPING
+    || isCombatSceneBootstrapping(status);
+}
+
+function logCombatSceneStatus(game: Phaser.Game, reason: string, screen: Screen): void {
+  const scene = getCombatScene(game);
+  console.info('[app] combat scene status', {
+    reason,
+    screen,
+    isActive: game.scene.isActive('CombatScene'),
+    status: scene?.sys.settings.status ?? 'missing',
+    visible: scene?.sys.settings.visible ?? null,
+  });
+}
+
 /** Roll enemies for a given act and node type. */
 function rollEncounter(
   act: Act,
@@ -149,7 +192,7 @@ export default function App() {
   const [bootComplete, setBootComplete] = useState(false);
   const [loadingDismissed, setLoadingDismissed] = useState(false);
   const [bootProgress, setBootProgress] = useState<{ loaded: number; total: number }>({ loaded: 0, total: 0 });
-  const prevScreenRef = useRef<Screen>('main-menu');
+  const currentScreenRef = useRef<Screen>(screen);
   const [wipePhase, setWipePhase] = useState<'none' | 'in' | 'out'>('none');
   /** Ref mirror of wipePhase so the onAnimationEnd handler always reads the latest value. */
   const wipePhaseRef = useRef<'none' | 'in' | 'out'>('none');
@@ -199,13 +242,32 @@ export default function App() {
 
     gameRef.current = new Phaser.Game(config);
     initSfx(gameRef.current);
+    const canvas = gameRef.current.canvas;
+
+    const handleContextLost = () => {
+      const game = gameRef.current;
+      if (!game) return;
+      logCombatSceneStatus(game, 'webglcontextlost', currentScreenRef.current);
+    };
+
+    const handleContextRestored = () => {
+      const game = gameRef.current;
+      if (!game) return;
+      logCombatSceneStatus(game, 'webglcontextrestored', currentScreenRef.current);
+    };
+
+    canvas?.addEventListener('webglcontextlost', handleContextLost);
+    canvas?.addEventListener('webglcontextrestored', handleContextRestored);
 
     // Wait for BootScene to finish loading all assets
-    EventBus.on(GameEvent.BOOT_COMPLETE, () => setBootComplete(true));
-    EventBus.on(GameEvent.BOOT_PROGRESS, (...args: unknown[]) => {
+    const handleBootComplete = () => setBootComplete(true);
+    const handleBootProgress = (...args: unknown[]) => {
       const { loaded, total } = args[0] as { loaded: number; total: number };
       setBootProgress({ loaded, total });
-    });
+    };
+
+    EventBus.on(GameEvent.BOOT_COMPLETE, handleBootComplete);
+    EventBus.on(GameEvent.BOOT_PROGRESS, handleBootProgress);
 
     const NON_COMBAT_NODE_SCREENS: Set<Screen> = new Set(['merchant', 'campfire', 'event', 'artifact']);
 
@@ -213,10 +275,8 @@ export default function App() {
     let lastAppliedScreen: Screen = 'main-menu';
 
     applyScreenChangeRef.current = (next: Screen) => {
-      // Use lastAppliedScreen instead of prevScreenRef (which updates async
-      // in a useEffect). This avoids a race where rapid transitions or the
-      // safety timeout fire before the effect updates prevScreenRef, causing
-      // the non-combat node completion check to see a stale value.
+      // Use lastAppliedScreen instead of React state timing so rapid
+      // transitions and the wipe safety timeout always see the latest screen.
       const prev = lastAppliedScreen;
 
       // Mark non-combat nodes completed when returning to map
@@ -336,6 +396,10 @@ export default function App() {
     });
 
     return () => {
+      canvas?.removeEventListener('webglcontextlost', handleContextLost);
+      canvas?.removeEventListener('webglcontextrestored', handleContextRestored);
+      EventBus.off(GameEvent.BOOT_COMPLETE, handleBootComplete);
+      EventBus.off(GameEvent.BOOT_PROGRESS, handleBootProgress);
       EventBus.off(GameEvent.SCREEN_CHANGE, handleScreenChange);
       unsubscribeAuth();
       gameRef.current?.destroy(true);
@@ -343,12 +407,22 @@ export default function App() {
     };
   }, [ready]);
 
+  useEffect(() => {
+    currentScreenRef.current = screen;
+  }, [screen]);
+
   // Start/stop CombatScene based on screen transitions
   useEffect(() => {
     const game = gameRef.current;
     if (!game || !bootComplete) return;
+    const combatSceneStatus = getCombatSceneStatus(game);
+    const combatSceneRunningLike = isCombatSceneRunningLike(game, combatSceneStatus);
 
-    if (screen === 'combat' && prevScreenRef.current !== 'combat') {
+    if (screen === 'combat') {
+      if (combatSceneRunningLike) return;
+
+      let scenePayload: CombatScenePayload | null = null;
+
       // Check if we have a pending snapshot to restore (mid-combat resume)
       const snapshot = consumePendingSnapshot();
       if (snapshot) {
@@ -369,134 +443,136 @@ export default function App() {
           });
         }
 
-        setCombatSceneData({ snapshot });
-        game.scene.start('CombatScene', { snapshot });
+        scenePayload = { snapshot };
       } else {
         // Fresh combat: build config from run state and start CombatScene
         const run = useRunStore.getState().run;
-        if (run) {
-          const isPendingEventCombat = run.pendingEventResumeScreen === 'combat';
-          const currentNode = run.mapState?.nodes.find((n) => n.id === run.currentNodeId);
-          const nodeType = currentNode?.type ?? 'combat';
-          const nodeRow = currentNode?.row ?? 99;
-          const outlawKingAvailable = !run.outlawKingEncountered;
-          const ascMods = getWantedLevelMutations(run.wantedLevel);
-          // Event-driven fights (e.g. Coyote Den) override the roll with a specific enemy list.
-          const forcedIds = run.forcedCombatEnemies;
-          const encounter: EncounterInfo = forcedIds && forcedIds.length > 0
-            ? {
-                enemies: forcedIds
-                  .map((id) => ALL_ENEMIES[id])
-                  .filter((def): def is EnemyDefinition => !!def)
-                  .map((def) => ({ ...def })),
-                isElite: false,
-                isBoss: false,
-              }
-            : rollEncounter(
-                run.currentAct, nodeType, run.seed, run.currentNodeId ?? undefined, nodeRow, outlawKingAvailable,
-                ascMods.outlawKingChanceMultiplier,
-              );
-          if (forcedIds && forcedIds.length > 0 && !isPendingEventCombat) {
-            useRunStore.getState().setForcedCombatEnemies(undefined);
-          }
-          // Once-per-run: mark Outlaw King encountered if he was rolled.
-          if (encounterContainsOutlawKing(encounter.enemies)) {
-            useRunStore.getState().markOutlawKingEncountered();
-          }
-          // Categorize the encounter for wanted-level scaling.
-          // Outlaw King in a "normal" combat node still counts as elite.
-          const hasOutlawKing = encounterContainsOutlawKing(encounter.enemies);
-          const category: 'normal' | 'elite' | 'boss' = encounter.isBoss
-            ? 'boss'
-            : encounter.isElite || hasOutlawKing
-            ? 'elite'
-            : 'normal';
+        if (!run) return;
 
-          // Scale the base encounter first.
-          applyWantedLevelToEnemies(encounter.enemies, run.wantedLevel, category);
-
-          // Vulture Circle event penalty: apply a +HP multiplier to this act's
-          // boss on top of wanted-level scaling, then clear the flag.
-          const bossHpBonus = run.pendingActBossHpBonus ?? 0;
-          if (encounter.isBoss && bossHpBonus > 0) {
-            for (const e of encounter.enemies) {
-              e.health = Math.round(e.health * (1 + bossHpBonus));
+        const isPendingEventCombat = run.pendingEventResumeScreen === 'combat';
+        const currentNode = run.mapState?.nodes.find((n) => n.id === run.currentNodeId);
+        const nodeType = currentNode?.type ?? 'combat';
+        const nodeRow = currentNode?.row ?? 99;
+        const outlawKingAvailable = !run.outlawKingEncountered;
+        const ascMods = getWantedLevelMutations(run.wantedLevel);
+        // Event-driven fights (e.g. Coyote Den) override the roll with a specific enemy list.
+        const forcedIds = run.forcedCombatEnemies;
+        const encounter: EncounterInfo = forcedIds && forcedIds.length > 0
+          ? {
+              enemies: forcedIds
+                .map((id) => ALL_ENEMIES[id])
+                .filter((def): def is EnemyDefinition => !!def)
+                .map((def) => ({ ...def })),
+              isElite: false,
+              isBoss: false,
             }
-            useRunStore.getState().setPendingActBossHpBonus(undefined);
+          : rollEncounter(
+              run.currentAct, nodeType, run.seed, run.currentNodeId ?? undefined, nodeRow, outlawKingAvailable,
+              ascMods.outlawKingChanceMultiplier,
+            );
+        if (forcedIds && forcedIds.length > 0 && !isPendingEventCombat) {
+          useRunStore.getState().setForcedCombatEnemies(undefined);
+        }
+        // Once-per-run: mark Outlaw King encountered if he was rolled.
+        if (encounterContainsOutlawKing(encounter.enemies)) {
+          useRunStore.getState().markOutlawKingEncountered();
+        }
+        // Categorize the encounter for wanted-level scaling.
+        // Outlaw King in a "normal" combat node still counts as elite.
+        const hasOutlawKing = encounterContainsOutlawKing(encounter.enemies);
+        const category: 'normal' | 'elite' | 'boss' = encounter.isBoss
+          ? 'boss'
+          : encounter.isElite || hasOutlawKing
+          ? 'elite'
+          : 'normal';
+
+        // Scale the base encounter first.
+        applyWantedLevelToEnemies(encounter.enemies, run.wantedLevel, category);
+
+        // Vulture Circle event penalty: apply a +HP multiplier to this act's
+        // boss on top of wanted-level scaling, then clear the flag.
+        const bossHpBonus = run.pendingActBossHpBonus ?? 0;
+        if (encounter.isBoss && bossHpBonus > 0) {
+          for (const e of encounter.enemies) {
+            e.health = Math.round(e.health * (1 + bossHpBonus));
           }
+          useRunStore.getState().setPendingActBossHpBonus(undefined);
+        }
 
-          // L20: the Act 3 final boss spawns with a random Act 3 elite companion,
-          // scaled with elite-category modifiers (not boss).
-          if (
-            encounter.isBoss &&
-            run.currentAct === 3 &&
-            ascMods.finalBossExtraElite
-          ) {
-            const elitePool = Object.values(ACT3_ELITE);
-            if (elitePool.length > 0) {
-              const pick = elitePool[Math.floor(Math.random() * elitePool.length)];
-              const companion = { ...pick, _summoned: true } as typeof pick;
-              applyWantedLevelToEnemies([companion], run.wantedLevel, 'elite');
-              encounter.enemies.push(companion);
-            }
-          }
-
-          const combatConfig: CombatConfig = {
-            character: run.character,
-            enemies: encounter.enemies,
-            playerHealth: run.health,
-            playerMaxHealth: run.maxHealth,
-            playerGold: run.gold,
-            activeTileTypes: run.activeTileTypes,
-            tileUpgrades: run.tileUpgrades,
-            abilityCharge: run.abilityCharge,
-            artifacts: run.artifacts,
-            traitCounts: run.traitCounts,
-            isElite: encounter.isElite,
-            isBoss: encounter.isBoss,
-            isOutlawKing: hasOutlawKing,
-            goldMultiplier: ascMods.goldMultiplier,
-          };
-
-          // Clear any stale combat snapshot before starting fresh
-          clearCombatSnapshot(run.id).catch(() => {});
-          clearRemoteCombatSnapshot(run.id).catch(() => {});
-
-          // Reset combat store before starting
-          useCombatStore.getState().reset();
-          useCombatStore.getState().setPlayerHealth(run.health, run.maxHealth);
-          useCombatStore.getState().setGold(run.gold);
-          useCombatStore.getState().setAct(run.currentAct);
-
-          // Announce encounter so BootScene can pick the right combat music
-          EventBus.emit(GameEvent.COMBAT_MUSIC_SET, {
-            enemyTypes: encounter.enemies.map((e) => e.type),
-            isElite: encounter.isElite,
-            isBoss: encounter.isBoss,
-            act: run.currentAct,
-          });
-
-          setCombatSceneData({ config: combatConfig });
-          game.scene.start('CombatScene', { config: combatConfig });
-
-          // Mark combat node as visited now that combat is starting
-          const nodeId = run.currentNodeId;
-          if (nodeId) {
-            useRunStore.getState().markNodeVisited(nodeId);
-          }
-          if (isPendingEventCombat) {
-            forceSaveRun();
+        // L20: the Act 3 final boss spawns with a random Act 3 elite companion,
+        // scaled with elite-category modifiers (not boss).
+        if (
+          encounter.isBoss &&
+          run.currentAct === 3 &&
+          ascMods.finalBossExtraElite
+        ) {
+          const elitePool = Object.values(ACT3_ELITE);
+          if (elitePool.length > 0) {
+            const pick = elitePool[Math.floor(Math.random() * elitePool.length)];
+            const companion = { ...pick, _summoned: true } as typeof pick;
+            applyWantedLevelToEnemies([companion], run.wantedLevel, 'elite');
+            encounter.enemies.push(companion);
           }
         }
+
+        const combatConfig: CombatConfig = {
+          character: run.character,
+          enemies: encounter.enemies,
+          playerHealth: run.health,
+          playerMaxHealth: run.maxHealth,
+          playerGold: run.gold,
+          activeTileTypes: run.activeTileTypes,
+          tileUpgrades: run.tileUpgrades,
+          abilityCharge: run.abilityCharge,
+          artifacts: run.artifacts,
+          traitCounts: run.traitCounts,
+          isElite: encounter.isElite,
+          isBoss: encounter.isBoss,
+          isOutlawKing: hasOutlawKing,
+          goldMultiplier: ascMods.goldMultiplier,
+        };
+
+        // Clear any stale combat snapshot before starting fresh
+        clearCombatSnapshot(run.id).catch(() => {});
+        clearRemoteCombatSnapshot(run.id).catch(() => {});
+
+        // Reset combat store before starting
+        useCombatStore.getState().reset();
+        useCombatStore.getState().setPlayerHealth(run.health, run.maxHealth);
+        useCombatStore.getState().setGold(run.gold);
+        useCombatStore.getState().setAct(run.currentAct);
+
+        // Announce encounter so BootScene can pick the right combat music
+        EventBus.emit(GameEvent.COMBAT_MUSIC_SET, {
+          enemyTypes: encounter.enemies.map((e) => e.type),
+          isElite: encounter.isElite,
+          isBoss: encounter.isBoss,
+          act: run.currentAct,
+        });
+
+        scenePayload = { config: combatConfig };
+
+        // Mark combat node as visited now that combat is starting
+        const nodeId = run.currentNodeId;
+        if (nodeId) {
+          useRunStore.getState().markNodeVisited(nodeId);
+        }
+        if (isPendingEventCombat) {
+          forceSaveRun();
+        }
       }
-    } else if (screen !== 'combat' && prevScreenRef.current === 'combat') {
-      // Leaving combat: stop CombatScene and clear combat store so the HUD
-      // (consumable slots, etc.) reports `inCombat = false` on the map.
-      game.scene.stop('CombatScene');
-      useCombatStore.getState().reset();
+
+      setCombatSceneData(scenePayload);
+      EventBus.emit(GameEvent.COMBAT_SCENE_RUN, scenePayload);
+      return;
     }
 
-    prevScreenRef.current = screen;
+    if (!combatSceneRunningLike) return;
+
+    // Leaving combat: stop CombatScene and clear combat store so the HUD
+    // (consumable slots, etc.) reports `inCombat = false` on the map.
+    EventBus.emit(GameEvent.COMBAT_SCENE_STOP);
+    useCombatStore.getState().reset();
   }, [screen, bootComplete]);
 
   // Event redirects checkpoint only after the destination has actually opened.
@@ -649,9 +725,7 @@ export default function App() {
       const run = useRunStore.getState().run;
       if (!game || !run) return;
 
-      const scene = game.scene.getScene('CombatScene') as
-        | (Phaser.Scene & { combatManager?: { createSnapshot: (runId: string) => CombatSnapshot } })
-        | null;
+      const scene = getCombatScene(game);
       if (!scene?.scene?.isActive() || !scene?.combatManager) return;
 
       const snapshot = scene.combatManager.createSnapshot(run.id);
@@ -669,14 +743,12 @@ export default function App() {
   useEffect(() => {
     const handleVisibilityChange = () => {
       if (document.visibilityState !== 'hidden') return;
-      if (prevScreenRef.current !== 'combat') return; // Only save during combat
+      if (currentScreenRef.current !== 'combat') return; // Only save during combat
       const game = gameRef.current;
       const run = useRunStore.getState().run;
       if (!game || !run) return;
 
-      const scene = game.scene.getScene('CombatScene') as
-        | (Phaser.Scene & { combatManager?: { createSnapshot: (runId: string) => CombatSnapshot } })
-        | null;
+      const scene = getCombatScene(game);
       if (!scene?.scene?.isActive() || !scene?.combatManager) return;
 
       const snapshot = scene.combatManager.createSnapshot(run.id);

@@ -1,6 +1,8 @@
 import Phaser from 'phaser';
 import { EventBus, GameEvent } from '../EventBus';
 import { useSettingsStore } from '../../store/settingsStore';
+import type { CombatConfig } from '../combat/CombatManager';
+import type { CombatSnapshot } from '../../types/combatSnapshot';
 
 /**
  * BootScene: asset loading and music management.
@@ -136,6 +138,23 @@ export class BootScene extends Phaser.Scene {
     this.cameras.main.setRoundPixels(true);
     // Signal that all assets are loaded and ready
     EventBus.emit(GameEvent.BOOT_COMPLETE);
+
+    const handleCombatSceneRun = (...args: unknown[]) => {
+      const data = args[0] as { config?: CombatConfig; snapshot?: CombatSnapshot } | undefined;
+      this.scene.run('CombatScene', data);
+    };
+
+    const handleCombatSceneStop = () => {
+      this.scene.stop('CombatScene');
+    };
+
+    this.events.once('shutdown', () => {
+      EventBus.off(GameEvent.COMBAT_SCENE_RUN, handleCombatSceneRun);
+      EventBus.off(GameEvent.COMBAT_SCENE_STOP, handleCombatSceneStop);
+    });
+
+    EventBus.on(GameEvent.COMBAT_SCENE_RUN, handleCombatSceneRun);
+    EventBus.on(GameEvent.COMBAT_SCENE_STOP, handleCombatSceneStop);
 
     // Live volume: apply musicVolume changes to currently playing music
     useSettingsStore.subscribe((state, prev) => {

@@ -89,6 +89,10 @@ export const KEYWORDS: Record<string, KeywordDefinition> = {
     color: '#C89030',
     description: 'On 20 stacks, deal 10 damage, gain 8 block, heal 6 HP, and gain 12 gold. Resets to 0.',
   },
+  Jackhammer: {
+    color: '#505050',
+    description: 'Jackhammer hits an extra time per stack. Clear stacks if Jackhammer was not used this turn.',
+  },
   Obsidian: {
     color: '#8B5CF6',
     description: 'Deal 1 damage and gain 1 block per tile. Cannot be swapped out for another tile.',

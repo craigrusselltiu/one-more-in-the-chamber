@@ -1,4 +1,4 @@
-import { memo, useCallback, useState, useEffect } from 'react';
+import { memo, useCallback, useState, useEffect, useRef } from 'react';
 import { EventBus, GameEvent } from '../../game/EventBus';
 import { useCombatStore, getEnemyStatusEffects } from '../../store/combatStore';
 import { HealthBar } from './HealthBar';
@@ -8,6 +8,7 @@ import { EnemyIntent } from './EnemyIntent';
 import { Tooltip } from '../components/Tooltip';
 import { ALL_ENEMIES } from '../../data/enemies';
 import type { EnemyState } from '../../types/combat';
+import { useSettingsStore } from '../../store/settingsStore';
 
 /** Map enemy type to sprite file. Dusty Dan reuses the bandit sprite. */
 const ENEMY_SPRITES: Record<string, string> = {
@@ -68,6 +69,19 @@ const ENEMY_SPRITE_SCALE: Record<string, number> = {
 
 /** Threshold above which a sprite is considered oversize and forces a 2-slot layout. */
 const OVERSIZE_SCALE_THRESHOLD = 2.0;
+const BASE_SPRITE_SIZE = 96;
+const DEATH_ANIMATION_MS = 720;
+const DUST_PARTICLE_LIFETIME = 0.38;
+const DUST_SAMPLE_STEP = 1;
+let nextDeathEffectId = 0;
+
+interface EnemyDeathEffect {
+  id: number;
+  enemyId: string;
+  slotIndex: number;
+  spriteFile: string;
+  scale: number;
+}
 
 /** Resolve sprite filename for an enemy, picking a variant if available. */
 function getEnemySprite(enemy: EnemyState): string | undefined {
@@ -89,6 +103,30 @@ function getEnemySprite(enemy: EnemyState): string | undefined {
   return ENEMY_SPRITES[enemy.enemyType];
 }
 
+function getEnemySlotLayout(
+  slotIdx: number,
+  enemy: EnemyState | null,
+  hasOversize: boolean,
+): { marginLeft: number; marginTop: number; transform?: string } {
+  const SLOT_OFFSET: Record<number, number> = { 0: -60, 1: 88, 2: -60 };
+  const isOversizeSlot = enemy
+    && (ENEMY_SPRITE_SCALE[enemy.enemyType] ?? 1) >= OVERSIZE_SCALE_THRESHOLD;
+  const marginLeft = isOversizeSlot ? 40 : (SLOT_OFFSET[slotIdx] ?? 0);
+  const marginTop = slotIdx > 0 ? -20 : 0;
+  const slotShiftY = slotIdx === 2 ? (hasOversize ? 20 : 15) : 0;
+  return {
+    marginLeft,
+    marginTop,
+    transform: slotShiftY ? `translateY(${slotShiftY}px)` : undefined,
+  };
+}
+
+function getSlotIndexForEnemyIndex(enemyIndex: number, hasOversize: boolean): number {
+  if (enemyIndex <= 0) return 1;
+  if (enemyIndex === 1) return hasOversize ? 2 : 0;
+  return 2;
+}
+
 /**
  * EnemyTargeting: shows up to 3 fixed enemy slots on the right side.
  * Slots are always present so dead enemies don't shift others around.
@@ -97,6 +135,9 @@ export const EnemyTargeting = memo(function EnemyTargeting() {
   const enemies = useCombatStore((s) => s.enemies);
   const targetedIndex = useCombatStore((s) => s.targetedEnemyIndex);
   const canShootEnemy = useCombatStore((s) => s.canDeadeyeShootEnemy);
+  const juiceAnimationsEnabled = useSettingsStore((s) => s.juiceAnimationsEnabled);
+  const [deathEffects, setDeathEffects] = useState<EnemyDeathEffect[]>([]);
+  const [dyingEnemyIds, setDyingEnemyIds] = useState<string[]>([]);
 
   // Build fixed 3-slot layout.
   // First enemy (index 0) always stays in the center slot (slot 1).
@@ -127,36 +168,72 @@ export const EnemyTargeting = memo(function EnemyTargeting() {
     return idx === -1 ? slotIdx : idx;
   };
 
-  // Zig-zag offsets: slots 0 & 2 (top/bottom) left, slot 1 (center) right
-  const SLOT_OFFSET: Record<number, number> = { 0: -60, 1: 88, 2: -60 };
+  useEffect(() => {
+    const handler = (...args: unknown[]) => {
+      if (!juiceAnimationsEnabled) return;
+      const payload = args[0] as { enemyId: string; enemyIndex: number };
+      const slotIndex = (() => {
+        const byId = slots.findIndex((slotEnemy) => slotEnemy?.id === payload.enemyId);
+        return byId >= 0 ? byId : getSlotIndexForEnemyIndex(payload.enemyIndex, hasOversize);
+      })();
+      const enemy = slotIndex >= 0 ? slots[slotIndex] : enemies[payload.enemyIndex] ?? null;
+      if (!enemy) return;
+      const spriteFile = getEnemySprite(enemy);
+      if (!spriteFile) return;
+      const scale = ENEMY_SPRITE_SCALE[enemy.enemyType] ?? 1;
+      const effect: EnemyDeathEffect = {
+        id: nextDeathEffectId++,
+        enemyId: payload.enemyId,
+        slotIndex,
+        spriteFile,
+        scale,
+      };
+      setDyingEnemyIds((prev) => (prev.includes(payload.enemyId) ? prev : [...prev, payload.enemyId]));
+      setDeathEffects((prev) => [...prev, effect]);
+    };
+
+    EventBus.on(GameEvent.ENEMY_DIED, handler);
+    return () => { EventBus.off(GameEvent.ENEMY_DIED, handler); };
+  }, [enemies, hasOversize, juiceAnimationsEnabled, slots]);
+
+  useEffect(() => {
+    if (juiceAnimationsEnabled) return;
+    setDeathEffects([]);
+    setDyingEnemyIds([]);
+  }, [juiceAnimationsEnabled]);
 
   return (
     <div className="flex flex-col items-center" style={{ position: 'relative', gap: '-8px' }}>
       {slots.map((enemy, slotIdx) => {
         const enemyIdx = slotToEnemyIndex(slotIdx);
-        // 2x sprites extend ~48px past their container on each side; if this
-        // slot holds one, pull it left enough that the right edge clears the
-        // screen. Other slots/scales keep the normal zig-zag offset.
-        // When a 2x enemy is present (in slot 1), visually push slot 2 down
-        // ~20px so the minion isn't right under the big sprite. Use transform
-        // (not marginTop) to avoid growing the flex container — the parent
-        // is justify-center, which would otherwise shift slot 1 upward.
-        const isOversizeSlot = enemy
-          && (ENEMY_SPRITE_SCALE[enemy.enemyType] ?? 1) >= OVERSIZE_SCALE_THRESHOLD;
-        const marginLeft = isOversizeSlot ? 40 : (SLOT_OFFSET[slotIdx] ?? 0);
-        const marginTop = slotIdx > 0 ? -20 : 0;
-        // Slot 2 is visually pushed down via transform so it doesn't grow the
-        // flex column and shift slots 0/1 up. Oversize encounters push further.
-        const slotShiftY = slotIdx === 2 ? (hasOversize ? 20 : 15) : 0;
-        const transform = slotShiftY ? `translateY(${slotShiftY}px)` : undefined;
+        const layout = getEnemySlotLayout(slotIdx, enemy, hasOversize);
+        const slotEffects = deathEffects.filter((effect) => effect.slotIndex === slotIdx);
         return (
-          <div key={slotIdx} style={{ marginLeft, marginTop, transform }}>
+          <div key={slotIdx} style={{ ...layout, position: 'relative' }}>
             <EnemySlot
               enemy={enemy}
               index={enemyIdx}
               isTargeted={enemy !== null && !enemy.isDead && enemyIdx === targetedIndex}
               canShootEnemy={canShootEnemy}
+              preserveDeadSprite={
+                juiceAnimationsEnabled
+                && enemy?.isDead === true
+                && !!enemy?.id
+                && dyingEnemyIds.includes(enemy.id)
+                && slotEffects.length === 0
+              }
             />
+            {slotEffects.map((effect) => (
+              <EnemyDeathDust
+                key={effect.id}
+                spriteFile={effect.spriteFile}
+                scale={effect.scale}
+                onComplete={() => {
+                  setDeathEffects((prev) => prev.filter((entry) => entry.id !== effect.id));
+                  setDyingEnemyIds((prev) => prev.filter((id) => id !== effect.enemyId));
+                }}
+              />
+            ))}
           </div>
         );
       })}
@@ -169,6 +246,7 @@ interface EnemySlotProps {
   index: number;
   isTargeted: boolean;
   canShootEnemy: boolean;
+  preserveDeadSprite?: boolean;
 }
 
 const EnemySlot = memo(function EnemySlot({
@@ -176,6 +254,7 @@ const EnemySlot = memo(function EnemySlot({
   index,
   isTargeted,
   canShootEnemy,
+  preserveDeadSprite = false,
 }: EnemySlotProps) {
   const [shaking, setShaking] = useState(false);
 
@@ -201,13 +280,57 @@ const EnemySlot = memo(function EnemySlot({
     }
   }, [index, enemy, canShootEnemy]);
 
-  // Empty or dead slot: fixed-height spacer to prevent position shifts
-  if (!enemy || enemy.isDead) {
+  // Empty slot: fixed-height spacer to prevent position shifts
+  if (!enemy) {
+    return <div style={{ width: 116, height: 152 }} />;
+  }
+
+  if (enemy.isDead && !preserveDeadSprite) {
     return <div style={{ width: 116, height: 152 }} />;
   }
 
   const effects = getEnemyStatusEffects(enemy);
   const nonBlockEffects = effects.filter((e) => e.type !== 'block');
+  const spriteFile = getEnemySprite(enemy);
+  const spriteScale = ENEMY_SPRITE_SCALE[enemy.enemyType];
+
+  if (enemy.isDead) {
+    return (
+      <div
+        className="relative flex flex-col items-center text-center px-1 py-0.5 pointer-events-none"
+        style={{
+          width: 116,
+          height: 152,
+        }}
+      >
+        {spriteFile ? (
+          <div className="relative my-1.5 shrink-0" style={{ width: 96, height: 96 }}>
+            <img
+              src={`${import.meta.env.BASE_URL}assets/sprites/shadow.png`}
+              alt=""
+              className="absolute bottom-0 left-1/2 -translate-x-1/2"
+              style={{ width: 80, imageRendering: 'pixelated', opacity: 0.5 }}
+            />
+            <img
+              src={`${import.meta.env.BASE_URL}assets/sprites/${spriteFile}`}
+              alt=""
+              aria-hidden
+              style={{
+                width: 96,
+                height: 96,
+                imageRendering: 'pixelated',
+                objectFit: 'contain',
+                transform: spriteScale ? `scale(${spriteScale})` : undefined,
+                transformOrigin: 'bottom center',
+              }}
+            />
+          </div>
+        ) : (
+          <div style={{ width: 96, height: 96 }} />
+        )}
+      </div>
+    );
+  }
 
   return (
     <button
@@ -231,7 +354,7 @@ const EnemySlot = memo(function EnemySlot({
 
       {/* Enemy sprite with shadow + name tooltip */}
       <Tooltip text={ALL_ENEMIES[enemy.enemyType]?.name ?? enemy.enemyType} position="bottom" gap={16}>
-        {getEnemySprite(enemy) ? (
+        {spriteFile ? (
           <div className={`relative my-1.5 shrink-0${shaking ? ' enemy-shake' : ''}`} style={{ width: 96, height: 96 }}>
             <img
               src={`${import.meta.env.BASE_URL}assets/sprites/shadow.png`}
@@ -240,7 +363,7 @@ const EnemySlot = memo(function EnemySlot({
               style={{ width: 80, imageRendering: 'pixelated', opacity: 0.5 }}
             />
             <img
-              src={`${import.meta.env.BASE_URL}assets/sprites/${getEnemySprite(enemy)}`}
+              src={`${import.meta.env.BASE_URL}assets/sprites/${spriteFile}`}
               alt={enemy.enemyType}
               data-enemy-sprite-id={enemy.id}
               style={{
@@ -248,8 +371,8 @@ const EnemySlot = memo(function EnemySlot({
                 height: 96,
                 imageRendering: 'pixelated',
                 objectFit: 'contain',
-                transform: ENEMY_SPRITE_SCALE[enemy.enemyType]
-                  ? `scale(${ENEMY_SPRITE_SCALE[enemy.enemyType]})`
+                transform: spriteScale
+                  ? `scale(${spriteScale})`
                   : undefined,
                 transformOrigin: 'bottom center',
               }}
@@ -259,7 +382,7 @@ const EnemySlot = memo(function EnemySlot({
               // 2px alpha-aware ring is rendered, never the body, so the breathing
               // opacity animation can never tint the original sprite.
               <img
-                src={`${import.meta.env.BASE_URL}assets/sprites/${getEnemySprite(enemy)}`}
+                src={`${import.meta.env.BASE_URL}assets/sprites/${spriteFile}`}
                 alt=""
                 aria-hidden
                 className="enemy-target-outline absolute top-0 left-0"
@@ -268,8 +391,8 @@ const EnemySlot = memo(function EnemySlot({
                   height: 96,
                   imageRendering: 'pixelated',
                   objectFit: 'contain',
-                  transform: ENEMY_SPRITE_SCALE[enemy.enemyType]
-                    ? `scale(${ENEMY_SPRITE_SCALE[enemy.enemyType]})`
+                  transform: spriteScale
+                    ? `scale(${spriteScale})`
                     : undefined,
                   transformOrigin: 'bottom center',
                   filter: 'url(#enemy-target-outline)',
@@ -307,5 +430,206 @@ const EnemySlot = memo(function EnemySlot({
         <StatusEffects effects={nonBlockEffects} />
       </div>
     </button>
+  );
+});
+
+interface EnemyDeathDustProps {
+  spriteFile: string;
+  scale: number;
+  onComplete: () => void;
+}
+
+interface DustParticle {
+  x: number;
+  y: number;
+  color: string;
+  size: number;
+  driftX: number;
+  driftY: number;
+  spin: number;
+  activation: number;
+}
+
+const EnemyDeathDust = memo(function EnemyDeathDust({
+  spriteFile,
+  scale,
+  onComplete,
+}: EnemyDeathDustProps) {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [ready, setReady] = useState(false);
+
+  useEffect(() => {
+    const finishId = setTimeout(onComplete, DEATH_ANIMATION_MS + 80);
+    return () => clearTimeout(finishId);
+  }, [onComplete]);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    let frameId = 0;
+    let cancelled = false;
+
+    const image = new Image();
+    image.decoding = 'async';
+    image.src = `${import.meta.env.BASE_URL}assets/sprites/${spriteFile}`;
+
+    const startAnimation = () => {
+      if (cancelled) return;
+
+      const sourceCanvas = document.createElement('canvas');
+      sourceCanvas.width = BASE_SPRITE_SIZE;
+      sourceCanvas.height = BASE_SPRITE_SIZE;
+      const sourceCtx = sourceCanvas.getContext('2d');
+      if (!sourceCtx) return;
+      sourceCtx.clearRect(0, 0, BASE_SPRITE_SIZE, BASE_SPRITE_SIZE);
+      sourceCtx.imageSmoothingEnabled = false;
+      sourceCtx.drawImage(image, 0, 0, BASE_SPRITE_SIZE, BASE_SPRITE_SIZE);
+      setReady(true);
+
+      const imageData = sourceCtx.getImageData(0, 0, BASE_SPRITE_SIZE, BASE_SPRITE_SIZE).data;
+      const particles: DustParticle[] = [];
+
+      for (let y = BASE_SPRITE_SIZE - 1; y >= 0; y -= DUST_SAMPLE_STEP) {
+        for (let x = 0; x < BASE_SPRITE_SIZE; x += DUST_SAMPLE_STEP) {
+          const index = (y * BASE_SPRITE_SIZE + x) * 4;
+          const alpha = imageData[index + 3] ?? 0;
+          if (alpha < 120) continue;
+
+          const activation = Math.max(0, 1 - ((y + DUST_SAMPLE_STEP) / BASE_SPRITE_SIZE));
+          particles.push({
+            x,
+            y,
+            color: `rgba(${imageData[index]}, ${imageData[index + 1]}, ${imageData[index + 2]}, ${alpha / 255})`,
+            size: Math.random() < 0.7 ? 2 : 1,
+            driftX: (Math.random() - 0.5) * 16,
+            driftY: 8 + Math.random() * 18,
+            spin: (Math.random() - 0.5) * 10,
+            activation,
+          });
+        }
+      }
+
+      const start = performance.now();
+      const draw = (now: number) => {
+        if (cancelled) return;
+
+        const elapsed = now - start;
+        const progress = Math.min(1, elapsed / DEATH_ANIMATION_MS);
+        const cutoffY = Math.max(0, Math.ceil(BASE_SPRITE_SIZE * (1 - progress)));
+
+        ctx.clearRect(0, 0, BASE_SPRITE_SIZE, BASE_SPRITE_SIZE);
+        ctx.imageSmoothingEnabled = false;
+
+        if (cutoffY > 0) {
+          ctx.drawImage(
+            sourceCanvas,
+            0,
+            0,
+            BASE_SPRITE_SIZE,
+            cutoffY,
+            0,
+            0,
+            BASE_SPRITE_SIZE,
+            cutoffY,
+          );
+        }
+
+        for (const particle of particles) {
+          if (progress < particle.activation) continue;
+
+          const local = Math.min(1, (progress - particle.activation) / DUST_PARTICLE_LIFETIME);
+          const alpha = 1 - local;
+          if (alpha <= 0) continue;
+
+          const px = particle.x + particle.driftX * local + particle.spin * local * local;
+          const py = particle.y - particle.driftY * local + 3 * local * local;
+
+          ctx.globalAlpha = alpha;
+          ctx.fillStyle = particle.color;
+          ctx.fillRect(Math.round(px), Math.round(py), particle.size, particle.size);
+        }
+
+        ctx.globalAlpha = 1;
+
+        if (progress < 1) {
+          frameId = window.requestAnimationFrame(draw);
+        }
+      };
+
+      frameId = window.requestAnimationFrame(draw);
+    };
+
+    if (image.complete && image.naturalWidth > 0) {
+      startAnimation();
+    } else {
+      image.onload = startAnimation;
+    }
+
+    return () => {
+      cancelled = true;
+      window.cancelAnimationFrame(frameId);
+    };
+  }, [spriteFile]);
+
+  return (
+    <div
+      className="pointer-events-none absolute left-1/2"
+      style={{
+        top: 7,
+        width: BASE_SPRITE_SIZE,
+        height: BASE_SPRITE_SIZE,
+        transform: 'translateX(-50%)',
+      }}
+    >
+      <img
+        src={`${import.meta.env.BASE_URL}assets/sprites/shadow.png`}
+        alt=""
+        aria-hidden
+        className="absolute bottom-0 left-1/2 -translate-x-1/2"
+        style={{
+          width: 80,
+          imageRendering: 'pixelated',
+          opacity: 0.35,
+          transform: `scale(${Math.min(1.2, Math.max(0.9, scale))})`,
+          transformOrigin: 'center',
+          animation: `enemy-death-shadow ${DEATH_ANIMATION_MS}ms ease-out forwards`,
+        }}
+      />
+      {!ready && (
+        <img
+          src={`${import.meta.env.BASE_URL}assets/sprites/${spriteFile}`}
+          alt=""
+          aria-hidden
+          style={{
+            position: 'absolute',
+            inset: 0,
+            width: BASE_SPRITE_SIZE,
+            height: BASE_SPRITE_SIZE,
+            imageRendering: 'pixelated',
+            objectFit: 'contain',
+            transform: `scale(${scale})`,
+            transformOrigin: 'bottom center',
+          }}
+        />
+      )}
+      <canvas
+        ref={canvasRef}
+        width={BASE_SPRITE_SIZE}
+        height={BASE_SPRITE_SIZE}
+        style={{
+          position: 'absolute',
+          inset: 0,
+          width: BASE_SPRITE_SIZE,
+          height: BASE_SPRITE_SIZE,
+          imageRendering: 'pixelated',
+          opacity: ready ? 1 : 0,
+          transform: `scale(${scale})`,
+          transformOrigin: 'bottom center',
+        }}
+      />
+    </div>
   );
 });

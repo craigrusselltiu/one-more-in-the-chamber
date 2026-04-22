@@ -37,3 +37,5 @@ todo:
 - NPCs
 - dialogue
 - update Hardened - should be every damage taken reduces hardened. when 0 become incincible.
+- Bones should only appear if the player has beaten the game at least once
+- crosshair needs to reset if navigating menu while deadeye is active

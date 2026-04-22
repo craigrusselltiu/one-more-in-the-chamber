@@ -6,7 +6,7 @@ import { TUTORIAL_TILE_SELECT } from '../../data/tutorials';
 import { STARTER_POOL, ADDITIONAL_POOL, TILE_DEFINITIONS } from '../../data/tiles';
 import { SHOP_ITEMS } from '../../data/shopItems';
 import { useMetaStore } from '../../store/metaStore';
-import { buildTileDescription, KeywordSubTooltips, getReferencedKeywords } from '../components/KeywordText';
+import { buildTileDescription } from '../components/KeywordText';
 import { TILE_FRAMES } from '../../data/spriteConfig';
 import { SpriteIcon } from '../components/SpriteIcon';
 import { Tooltip } from '../components/Tooltip';
@@ -124,13 +124,10 @@ export const TileSelectScreen = memo(function TileSelectScreen() {
               <span className="text-amber-300">{def.upgradeText}</span>
             </div>
           ) : undefined;
-          const hasKeywords = getReferencedKeywords(def.description).length > 0;
-          const keywordTooltip = hasKeywords ? <KeywordSubTooltips text={def.description} /> : undefined;
           return (
             <Tooltip
               key={tileType}
               content={upgradeTooltip}
-              secondContent={keywordTooltip}
               position="bottom"
             >
               <button
