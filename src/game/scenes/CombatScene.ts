@@ -121,12 +121,14 @@ export class CombatScene extends Phaser.Scene {
       // Also prevent default so space doesn't trigger focused UI buttons.
       this.input.keyboard?.on('keydown-SPACE', (event: KeyboardEvent) => {
         event.preventDefault();
+        if (useCombatStore.getState().uiOverlayOpen) return;
         EventBus.emit(GameEvent.ACTIVATE_ABILITY);
       });
 
       // Tab cycles enemy targets
       this.input.keyboard?.on('keydown-TAB', (event: KeyboardEvent) => {
         event.preventDefault();
+        if (useCombatStore.getState().uiOverlayOpen) return;
         const store = useCombatStore.getState();
         const alive = store.enemies.filter((e) => !e.isDead);
         if (alive.length <= 1) return;

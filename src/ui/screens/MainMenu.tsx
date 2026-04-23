@@ -1,4 +1,4 @@
-import { memo, useEffect, useState } from 'react';
+import { memo, useEffect, useMemo, useState } from 'react';
 import { EventBus, GameEvent } from '../../game/EventBus';
 import { useRunStore } from '../../store/runStore';
 import { useMetaStore } from '../../store/metaStore';
@@ -11,6 +11,8 @@ import changelogRaw from '../../../CHANGELOG.md?raw';
 
 import type { Screen } from '../../App';
 
+type MenuButtonEntryState = 'pending' | 'animate' | 'static';
+
 function pickMainMenuMessage(playerName: string, isLoggedIn: boolean): { text: string; showGuestTag: boolean } {
   const displayName = playerName || 'Challenger';
   const messages = isLoggedIn
@@ -20,7 +22,7 @@ function pickMainMenuMessage(playerName: string, isLoggedIn: boolean): { text: s
       ]
     : [
         { text: `Welcome back, ${displayName}!`, showGuestTag: true },
-        { text: 'Unlock new tiles in the Reputation Shop!', showGuestTag: true },
+        { text: 'Login to access the Reputation Shop!', showGuestTag: true },
       ];
 
   return messages[Math.floor(Math.random() * messages.length)];
@@ -31,13 +33,26 @@ function MenuButton({
   onClick,
   disabled,
   disabledTooltip,
+  entryIndex = 0,
+  entryState = 'static',
 }: {
   label: string;
   onClick?: () => void;
   disabled?: boolean;
   /** Optional hover hint shown on the disabled state (e.g. a log-in prompt). */
   disabledTooltip?: string;
+  entryIndex?: number;
+  entryState?: MenuButtonEntryState;
 }) {
+  const wrapperStyle = {
+    animationDelay: `${entryIndex * 65}ms`,
+  };
+  const wrapperClassName = entryState === 'animate'
+    ? 'main-menu-button-enter'
+    : entryState === 'pending'
+      ? 'main-menu-button-pending'
+      : 'main-menu-button-static';
+
   if (disabled) {
     const body = (
       <div
@@ -54,42 +69,48 @@ function MenuButton({
         {label}
       </div>
     );
-    return disabledTooltip
-      ? <Tooltip text={disabledTooltip} position="top">{body}</Tooltip>
-      : body;
+    return (
+      <div className={wrapperClassName} style={wrapperStyle}>
+        {disabledTooltip
+          ? <Tooltip text={disabledTooltip} position="top">{body}</Tooltip>
+          : body}
+      </div>
+    );
   }
 
   return (
-    <button
-      onClick={onClick}
-      onMouseEnter={playHover}
-      className="group relative text-left py-1 px-3 bg-transparent border-none outline-none"
-      style={{
-        fontSize: '14px',
-        letterSpacing: '1px',
-        color: '#e8e8e8',
-        WebkitTextStroke: '3px #000',
-        paintOrder: 'stroke fill',
-        cursor: 'pointer',
-      }}
-    >
-      {/* Hover highlight bar */}
-      <span
-        className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-150 pointer-events-none rounded"
+    <div className={wrapperClassName} style={wrapperStyle}>
+      <button
+        onClick={onClick}
+        onMouseEnter={playHover}
+        className="group relative text-left py-1 px-3 bg-transparent border-none outline-none"
         style={{
-          background:
-            'linear-gradient(90deg, rgba(232,232,232,0.15) 0%, rgba(232,232,232,0.03) 70%, transparent 100%)',
+          fontSize: '14px',
+          letterSpacing: '1px',
+          color: '#e8e8e8',
+          WebkitTextStroke: '3px #000',
+          paintOrder: 'stroke fill',
+          cursor: 'pointer',
         }}
-      />
-      {/* Text with shift animation */}
-      <span className="relative inline-block transition-transform duration-150 group-hover:translate-x-1.5">
-        {label}
-      </span>
-    </button>
+      >
+        {/* Hover highlight bar */}
+        <span
+          className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-150 pointer-events-none rounded"
+          style={{
+            background:
+              'linear-gradient(90deg, rgba(232,232,232,0.15) 0%, rgba(232,232,232,0.03) 70%, transparent 100%)',
+          }}
+        />
+        {/* Text with shift animation */}
+        <span className="relative inline-block transition-transform duration-150 group-hover:translate-x-1.5">
+          {label}
+        </span>
+      </button>
+    </div>
   );
 }
 
-export const MainMenu = memo(function MainMenu() {
+export const MainMenu = memo(function MainMenu({ buttonEntryState = 'static' }: { buttonEntryState?: MenuButtonEntryState }) {
   const run = useRunStore((s) => s.run);
   const clearRun = useRunStore((s) => s.clearRun);
   const hasActiveRun = run && run.status === 'active';
@@ -99,7 +120,7 @@ export const MainMenu = memo(function MainMenu() {
   const setPlayerName = useMetaStore((s) => s.setPlayerName);
   const [nameInput, setNameInput] = useState('');
   const [auth, setAuth] = useState<AuthState>(() => ({ ...getAuthState() }));
-  const [mainMenuMessage] = useState(() => pickMainMenuMessage(playerName, auth.isLoggedIn));
+  const mainMenuMessage = useMemo(() => pickMainMenuMessage(playerName, auth.isLoggedIn), [playerName, auth.isLoggedIn]);
   useEffect(() => subscribeAuth(setAuth), []);
 
   const handleNewGame = () => {
@@ -228,6 +249,8 @@ export const MainMenu = memo(function MainMenu() {
     EventBus.emit(GameEvent.SCREEN_CHANGE, 'login' satisfies Screen);
   };
 
+  let menuButtonIndex = 0;
+
   return (
     <div
       className="relative"
@@ -276,25 +299,29 @@ export const MainMenu = memo(function MainMenu() {
       {/* Menu items -- bottom left */}
       <div className="absolute left-8 bottom-10 flex flex-col gap-0.5">
         {hasActiveRun && (
-          <MenuButton label="Continue" onClick={handleContinue} />
+          <MenuButton label="Continue" onClick={handleContinue} entryIndex={menuButtonIndex++} entryState={buttonEntryState} />
         )}
-        <MenuButton label="New Game" onClick={handleNewGame} />
+        <MenuButton label="New Game" onClick={handleNewGame} entryIndex={menuButtonIndex++} entryState={buttonEntryState} />
         <MenuButton
           label="Reputation Shop"
           onClick={handleReputationShop}
           disabled={!auth.isLoggedIn}
           disabledTooltip={!auth.isLoggedIn ? 'Log in to spend reputation.' : undefined}
+          entryIndex={menuButtonIndex++}
+          entryState={buttonEntryState}
         />
         <MenuButton
           label="Customize"
           onClick={handleCustomize}
           disabled={!auth.isLoggedIn}
           disabledTooltip={!auth.isLoggedIn ? 'Log in to customize your look.' : undefined}
+          entryIndex={menuButtonIndex++}
+          entryState={buttonEntryState}
         />
-        <MenuButton label="Ledger" onClick={handleLedger} />
-        <MenuButton label="Leaderboard" onClick={handleLeaderboard} />
-        <MenuButton label="Changelog" onClick={() => setShowChangelog(true)} />
-        <MenuButton label="Settings" onClick={handleSettings} />
+        <MenuButton label="Ledger" onClick={handleLedger} entryIndex={menuButtonIndex++} entryState={buttonEntryState} />
+        <MenuButton label="Leaderboard" onClick={handleLeaderboard} entryIndex={menuButtonIndex++} entryState={buttonEntryState} />
+        <MenuButton label="Changelog" onClick={() => setShowChangelog(true)} entryIndex={menuButtonIndex++} entryState={buttonEntryState} />
+        <MenuButton label="Settings" onClick={handleSettings} entryIndex={menuButtonIndex++} entryState={buttonEntryState} />
       </div>
 
       {/* Account indicator -- bottom right: shows login button when logged out,

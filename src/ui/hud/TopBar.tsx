@@ -48,7 +48,14 @@ function formatTimer(totalSeconds: number): string {
  * Rendered once by App.tsx for all in-run screens.
  * Consumable slots are always visible. Taller bar to fit them.
  */
-export const TopBar = memo(function TopBar({ mapDisabled }: { showMapButton?: boolean; showConsumables?: boolean; mapDisabled?: boolean }) {
+type TopBarProps = {
+  showMapButton?: boolean;
+  showConsumables?: boolean;
+  mapDisabled?: boolean;
+  deadeyeCursorEnabled?: boolean;
+};
+
+export const TopBar = memo(function TopBar({ mapDisabled, deadeyeCursorEnabled = false }: TopBarProps) {
   const run = useRunStore((s) => s.run);
   const act = (run?.currentAct ?? 1) as Act;
   const health = run?.health ?? 100;
@@ -81,6 +88,31 @@ export const TopBar = memo(function TopBar({ mapDisabled }: { showMapButton?: bo
     }, 1000);
     return () => clearInterval(id);
   }, []);
+
+  // Tell the combat store (and therefore the game layer) whether a UI overlay is open.
+  const setUiOverlayOpen = useCombatStore((s) => s.setUiOverlayOpen);
+  const isDeadeyeActive = useCombatStore((s) => s.isDeadeyeActive);
+  const canDeadeyeShootEnemy = useCombatStore((s) => s.canDeadeyeShootEnemy);
+  useEffect(() => {
+    const anyOpen = showMap || showSettings || showTiles;
+    setUiOverlayOpen(anyOpen);
+    return () => setUiOverlayOpen(false);
+  }, [showMap, showSettings, showTiles, setUiOverlayOpen]);
+
+  useEffect(() => {
+    const anyOpen = showMap || showSettings || showTiles;
+    if (deadeyeCursorEnabled && !anyOpen && isDeadeyeActive) {
+      document.body.classList.toggle('cursor-crosshair-alt', canDeadeyeShootEnemy);
+      document.body.classList.toggle('cursor-crosshair', !canDeadeyeShootEnemy);
+    } else {
+      document.body.classList.remove('cursor-crosshair');
+      document.body.classList.remove('cursor-crosshair-alt');
+    }
+    return () => {
+      document.body.classList.remove('cursor-crosshair');
+      document.body.classList.remove('cursor-crosshair-alt');
+    };
+  }, [deadeyeCursorEnabled, showMap, showSettings, showTiles, isDeadeyeActive, canDeadeyeShootEnemy]);
 
   const handleGiveUp = () => {
     setShowSettings(false);

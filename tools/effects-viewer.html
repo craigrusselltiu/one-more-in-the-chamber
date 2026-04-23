@@ -1,0 +1,327 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Pixel Effects Viewer</title>
+  <style>
+    * { box-sizing: border-box; }
+    html, body { margin: 0; min-height: 100%; background: #101014; color: #f1eee8; font-family: ui-monospace, SFMono-Regular, Consolas, monospace; }
+    body { overflow: hidden; }
+    button, input, select { font: inherit; }
+    .app { display: grid; grid-template-rows: auto 1fr; height: 100vh; }
+    .toolbar {
+      display: grid;
+      grid-template-columns: 1fr auto auto auto auto auto;
+      gap: 10px;
+      align-items: center;
+      padding: 10px 12px;
+      background: #19191f;
+      border-bottom: 1px solid #34343c;
+    }
+    .toolbar label { display: flex; gap: 6px; align-items: center; color: #bdb7aa; font-size: 12px; white-space: nowrap; }
+    input, select, button {
+      color: #f1eee8;
+      background: #24242b;
+      border: 1px solid #44444e;
+      border-radius: 4px;
+      padding: 6px 8px;
+    }
+    input { width: 100%; }
+    button { cursor: pointer; }
+    button:hover { border-color: #d6a64a; }
+    .content { display: grid; grid-template-columns: minmax(340px, 1fr) 360px; min-height: 0; }
+    .grid {
+      overflow: auto;
+      padding: 12px;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+      align-content: start;
+      gap: 10px;
+    }
+    .card {
+      border: 1px solid #303039;
+      border-radius: 6px;
+      background: #17171c;
+      min-width: 0;
+      padding: 8px;
+      cursor: pointer;
+    }
+    .card:hover, .card.selected { border-color: #d6a64a; background: #202027; }
+    .thumb-wrap {
+      height: 150px;
+      display: grid;
+      place-items: center;
+      background:
+        linear-gradient(45deg, #222 25%, transparent 25%),
+        linear-gradient(-45deg, #222 25%, transparent 25%),
+        linear-gradient(45deg, transparent 75%, #222 75%),
+        linear-gradient(-45deg, transparent 75%, #222 75%);
+      background-color: #191919;
+      background-size: 16px 16px;
+      background-position: 0 0, 0 8px, 8px -8px, -8px 0;
+      border-radius: 4px;
+      overflow: hidden;
+    }
+    canvas { image-rendering: pixelated; }
+    .name { margin-top: 8px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #f5d081; font-size: 12px; }
+    .meta { margin-top: 3px; color: #8f8a80; font-size: 11px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .side {
+      min-height: 0;
+      overflow: auto;
+      border-left: 1px solid #34343c;
+      background: #15151a;
+      padding: 12px;
+    }
+    .preview {
+      display: grid;
+      place-items: center;
+      min-height: 280px;
+      background:
+        linear-gradient(45deg, #222 25%, transparent 25%),
+        linear-gradient(-45deg, #222 25%, transparent 25%),
+        linear-gradient(45deg, transparent 75%, #222 75%),
+        linear-gradient(-45deg, transparent 75%, #222 75%);
+      background-color: #191919;
+      background-size: 20px 20px;
+      background-position: 0 0, 0 10px, 10px -10px, -10px 0;
+      border: 1px solid #303039;
+      border-radius: 6px;
+    }
+    .details h2 { margin: 12px 0 6px; font-size: 16px; color: #f5d081; overflow-wrap: anywhere; }
+    .details p { margin: 4px 0; color: #bdb7aa; font-size: 12px; overflow-wrap: anywhere; }
+    .copy-row { display: flex; gap: 8px; margin-top: 10px; }
+    .copy-row button { flex: 1; }
+    .frames { margin-top: 12px; display: grid; grid-template-columns: repeat(auto-fill, minmax(34px, 1fr)); gap: 4px; }
+    .frame-cell { color: #aaa; background: #202027; border: 1px solid #33333c; border-radius: 3px; padding: 3px 0; text-align: center; font-size: 10px; }
+    .status { color: #8f8a80; font-size: 12px; }
+    .error { color: #ff8a8a; padding: 12px; white-space: pre-wrap; }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <div class="toolbar">
+      <input id="search" type="search" placeholder="Search effects, categories, colours...">
+      <label>Category <select id="category"></select></label>
+      <label>Size <select id="size"><option value="all">All</option><option value="large">Large</option><option value="small">Small</option></select></label>
+      <label>FPS <input id="fps" type="number" min="1" max="60" value="18" style="width:64px"></label>
+      <label>Scale <input id="scale" type="number" min="1" max="8" value="3" style="width:64px"></label>
+      <button id="pause">Pause</button>
+    </div>
+    <div class="content">
+      <main id="grid" class="grid"><div class="status">Loading effects...</div></main>
+      <aside class="side">
+        <div class="preview"><canvas id="preview"></canvas></div>
+        <div id="details" class="details">
+          <h2>Select an effect</h2>
+          <p>Use the grid to preview every spritesheet animation.</p>
+        </div>
+      </aside>
+    </div>
+  </div>
+
+  <script>
+    const state = {
+      effects: [],
+      filtered: [],
+      selected: null,
+      paused: false,
+      fps: 18,
+      scale: 3,
+      frame: 0,
+      lastTick: 0,
+      canvases: new Map(),
+      images: new Map(),
+    };
+
+    const els = {
+      grid: document.getElementById('grid'),
+      search: document.getElementById('search'),
+      category: document.getElementById('category'),
+      size: document.getElementById('size'),
+      fps: document.getElementById('fps'),
+      scale: document.getElementById('scale'),
+      pause: document.getElementById('pause'),
+      preview: document.getElementById('preview'),
+      details: document.getElementById('details'),
+    };
+    const previewCtx = els.preview.getContext('2d');
+    previewCtx.imageSmoothingEnabled = false;
+
+    function displayName(effect) {
+      return effect.name.replaceAll('_', ' ');
+    }
+
+    function matchesSize(effect, size) {
+      if (size === 'all') return true;
+      return effect.name.includes(`_${size}_`);
+    }
+
+    function filterEffects() {
+      const query = els.search.value.trim().toLowerCase();
+      const category = els.category.value;
+      const size = els.size.value;
+      state.filtered = state.effects.filter((effect) => {
+        if (category !== 'all' && effect.category !== category) return false;
+        if (!matchesSize(effect, size)) return false;
+        if (!query) return true;
+        return `${effect.category} ${effect.group} ${effect.name} ${effect.relDir}`.toLowerCase().includes(query);
+      });
+      renderGrid();
+    }
+
+    function renderGrid() {
+      state.canvases.clear();
+      els.grid.innerHTML = '';
+      if (state.filtered.length === 0) {
+        els.grid.innerHTML = '<div class="status">No effects match the current filters.</div>';
+        return;
+      }
+
+      for (const effect of state.filtered) {
+        const card = document.createElement('article');
+        card.className = `card${state.selected?.id === effect.id ? ' selected' : ''}`;
+        card.title = effect.relDir;
+
+        const wrap = document.createElement('div');
+        wrap.className = 'thumb-wrap';
+
+        const canvas = document.createElement('canvas');
+        canvas.width = Math.max(1, effect.frameWidth * state.scale);
+        canvas.height = Math.max(1, effect.frameHeight * state.scale);
+        canvas.style.maxWidth = '100%';
+        canvas.style.maxHeight = '140px';
+        wrap.appendChild(canvas);
+
+        const name = document.createElement('div');
+        name.className = 'name';
+        name.textContent = displayName(effect);
+
+        const meta = document.createElement('div');
+        meta.className = 'meta';
+        meta.textContent = `${effect.category}${effect.group ? ` / ${effect.group}` : ''} · ${effect.frameCount}f · ${effect.frameWidth}x${effect.frameHeight}`;
+
+        card.append(wrap, name, meta);
+        card.addEventListener('click', () => selectEffect(effect));
+        els.grid.appendChild(card);
+        state.canvases.set(effect.id, canvas);
+        ensureImage(effect);
+      }
+    }
+
+    function ensureImage(effect) {
+      let image = state.images.get(effect.id);
+      if (image) return image;
+      image = new Image();
+      image.src = effect.imageUrl;
+      image.onload = () => drawEffect(effect, state.canvases.get(effect.id), state.frame);
+      state.images.set(effect.id, image);
+      return image;
+    }
+
+    function drawEffect(effect, canvas, frameNumber) {
+      if (!canvas || effect.frames.length === 0) return;
+      const image = ensureImage(effect);
+      if (!image.complete) return;
+      const frame = effect.frames[frameNumber % effect.frames.length];
+      canvas.width = frame.w * state.scale;
+      canvas.height = frame.h * state.scale;
+      const ctx = canvas.getContext('2d');
+      ctx.imageSmoothingEnabled = false;
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(image, frame.x, frame.y, frame.w, frame.h, 0, 0, canvas.width, canvas.height);
+    }
+
+    function drawAll() {
+      for (const effect of state.filtered) {
+        drawEffect(effect, state.canvases.get(effect.id), state.frame);
+      }
+      if (state.selected) drawSelected();
+    }
+
+    function drawSelected() {
+      const effect = state.selected;
+      if (!effect || effect.frames.length === 0) return;
+      const image = ensureImage(effect);
+      if (!image.complete) return;
+      const frame = effect.frames[state.frame % effect.frames.length];
+      const maxSide = 300;
+      const scale = Math.max(1, Math.floor(maxSide / Math.max(frame.w, frame.h)));
+      els.preview.width = frame.w * scale;
+      els.preview.height = frame.h * scale;
+      previewCtx.imageSmoothingEnabled = false;
+      previewCtx.clearRect(0, 0, els.preview.width, els.preview.height);
+      previewCtx.drawImage(image, frame.x, frame.y, frame.w, frame.h, 0, 0, els.preview.width, els.preview.height);
+    }
+
+    function selectEffect(effect) {
+      state.selected = effect;
+      renderGrid();
+      drawSelected();
+      els.details.innerHTML = `
+        <h2>${escapeHtml(displayName(effect))}</h2>
+        <p>${escapeHtml(effect.relDir)}</p>
+        <p>${effect.frameCount} frames · ${effect.frameWidth}x${effect.frameHeight}</p>
+        <div class="copy-row">
+          <button id="copy-path">Copy path</button>
+          <button id="copy-json">Copy frames JSON</button>
+        </div>
+        <div class="frames">${effect.frames.map((frame) => `<div class="frame-cell">${frame.index}</div>`).join('')}</div>
+      `;
+      document.getElementById('copy-path').addEventListener('click', () => navigator.clipboard.writeText(effect.relDir));
+      document.getElementById('copy-json').addEventListener('click', () => navigator.clipboard.writeText(JSON.stringify(effect.frames)));
+    }
+
+    function escapeHtml(value) {
+      return String(value)
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;');
+    }
+
+    function tick(now) {
+      if (!state.paused && now - state.lastTick >= 1000 / state.fps) {
+        state.frame += 1;
+        state.lastTick = now;
+        drawAll();
+      }
+      requestAnimationFrame(tick);
+    }
+
+    async function load() {
+      try {
+        const response = await fetch('/api/effects');
+        if (!response.ok) throw new Error(await response.text());
+        const manifest = await response.json();
+        state.effects = manifest.effects;
+        els.category.innerHTML = [
+          '<option value="all">All</option>',
+          ...manifest.categories.map((category) => `<option value="${escapeHtml(category)}">${escapeHtml(category)}</option>`),
+        ].join('');
+        filterEffects();
+        if (state.filtered[0]) selectEffect(state.filtered[0]);
+        requestAnimationFrame(tick);
+      } catch (error) {
+        els.grid.innerHTML = `<div class="error">${escapeHtml(error.stack || error.message || error)}</div>`;
+      }
+    }
+
+    els.search.addEventListener('input', filterEffects);
+    els.category.addEventListener('change', filterEffects);
+    els.size.addEventListener('change', filterEffects);
+    els.fps.addEventListener('input', () => { state.fps = Math.max(1, Number(els.fps.value) || 18); });
+    els.scale.addEventListener('input', () => {
+      state.scale = Math.max(1, Number(els.scale.value) || 3);
+      renderGrid();
+      drawAll();
+    });
+    els.pause.addEventListener('click', () => {
+      state.paused = !state.paused;
+      els.pause.textContent = state.paused ? 'Play' : 'Pause';
+    });
+
+    load();
+  </script>
+</body>
+</html>

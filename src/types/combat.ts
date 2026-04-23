@@ -175,6 +175,8 @@ export interface MatchResult {
   suppressCount?: number;
   /** True if this match was created from chain destruction (explosive/showdown), not a direct match. */
   isChainDestruction?: boolean;
+  /** True when a special player action should consume Ace like the swapped tile. */
+  consumesAce?: boolean;
 }
 
 export interface GridPosition {

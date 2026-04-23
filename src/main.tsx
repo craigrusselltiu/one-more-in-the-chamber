@@ -20,11 +20,41 @@ style.textContent = `
     background-position: center !important;
     background-repeat: no-repeat !important;
   }
+  body * {
+    cursor: url('${base}assets/cursors/pointer.png'), auto !important;
+  }
+  button:not(:disabled),
+  button:not(:disabled) *,
+  a[href],
+  a[href] *,
+  input[type='button']:not(:disabled),
+  input[type='submit']:not(:disabled),
+  input[type='checkbox']:not(:disabled),
+  input[type='radio']:not(:disabled),
+  select:not(:disabled),
+  select:not(:disabled) *,
+  summary,
+  summary *,
+  label,
+  label *,
+  [role='button']:not([aria-disabled='true']),
+  [role='button']:not([aria-disabled='true']) *,
+  .cursor-pointer,
+  .cursor-pointer *,
+  [style*='cursor: pointer'],
+  [style*='cursor: pointer'] *,
+  [style*='cursor:pointer'],
+  [style*='cursor:pointer'] * {
+    cursor: url('${base}assets/cursors/hand.png'), pointer !important;
+  }
   body.cursor-crosshair, body.cursor-crosshair * {
-    cursor: url('${base}assets/cursors/crosshair.png') 64 64, crosshair !important;
+    cursor: url('${base}assets/cursors/crosshair.png') 64 64, url('${base}assets/cursors/pointer.png'), crosshair !important;
+  }
+  body.cursor-crosshair-alt, body.cursor-crosshair-alt * {
+    cursor: url('${base}assets/cursors/crosshair_alt.png') 64 64, url('${base}assets/cursors/pointer.png'), crosshair !important;
   }
   body.cursor-lasso, body.cursor-lasso * {
-    cursor: grab !important;
+    cursor: url('${base}assets/cursors/pointer.png'), grab !important;
   }
 `;
 document.head.appendChild(style);
@@ -41,7 +71,7 @@ document.head.appendChild(style);
     const sx = (FRAME % COLS) * SIZE, sy = Math.floor(FRAME / COLS) * SIZE;
     ctx.drawImage(img, sx, sy, SIZE, SIZE, 0, 0, SIZE * SCALE, SIZE * SCALE);
     const rule = document.createElement('style');
-    rule.textContent = `body.cursor-lasso, body.cursor-lasso * { cursor: url('${c.toDataURL()}') 16 16, grab !important; }`;
+    rule.textContent = `body.cursor-lasso, body.cursor-lasso * { cursor: url('${c.toDataURL()}') 16 16, url('${base}assets/cursors/pointer.png'), grab !important; }`;
     document.head.appendChild(rule);
   };
   img.src = `${base}assets/sprites/items_sheet.png`;

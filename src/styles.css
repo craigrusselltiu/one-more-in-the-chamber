@@ -267,6 +267,24 @@
 .animate-welcome-breathe {
   animation: welcome-breathe 3s ease-in-out infinite;
 }
+@keyframes main-menu-button-slide-in {
+  0% { opacity: 0; transform: translateX(-360px); }
+  70% { opacity: 1; transform: translateX(6px); }
+  100% { opacity: 1; transform: translateX(0); }
+}
+.main-menu-button-enter {
+  opacity: 0;
+  animation: main-menu-button-slide-in 420ms cubic-bezier(0.2, 0.85, 0.25, 1) forwards;
+  will-change: transform, opacity;
+}
+.main-menu-button-pending {
+  opacity: 0;
+  transform: translateX(-360px);
+}
+.main-menu-button-static {
+  opacity: 1;
+  transform: translateX(0);
+}
 @keyframes intent-pop-in {
   0% { transform: scale(0); opacity: 0; }
   60% { transform: scale(1.2); opacity: 1; }

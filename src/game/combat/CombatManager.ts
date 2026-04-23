@@ -407,10 +407,24 @@ export class CombatManager {
 
   /** Remove all EventBus listeners. Call on scene shutdown. */
   destroy(): void {
+    this.board.setDeadeyeMode(false);
+    this.clearDeadeyeCursor();
+    document.body.classList.remove('cursor-lasso');
     for (const { event, fn } of this.boundListeners) {
       EventBus.off(event, fn);
     }
     this.boundListeners = [];
+  }
+
+  private setDeadeyeCursor(): void {
+    const useAlt = this.deadeyeShotsRemaining === 1 && this.artifacts.has('rusts_cylinder');
+    document.body.classList.toggle('cursor-crosshair-alt', useAlt);
+    document.body.classList.toggle('cursor-crosshair', !useAlt);
+  }
+
+  private clearDeadeyeCursor(): void {
+    document.body.classList.remove('cursor-crosshair');
+    document.body.classList.remove('cursor-crosshair-alt');
   }
 
   // ---------------------------------------------------------------------------
@@ -636,7 +650,7 @@ export class CombatManager {
       this.isDeadeyeActive = false;
       this.deadeyeShotsRemaining = 0;
       this.board.setDeadeyeMode(false);
-      document.body.classList.remove('cursor-crosshair');
+      this.clearDeadeyeCursor();
     }
 
     // Cancel lasso on restore
@@ -1092,7 +1106,7 @@ export class CombatManager {
     this.isDeadeyeActive = true;
     this.deadeyeShotsRemaining = this.deadeyeMaxShots;
     this.board.setDeadeyeMode(true);
-    document.body.classList.add('cursor-crosshair');
+    this.setDeadeyeCursor();
     this.emitFullState();
     EventBus.emit(GameEvent.ABILITY_CHARGE_CHANGE, this.player.abilityCharge, this.player.abilityThreshold);
     return true;
@@ -1133,7 +1147,9 @@ export class CombatManager {
     EventBus.emit(GameEvent.ABILITY_CHARGE_CHANGE, this.player.abilityCharge, this.player.abilityThreshold);
     if (this.deadeyeShotsRemaining <= 0) {
       this.board.setDeadeyeMode(false);
-      document.body.classList.remove('cursor-crosshair');
+      this.clearDeadeyeCursor();
+    } else {
+      this.setDeadeyeCursor();
     }
     this.emitFullState();
     this.emitEnemyHpChanges();
@@ -1207,7 +1223,7 @@ export class CombatManager {
     if (this.player.abilityCharge > 0) this.player.abilityCharge--;
     EventBus.emit(GameEvent.ABILITY_CHARGE_CHANGE, this.player.abilityCharge, this.player.abilityThreshold);
     this.board.setDeadeyeMode(false);
-    document.body.classList.remove('cursor-crosshair');
+    this.clearDeadeyeCursor();
     this.emitFullState();
 
     this.endDeadeye(true);
@@ -1230,7 +1246,7 @@ export class CombatManager {
     this.pendingAbilityCharge = 0;
     this.player.abilityCharge = rollover;
     this.board.setDeadeyeMode(false);
-    document.body.classList.remove('cursor-crosshair');
+    this.clearDeadeyeCursor();
     EventBus.emit(GameEvent.ABILITY_CHARGE_CHANGE, this.player.abilityCharge, this.player.abilityThreshold);
     this.emitFullState();
   }
@@ -1242,7 +1258,7 @@ export class CombatManager {
       this.isDeadeyeActive = false;
       this.deadeyeShotsRemaining = 0;
       this.board.setDeadeyeMode(false);
-      document.body.classList.remove('cursor-crosshair');
+      this.clearDeadeyeCursor();
       if (usedShots > 0) {
         const rollover = Math.min(this.player.abilityThreshold, this.pendingAbilityCharge);
         this.player.abilityCharge = rollover;
@@ -1619,8 +1635,11 @@ export class CombatManager {
         this.artifacts.onCritTriggered(this.player, targetEnemy);
       }
 
-      // Ace stacks: consumed on next non-Ace non-cascade match (all resources)
-      if (match.tileType !== 'ace' && comboMultiplier === 1.0 && this.player.aceStacks > 0) {
+      // Ace stacks: consumed on direct player swaps and explicit player-used
+      // specials like Showdown. Explosive/cascade spillover does not consume it.
+      const aceEligible = match.consumesAce
+        || (comboMultiplier === 1.0 && !forceCascadeForCloak && !match.isChainDestruction);
+      if (match.tileType !== 'ace' && aceEligible && this.player.aceStacks > 0) {
         multiplier *= this.player.consumeAce();
       }
 
@@ -3015,7 +3034,7 @@ export class CombatManager {
       this.deadeyeShotsRemaining = 0;
       this.player.abilityCharge = 0;
       this.board.setDeadeyeMode(false);
-      document.body.classList.remove('cursor-crosshair');
+      this.clearDeadeyeCursor();
     }
 
     this.setPhase('combat-end');

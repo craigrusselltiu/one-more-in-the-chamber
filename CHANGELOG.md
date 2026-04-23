@@ -4,6 +4,21 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## v1.0.2
+
+### Changed
+- Bones no longer appears at the start of a run until the player has beaten the game at least once.
+- Deadeye's Rust's Cylinder shot now uses a distinct crosshair cursor.
+- Added a local effects viewer for browsing pixel effect animations.
+- Main menu buttons now slide in from the left when the menu opens.
+- The custom hand cursor now appears over clickable UI, with the regular cursor elsewhere.
+- Guest players now see "Login to access the Reputation Shop!" instead of the unlock message.
+
+### Fixed
+- Crosshair cursor now resets when navigating away from combat while Deadeye is active.
+- Ace now powers Showdown swaps, but is no longer spent by explosive chain clears.
+- Welcome message now shows the account display name after logging in instead of the guest name.
+
 ## v1.0.1
 
 ### Changed

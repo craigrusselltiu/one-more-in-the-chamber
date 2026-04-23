@@ -64,6 +64,8 @@ interface CombatStore {
   intentsHidden: boolean;
   /** Lethargic: when true, the next swap attempt will do nothing. Cleared once consumed. */
   lethargicActive: boolean;
+  /** True while a UI overlay (settings, map, tiles) covers the combat board. */
+  uiOverlayOpen: boolean;
 
   // Actions
   syncFromCombatState: (state: CombatState) => void;
@@ -76,6 +78,7 @@ interface CombatStore {
   setAct: (act: number) => void;
   setIntentsHidden: (hidden: boolean) => void;
   setLethargicActive: (active: boolean) => void;
+  setUiOverlayOpen: (open: boolean) => void;
   reset: () => void;
 }
 
@@ -125,6 +128,7 @@ const initialState = {
   mirageType: null,
   intentsHidden: false,
   lethargicActive: false,
+  uiOverlayOpen: false,
 };
 
 export const useCombatStore = create<CombatStore>((set) => ({
@@ -192,6 +196,8 @@ export const useCombatStore = create<CombatStore>((set) => ({
   setIntentsHidden: (hidden) => set({ intentsHidden: hidden }),
 
   setLethargicActive: (active) => set({ lethargicActive: active }),
+
+  setUiOverlayOpen: (open) => set({ uiOverlayOpen: open }),
 
   reset: () => set(initialState),
 }));

@@ -191,6 +191,7 @@ export default function App() {
   const [ready, setReady] = useState(false);
   const [bootComplete, setBootComplete] = useState(false);
   const [loadingDismissed, setLoadingDismissed] = useState(false);
+  const [mainMenuIntroPlayed, setMainMenuIntroPlayed] = useState(false);
   const [bootProgress, setBootProgress] = useState<{ loaded: number; total: number }>({ loaded: 0, total: 0 });
   const currentScreenRef = useRef<Screen>(screen);
   const [wipePhase, setWipePhase] = useState<'none' | 'in' | 'out'>('none');
@@ -304,10 +305,11 @@ export default function App() {
       lastAppliedScreen = next;
       setScreen(next);
 
-      // Act 1: pre-run starter encounter before anything else.
+      // Act 1: pre-run starter encounter before anything else (requires at least one win).
       if (next === 'map') {
         const run = useRunStore.getState().run;
-        if (run && run.currentAct === 1 && !run.starterEncountered) {
+        const hasWon = useMetaStore.getState().meta.highestWantedLevelCleared >= 0;
+        if (run && run.currentAct === 1 && !run.starterEncountered && hasWon) {
           setScreen('starter');
           return;
         }
@@ -373,6 +375,8 @@ export default function App() {
 
     const handleScreenChange = (...args: unknown[]) => {
       const next = args[0] as Screen;
+      document.body.classList.remove('cursor-crosshair');
+      document.body.classList.remove('cursor-crosshair-alt');
       // Start wipe-in, store pending screen
       pendingScreenRef.current = next;
       setWipePhaseWithFallback('in');
@@ -410,6 +414,22 @@ export default function App() {
   useEffect(() => {
     currentScreenRef.current = screen;
   }, [screen]);
+
+  const shouldAnimateMainMenuButtons =
+    screen === 'main-menu'
+    && loadingDismissed
+    && wipePhase === 'none'
+    && !mainMenuIntroPlayed;
+  const mainMenuButtonEntryState =
+    screen === 'main-menu' && !mainMenuIntroPlayed
+      ? shouldAnimateMainMenuButtons ? 'animate' : 'pending'
+      : 'static';
+
+  useEffect(() => {
+    if (!shouldAnimateMainMenuButtons) return;
+    const id = setTimeout(() => setMainMenuIntroPlayed(true), 1100);
+    return () => clearTimeout(id);
+  }, [shouldAnimateMainMenuButtons]);
 
   // Start/stop CombatScene based on screen transitions
   useEffect(() => {
@@ -886,6 +906,7 @@ export default function App() {
             <TopBar
               mapDisabled={screen === 'map'}
               showConsumables={screen === 'combat'}
+              deadeyeCursorEnabled={screen === 'combat' && wipePhase === 'none'}
             />
             <ArtifactBar />
             <TraitRow />
@@ -898,7 +919,7 @@ export default function App() {
         {/* Non-combat screen content fills remaining space below TopBar */}
         {screen !== 'combat' && screen !== 'artifact' && screen !== 'tile-select' && screen !== 'starter' && (
           <div className={showTopBar ? 'flex-1 overflow-hidden' : 'h-full'}>
-            {screen === 'main-menu' && <MainMenu />}
+            {screen === 'main-menu' && <MainMenu buttonEntryState={mainMenuButtonEntryState} />}
             {screen === 'character-select' && <CharacterSelectScreen />}
             {screen === 'map' && <MapScreen />}
             {screen === 'merchant' && <MerchantScreen />}

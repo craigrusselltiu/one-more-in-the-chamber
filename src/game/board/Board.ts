@@ -595,6 +595,7 @@ export class Board {
         crossIntersections: [],
         matchBonus: 1.0,
         isChainDestruction: true,
+        consumesAce: tType === targetType,
       });
     }
 
