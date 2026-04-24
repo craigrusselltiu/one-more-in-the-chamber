@@ -885,15 +885,16 @@ export class Board {
       const tile = this.grid[pos.row]?.[pos.col];
       if (!tile) continue;
 
-      // Locked tiles: decrement lock instead of destroying
+      // Locked tiles: decrement lock. If hits remain, tile stays.
       if (tile.hazard?.type === 'lock') {
-        detonated.add(key);
         tile.hazard.hits--;
-        if (tile.hazard.hits <= 0) {
-          tile.hazard = null;
+        if (tile.hazard.hits > 0) {
+          detonated.add(key);
+          tile.refreshStatusIndicator();
+          continue;
         }
+        tile.hazard = null;
         tile.refreshStatusIndicator();
-        continue;
       }
 
       detonated.add(key);
@@ -939,15 +940,16 @@ export class Board {
             const tile = this.grid[r]?.[c];
             if (!tile) continue;
 
-            // Locked tiles: decrement lock instead of destroying
+            // Locked tiles: decrement lock. If hits remain, tile stays.
             if (tile.hazard?.type === 'lock') {
-              detonated.add(key);
               tile.hazard.hits--;
-              if (tile.hazard.hits <= 0) {
-                tile.hazard = null;
+              if (tile.hazard.hits > 0) {
+                detonated.add(key);
+                tile.refreshStatusIndicator();
+                continue;
               }
+              tile.hazard = null;
               tile.refreshStatusIndicator();
-              continue;
             }
 
             detonated.add(key);

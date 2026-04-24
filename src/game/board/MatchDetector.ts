@@ -27,22 +27,27 @@ export class MatchDetector {
     if (!tileA || !tileB) return false;
     if (!this.isMatchable(tileA) || !this.isMatchable(tileB)) return false;
 
-    // Virtual swap: check each position with the other's type
+    // Virtual swap: check each position with the other's type.
+    // Pass the other swap position so the count excludes it (after the
+    // swap it holds a different type, so the run breaks there).
     return (
-      this.countsAtPosition(grid, size, a, tileB.type) >= 3 ||
-      this.countsAtPosition(grid, size, b, tileA.type) >= 3
+      this.countsAtPosition(grid, size, a, tileB.type, b) >= 3 ||
+      this.countsAtPosition(grid, size, b, tileA.type, a) >= 3
     );
   }
 
   /**
    * Count the longest run through a position if it held the given type.
    * Checks both horizontal and vertical axes, returns the max.
+   * `excludePos` is the other side of a virtual swap -- the walk breaks
+   * there because that cell will hold a different type after the swap.
    */
   private countsAtPosition(
     grid: (Tile | null)[][],
     size: number,
     pos: GridPosition,
     type: string,
+    excludePos?: GridPosition,
   ): number {
     let best = 0;
     const posTile = grid[pos.row]?.[pos.col];
@@ -51,12 +56,13 @@ export class MatchDetector {
     // Horizontal run through pos
     let count = 1;
     for (let c = pos.col - 1; c >= 0; c--) {
+      if (excludePos && excludePos.row === pos.row && excludePos.col === c) break;
       const t = grid[pos.row][c];
-      if (c === pos.col) continue;
       if (t && this.isMatchable(t) && t.type === type) count++;
       else break;
     }
     for (let c = pos.col + 1; c < size; c++) {
+      if (excludePos && excludePos.row === pos.row && excludePos.col === c) break;
       const t = grid[pos.row][c];
       if (t && this.isMatchable(t) && t.type === type) count++;
       else break;
@@ -66,11 +72,13 @@ export class MatchDetector {
     // Vertical run through pos
     count = 1;
     for (let r = pos.row - 1; r >= 0; r--) {
+      if (excludePos && excludePos.col === pos.col && excludePos.row === r) break;
       const t = grid[r][pos.col];
       if (t && this.isMatchable(t) && t.type === type) count++;
       else break;
     }
     for (let r = pos.row + 1; r < size; r++) {
+      if (excludePos && excludePos.col === pos.col && excludePos.row === r) break;
       const t = grid[r][pos.col];
       if (t && this.isMatchable(t) && t.type === type) count++;
       else break;
