@@ -23,6 +23,13 @@ export function getArtifactPoolForRun(run: RunState, opts: ArtifactPickOptions =
     (a) => !ownedIds.has(a.id) && (!a.exclusive || a.exclusive === run.character),
   );
   let pool = available.length > 0 ? available : nonCorrupt;
+
+  // After Bones encounter, Greed enters the normal pool if the player doesn't have it
+  if (run.starterEncountered && !ownedIds.has('greed')) {
+    const greedDef = ARTIFACTS.find((a) => a.id === 'greed');
+    if (greedDef) pool = [...pool, { ...greedDef, rarity: 'common' }];
+  }
+
   if (opts.legendaryOnly) {
     const legendaries = pool.filter((a) => a.rarity === 'legendary');
     if (legendaries.length > 0) pool = legendaries;

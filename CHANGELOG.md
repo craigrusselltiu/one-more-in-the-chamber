@@ -6,9 +6,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
 ## v1.0.5
 
+### Changed
+- Greed now enters the artifact pool after the Bones encounter if the player didn't pick it.
+
 ### Fixed
+- Locked tiles now participate in matches again; matching a locked tile decrements its lock instead of destroying it.
+- Board reshuffle now correctly detects and breaks matches involving locked tiles.
+- Tile swap highlighting no longer shows incorrect tiles when locked tiles are adjacent to valid moves.
 - Trait breakpoint tooltips now match their implemented effects.
 - Hints and no-move reshuffles now ignore locked tiles correctly.
+- Golden Hunger can no longer grant more than one Greed corruption.
 
 ## v1.0.4
 

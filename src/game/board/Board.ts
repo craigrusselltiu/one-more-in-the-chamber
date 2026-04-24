@@ -109,56 +109,43 @@ export class Board {
       for (let col = 0; col < BOARD_SIZE; col++) {
         const tile = this.grid[row][col];
         if (!tile) continue;
-        const isLocked = tile.hazard?.type === 'lock';
-        if (!isLocked) unlocked.push({ row, col });
+        if (tile.hazard?.type !== 'lock') unlocked.push({ row, col });
       }
     }
 
-    let hasMatches = true;
     let safety = 500;
-    while (hasMatches && safety-- > 0) {
-      hasMatches = false;
-      for (let row = 0; row < BOARD_SIZE; row++) {
-        for (let col = 0; col < BOARD_SIZE; col++) {
-          const tile = this.grid[row][col];
-          if (!tile) continue;
-          const isLocked = tile.hazard?.type === 'lock';
-          if (isLocked) continue;
+    let matches = this.findMatches();
+    while (matches.length > 0 && safety-- > 0) {
+      let broke = false;
+      for (const match of matches) {
+        // Find an unlocked tile in the match to swap out
+        const swappable = match.tiles.find(pos => {
+          const t = this.grid[pos.row]?.[pos.col];
+          return t && t.hazard?.type !== 'lock';
+        });
+        if (!swappable) continue;
 
-          let formsMatch = false;
-          if (col >= 2) {
-            const t1 = this.grid[row][col - 1];
-            const t2 = this.grid[row][col - 2];
-            if (t1 && t2 && t1.type === tile.type && t2.type === tile.type) formsMatch = true;
-          }
-          if (!formsMatch && row >= 2) {
-            const t1 = this.grid[row - 1][col];
-            const t2 = this.grid[row - 2][col];
-            if (t1 && t2 && t1.type === tile.type && t2.type === tile.type) formsMatch = true;
-          }
+        const tile = this.grid[swappable.row][swappable.col]!;
+        const candidates = unlocked.filter(p =>
+          !(p.row === swappable.row && p.col === swappable.col) &&
+          this.grid[p.row][p.col]!.type !== tile.type,
+        );
+        if (candidates.length === 0) continue;
 
-          if (formsMatch) {
-            // Find an unlocked tile with a different type to swap with
-            const candidates = unlocked.filter(p =>
-              !(p.row === row && p.col === col) &&
-              this.grid[p.row][p.col]!.type !== tile.type,
-            );
-            if (candidates.length > 0) {
-              const pick = candidates[Math.floor(Math.random() * candidates.length)];
-              const other = this.grid[pick.row][pick.col]!;
-              // Swap full state between the two tiles
-              const tmpType = tile.type;
-              const tmpExplosive = tile.isExplosive;
-              const tmpShowdown = tile.isShowdown;
-              const tmpShadow = tile.isShadow;
-              const tmpHazard = tile.hazard;
-              tile.setType(other.type); tile.isExplosive = other.isExplosive; tile.isShowdown = other.isShowdown; tile.isShadow = other.isShadow; tile.hazard = other.hazard; tile.refreshStatusIndicator();
-              other.setType(tmpType); other.isExplosive = tmpExplosive; other.isShowdown = tmpShowdown; other.isShadow = tmpShadow; other.hazard = tmpHazard; other.refreshStatusIndicator();
-              hasMatches = true;
-            }
-          }
-        }
+        const pick = candidates[Math.floor(Math.random() * candidates.length)];
+        const other = this.grid[pick.row][pick.col]!;
+        const tmpType = tile.type;
+        const tmpExplosive = tile.isExplosive;
+        const tmpShowdown = tile.isShowdown;
+        const tmpShadow = tile.isShadow;
+        const tmpHazard = tile.hazard;
+        tile.setType(other.type); tile.isExplosive = other.isExplosive; tile.isShowdown = other.isShowdown; tile.isShadow = other.isShadow; tile.hazard = other.hazard; tile.refreshStatusIndicator();
+        other.setType(tmpType); other.isExplosive = tmpExplosive; other.isShowdown = tmpShowdown; other.isShadow = tmpShadow; other.hazard = tmpHazard; other.refreshStatusIndicator();
+        broke = true;
+        break;
       }
+      if (!broke) break;
+      matches = this.findMatches();
     }
   }
 
@@ -898,6 +885,17 @@ export class Board {
       const tile = this.grid[pos.row]?.[pos.col];
       if (!tile) continue;
 
+      // Locked tiles: decrement lock instead of destroying
+      if (tile.hazard?.type === 'lock') {
+        detonated.add(key);
+        tile.hazard.hits--;
+        if (tile.hazard.hits <= 0) {
+          tile.hazard = null;
+        }
+        tile.refreshStatusIndicator();
+        continue;
+      }
+
       detonated.add(key);
       results.push({ type: tile.type, row: pos.row, col: pos.col, isShadow: tile.isShadow });
 
@@ -940,6 +938,17 @@ export class Board {
             if (detonated.has(key)) continue;
             const tile = this.grid[r]?.[c];
             if (!tile) continue;
+
+            // Locked tiles: decrement lock instead of destroying
+            if (tile.hazard?.type === 'lock') {
+              detonated.add(key);
+              tile.hazard.hits--;
+              if (tile.hazard.hits <= 0) {
+                tile.hazard = null;
+              }
+              tile.refreshStatusIndicator();
+              continue;
+            }
 
             detonated.add(key);
             results.push({ type: tile.type, row: r, col: c, isShadow: tile.isShadow });

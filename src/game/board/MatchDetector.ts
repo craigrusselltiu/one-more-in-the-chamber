@@ -132,8 +132,8 @@ export class MatchDetector {
     return results;
   }
 
-  private isMatchable(tile: Tile): boolean {
-    return tile.hazard?.type !== 'lock';
+  private isMatchable(_tile: Tile): boolean {
+    return true;
   }
 
   /**
