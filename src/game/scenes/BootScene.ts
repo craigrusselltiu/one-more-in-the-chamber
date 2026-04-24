@@ -24,6 +24,8 @@ export class BootScene extends Phaser.Scene {
   private fadeTween: Phaser.Tweens.Tween | null = null;
   /** Sound currently being faded out (so it can be cleaned up if interrupted). */
   private fadingOutSound: Phaser.Sound.BaseSound | null = null;
+  /** Track temporarily faded out and paused while Deadeye is active. */
+  private deadeyePausedMusic: Phaser.Sound.BaseSound | null = null;
 
   constructor() {
     super({ key: 'BootScene' });
@@ -75,6 +77,9 @@ export class BootScene extends Phaser.Scene {
     this.load.audio('sfx_upgrade', `${base}assets/audio/sfx/upgrade.wav`);
     this.load.audio('sfx_shuffle', `${base}assets/audio/sfx/shuffle.wav`);
     this.load.audio('sfx_revolver_spin', `${base}assets/audio/sfx/revolver_spin.wav`);
+    this.load.audio('sfx_revolver_cock', `${base}assets/audio/sfx/revolver_cock.wav`);
+    this.load.audio('sfx_deadeye_activate', `${base}assets/audio/sfx/deadeye.wav`);
+    this.load.audio('sfx_holster', `${base}assets/audio/sfx/holster.wav`);
     // Backgrounds
     this.load.image('act1_bg', `${base}assets/backgrounds/act1_bg.png`);
     this.load.image('act2_bg', `${base}assets/backgrounds/act2_bg.png`);
@@ -251,6 +256,14 @@ export class BootScene extends Phaser.Scene {
       if (audioUnlocked) this.fadeOut();
     });
 
+    EventBus.on(GameEvent.DEADEYE_ACTIVATED, () => {
+      if (audioUnlocked) this.pauseForDeadeye();
+    });
+
+    EventBus.on(GameEvent.DEADEYE_ENDED, () => {
+      if (audioUnlocked) this.resumeAfterDeadeye();
+    });
+
     // Combat music is chosen once the encounter is known, so we can swap in
     // enemy-specific tracks (e.g. Outlaw King) instead of generic elite music.
     EventBus.on(GameEvent.COMBAT_MUSIC_SET, (...args: unknown[]) => {
@@ -360,6 +373,9 @@ export class BootScene extends Phaser.Scene {
     }
 
     this.fadingOutSound = music;
+    if (this.deadeyePausedMusic === music) {
+      this.deadeyePausedMusic = null;
+    }
     const proxy = { vol: currentVol };
     this.fadeTween = this.tweens.add({
       targets: proxy,
@@ -372,6 +388,68 @@ export class BootScene extends Phaser.Scene {
         try { music.stop(); } catch { /* ignore */ }
         try { music.destroy(); } catch { /* ignore */ }
         onComplete?.();
+      },
+    });
+  }
+
+  /** Fade the current music to silence, then pause it while Deadeye is active. */
+  private pauseForDeadeye(): void {
+    const music = this.currentMusic;
+    if (!music || this.deadeyePausedMusic === music) return;
+
+    if (this.fadeTween) {
+      this.fadeTween.stop();
+      this.fadeTween = null;
+    }
+    if (this.fadingOutSound) {
+      try { this.fadingOutSound.stop(); } catch { /* ignore */ }
+      try { this.fadingOutSound.destroy(); } catch { /* ignore */ }
+      this.fadingOutSound = null;
+    }
+
+    let currentVol: number;
+    try {
+      currentVol = (music as Phaser.Sound.WebAudioSound).volume ?? this.targetVolume;
+    } catch {
+      currentVol = this.targetVolume;
+    }
+
+    const proxy = { vol: currentVol };
+    this.fadeTween = this.tweens.add({
+      targets: proxy,
+      vol: 0,
+      duration: 350,
+      onUpdate: () => this.safeSetVolume(music, proxy.vol),
+      onComplete: () => {
+        this.fadeTween = null;
+        this.deadeyePausedMusic = music;
+        try { music.pause(); } catch { /* ignore */ }
+      },
+    });
+  }
+
+  /** Resume the paused track after Deadeye and fade it back to full volume. */
+  private resumeAfterDeadeye(): void {
+    const music = this.deadeyePausedMusic;
+    if (!music || this.currentMusic !== music) return;
+
+    if (this.fadeTween) {
+      this.fadeTween.stop();
+      this.fadeTween = null;
+    }
+
+    this.deadeyePausedMusic = null;
+    this.safeSetVolume(music, 0);
+    try { music.resume(); } catch { /* ignore */ }
+
+    const proxy = { vol: 0 };
+    this.fadeTween = this.tweens.add({
+      targets: proxy,
+      vol: this.targetVolume,
+      duration: 350,
+      onUpdate: () => this.safeSetVolume(music, proxy.vol),
+      onComplete: () => {
+        this.fadeTween = null;
       },
     });
   }

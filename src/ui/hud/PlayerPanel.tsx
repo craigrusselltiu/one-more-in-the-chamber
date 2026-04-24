@@ -20,6 +20,7 @@ export const PlayerPanel = memo(function PlayerPanel() {
   const health = useCombatStore((s) => s.playerHealth);
   const maxHealth = useCombatStore((s) => s.playerMaxHealth);
   const block = useCombatStore((s) => s.playerBlock);
+  const isDeadeyeActive = useCombatStore((s) => s.isDeadeyeActive);
   const store = useCombatStore();
   const effects = getPlayerStatusEffects(store);
   const nonBlockEffects = useMemo(() => effects.filter((e) => e.type !== 'block'), [effects]);
@@ -31,7 +32,7 @@ export const PlayerPanel = memo(function PlayerPanel() {
   const hitTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
 
   useEffect(() => {
-    if ((character !== 'red_panda' && character !== 'reno') || attacking) {
+    if ((character !== 'red_panda' && character !== 'reno') || attacking || isDeadeyeActive) {
       setIdleFrame(0);
       return;
     }
@@ -41,7 +42,7 @@ export const PlayerPanel = memo(function PlayerPanel() {
     }, IDLE_FRAME_DELAY_MS);
 
     return () => clearInterval(interval);
-  }, [character, attacking]);
+  }, [character, attacking, isDeadeyeActive]);
 
   useEffect(() => {
     const handler = () => {
@@ -84,6 +85,7 @@ export const PlayerPanel = memo(function PlayerPanel() {
             character={character}
             hit={hit}
             attacking={attacking}
+            deadeyeActive={isDeadeyeActive}
             idleFrame={idleFrame}
             size={CHARACTER_DISPLAY_SIZE}
             playerSprite

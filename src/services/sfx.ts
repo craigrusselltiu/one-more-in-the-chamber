@@ -95,6 +95,15 @@ export function playRevolverSpin(): void {
   play('sfx_revolver_spin', 0.5);
 }
 
+export function playDeadeyeActivate(): void {
+  play('sfx_revolver_cock', 0.45);
+  play('sfx_deadeye_activate', 0.5);
+}
+
+export function playHolster(): void {
+  play('sfx_holster', 0.45);
+}
+
 let lastBlockTime = 0;
 export function playBlock(): void {
   const now = Date.now();

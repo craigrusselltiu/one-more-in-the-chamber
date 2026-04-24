@@ -327,7 +327,7 @@ export function buildTileDescription(type: TileType, upgradeLevel: number): Reac
     }
     case 'milk': {
       const v = def.baseValue + bonus;
-      return [...seg('Gain ', false), ...seg(`${v}`, upgraded), ...seg(' block per tile. Heal 1 HP per 3-match, plus 1 per extra tile. On turn 4, transform into Cheese.', false)];
+      return [...seg('Gain ', false), ...seg(`${v}`, upgraded), ...seg(' block per tile. Heal 1 HP per 3-match, plus 1 per extra tile. On turn 5, transform into Cheese.', false)];
     }
     case 'cheese': {
       const v = def.baseValue + bonus;
@@ -464,7 +464,7 @@ export function buildUpgradePreview(type: TileType, currentLevel: number): React
     case 'nunchucks':
       return [...seg('Deal ', false), ...arrowUpgrade(oldVal, newVal), ...seg(' damage per tile. Hits twice if attacking a different enemy than the previous attack.', false)];
     case 'milk':
-      return [...seg('Gain ', false), ...arrowUpgrade(oldVal, newVal), ...seg(' block per tile. Heal 1 HP per 3-match, plus 1 per extra tile. On turn 4, transform into Cheese.', false)];
+      return [...seg('Gain ', false), ...arrowUpgrade(oldVal, newVal), ...seg(' block per tile. Heal 1 HP per 3-match, plus 1 per extra tile. On turn 5, transform into Cheese.', false)];
     case 'cheese':
       return [...seg('Gain ', false), ...arrowUpgrade(oldVal, newVal), ...seg(' block per tile. Heal 1 per tile.', false)];
     case 'obsidian':

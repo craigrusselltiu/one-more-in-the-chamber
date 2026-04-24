@@ -15,7 +15,7 @@ import { BoardHazardManager } from '../board/BoardHazardManager';
 import { TILE_COLORS, TILE_DEFINITIONS } from '../../data/tiles';
 import { chooseEnemyIntent } from './EnemyAI';
 import { BossController } from './BossController';
-import { playSwapFail, playMatch, playDeadeyeShot, playHit, playBlock, playAbilityReady, playShuffle, playRevolverSpin } from '../../services/sfx';
+import { playSwapFail, playMatch, playDeadeyeShot, playDeadeyeActivate, playHolster, playHit, playBlock, playAbilityReady, playShuffle, playRevolverSpin } from '../../services/sfx';
 import { useRunStore } from '../../store/runStore';
 import { useCombatStore } from '../../store/combatStore';
 import { CONSUMABLES } from '../../data/consumables';
@@ -80,6 +80,7 @@ export interface CombatResult {
  * Emits granular events so the React HUD stays in sync.
  */
 export class CombatManager {
+  private static readonly DEADEYE_CANCEL_LOCKOUT_MS = 1000;
   private board: Board;
   private player: Player;
   private character: CharacterId;
@@ -110,6 +111,7 @@ export class CombatManager {
   private isDeadeyeActive = false;
   private deadeyeShotsRemaining = 0;
   private deadeyeMaxShots: number;
+  private deadeyeCancelAvailableAt = 0;
   private deadeyeFinishSpinTrigger = 0;
   /** Ability charges earned while Deadeye is active; rolled into abilityCharge on endDeadeye. */
   private pendingAbilityCharge = 0;
@@ -649,8 +651,10 @@ export class CombatManager {
     if (this.isDeadeyeActive) {
       this.isDeadeyeActive = false;
       this.deadeyeShotsRemaining = 0;
+      this.deadeyeCancelAvailableAt = 0;
       this.board.setDeadeyeMode(false);
       this.clearDeadeyeCursor();
+      EventBus.emit(GameEvent.DEADEYE_ENDED);
     }
 
     // Cancel lasso on restore
@@ -805,7 +809,7 @@ export class CombatManager {
   }
 
   private ensureMilkHasTransformed(): void {
-    if (this.turnNumber < 4) return;
+    if (this.turnNumber < 5) return;
 
     const transformedTileTypes = Array.from(
       new Set(this.player.activeTileTypes.map((type) => (type === 'milk' ? 'cheese' : type))),
@@ -1103,10 +1107,13 @@ export class CombatManager {
     if (this.phase !== 'swap-phase' && this.phase !== 'consumable-window') return false;
     if (!this.player.isDeadeyeReady()) return false;
 
+    playDeadeyeActivate();
     this.isDeadeyeActive = true;
     this.deadeyeShotsRemaining = this.deadeyeMaxShots;
+    this.deadeyeCancelAvailableAt = Date.now() + CombatManager.DEADEYE_CANCEL_LOCKOUT_MS;
     this.board.setDeadeyeMode(true);
     this.setDeadeyeCursor();
+    EventBus.emit(GameEvent.DEADEYE_ACTIVATED);
     this.emitFullState();
     EventBus.emit(GameEvent.ABILITY_CHARGE_CHANGE, this.player.abilityCharge, this.player.abilityThreshold);
     return true;
@@ -1242,11 +1249,13 @@ export class CombatManager {
     }
     this.isDeadeyeActive = false;
     this.deadeyeShotsRemaining = 0;
+    this.deadeyeCancelAvailableAt = 0;
     const rollover = Math.min(this.player.abilityThreshold, this.pendingAbilityCharge);
     this.pendingAbilityCharge = 0;
     this.player.abilityCharge = rollover;
     this.board.setDeadeyeMode(false);
     this.clearDeadeyeCursor();
+    EventBus.emit(GameEvent.DEADEYE_ENDED);
     EventBus.emit(GameEvent.ABILITY_CHARGE_CHANGE, this.player.abilityCharge, this.player.abilityThreshold);
     this.emitFullState();
   }
@@ -1254,11 +1263,15 @@ export class CombatManager {
   /** Cancel the active ability. Retain charges if unused, clear remaining if partly used. */
   private cancelAbility(): void {
     if (this.isDeadeyeActive) {
+      if (Date.now() < this.deadeyeCancelAvailableAt) return;
+      playHolster();
       const usedShots = this.deadeyeMaxShots - this.deadeyeShotsRemaining;
       this.isDeadeyeActive = false;
       this.deadeyeShotsRemaining = 0;
+      this.deadeyeCancelAvailableAt = 0;
       this.board.setDeadeyeMode(false);
       this.clearDeadeyeCursor();
+      EventBus.emit(GameEvent.DEADEYE_ENDED);
       if (usedShots > 0) {
         const rollover = Math.min(this.player.abilityThreshold, this.pendingAbilityCharge);
         this.player.abilityCharge = rollover;
@@ -2011,7 +2024,7 @@ export class CombatManager {
     // Enemy thorns: reflect damage back to player
     if (enemy.state.thorns > 0 && damage > 0) {
       const thornsDmg = this.player.takeDamage(enemy.state.thorns);
-      if (thornsDmg.hpLost > 0 || thornsDmg.blocked > 0) EventBus.emit(GameEvent.PLAYER_HIT);
+      if (thornsDmg.hpLost > 0) EventBus.emit(GameEvent.PLAYER_HIT);
       if (thornsDmg.hpLost > 0) {
         this.floatOnPlayer(`-${thornsDmg.hpLost}`, '#C04040');
         this.playerTookDamageThisFight = true;
@@ -3032,9 +3045,11 @@ export class CombatManager {
     if (this.isDeadeyeActive) {
       this.isDeadeyeActive = false;
       this.deadeyeShotsRemaining = 0;
+      this.deadeyeCancelAvailableAt = 0;
       this.player.abilityCharge = 0;
       this.board.setDeadeyeMode(false);
       this.clearDeadeyeCursor();
+      EventBus.emit(GameEvent.DEADEYE_ENDED);
     }
 
     this.setPhase('combat-end');

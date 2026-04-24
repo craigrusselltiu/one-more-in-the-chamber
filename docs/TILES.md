@@ -249,11 +249,11 @@ NOTE: The tile pool for Acts 2, 3, and also the shop should be the Starter Tiles
 - Single formula: 2 damage + level * 1
 
 ### Milk
-- Flavor text: "Good for the bones."
-- Behaviour text: Gain 2 block per tile. Heal 1 HP per 3-match, plus 1 per extra tile. On turn 4, transform into Cheese.
+- Flavor text: "Yummers!"
+- Behaviour text: Gain 1 block per tile. Heal 1 HP per 3-match, plus 1 per extra tile. On turn 5, transform into Cheese.
 - Upgrade text: +1 block per tile per level
-- Resource formula: (2 block + level * 1) * tiles, 1 healing + (tiles - 3)
-- Single formula: 2 block + level * 1
+- Resource formula: (1 block + level * 1) * tiles, 1 healing + (tiles - 3)
+- Single formula: 1 block + level * 1
 
 ## Special Tiles
 

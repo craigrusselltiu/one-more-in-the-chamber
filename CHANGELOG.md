@@ -4,6 +4,20 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## v1.0.3
+
+### Changed
+- Milk now grants less block early, scales more cleanly with upgrades, and transforms into Cheese on turn 5 instead of turn 4.
+- Milk's flavor text now reads "Yummers!"
+- Activating Deadeye now plays both the revolver cock and Deadeye activation sounds.
+- Cancelling Deadeye now plays the holster sound.
+- Deadeye can no longer be cancelled for about 1 second immediately after activation.
+- Rust now switches to a dedicated Deadeye stance frame while Deadeye is active.
+- Combat music now fades out and pauses while Deadeye is active, then fades back in when Deadeye ends.
+
+### Fixed
+- Passive Thorns damage no longer triggers the player hit feedback when it is fully absorbed by block.
+
 ## v1.0.2
 
 ### Changed

@@ -55,6 +55,7 @@ export const GameEvent = {
   // Combat events
   ENEMY_DIED: 'enemy:died',
   DEADEYE_ACTIVATED: 'deadeye:activated',
+  DEADEYE_ENDED: 'deadeye:ended',
   CONSUMABLE_USED: 'consumable:used',
   /** A one-shot artifact effect has been spent (e.g. Shed Skin triggered). Payload: artifact id. */
   ARTIFACT_USED: 'artifact:used',
@@ -138,6 +139,8 @@ export interface EventPayloads {
   [GameEvent.COMBAT_SCENE_RUN]: [payload: { config?: CombatConfig; snapshot?: CombatSnapshot }];
   [GameEvent.COMBAT_SCENE_STOP]: [];
   [GameEvent.ENEMY_DIED]: [payload: { enemyId: string; enemyIndex: number }];
+  [GameEvent.DEADEYE_ACTIVATED]: [];
+  [GameEvent.DEADEYE_ENDED]: [];
   [GameEvent.PLAYER_ATTACK]: [];
   [GameEvent.PLAYER_HIT]: [];
   [GameEvent.ARTIFACT_USED]: [artifactId: string];
