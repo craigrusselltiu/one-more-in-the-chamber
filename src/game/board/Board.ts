@@ -204,7 +204,7 @@ export class Board {
   // -- Hint system --
   private hintTimer = 0;
   private hintTriggered = false;
-  private hintCachedPos: GridPosition | null = null;
+  private hintCachedMove: { from: GridPosition; to: GridPosition } | null = null;
   private static readonly HINT_INTERVAL = 10000; // 10 seconds
   private static readonly HINT_BREATHE_DURATION = 1500; // how long the hint breathes
   /** Whether shuffle hold mode is active (clicks toggle hold). */
@@ -401,6 +401,28 @@ export class Board {
     const dr = Math.abs(a.row - b.row);
     const dc = Math.abs(a.col - b.col);
     return (dr === 1 && dc === 0) || (dr === 0 && dc === 1);
+  }
+
+  private isLocked(pos: GridPosition): boolean {
+    return this.grid[pos.row]?.[pos.col]?.hazard?.type === 'lock';
+  }
+
+  private isLegalAdjacentSwap(a: GridPosition, b: GridPosition): boolean {
+    if (!this.isAdjacent(a, b)) return false;
+    const tileA = this.grid[a.row]?.[a.col];
+    const tileB = this.grid[b.row]?.[b.col];
+    if (!tileA || !tileB) return false;
+    if (this.isLocked(a) || this.isLocked(b)) return false;
+
+    const aShowdown = tileA.isShowdown || tileA.type === 'showdown';
+    const bShowdown = tileB.isShowdown || tileB.type === 'showdown';
+    const aExplosive = tileA.isExplosive;
+    const bExplosive = tileB.isExplosive;
+
+    if (aShowdown || bShowdown) return true;
+    if (aExplosive && bExplosive) return true;
+
+    return this.matchDetector.wouldMatch(this.grid, BOARD_SIZE, a, b);
   }
 
   /** Duration for the swap animation in ms (before speed multiplier). */
@@ -1235,31 +1257,17 @@ export class Board {
   hasValidMoves(): boolean {
     for (let row = 0; row < BOARD_SIZE; row++) {
       for (let col = 0; col < BOARD_SIZE; col++) {
-        const tileA = this.grid[row][col];
-        if (!tileA) continue;
-        // Locked tiles can't be swapped
-        const aLocked = tileA.hazard?.type === 'lock';
-        if (aLocked) continue;
-
         // Check right neighbor
         if (col < BOARD_SIZE - 1) {
-          const tileB = this.grid[row][col + 1];
-          const bLocked = tileB?.hazard?.type === 'lock';
-          if (!bLocked) {
-            const a: GridPosition = { row, col };
-            const b: GridPosition = { row, col: col + 1 };
-            if (this.matchDetector.wouldMatch(this.grid, BOARD_SIZE, a, b)) return true;
-          }
+          const a: GridPosition = { row, col };
+          const b: GridPosition = { row, col: col + 1 };
+          if (this.isLegalAdjacentSwap(a, b)) return true;
         }
         // Check bottom neighbor
         if (row < BOARD_SIZE - 1) {
-          const tileB = this.grid[row + 1][col];
-          const bLocked = tileB?.hazard?.type === 'lock';
-          if (!bLocked) {
-            const a: GridPosition = { row, col };
-            const b: GridPosition = { row: row + 1, col };
-            if (this.matchDetector.wouldMatch(this.grid, BOARD_SIZE, a, b)) return true;
-          }
+          const a: GridPosition = { row, col };
+          const b: GridPosition = { row: row + 1, col };
+          if (this.isLegalAdjacentSwap(a, b)) return true;
         }
       }
     }
@@ -1331,22 +1339,27 @@ export class Board {
 
     do {
       const result = this.collectAndShuffleUnlocked();
-      if (!result) return;
+      if (!result) {
+        this.rebuildBoardWithoutHazards();
+        return;
+      }
       this.applyShuffledState(result.unlocked, result.states);
       this.removeInitialMatchesBySwapping();
       attempts++;
     } while (!this.hasValidMoves() && attempts < maxAttempts);
 
     if (!this.hasValidMoves()) {
-      this.destroyAllTiles();
-      this.initGrid();
+      this.rebuildBoardWithoutHazards();
     }
   }
 
   /** Animated reshuffle for no-valid-moves: breaks matches, guarantees valid moves. */
   async reshuffleAnimated(): Promise<void> {
     const result = this.collectAndShuffleUnlocked();
-    if (!result) return;
+    if (!result) {
+      this.rebuildBoardWithoutHazards();
+      return;
+    }
 
     const tiles = result.unlocked
       .map(pos => this.grid[pos.row]?.[pos.col])
@@ -1368,12 +1381,17 @@ export class Board {
     }
 
     if (!this.hasValidMoves()) {
-      this.destroyAllTiles();
-      this.initGrid();
+      this.rebuildBoardWithoutHazards();
       return;
     }
 
     await Promise.all(tiles.map(t => t.tweenScale(1, 150)));
+  }
+
+  private rebuildBoardWithoutHazards(): void {
+    this.destroyAllTiles();
+    this.initGrid();
+    this.resetHintTimer();
   }
 
   /** Animated reshuffle that allows matches to remain (for Reno ability / consumables). */
@@ -1838,45 +1856,35 @@ export class Board {
   resetHintTimer(): void {
     this.hintTimer = this.scene.time.now;
     this.hintTriggered = false;
-    this.hintCachedPos = null;
+    this.hintCachedMove = null;
   }
 
-  /** Find a random tile position involved in a valid move. Caches result until swap. */
-  private findHintMove(): GridPosition | null {
-    if (this.hintCachedPos) return this.hintCachedPos;
+  /** Find a random legal adjacent swap. Caches the move, but revalidates it before reuse. */
+  private findHintMove(): { from: GridPosition; to: GridPosition } | null {
+    if (this.hintCachedMove && this.isLegalAdjacentSwap(this.hintCachedMove.from, this.hintCachedMove.to)) {
+      return this.hintCachedMove;
+    }
+    this.hintCachedMove = null;
 
-    const candidates: GridPosition[] = [];
+    const candidates: Array<{ from: GridPosition; to: GridPosition }> = [];
     for (let row = 0; row < BOARD_SIZE; row++) {
       for (let col = 0; col < BOARD_SIZE; col++) {
-        const tileA = this.grid[row][col];
-        if (!tileA) continue;
-        const aLocked = tileA.hazard?.type === 'lock';
-        if (aLocked) continue;
-
         if (col < BOARD_SIZE - 1) {
-          const tileB = this.grid[row][col + 1];
-          const bLocked = tileB?.hazard?.type === 'lock';
-          if (!bLocked) {
-            const a: GridPosition = { row, col };
-            const b: GridPosition = { row, col: col + 1 };
-            if (this.matchDetector.wouldMatch(this.grid, BOARD_SIZE, a, b)) candidates.push(a);
-          }
+          const from: GridPosition = { row, col };
+          const to: GridPosition = { row, col: col + 1 };
+          if (this.isLegalAdjacentSwap(from, to)) candidates.push({ from, to });
         }
         if (row < BOARD_SIZE - 1) {
-          const tileB = this.grid[row + 1][col];
-          const bLocked = tileB?.hazard?.type === 'lock';
-          if (!bLocked) {
-            const a: GridPosition = { row, col };
-            const b: GridPosition = { row: row + 1, col };
-            if (this.matchDetector.wouldMatch(this.grid, BOARD_SIZE, a, b)) candidates.push(a);
-          }
+          const from: GridPosition = { row, col };
+          const to: GridPosition = { row: row + 1, col };
+          if (this.isLegalAdjacentSwap(from, to)) candidates.push({ from, to });
         }
       }
     }
 
     if (candidates.length === 0) return null;
-    this.hintCachedPos = candidates[Math.floor(Math.random() * candidates.length)];
-    return this.hintCachedPos;
+    this.hintCachedMove = candidates[Math.floor(Math.random() * candidates.length)];
+    return this.hintCachedMove;
   }
 
   update(): void {
@@ -1902,10 +1910,12 @@ export class Board {
       const elapsed = time - this.hintTimer;
       if (elapsed >= Board.HINT_INTERVAL && !this.hintTriggered) {
         this.hintTriggered = true;
-        const pos = this.findHintMove();
-        if (pos) {
-          const tile = this.grid[pos.row]?.[pos.col];
-          if (tile) tile.startHint(Board.HINT_BREATHE_DURATION);
+        const move = this.findHintMove();
+        if (move) {
+          const fromTile = this.grid[move.from.row]?.[move.from.col];
+          const toTile = this.grid[move.to.row]?.[move.to.col];
+          if (fromTile) fromTile.startHint(Board.HINT_BREATHE_DURATION);
+          if (toTile) toTile.startHint(Board.HINT_BREATHE_DURATION);
         }
         // Reset timer for next hint cycle
         this.hintTimer = time;

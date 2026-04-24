@@ -36,17 +36,18 @@ const TRAIT_LABELS: Record<TraitId, string> = {
 const TRAIT_DESCRIPTIONS: Record<string, Record<number, string>> = {
   sheriff: {
     2: 'Double the first time you gain block each combat.',
-    4: 'At the start of combat, gain 4 Sturdy.',
+    4: 'At the start of combat, gain 3 Sturdy.',
     6: 'Block reflects 100% of absorbed damage back to attacker.',
+    8: 'Become immune to Suppress.',
   },
   outlaw: {
     2: 'Killing an enemy grants 3 Rageful.',
-    5: 'At the start of Boss encounters, gain 5 Rageful and apply 3 Vulnerable to all enemies.',
+    5: 'At the start of boss encounters, gain 5 Rageful and apply 3 Vulnerable to all enemies.',
   },
   prospector: {
-    2: 'On any match, 25% chance to generate 7 gold.',
-    4: 'Whenever you gain gold during combat, deal 2 damage to a random enemy.',
-    6: 'Deal 5% of your current gold as extra damage.',
+    2: 'On any match, 25% chance to generate 6 gold.',
+    4: 'Whenever you gain gold during combat, deal 1 damage to a random enemy.',
+    6: 'Deal 3% of your current gold as extra damage.',
   },
   gunslinger: {
     2: 'Bullet-type tiles deal 1 extra damage per tile.',
@@ -71,7 +72,7 @@ const TRAIT_DESCRIPTIONS: Record<string, Record<number, string>> = {
     7: 'Once per combat when taking lethal damage, prevent it and heal 20% HP.',
   },
   mustang: {
-    4: '+1 swap per turn.',
+    4: 'Gain 1 swap per turn.',
   },
   tracker: {
     1: 'Buried tiles get revealed at the end of your turn automatically.',
@@ -80,21 +81,22 @@ const TRAIT_DESCRIPTIONS: Record<string, Record<number, string>> = {
   preacher: {
     2: "Whenever you don't deal damage in a turn, heal 5.",
     4: 'Take 20% less damage from enemies with lower HP than you.',
-    6: 'At the start of combat, gain 2 Grace.',
+    6: 'At the start of combat, gain 1 Grace.',
   },
   antivenom: {
-    3: 'Matching next to a Poison tile clears it.',
+    2: 'Matching next to a Poison tile clears it.',
+    4: 'At the start of every turn, halve your Poison.',
   },
   undertaker: {
-    3: 'Deal 50% more damage to summoned enemies.',
-    6: 'On enemy death, gain 1 Ready.',
+    2: 'Deal 50% more damage to summoned enemies.',
+    4: 'Killing an enemy grants 1 max HP.',
   },
   desperado: {
     2: 'Desperado-tagged artifacts are more common.',
     5: 'At the start of every turn, gain 4 Ace.',
   },
   rattlesnake: {
-    2: 'Clearing or matching Poison tiles applies Poison to target instead.',
+    2: 'Your tiles that apply Poison have +1 level.',
     4: 'When you would apply Poison, apply it to ALL enemies.',
   },
   corrupt: {

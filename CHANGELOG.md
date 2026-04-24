@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## v1.0.5
+
+### Fixed
+- Trait breakpoint tooltips now match their implemented effects.
+- Hints and no-move reshuffles now ignore locked tiles correctly.
+
 ## v1.0.4
 
 ### Changed

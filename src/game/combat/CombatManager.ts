@@ -3293,7 +3293,7 @@ export class CombatManager {
     };
   }
 
-  /** Saloon Keeper(4): grant a random consumable from the basic pool. */
+  /** Saloon Keeper(5): grant a random consumable from the basic pool. */
   private grantRandomConsumable(): void {
     const pool = CONSUMABLES.filter((c) =>
       !['stick_of_tnt', 'skeleton_key', 'signal_flare'].includes(c.id),

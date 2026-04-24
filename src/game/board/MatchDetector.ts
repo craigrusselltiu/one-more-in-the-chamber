@@ -25,6 +25,7 @@ export class MatchDetector {
     const tileA = grid[a.row]?.[a.col];
     const tileB = grid[b.row]?.[b.col];
     if (!tileA || !tileB) return false;
+    if (!this.isMatchable(tileA) || !this.isMatchable(tileB)) return false;
 
     // Virtual swap: check each position with the other's type
     return (
@@ -44,18 +45,20 @@ export class MatchDetector {
     type: string,
   ): number {
     let best = 0;
+    const posTile = grid[pos.row]?.[pos.col];
+    if (!posTile || !this.isMatchable(posTile)) return 0;
 
     // Horizontal run through pos
     let count = 1;
     for (let c = pos.col - 1; c >= 0; c--) {
       const t = grid[pos.row][c];
       if (c === pos.col) continue;
-      if (t && t.type === type) count++;
+      if (t && this.isMatchable(t) && t.type === type) count++;
       else break;
     }
     for (let c = pos.col + 1; c < size; c++) {
       const t = grid[pos.row][c];
-      if (t && t.type === type) count++;
+      if (t && this.isMatchable(t) && t.type === type) count++;
       else break;
     }
     best = Math.max(best, count);
@@ -64,12 +67,12 @@ export class MatchDetector {
     count = 1;
     for (let r = pos.row - 1; r >= 0; r--) {
       const t = grid[r][pos.col];
-      if (t && t.type === type) count++;
+      if (t && this.isMatchable(t) && t.type === type) count++;
       else break;
     }
     for (let r = pos.row + 1; r < size; r++) {
       const t = grid[r][pos.col];
-      if (t && t.type === type) count++;
+      if (t && this.isMatchable(t) && t.type === type) count++;
       else break;
     }
     best = Math.max(best, count);
@@ -94,13 +97,15 @@ export class MatchDetector {
 
         const current = inner < size ? getCell(inner) : null;
         const prev = getCell(inner - 1);
+        const currentMatchable = !!current && this.isMatchable(current);
+        const prevMatchable = !!prev && this.isMatchable(prev);
 
-        if (inner < size && current && prev && current.type === prev.type) {
+        if (inner < size && currentMatchable && prevMatchable && current.type === prev.type) {
           continue;
         }
 
         const runLength = inner - runStart;
-        if (runLength >= 3 && prev) {
+        if (runLength >= 3 && prev && prevMatchable) {
           const tiles: GridPosition[] = [];
           for (let i = runStart; i < inner; i++) {
             tiles.push(
@@ -125,6 +130,10 @@ export class MatchDetector {
       }
     }
     return results;
+  }
+
+  private isMatchable(tile: Tile): boolean {
+    return tile.hazard?.type !== 'lock';
   }
 
   /**

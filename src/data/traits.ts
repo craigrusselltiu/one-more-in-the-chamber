@@ -30,7 +30,7 @@ export const TRAITS: TraitDefinition[] = [
     description: 'Wanted: Alive. Preferably not.',
     breakpoints: [
       { threshold: 2, description: 'Killing an enemy grants 3 Rageful.' },
-      { threshold: 5, description: 'At the start of Boss encounters, gain 5 Rageful and apply 3 Vulnerable to all enemies.' },
+      { threshold: 5, description: 'At the start of boss encounters, gain 5 Rageful and apply 3 Vulnerable to all enemies.' },
     ],
   },
   {

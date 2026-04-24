@@ -36,7 +36,7 @@ Trait level = number of artifacts held with that tag. Effects activate at breakp
 - Flavor: "Fire in the hole."
 - 2 -- Enemy bomb timers are increased by 2.
 - 4 -- Increase the radius of explosive tiles by 1.
-- NOTE: breakpoint 4 also affects swapping double explosive, 5x5 > 6x6
+- NOTE: breakpoint 4 also affects swapping double explosive, 5x5 > 7x7
 
 ## Sniper
 - Flavor: "Sniper? I barely know her!"
@@ -61,7 +61,7 @@ Trait level = number of artifacts held with that tag. Effects activate at breakp
 
 ## Preacher
 - Flavor: "The sermon ain't over yet."
-- 2 -- Whenever you don't deal damage in a turn, heal 5
+- 2 -- Whenever you don't deal damage in a turn, heal 5.
 - 4 -- Take 20% less damage from enemies with lower HP than you.
 - 6 -- At the start of combat, gain 1 Grace.
 
@@ -86,10 +86,6 @@ Trait level = number of artifacts held with that tag. Effects activate at breakp
 - 4 -- When you would apply Poison, apply it to ALL enemies.
 NOTE: breakpoint 2 just makes your poison tiles act as if they're 1 level higher.
 probably add a (+1) next to the level in the Tiles popup, merchant screen, and tile selection if you have B2
-
-## Juggernaut
-- Flavor: ""
-- 2 -- max hp
 
 ## Corrupt
 - Flavor: "Something rotten, clinging close."

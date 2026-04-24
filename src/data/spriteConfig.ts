@@ -194,19 +194,19 @@ export const TRAIT_FRAMES: Record<string, number> = {
 /** Trait breakpoint thresholds (in order). */
 export const TRAIT_BREAKPOINTS: Record<string, number[]> = {
   outlaw: [2, 5],
-  sheriff: [2, 4, 6],
+  sheriff: [2, 4, 6, 8],
   prospector: [2, 4, 6],
   sapper: [2, 4],
   mustang: [4],
-  gunslinger: [2, 4],
+  gunslinger: [2, 4, 6],
   saloon_keeper: [2, 5],
   desperado: [2, 5],
   sniper: [3, 5],
   dead_man_walking: [3, 5, 7],
   tracker: [1, 3],
   preacher: [2, 4, 6],
-  antivenom: [3],
-  undertaker: [3, 6],
+  antivenom: [2, 4],
+  undertaker: [2, 4],
   rattlesnake: [2, 4],
   corrupt: [2],
 };

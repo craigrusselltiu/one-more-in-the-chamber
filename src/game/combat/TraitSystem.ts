@@ -252,7 +252,7 @@ export class TraitSystem {
   // Gold Gain Hook
   // ---------------------------------------------------------------------------
 
-  /** Prospector(4): whenever gold is gained in combat, deal 2 damage to a random enemy. */
+  /** Prospector(4): whenever gold is gained in combat, deal 1 damage to a random enemy. */
   goldDealsDamage(): boolean {
     return this.isActive('prospector', 4);
   }

@@ -45,3 +45,5 @@ todo:
 - add artifacts
 - add character
 - add more sound effects, ult animation
+- hint can sometimes be wrong
+- seems like locked tiles can still cause lock-out? (no moves)
