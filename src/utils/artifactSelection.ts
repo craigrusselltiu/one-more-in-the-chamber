@@ -23,13 +23,6 @@ export function getArtifactPoolForRun(run: RunState, opts: ArtifactPickOptions =
     (a) => !ownedIds.has(a.id) && (!a.exclusive || a.exclusive === run.character),
   );
   let pool = available.length > 0 ? available : nonCorrupt;
-
-  // After Bones encounter, Greed enters the normal pool if the player doesn't have it
-  if (run.starterEncountered && !ownedIds.has('greed')) {
-    const greedDef = ARTIFACTS.find((a) => a.id === 'greed');
-    if (greedDef) pool = [...pool, { ...greedDef, rarity: 'common' }];
-  }
-
   if (opts.legendaryOnly) {
     const legendaries = pool.filter((a) => a.rarity === 'legendary');
     if (legendaries.length > 0) pool = legendaries;
@@ -67,15 +60,21 @@ export function pickArtifactsForRun(
  * (e.g. 'rattlesnake', 'preacher', 'corrupt'), using weighted rarity selection.
  * Prefers unowned; falls back to the full tagged pool if every candidate is
  * already owned. Returns null only if no artifact carries the tag.
+ *
+ * For the 'corrupt' tag, Greed is excluded until after the Bones encounter
+ * (and only included if the player doesn't already own it).
  */
 export function pickArtifactByTag(
   run: RunState,
   tag: TraitId,
   rand: () => number,
 ): ArtifactDefinition | null {
-  const tagged = ARTIFACTS.filter(
+  let tagged = ARTIFACTS.filter(
     (a) => a.tags.includes(tag) && (!a.exclusive || a.exclusive === run.character),
   );
+  if (tag === 'corrupt') {
+    tagged = filterCorruptPool(tagged, run);
+  }
   if (tagged.length === 0) return null;
   const ownedIds = new Set(run.artifacts.map((a) => a.id));
   const unowned = tagged.filter((a) => !ownedIds.has(a.id));
@@ -83,4 +82,15 @@ export function pickArtifactByTag(
   const desperadoActive = (run.traitCounts?.desperado ?? 0) >= 2;
   const legendaryWeight = getWantedLevelMutations(run.wantedLevel).legendaryWeight;
   return weightedArtifactPick(pool, rand, desperadoActive, false, legendaryWeight);
+}
+
+/**
+ * Filter the corrupt artifact pool: Greed is excluded until after Bones,
+ * and only re-included if the player doesn't already own it.
+ */
+export function filterCorruptPool(pool: ArtifactDefinition[], run: RunState): ArtifactDefinition[] {
+  const ownedIds = new Set(run.artifacts.map((a) => a.id));
+  const greedAvailable = run.starterEncountered && !ownedIds.has('greed');
+  if (greedAvailable) return pool;
+  return pool.filter((a) => a.id !== 'greed');
 }

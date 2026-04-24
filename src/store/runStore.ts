@@ -209,9 +209,9 @@ export const useRunStore = create<RunStore>((set, get) => ({
       for (const tag of startDef.tags) traitCounts[tag] = (traitCounts[tag] ?? 0) + 1;
     }
 
-    // L25: start with a random corrupt-tagged artifact.
+    // L25: start with a random corrupt-tagged artifact (Greed excluded -- not yet offered by Bones).
     if (ascMods.startWithRandomCorruption) {
-      const corruptPool = ARTIFACTS.filter((a) => a.rarity === 'corrupt');
+      const corruptPool = ARTIFACTS.filter((a) => a.rarity === 'corrupt' && a.id !== 'greed');
       if (corruptPool.length > 0) {
         const pick = corruptPool[Math.floor(Math.random() * corruptPool.length)];
         artifacts.push({ id: pick.id, tags: pick.tags });
