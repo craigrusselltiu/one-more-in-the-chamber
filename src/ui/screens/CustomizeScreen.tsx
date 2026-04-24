@@ -2,7 +2,6 @@ import { memo, useEffect, useMemo, useState } from 'react';
 import { EventBus, GameEvent } from '../../game/EventBus';
 import { useMetaStore } from '../../store/metaStore';
 import { NAMEPLATES, COLOURS, COLOUR_BY_ID, TITLES, SKINS } from '../../data/cosmetics';
-import { playHover } from '../../services/sfx';
 import { getAuthState, subscribeAuth, type AuthState } from '../../services/auth';
 import type { Screen } from '../../App';
 
@@ -176,7 +175,6 @@ export const CustomizeScreen = memo(function CustomizeScreen() {
             <button
               key={t.key}
               onClick={() => handleTabChange(t.key)}
-              onMouseEnter={playHover}
               className="px-3 py-1 text-[10px] rounded-sm transition-transform"
               style={{
                 backgroundColor: active ? 'rgba(120, 53, 15, 0.85)' : 'rgba(28, 25, 23, 0.8)',
@@ -231,7 +229,6 @@ export const CustomizeScreen = memo(function CustomizeScreen() {
       <div className="py-3 flex gap-3">
         <button
           onClick={handleBack}
-          onMouseEnter={playHover}
           style={{ boxShadow: '2px 2px 1px rgba(0,0,0,0.4)', cursor: 'pointer' }}
           className="px-6 py-1.5 text-xs rounded-sm bg-stone-800 text-stone-300 hover:bg-stone-700 active:translate-y-0.5 transition-transform"
         >
@@ -239,7 +236,6 @@ export const CustomizeScreen = memo(function CustomizeScreen() {
         </button>
         <button
           onClick={handleEquipToggle}
-          onMouseEnter={playHover}
           disabled={equipButtonDisabled}
           style={{
             boxShadow: equipButtonDisabled ? 'none' : '2px 2px 1px rgba(0,0,0,0.4)',
@@ -272,7 +268,6 @@ function CustomizeCard({
   return (
     <button
       onClick={onSelect}
-      onMouseEnter={playHover}
       className="relative flex flex-col items-center justify-center w-36 h-36 rounded-sm text-center transition-transform hover:-translate-y-0.5 active:translate-y-0.5"
       style={{
         backgroundColor: selected ? 'rgba(120, 53, 15, 0.75)' : 'rgba(28, 25, 23, 0.8)',
@@ -370,7 +365,6 @@ function NameplateCustomizeCard({
   return (
     <button
       onClick={onSelect}
-      onMouseEnter={playHover}
       className="relative flex items-center w-full rounded-sm transition-transform hover:-translate-y-0.5 active:translate-y-0.5 cursor-pointer"
       style={{
         height: 40,

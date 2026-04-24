@@ -474,7 +474,7 @@ Diagonal = single-trait artifacts. Off-diagonal = artifacts with both traits.
 ### Death's Glare
 - Tags: Undertaker, Dead Man Walking
 - Rarity: Legendary
-- Effect: On combat start, gain 3 Dead Man Walking, then apply 3 Vulnerable and 3 Terrified to ALL enemies.
+- Effect: On combat start, gain 3 Dead Man Walking and 3 Ready, then apply 3 Vulnerable and 3 Terrified to ALL enemies.
 - Flavor: "They saw what was coming."
 
 ### Strong Liver

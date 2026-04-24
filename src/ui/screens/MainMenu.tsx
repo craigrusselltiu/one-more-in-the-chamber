@@ -4,7 +4,6 @@ import { useRunStore } from '../../store/runStore';
 import { useMetaStore } from '../../store/metaStore';
 import { checkForCombatResume } from '../../services/combatResume';
 import { calculateScore } from '../../utils/scoring';
-import { playHover } from '../../services/sfx';
 import { getAuthState, subscribeAuth, type AuthState } from '../../services/auth';
 import { Tooltip } from '../components/Tooltip';
 import changelogRaw from '../../../CHANGELOG.md?raw';
@@ -82,7 +81,6 @@ function MenuButton({
     <div className={wrapperClassName} style={wrapperStyle}>
       <button
         onClick={onClick}
-        onMouseEnter={playHover}
         className="group relative text-left py-1 px-3 bg-transparent border-none outline-none"
         style={{
           fontSize: '14px',
@@ -121,6 +119,16 @@ export const MainMenu = memo(function MainMenu({ buttonEntryState = 'static' }: 
   const [nameInput, setNameInput] = useState('');
   const [auth, setAuth] = useState<AuthState>(() => ({ ...getAuthState() }));
   const mainMenuMessage = useMemo(() => pickMainMenuMessage(playerName, auth.isLoggedIn), [playerName, auth.isLoggedIn]);
+  const changelogLines = useMemo(() => {
+    let reachedVersions = false;
+    return changelogRaw
+      .split(/\r?\n/)
+      .map((line) => line.trimEnd())
+      .filter((line) => {
+        if (line.startsWith('## ')) reachedVersions = true;
+        return reachedVersions && line.trim().length > 0;
+      });
+  }, []);
   useEffect(() => subscribeAuth(setAuth), []);
 
   const handleNewGame = () => {
@@ -341,7 +349,6 @@ export const MainMenu = memo(function MainMenu({ buttonEntryState = 'static' }: 
         ) : (
           <button
             onClick={handleLogin}
-            onMouseEnter={playHover}
             style={{ boxShadow: '2px 2px 1px rgba(0,0,0,0.4)', cursor: 'pointer' }}
             className="px-4 py-1.5 text-[11px] rounded-sm bg-amber-800 text-amber-200 hover:bg-amber-700 active:translate-y-0.5 transition-transform"
           >
@@ -387,19 +394,36 @@ export const MainMenu = memo(function MainMenu({ buttonEntryState = 'static' }: 
           className="absolute inset-0 flex items-center justify-center bg-black/80 z-10"
           onClick={(e) => { if (e.target === e.currentTarget) setShowChangelog(false); }}
         >
-          <div className="border border-stone-600 bg-stone-900 p-5 flex flex-col" style={{ width: 500, maxHeight: 440 }}>
-            <h2 className="text-amber-400 text-sm font-bold mb-3 text-center">Changelog</h2>
-            <div className="overflow-y-auto flex-1 pr-2 text-xs" style={{ scrollbarWidth: 'thin' }}>
-              {changelogRaw
-                .split('\n')
-                .filter((_, i) => i > 4) // skip title + preamble
-                .map((line, i) => {
-                  if (line.startsWith('## '))
-                    return <h3 key={i} className="text-amber-400 font-bold mt-3 mb-1" style={{ fontSize: '13px' }}>{line.slice(3)}</h3>;
-                  if (line.startsWith('### '))
-                    return <h4 key={i} className="text-stone-400 font-bold mt-2 mb-0.5">{line.slice(4)}</h4>;
-                  if (line.startsWith('- '))
-                    return <p key={i} className="text-stone-300 ml-3 leading-relaxed">{'- '}{line.slice(2)}</p>;
+          <div
+            className="border border-stone-600 bg-stone-950/95 px-7 py-6 flex flex-col shadow-2xl"
+            style={{ width: 'min(560px, calc(100vw - 32px))', maxHeight: 'min(470px, calc(100vh - 48px))' }}
+          >
+            <h2
+              className="text-amber-400 text-center uppercase mb-5"
+              style={{ fontSize: '22px', lineHeight: 1, WebkitTextStroke: '3px #000', paintOrder: 'stroke fill' }}
+            >
+              CHANGELOG
+            </h2>
+            <div
+              className="thin-scroll min-h-0 flex-1 overflow-y-auto overflow-x-hidden px-3"
+              style={{ overflowX: 'hidden', fontSize: '10px', lineHeight: 1.5 }}
+            >
+              {changelogLines.map((line, i) => {
+                  const text = line.trim();
+                  if (text.startsWith('## '))
+                    return (
+                      <div
+                        key={i}
+                        className="text-amber-300 font-bold mt-4 first:mt-0 mb-1.5 tracking-wide break-words"
+                        style={{ fontSize: '13px', lineHeight: 1.2 }}
+                      >
+                        {text.slice(3)}
+                      </div>
+                    );
+                  if (text.startsWith('### '))
+                    return <div key={i} className="text-stone-100 font-bold mt-2 mb-1 uppercase tracking-wide break-words" style={{ fontSize: '10px' }}>{text.slice(4)}</div>;
+                  if (text.startsWith('- '))
+                    return <p key={i} className="text-stone-300 pl-3 break-words" style={{ overflowWrap: 'anywhere' }}>- {text.slice(2)}</p>;
                   return null;
                 })}
             </div>

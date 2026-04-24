@@ -132,9 +132,10 @@ export class ArtifactSystem {
       player.protectedStacks += 1;
     }
 
-    // Death's Glare: grant 3 Dead Man Walking to player, then apply 3 Vulnerable + 3 Terrified to ALL enemies
+    // Death's Glare: grant 3 Dead Man Walking + 3 Ready, then apply 3 Vulnerable + 3 Terrified to ALL enemies
     if (this.has('deaths_glare') && enemies) {
       player.deadManWalkingStacks += 3;
+      player.addReady(3);
       for (const enemy of enemies) {
         if (!enemy.state.isDead) {
           enemy.addVulnerable(3);

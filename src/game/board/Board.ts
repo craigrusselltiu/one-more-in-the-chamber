@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { Tile, TILE_SIZE } from './Tile';
+import { Tile, TILE_SIZE, type TileEffectFrame } from './Tile';
 import { MatchDetector } from './MatchDetector';
 import { CascadeResolver } from './CascadeResolver';
 import type { GravityDirection } from './CascadeResolver';
@@ -37,6 +37,7 @@ export class Board {
   private tileTypeBag: TileType[] = [];
   /** If mirage is active, the type it transformed into for this combat. */
   private mirageReplacementType: TileType | null = null;
+  private effectTiles = new Set<Tile>();
 
   getMirageType(): TileType | null {
     return this.mirageReplacementType;
@@ -71,10 +72,18 @@ export class Board {
 
   /** Create a tile and apply the board mask to it. */
   private createTile(x: number, y: number, type: TileType, row: number, col: number): Tile {
-    const tile = new Tile(this.scene, x, y, type, row, col);
+    const tile = new Tile(this.scene, x, y, type, row, col, this.setEffectTileActive);
     tile.setMask(this.boardMask);
     return tile;
   }
+
+  private setEffectTileActive = (tile: Tile, active: boolean): void => {
+    if (active) {
+      this.effectTiles.add(tile);
+    } else {
+      this.effectTiles.delete(tile);
+    }
+  };
 
   private initGrid(): void {
     for (let row = 0; row < BOARD_SIZE; row++) {
@@ -873,10 +882,6 @@ export class Board {
       if (tile.isExplosive) explosiveQueue.push(pos);
       if (tile.isShowdown || tile.type === 'showdown') showdownQueue.push(pos);
 
-      // Emit particles for this tile
-      const center = tile.getWorldCenter();
-      EventBus.emit(GameEvent.TILE_PARTICLES, center.x, center.y, TILE_COLORS[tile.type] ?? '#ffffff');
-
       this.grid[pos.row][pos.col] = null;
       tilesToAnimate.push(tile);
     }
@@ -888,6 +893,8 @@ export class Board {
     if (staggerMs > 0) {
       for (const tile of tilesToAnimate) {
         playMatch(1, 0.25);
+        const center = tile.getWorldCenter();
+        EventBus.emit(GameEvent.TILE_PARTICLES, center.x, center.y, TILE_COLORS[tile.type] ?? '#ffffff');
         tile.destroy();
         await new Promise(r => setTimeout(r, staggerMs));
       }
@@ -1241,10 +1248,7 @@ export class Board {
           if (!bLocked) {
             const a: GridPosition = { row, col };
             const b: GridPosition = { row, col: col + 1 };
-            this.swapTilesInGrid(a, b);
-            const has = this.findMatches().length > 0;
-            this.swapTilesInGrid(a, b);
-            if (has) return true;
+            if (this.matchDetector.wouldMatch(this.grid, BOARD_SIZE, a, b)) return true;
           }
         }
         // Check bottom neighbor
@@ -1254,10 +1258,7 @@ export class Board {
           if (!bLocked) {
             const a: GridPosition = { row, col };
             const b: GridPosition = { row: row + 1, col };
-            this.swapTilesInGrid(a, b);
-            const has = this.findMatches().length > 0;
-            this.swapTilesInGrid(a, b);
-            if (has) return true;
+            if (this.matchDetector.wouldMatch(this.grid, BOARD_SIZE, a, b)) return true;
           }
         }
       }
@@ -1664,7 +1665,7 @@ export class Board {
     const boardH = BOARD_SIZE * TILE_SIZE;
     const centerX = this.originX + boardW / 2;
     const centerY = this.originY + boardH / 2;
-    const margin = 60; // extra margin so arrow fully enters/exits the masked area
+    const margin = 90; // extra margin so arrow fully enters/exits the masked area
 
     const arrowChars: Record<string, string> = {
       down: '\u25BC', left: '\u25C0', up: '\u25B2', right: '\u25B6',
@@ -1682,7 +1683,7 @@ export class Board {
 
     const arrow = this.scene.add
       .text(startX, startY, arrowChars[direction], {
-        fontSize: '80px',
+        fontSize: '120px',
         color: '#ffffff',
       })
       .setOrigin(0.5)
@@ -1858,10 +1859,7 @@ export class Board {
           if (!bLocked) {
             const a: GridPosition = { row, col };
             const b: GridPosition = { row, col: col + 1 };
-            this.swapTilesInGrid(a, b);
-            const has = this.findMatches().length > 0;
-            this.swapTilesInGrid(a, b);
-            if (has) candidates.push(a);
+            if (this.matchDetector.wouldMatch(this.grid, BOARD_SIZE, a, b)) candidates.push(a);
           }
         }
         if (row < BOARD_SIZE - 1) {
@@ -1870,10 +1868,7 @@ export class Board {
           if (!bLocked) {
             const a: GridPosition = { row, col };
             const b: GridPosition = { row: row + 1, col };
-            this.swapTilesInGrid(a, b);
-            const has = this.findMatches().length > 0;
-            this.swapTilesInGrid(a, b);
-            if (has) candidates.push(a);
+            if (this.matchDetector.wouldMatch(this.grid, BOARD_SIZE, a, b)) candidates.push(a);
           }
         }
       }
@@ -1887,9 +1882,18 @@ export class Board {
   update(): void {
     // Drive tile effect overlays (breathing animations)
     const time = this.scene.time.now;
-    for (let row = 0; row < BOARD_SIZE; row++) {
-      for (let col = 0; col < BOARD_SIZE; col++) {
-        this.grid[row][col]?.updateEffects(time);
+    const effectFrame: TileEffectFrame = {
+      breath: 0.5 + 0.5 * Math.sin(time / 400),
+      sandBreath: 0.5 + 0.5 * Math.sin(time / 600),
+      slowBreath: 0.5 + 0.5 * Math.sin(time / 600),
+      showdownTint: Phaser.Display.Color.HSLToColor(((time / 20) % 360) / 360, 0.8, 0.5).color,
+    };
+
+    for (const tile of [...this.effectTiles]) {
+      if (tile.needsEffectUpdate()) {
+        tile.updateEffects(time, effectFrame);
+      } else {
+        this.effectTiles.delete(tile);
       }
     }
 

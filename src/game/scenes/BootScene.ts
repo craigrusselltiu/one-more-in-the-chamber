@@ -24,8 +24,9 @@ export class BootScene extends Phaser.Scene {
   private fadeTween: Phaser.Tweens.Tween | null = null;
   /** Sound currently being faded out (so it can be cleaned up if interrupted). */
   private fadingOutSound: Phaser.Sound.BaseSound | null = null;
-  /** Track temporarily faded out and paused while Deadeye is active. */
-  private deadeyePausedMusic: Phaser.Sound.BaseSound | null = null;
+  /** Music volume multiplier while Deadeye is active. */
+  private musicDuckMultiplier = 1;
+  private deadeyeMusicDucking = false;
 
   constructor() {
     super({ key: 'BootScene' });
@@ -257,11 +258,11 @@ export class BootScene extends Phaser.Scene {
     });
 
     EventBus.on(GameEvent.DEADEYE_ACTIVATED, () => {
-      if (audioUnlocked) this.pauseForDeadeye();
+      if (audioUnlocked) this.duckForDeadeye();
     });
 
     EventBus.on(GameEvent.DEADEYE_ENDED, () => {
-      if (audioUnlocked) this.resumeAfterDeadeye();
+      if (audioUnlocked) this.restoreAfterDeadeye();
     });
 
     // Combat music is chosen once the encounter is known, so we can swap in
@@ -308,7 +309,9 @@ export class BootScene extends Phaser.Scene {
 
   private safeSetVolume(sound: Phaser.Sound.BaseSound, vol: number): void {
     try {
-      (sound as Phaser.Sound.WebAudioSound).setVolume(vol * useSettingsStore.getState().musicVolume);
+      (sound as Phaser.Sound.WebAudioSound).setVolume(
+        vol * this.musicDuckMultiplier * useSettingsStore.getState().musicVolume,
+      );
     } catch { /* audio node may be null */ }
   }
 
@@ -354,6 +357,8 @@ export class BootScene extends Phaser.Scene {
       try { this.fadingOutSound.destroy(); } catch { /* ignore */ }
       this.fadingOutSound = null;
     }
+    this.musicDuckMultiplier = 1;
+    this.deadeyeMusicDucking = false;
 
     const music = this.currentMusic;
     if (!music) {
@@ -373,9 +378,6 @@ export class BootScene extends Phaser.Scene {
     }
 
     this.fadingOutSound = music;
-    if (this.deadeyePausedMusic === music) {
-      this.deadeyePausedMusic = null;
-    }
     const proxy = { vol: currentVol };
     this.fadeTween = this.tweens.add({
       targets: proxy,
@@ -392,10 +394,10 @@ export class BootScene extends Phaser.Scene {
     });
   }
 
-  /** Fade the current music to silence, then pause it while Deadeye is active. */
-  private pauseForDeadeye(): void {
+  /** Fade the current music down while Deadeye is active. */
+  private duckForDeadeye(): void {
     const music = this.currentMusic;
-    if (!music || this.deadeyePausedMusic === music) return;
+    if (!music || this.deadeyeMusicDucking) return;
 
     if (this.fadeTween) {
       this.fadeTween.stop();
@@ -407,9 +409,12 @@ export class BootScene extends Phaser.Scene {
       this.fadingOutSound = null;
     }
 
+    this.deadeyeMusicDucking = true;
+    this.musicDuckMultiplier = 1;
     let currentVol: number;
     try {
-      currentVol = (music as Phaser.Sound.WebAudioSound).volume ?? this.targetVolume;
+      const settingsVolume = useSettingsStore.getState().musicVolume || 1;
+      currentVol = ((music as Phaser.Sound.WebAudioSound).volume ?? this.targetVolume) / settingsVolume;
     } catch {
       currentVol = this.targetVolume;
     }
@@ -417,32 +422,39 @@ export class BootScene extends Phaser.Scene {
     const proxy = { vol: currentVol };
     this.fadeTween = this.tweens.add({
       targets: proxy,
-      vol: 0,
+      vol: this.targetVolume * 0.5,
       duration: 350,
       onUpdate: () => this.safeSetVolume(music, proxy.vol),
       onComplete: () => {
         this.fadeTween = null;
-        this.deadeyePausedMusic = music;
-        try { music.pause(); } catch { /* ignore */ }
+        if (!this.deadeyeMusicDucking) return;
+        this.musicDuckMultiplier = 0.5;
+        this.safeSetVolume(music, this.targetVolume);
       },
     });
   }
 
-  /** Resume the paused track after Deadeye and fade it back to full volume. */
-  private resumeAfterDeadeye(): void {
-    const music = this.deadeyePausedMusic;
-    if (!music || this.currentMusic !== music) return;
+  /** Restore full music volume after Deadeye. */
+  private restoreAfterDeadeye(): void {
+    const music = this.currentMusic;
+    if (!music || !this.deadeyeMusicDucking) return;
 
     if (this.fadeTween) {
       this.fadeTween.stop();
       this.fadeTween = null;
     }
 
-    this.deadeyePausedMusic = null;
-    this.safeSetVolume(music, 0);
-    try { music.resume(); } catch { /* ignore */ }
+    let currentVol: number;
+    try {
+      const settingsVolume = useSettingsStore.getState().musicVolume || 1;
+      currentVol = ((music as Phaser.Sound.WebAudioSound).volume ?? this.targetVolume) / settingsVolume;
+    } catch {
+      currentVol = this.targetVolume * 0.5;
+    }
 
-    const proxy = { vol: 0 };
+    this.deadeyeMusicDucking = false;
+    this.musicDuckMultiplier = 1;
+    const proxy = { vol: currentVol };
     this.fadeTween = this.tweens.add({
       targets: proxy,
       vol: this.targetVolume,

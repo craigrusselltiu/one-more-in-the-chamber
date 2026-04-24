@@ -108,6 +108,7 @@ export class CombatManager {
    */
   private lethargicSuppressResources = false;
   private targetedEnemyIndex = 0;
+  private targetedEnemyId: string | null = null;
   private isDeadeyeActive = false;
   private deadeyeShotsRemaining = 0;
   private deadeyeMaxShots: number;
@@ -215,6 +216,7 @@ export class CombatManager {
       }
       this.enemies.push(enemy);
     }
+    this.targetedEnemyId = this.aliveEnemies()[0]?.state.id ?? null;
 
     // Boss controller for phase-based bosses
     if (config.isBoss && config.enemies.length > 0) {
@@ -617,6 +619,9 @@ export class CombatManager {
       ? [...snapshot.swapIconSources]
       : [...this.baseSwapIconSources];
     this.targetedEnemyIndex = snapshot.targetedEnemyIndex;
+    this.targetedEnemyId = this.aliveEnemies()[this.targetedEnemyIndex]?.state.id
+      ?? this.aliveEnemies()[0]?.state.id
+      ?? null;
     this.phase = snapshot.phase;
     this.isDeadeyeActive = snapshot.isDeadeyeActive;
     this.deadeyeShotsRemaining = snapshot.deadeyeShotsRemaining;
@@ -655,6 +660,7 @@ export class CombatManager {
       this.board.setDeadeyeMode(false);
       this.clearDeadeyeCursor();
       EventBus.emit(GameEvent.DEADEYE_ENDED);
+      EventBus.emit(GameEvent.ABILITY_ENDED, { character: this.character });
     }
 
     // Cancel lasso on restore
@@ -1034,11 +1040,7 @@ export class CombatManager {
       EventBus.emit(GameEvent.SWAPS_CHANGE, this.swapsRemaining, this.swapsPerTurn);
     }
 
-    // Auto-retarget if targeted enemy died during cascade
-    const alive = this.aliveEnemies();
-    if (alive.length > 0 && this.targetedEnemyIndex >= alive.length) {
-      this.targetedEnemyIndex = 0;
-    }
+    this.preserveTargetIfAlive(this.getTargetedAliveEnemy());
 
     if (this.isCombatOver()) {
       EventBus.emit(GameEvent.COMBO_UPDATE, 0);
@@ -1092,6 +1094,7 @@ export class CombatManager {
     const aliveIdx = alive.indexOf(enemy);
     if (aliveIdx >= 0) {
       this.targetedEnemyIndex = aliveIdx;
+      this.targetedEnemyId = enemy.state.id;
       this.emitFullState();
     }
   }
@@ -1114,6 +1117,7 @@ export class CombatManager {
     this.board.setDeadeyeMode(true);
     this.setDeadeyeCursor();
     EventBus.emit(GameEvent.DEADEYE_ACTIVATED);
+    EventBus.emit(GameEvent.ABILITY_STARTED, { character: this.character });
     this.emitFullState();
     EventBus.emit(GameEvent.ABILITY_CHARGE_CHANGE, this.player.abilityCharge, this.player.abilityThreshold);
     return true;
@@ -1256,6 +1260,7 @@ export class CombatManager {
     this.board.setDeadeyeMode(false);
     this.clearDeadeyeCursor();
     EventBus.emit(GameEvent.DEADEYE_ENDED);
+    EventBus.emit(GameEvent.ABILITY_ENDED, { character: this.character });
     EventBus.emit(GameEvent.ABILITY_CHARGE_CHANGE, this.player.abilityCharge, this.player.abilityThreshold);
     this.emitFullState();
   }
@@ -1272,6 +1277,7 @@ export class CombatManager {
       this.board.setDeadeyeMode(false);
       this.clearDeadeyeCursor();
       EventBus.emit(GameEvent.DEADEYE_ENDED);
+      EventBus.emit(GameEvent.ABILITY_ENDED, { character: this.character });
       if (usedShots > 0) {
         const rollover = Math.min(this.player.abilityThreshold, this.pendingAbilityCharge);
         this.player.abilityCharge = rollover;
@@ -1299,6 +1305,7 @@ export class CombatManager {
     if (!this.player.isDeadeyeReady()) return;
     this.player.activateDeadeye(); // consume charges
     playShuffle();
+    EventBus.emit(GameEvent.ABILITY_STARTED, { character: this.character });
 
     this.emitFullState();
     EventBus.emit(GameEvent.ABILITY_CHARGE_CHANGE, this.player.abilityCharge, this.player.abilityThreshold);
@@ -1306,6 +1313,7 @@ export class CombatManager {
     // Animated reshuffle then let matches cascade
     this.board.setIsResolving(true);
     await this.board.reshuffleAnimatedWithCascades();
+    EventBus.emit(GameEvent.ABILITY_ENDED, { character: this.character });
 
     // Post-Shuffle matches are all cascades — force cloak suppression.
     this.ricochetTriggeredThisResolution = false;
@@ -1939,10 +1947,15 @@ export class CombatManager {
     EventBus.emit(GameEvent.FLOATING_NUMBER, 'enemy', this.enemies.indexOf(enemy), text, color, fontSize);
   }
 
+  private emitEnemyDamaged(enemy: Enemy, hpLost: number): void {
+    if (hpLost > 0) EventBus.emit(GameEvent.ENEMY_DAMAGED, enemy.state.id);
+  }
+
   /** Apply non-match damage and route any resulting executions/deaths through the shared hooks. */
   private dealAuxiliaryDamageToEnemy(enemy: Enemy, damage: number, color: string, fontSize?: number): void {
     const { hpLost } = enemy.takeDamage(damage);
     this.damageDealtThisFight += hpLost;
+    this.emitEnemyDamaged(enemy, hpLost);
     if (hpLost > 0) {
       this.floatOnEnemy(enemy, `-${hpLost}`, color, fontSize);
     }
@@ -2010,6 +2023,7 @@ export class CombatManager {
     const critSize = isCrit ? 18 : undefined;
     const { hpLost, blocked } = enemy.takeDamage(damage, pierce);
     this.damageDealtThisFight += hpLost;
+    this.emitEnemyDamaged(enemy, hpLost);
 
     if (damage > 0 && (hpLost > 0 || blocked > 0)) {
       EventBus.emit(GameEvent.PLAYER_DAMAGE_LINE, enemy.state.id);
@@ -2055,7 +2069,9 @@ export class CombatManager {
    * Process newly-dead enemies and fire all death-triggered effects.
    * This must run for both match kills and non-match damage sources.
    */
-  private processEnemyDeaths(match: MatchResult | null): void {
+  private processEnemyDeaths(match: MatchResult | null, options: { flashBeforeDust?: boolean } = {}): void {
+    const flashBeforeDust = options.flashBeforeDust ?? true;
+    const targetBeforeDeaths = this.getTargetedAliveEnemy();
     let progressed = true;
     while (progressed) {
       progressed = false;
@@ -2067,6 +2083,7 @@ export class CombatManager {
         EventBus.emit(GameEvent.ENEMY_DIED, {
           enemyId: enemy.state.id,
           enemyIndex: this.enemies.indexOf(enemy),
+          flashBeforeDust,
         });
         enemy.state._deathProcessed = true;
 
@@ -2087,6 +2104,7 @@ export class CombatManager {
           for (const alive of this.aliveEnemies()) {
             const { hpLost } = alive.takeDamage(explosionDmg);
             this.damageDealtThisFight += hpLost;
+            this.emitEnemyDamaged(alive, hpLost);
             if (hpLost > 0) {
               this.floatOnEnemy(alive, `-${hpLost}`, '#D06060');
             }
@@ -2125,6 +2143,7 @@ export class CombatManager {
         this.emitEnemyHpChanges();
       }
     }
+    this.preserveTargetIfAlive(targetBeforeDeaths);
   }
 
   private applyResourceOutput(output: ResourceOutput, isCrit = false, isSingle = false): void {
@@ -2692,12 +2711,7 @@ export class CombatManager {
       this.enemies.push(enemy);
     }
 
-    // Restore target index so summoning doesn't shift the player's target
-    if (prevTarget) {
-      const alive = this.aliveEnemies();
-      const restored = alive.indexOf(prevTarget);
-      if (restored >= 0) this.targetedEnemyIndex = restored;
-    }
+    this.preserveTargetIfAlive(prevTarget);
   }
 
   /** Execute a single structured move action from an enemy's intent. */
@@ -2963,6 +2977,7 @@ export class CombatManager {
     if (thornsDamage > 0) {
       const { hpLost } = enemy.takeDamage(thornsDamage);
       this.damageDealtThisFight += hpLost;
+      this.emitEnemyDamaged(enemy, hpLost);
       this.handleBountyKill(enemy);
       this.processEnemyDeaths(null);
       EventBus.emit(GameEvent.ENEMY_HP_CHANGE, { ...enemy.state });
@@ -2971,6 +2986,7 @@ export class CombatManager {
     if (blocked > 0 && this.traits.blockReflectsDamage()) {
       const reflected = enemy.takeDamage(blocked).hpLost;
       this.damageDealtThisFight += reflected;
+      this.emitEnemyDamaged(enemy, reflected);
       this.floatOnEnemy(enemy, `-${reflected}`, '#6888A0');
       this.handleBountyKill(enemy);
       this.processEnemyDeaths(null);
@@ -3032,7 +3048,7 @@ export class CombatManager {
     if (alive.every((e) => e.summoned)) {
       // Kill remaining summoned enemies
       for (const e of alive) e.state.isDead = true;
-      this.processEnemyDeaths(null);
+      this.processEnemyDeaths(null, { flashBeforeDust: false });
       return true;
     }
     return false;
@@ -3050,6 +3066,7 @@ export class CombatManager {
       this.board.setDeadeyeMode(false);
       this.clearDeadeyeCursor();
       EventBus.emit(GameEvent.DEADEYE_ENDED);
+      EventBus.emit(GameEvent.ABILITY_ENDED, { character: this.character });
     }
 
     this.setPhase('combat-end');
@@ -3172,7 +3189,39 @@ export class CombatManager {
 
   private getTargetedAliveEnemy(): Enemy | null {
     const alive = this.aliveEnemies();
-    return alive[this.targetedEnemyIndex] ?? alive[0] ?? null;
+    const matchingTarget = this.targetedEnemyId
+      ? alive.find((enemy) => enemy.state.id === this.targetedEnemyId)
+      : null;
+    const target = matchingTarget ?? alive[this.targetedEnemyIndex] ?? alive[0] ?? null;
+    if (target) {
+      this.targetedEnemyIndex = alive.indexOf(target);
+      this.targetedEnemyId = target.state.id;
+    } else {
+      this.targetedEnemyIndex = 0;
+      this.targetedEnemyId = null;
+    }
+    return target;
+  }
+
+  private preserveTargetIfAlive(target: Enemy | null): void {
+    const alive = this.aliveEnemies();
+    if (target && !target.state.isDead) {
+      const idx = alive.indexOf(target);
+      if (idx >= 0) {
+        this.targetedEnemyIndex = idx;
+        this.targetedEnemyId = target.state.id;
+        return;
+      }
+    }
+    if (alive.length === 0) {
+      this.targetedEnemyIndex = 0;
+      this.targetedEnemyId = null;
+    } else if (this.targetedEnemyIndex >= alive.length) {
+      this.targetedEnemyIndex = 0;
+      this.targetedEnemyId = alive[0].state.id;
+    } else {
+      this.targetedEnemyId = alive[this.targetedEnemyIndex]?.state.id ?? null;
+    }
   }
 
   private isBossEnemy(enemy: Enemy): boolean {

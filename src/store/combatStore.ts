@@ -177,19 +177,32 @@ export const useCombatStore = create<CombatStore>((set) => ({
     }),
 
   setPlayerHealth: (current, max) =>
-    set({ playerHealth: current, playerMaxHealth: max }),
+    set((state) => (
+      state.playerHealth === current && state.playerMaxHealth === max
+        ? state
+        : { playerHealth: current, playerMaxHealth: max }
+    )),
 
-  setGold: (gold) => set({ gold }),
+  setGold: (gold) => set((state) => (state.gold === gold ? state : { gold })),
 
   setSwaps: (remaining, total) =>
-    set({ swapsRemaining: remaining, swapsPerTurn: total }),
+    set((state) => (
+      state.swapsRemaining === remaining && state.swapsPerTurn === total
+        ? state
+        : { swapsRemaining: remaining, swapsPerTurn: total }
+    )),
 
   setAbilityCharge: (charge, threshold) =>
-    set({ abilityCharge: charge, abilityThreshold: threshold }),
+    set((state) => (
+      state.abilityCharge === charge && state.abilityThreshold === threshold
+        ? state
+        : { abilityCharge: charge, abilityThreshold: threshold }
+    )),
 
-  setTargetedEnemy: (index) => set({ targetedEnemyIndex: index }),
+  setTargetedEnemy: (index) =>
+    set((state) => (state.targetedEnemyIndex === index ? state : { targetedEnemyIndex: index })),
 
-  setCombo: (combo) => set({ comboCount: combo }),
+  setCombo: (combo) => set((state) => (state.comboCount === combo ? state : { comboCount: combo })),
 
   setAct: (act) => set({ currentAct: act }),
 

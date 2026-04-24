@@ -55,7 +55,7 @@ export const KEYWORDS: Record<string, KeywordDefinition> = {
   },
   Ready: {
     color: '#D4A030',
-    description: 'Your next non-cascade attack deals 50% more damage. (max 1)',
+    description: 'Your next non-cascade attack deals 50% more damage. Consumes 1 stack.',
   },
   Duel: {
     color: '#D06060',
@@ -95,7 +95,7 @@ export const KEYWORDS: Record<string, KeywordDefinition> = {
   },
   Obsidian: {
     color: '#8B5CF6',
-    description: 'Deal 1 damage and gain 1 block per tile. Cannot be swapped out for another tile.',
+    description: 'Deal 10 damage and gain 10 block per tile.',
   },
   Cheese: {
     color: '#E8C040',

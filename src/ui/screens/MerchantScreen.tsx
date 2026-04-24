@@ -639,7 +639,7 @@ export const MerchantScreen = memo(function MerchantScreen() {
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div>
-      <h3 className="text-xs text-stone-500 uppercase tracking-wider mb-1.5">{title}</h3>
+      <h3 className="merchant-section-label text-[10px] text-stone-500 font-bold uppercase tracking-wider mb-1.5">{title}</h3>
       <div className="flex gap-2">{children}</div>
     </div>
   );

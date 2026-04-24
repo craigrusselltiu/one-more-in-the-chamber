@@ -142,9 +142,9 @@ I want just the text prompt that I can copy straight into Gemini. No formatting,
 - Base HP: 62
 - Start of fight: Bomb 1
 - Moves:
-    - Attack 11, Bomb 2
+    - Attack 11, Bomb 1
     - Multi-attack 3x3
-    - Bomb 3
+    - Bomb 2
     - Attack 8, Bomb 1, Bury 3
 
 ### Mining Canary
@@ -246,7 +246,7 @@ I want just the text prompt that I can copy straight into Gemini. No formatting,
 ## Normal Enemies Pool
 
 ### Train Guard
-- Base HP: 111
+- Base HP: 119
 - Start of fight: Lock 1 column
 - Moves:
     - Attack 14, Lock 1 row
@@ -256,7 +256,7 @@ I want just the text prompt that I can copy straight into Gemini. No formatting,
 - NOTE: The first move he does is always Block 25, Lock 1 row
 
 ### Guard Dog
-- Base HP: 58
+- Base HP: 62
 - Moves:
     - Attack 12
     - Multi-attack 4x2
@@ -264,7 +264,7 @@ I want just the text prompt that I can copy straight into Gemini. No formatting,
     - Attack 6, Gain 2 Rageful
 
 ### Hellfire Preacher
-- Base HP: 97
+- Base HP: 104
 - Start of fight: Gain 3 Grace
 - Moves:
     - Multi-attack 4x2, Block 16
@@ -273,7 +273,7 @@ I want just the text prompt that I can copy straight into Gemini. No formatting,
     - Block 26, Apply 1 Terrified
 
 ### Hangman
-- Base HP: 159
+- Base HP: 170
 - Start of fight: Apply 4 Terrified
 - Moves:
     - Lock 7, Suppress 2
@@ -283,7 +283,7 @@ I want just the text prompt that I can copy straight into Gemini. No formatting,
 - NOTE: This enemy always goes down the movelist in order exactly from the top, then repeats.
 
 ### Corrupt Deputy
-- Base HP: 138
+- Base HP: 148
 - Moves:
     - Attack 18, Lock 5
     - Attack 16, Suppress 1
@@ -294,16 +294,16 @@ I want just the text prompt that I can copy straight into Gemini. No formatting,
 ## Elite Enemies Pool
 
 ### Saloon Brawler
-- Base HP: 263
+- Base HP: 281
 - Moves:
     - Multi-attack 11x2
-    - Multi-attack 4x2, Gain 3 Rageful
+    - Multi-attack 4x2, Gain 5 Rageful
     - Attack 24
     - Attack 6x2, Clear ALL statuses
-- NOTE: The first move he does is always Multi-attack 4x2, Gain 3 Rageful
+- NOTE: The first move he does is always Multi-attack 4x2, Gain 5 Rageful
 
 ### Sheriff's Shadow
-- Base HP: 255
+- Base HP: 273
 - Start of fight: Gain 30 block, Gain 3 Dead Man Walking
 - Moves:
     - Attack 12, Block 12, Suppress 1
@@ -314,7 +314,7 @@ I want just the text prompt that I can copy straight into Gemini. No formatting,
 ## Outlaw King
 
 ### Outlaw King  (Act 3)
-- Base HP: 321
+- Base HP: 343
 - Starts with 2 Bandits (with full HP, not 1/3)
 - Start of fight: Apply 4 Terrified, Gain 2 Cloak, Gain 99 Dead Man Walking
 - Moves:
@@ -336,7 +336,7 @@ I want just the text prompt that I can copy straight into Gemini. No formatting,
 ## Bosses
 
 ### "Iron Eye" Isabella
-- Base HP: 354
+- Base HP: 379
 - Start of fight: Lock 2 rows
 - Passive: Gain 10 block per turn
 - When HP drops below 50%, Gain 5 Rageful, 1 Invulnerable, Apply 1 Terrified, Apply 1 Vulnerable. Sprite changes to ironeye_alt.

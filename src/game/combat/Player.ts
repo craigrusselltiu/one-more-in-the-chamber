@@ -188,15 +188,15 @@ export class Player {
     return mult;
   }
 
-  /** Add Ready stacks (max 1). Next non-cascade attack deals 50% more damage. */
+  /** Add Ready stacks. Each stack powers one non-cascade attack. */
   addReady(stacks: number): void {
-    this.readyStacks = Math.min(1, this.readyStacks + stacks);
+    this.readyStacks = Math.max(0, this.readyStacks + stacks);
   }
 
-  /** Consume Ready on non-cascade attack. Returns 1.5 if ready, 1.0 otherwise. */
+  /** Consume one Ready stack on non-cascade attack. Returns 1.5 if ready, 1.0 otherwise. */
   consumeReady(): number {
     if (this.readyStacks <= 0) return 1.0;
-    this.readyStacks = 0;
+    this.readyStacks--;
     return 1.5;
   }
 

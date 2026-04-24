@@ -37,3 +37,11 @@ todo:
 - NPCs
 - dialogue
 - update Hardened - should be every damage taken reduces hardened. when 0 become incincible.
+- change UI and font
+- update artifacts
+- update traits
+- update enemies
+- add enemies
+- add artifacts
+- add character
+- add more sound effects, ult animation

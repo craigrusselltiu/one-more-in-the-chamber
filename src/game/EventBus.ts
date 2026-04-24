@@ -56,6 +56,8 @@ export const GameEvent = {
   ENEMY_DIED: 'enemy:died',
   DEADEYE_ACTIVATED: 'deadeye:activated',
   DEADEYE_ENDED: 'deadeye:ended',
+  ABILITY_STARTED: 'ability:started',
+  ABILITY_ENDED: 'ability:ended',
   CONSUMABLE_USED: 'consumable:used',
   /** A one-shot artifact effect has been spent (e.g. Shed Skin triggered). Payload: artifact id. */
   ARTIFACT_USED: 'artifact:used',
@@ -83,6 +85,8 @@ export const GameEvent = {
   PLAYER_HIT: 'vfx:player-hit',
   /** Player dealt damage to an enemy (for player->enemy line VFX). Payload: enemyId */
   PLAYER_DAMAGE_LINE: 'vfx:player-damage-line',
+  /** Enemy took HP damage and should flash. Payload: enemyId */
+  ENEMY_DAMAGED: 'vfx:enemy-damaged',
 
   // Board input -> CombatManager
   SWAP_REQUESTED: 'board:swap-requested',
@@ -138,11 +142,14 @@ export interface EventPayloads {
   [GameEvent.RUN_ENDED]: [completed: boolean];
   [GameEvent.COMBAT_SCENE_RUN]: [payload: { config?: CombatConfig; snapshot?: CombatSnapshot }];
   [GameEvent.COMBAT_SCENE_STOP]: [];
-  [GameEvent.ENEMY_DIED]: [payload: { enemyId: string; enemyIndex: number }];
+  [GameEvent.ENEMY_DIED]: [payload: { enemyId: string; enemyIndex: number; flashBeforeDust?: boolean }];
   [GameEvent.DEADEYE_ACTIVATED]: [];
   [GameEvent.DEADEYE_ENDED]: [];
+  [GameEvent.ABILITY_STARTED]: [payload: { character: string }];
+  [GameEvent.ABILITY_ENDED]: [payload: { character: string }];
   [GameEvent.PLAYER_ATTACK]: [];
   [GameEvent.PLAYER_HIT]: [];
   [GameEvent.ARTIFACT_USED]: [artifactId: string];
   [GameEvent.PLAYER_DAMAGE_LINE]: [enemyId: string];
+  [GameEvent.ENEMY_DAMAGED]: [enemyId: string];
 }

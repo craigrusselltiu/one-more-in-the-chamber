@@ -5,11 +5,11 @@ import { CutsceneScene } from './scenes/CutsceneScene';
 
 /**
  * Internal Phaser resolution (16:9).
- * Larger than the React UI overlay (960x540 / 2 = 480x270) so the board
- * (8x32 = 256px) takes proportionally less space while keeping 2x sprites.
+ * Matches the React UI overlay exactly (960x540) so every canvas pixel
+ * maps 1:1 to a screen pixel -- no upscaling, no sub-pixel blur.
  */
-export const GAME_WIDTH = 640;
-export const GAME_HEIGHT = 360;
+export const GAME_WIDTH = 960;
+export const GAME_HEIGHT = 540;
 
 export const gameConfig: Phaser.Types.Core.GameConfig = {
   type: Phaser.AUTO,

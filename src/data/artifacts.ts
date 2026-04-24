@@ -578,7 +578,7 @@ export const ARTIFACTS: ArtifactDefinition[] = [
     name: "Death's Glare",
     description: 'They saw what was coming.',
     tags: ['undertaker', 'dead_man_walking'],
-    effect: 'On combat start, gain 3 Dead Man Walking, then apply 3 Vulnerable and 3 Terrified to ALL enemies.',
+    effect: 'On combat start, gain 3 Dead Man Walking and 3 Ready, then apply 3 Vulnerable and 3 Terrified to ALL enemies.',
     rarity: 'legendary',
   },
   {

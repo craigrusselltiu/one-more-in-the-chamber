@@ -276,10 +276,9 @@ NOTE: The tile pool for Acts 2, 3, and also the shop should be the Starter Tiles
 
 ### Obsidian
 - Flavor text: "Forged in fire, cooled in blood."
-- Behaviour text: Deal 1 damage and gain 1 block per tile. Cannot be swapped out for another tile.
-- Upgrade text: +1 damage per tile per level, +1 block per tile per level
-- Resource formula: (1 damage + level * 1) * tiles, (1 block + level * 1) * tiles
-- Single formula: 1 damage + level * 1, 1 block + level * 1
+- Behaviour text: Deal 10 damage and gain 10 block per tile.
+- Resource formula: 10 damage * tiles, 10 block * tiles
+- Single formula: 10 damage, 10 block
 
 ### Cheese
 - Flavor text: "Aged long enough to fight back."

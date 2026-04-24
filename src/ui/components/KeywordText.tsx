@@ -334,8 +334,7 @@ export function buildTileDescription(type: TileType, upgradeLevel: number): Reac
       return [...seg('Gain ', false), ...seg(`${v}`, upgraded), ...seg(' block per tile. Heal 1 per tile.', false)];
     }
     case 'obsidian': {
-      const v = def.baseValue + bonus;
-      return [...seg('Deal ', false), ...seg(`${v}`, upgraded), ...seg(' damage and gain ', false), ...seg(`${v}`, upgraded), ...seg(' block per tile. Cannot be swapped out for another tile.', false)];
+      return [...seg('Deal 10 damage and gain 10 block per tile.', false)];
     }
 
     // --- No upgrade / special ---
@@ -468,13 +467,7 @@ export function buildUpgradePreview(type: TileType, currentLevel: number): React
     case 'cheese':
       return [...seg('Gain ', false), ...arrowUpgrade(oldVal, newVal), ...seg(' block per tile. Heal 1 per tile.', false)];
     case 'obsidian':
-      return [
-        ...seg('Deal ', false),
-        <span key="ob-dmg">{oldVal} <O>{'\u2192'} {newVal}</O></span>,
-        ...seg(' damage and gain ', false),
-        <span key="ob-blk">{oldVal} <O>{'\u2192'} {newVal}</O></span>,
-        ...seg(' block per tile. Cannot be swapped out for another tile.', false),
-      ];
+      return [...seg('Deal 10 damage and gain 10 block per tile.', false)];
 
     default:
       return colorizeKeywords(def.description);

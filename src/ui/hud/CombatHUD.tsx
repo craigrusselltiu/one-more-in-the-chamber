@@ -13,10 +13,10 @@ import { EventBus, GameEvent } from '../../game/EventBus';
  *
  * TopBar + ArtifactBar are rendered by App.tsx for all in-run screens.
  *
- * The board is 224px wide centered in 480px game width.
- * Board left edge: 128px, right edge: 352px.
- * Player panel centered between left screen edge (0) and board left (128).
- * Enemy panel centered between board right (352) and right screen edge (480).
+ * The board is 432px wide centered in 960px canvas (1:1 with UI).
+ * Board left in UI: ~264px, right: ~696px.
+ * Player panel centered between left screen edge (0) and board left.
+ * Enemy panel centered between board right and right screen edge.
  *
  * All panels use pointer-events-auto so they're clickable;
  * the board area passes through to Phaser.
@@ -64,12 +64,11 @@ export const CombatHUD = memo(function CombatHUD() {
         </div>
       </div>
 
-      {/* Ability meter bar: container centered between screen-left (x=0) and
-          board-left (~x=264 in the 960-wide UI, since Phaser is 640 wide and
-          the 288-wide board is centered -> boardX=176 scaled 1.5x = 264). */}
+      {/* Ability meter bar: centered between screen-left (x=0) and
+          board-left (~x=264 in the 960-wide UI). */}
       <div
         className="absolute pointer-events-auto flex items-center"
-        style={{ bottom: 48, left: 150, transform: 'translateX(-50%)' }}
+        style={{ bottom: 40, left: 144, transform: 'translateX(-50%)' }}
       >
         <AbilityMeter />
       </div>

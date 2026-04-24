@@ -97,7 +97,7 @@ export function playRevolverSpin(): void {
 
 export function playDeadeyeActivate(): void {
   play('sfx_revolver_cock', 0.45);
-  play('sfx_deadeye_activate', 0.5);
+  play('sfx_deadeye_activate', 0.25);
 }
 
 export function playHolster(): void {

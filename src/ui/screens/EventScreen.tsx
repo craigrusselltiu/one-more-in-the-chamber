@@ -316,15 +316,15 @@ export const EventScreen = memo(function EventScreen() {
         return;
       }
       case 'vulture_bury': {
-        const heal = adjustHeal(run, 16);
+        const heal = adjustHeal(run, 11);
         syncHealth(Math.min(run.maxHealth, run.health + heal), run.maxHealth);
         gainGold(33);
         finishChoice(choice);
         return;
       }
       case 'preacher_confess': {
-        if (run.gold < 66) return;
-        updateGold(-66);
+        if (run.gold < 100) return;
+        updateGold(-100);
         const missing = run.maxHealth - run.health;
         const heal = adjustHeal(run, missing);
         syncHealth(run.health + heal, run.maxHealth);
@@ -333,7 +333,7 @@ export const EventScreen = memo(function EventScreen() {
         return;
       }
       case 'preacher_draw': {
-        gainGold(166);
+        gainGold(146);
         const corrupt = pickArtifactByTag(run, 'corrupt', Math.random);
         if (corrupt) addArtifact({ id: corrupt.id, tags: corrupt.tags });
         const preacher = pickArtifactByTag(run, 'preacher', Math.random);
@@ -342,7 +342,7 @@ export const EventScreen = memo(function EventScreen() {
         return;
       }
       case 'campfire_sit': {
-        const heal = adjustHeal(run, 23);
+        const heal = adjustHeal(run, 20);
         syncHealth(Math.min(run.maxHealth, run.health + heal), run.maxHealth);
         finishChoice(choice);
         return;
@@ -389,14 +389,20 @@ export const EventScreen = memo(function EventScreen() {
         return;
       }
       case 'medicine_whiskey': {
-        if (run.gold < 10) return;
-        updateGold(-10);
+        if (run.gold < 15) return;
+        updateGold(-15);
         addConsumable({ id: 'strong_whiskey' });
         finishChoice(choice);
         return;
       }
+      case 'medicine_panacea': {
+        if (run.gold < 30) return;
+        updateGold(-30);
+        addConsumable({ id: 'panacea' });
+        finishChoice(choice);
+        return;
+      }
       case 'medicine_threaten': {
-        addConsumable({ id: 'bandage' });
         addConsumable({ id: 'snake_oil' });
         gainGold(129);
         useRunStore.getState().setActMerchantSurcharge(0.20);
@@ -411,7 +417,7 @@ export const EventScreen = memo(function EventScreen() {
         return;
       }
       case 'saloon_drink': {
-        const heal = adjustHeal(run, 28);
+        const heal = adjustHeal(run, 18);
         syncHealth(Math.min(run.maxHealth, run.health + heal), run.maxHealth);
         const current = run.pendingNextFightSwapBonus ?? 0;
         useRunStore.getState().setPendingNextFightSwapBonus(current - 1);
@@ -467,9 +473,10 @@ export const EventScreen = memo(function EventScreen() {
 
   const isChoiceDisabled = (choice: EventChoice): boolean => {
     if (choice.effect === 'play_card_game') return run.gold < PLAY_COST;
-    if (choice.effect === 'preacher_confess') return run.gold < 66;
+    if (choice.effect === 'preacher_confess') return run.gold < 100;
     if (choice.effect === 'campfire_trade') return run.consumables.length === 0;
-    if (choice.effect === 'medicine_whiskey') return run.gold < 10;
+    if (choice.effect === 'medicine_whiskey') return run.gold < 15;
+    if (choice.effect === 'medicine_panacea') return run.gold < 30;
     return false;
   };
 
@@ -491,8 +498,7 @@ export const EventScreen = memo(function EventScreen() {
         return;
       case 'max_hp':
         if (run) {
-          const heal = adjustHeal(run, reward.amount);
-          syncHealth(run.health + heal, run.maxHealth + reward.amount);
+          syncHealth(run.health, run.maxHealth + reward.amount);
         }
         return;
       case 'heal_full':

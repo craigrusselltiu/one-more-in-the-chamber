@@ -71,8 +71,9 @@ const ENEMY_SPRITE_SCALE: Record<string, number> = {
 const OVERSIZE_SCALE_THRESHOLD = 2.0;
 const BASE_SPRITE_SIZE = 96;
 const DEATH_ANIMATION_MS = 720;
+const DAMAGE_FLASH_MS = 300;
 const DUST_PARTICLE_LIFETIME = 0.38;
-const DUST_SAMPLE_STEP = 1;
+const DUST_SAMPLE_STEP = 2;
 let nextDeathEffectId = 0;
 
 interface EnemyDeathEffect {
@@ -81,6 +82,7 @@ interface EnemyDeathEffect {
   slotIndex: number;
   spriteFile: string;
   scale: number;
+  flashBeforeDust: boolean;
 }
 
 /** Resolve sprite filename for an enemy, picking a variant if available. */
@@ -171,7 +173,7 @@ export const EnemyTargeting = memo(function EnemyTargeting() {
   useEffect(() => {
     const handler = (...args: unknown[]) => {
       if (!juiceAnimationsEnabled) return;
-      const payload = args[0] as { enemyId: string; enemyIndex: number };
+      const payload = args[0] as { enemyId: string; enemyIndex: number; flashBeforeDust?: boolean };
       const slotIndex = (() => {
         const byId = slots.findIndex((slotEnemy) => slotEnemy?.id === payload.enemyId);
         return byId >= 0 ? byId : getSlotIndexForEnemyIndex(payload.enemyIndex, hasOversize);
@@ -187,6 +189,7 @@ export const EnemyTargeting = memo(function EnemyTargeting() {
         slotIndex,
         spriteFile,
         scale,
+        flashBeforeDust: payload.flashBeforeDust ?? true,
       };
       setDyingEnemyIds((prev) => (prev.includes(payload.enemyId) ? prev : [...prev, payload.enemyId]));
       setDeathEffects((prev) => [...prev, effect]);
@@ -228,6 +231,7 @@ export const EnemyTargeting = memo(function EnemyTargeting() {
                 key={effect.id}
                 spriteFile={effect.spriteFile}
                 scale={effect.scale}
+                flashBeforeDust={effect.flashBeforeDust}
                 onComplete={() => {
                   setDeathEffects((prev) => prev.filter((entry) => entry.id !== effect.id));
                   setDyingEnemyIds((prev) => prev.filter((id) => id !== effect.enemyId));
@@ -257,6 +261,9 @@ const EnemySlot = memo(function EnemySlot({
   preserveDeadSprite = false,
 }: EnemySlotProps) {
   const [shaking, setShaking] = useState(false);
+  const [damageFlashing, setDamageFlashing] = useState(false);
+  const damageFlashTimeouts = useRef<number[]>([]);
+  const juiceAnimationsEnabled = useSettingsStore((s) => s.juiceAnimationsEnabled);
 
   useEffect(() => {
     const handler = (...args: unknown[]) => {
@@ -268,6 +275,29 @@ const EnemySlot = memo(function EnemySlot({
     EventBus.on(GameEvent.ENEMY_ACTION, handler);
     return () => { EventBus.off(GameEvent.ENEMY_ACTION, handler); };
   }, [enemy?.id]);
+
+  useEffect(() => {
+    const clearDamageFlashTimeouts = () => {
+      for (const timeoutId of damageFlashTimeouts.current) window.clearTimeout(timeoutId);
+      damageFlashTimeouts.current = [];
+    };
+
+    const handler = (...args: unknown[]) => {
+      if (!juiceAnimationsEnabled || args[0] !== enemy?.id) return;
+      clearDamageFlashTimeouts();
+      setDamageFlashing(false);
+      damageFlashTimeouts.current.push(window.setTimeout(() => {
+        setDamageFlashing(true);
+        damageFlashTimeouts.current.push(window.setTimeout(() => setDamageFlashing(false), DAMAGE_FLASH_MS));
+      }, 0));
+    };
+
+    EventBus.on(GameEvent.ENEMY_DAMAGED, handler);
+    return () => {
+      EventBus.off(GameEvent.ENEMY_DAMAGED, handler);
+      clearDamageFlashTimeouts();
+    };
+  }, [enemy?.id, juiceAnimationsEnabled]);
 
   const handleClick = useCallback(() => {
     if (enemy && !enemy.isDead) {
@@ -336,6 +366,7 @@ const EnemySlot = memo(function EnemySlot({
     <button
       onClick={handleClick}
       data-no-click-sfx
+      data-no-hover-sfx
       className="relative flex flex-col items-center text-center px-1 py-0.5 pointer-events-auto outline-none cursor-pointer"
       style={{
         width: 116,
@@ -377,6 +408,24 @@ const EnemySlot = memo(function EnemySlot({
                 transformOrigin: 'bottom center',
               }}
             />
+            {damageFlashing && (
+              <img
+                src={`${import.meta.env.BASE_URL}assets/sprites/${spriteFile}`}
+                alt=""
+                aria-hidden
+                className="enemy-damage-flash-overlay absolute top-0 left-0"
+                style={{
+                  width: 96,
+                  height: 96,
+                  imageRendering: 'pixelated',
+                  objectFit: 'contain',
+                  transform: spriteScale
+                    ? `scale(${spriteScale})`
+                    : undefined,
+                  transformOrigin: 'bottom center',
+                }}
+              />
+            )}
             {isTargeted && (
               // Duplicate sprite passed through the SVG outline filter — only the
               // 2px alpha-aware ring is rendered, never the body, so the breathing
@@ -436,6 +485,7 @@ const EnemySlot = memo(function EnemySlot({
 interface EnemyDeathDustProps {
   spriteFile: string;
   scale: number;
+  flashBeforeDust: boolean;
   onComplete: () => void;
 }
 
@@ -450,18 +500,93 @@ interface DustParticle {
   activation: number;
 }
 
+interface DustPixel {
+  x: number;
+  y: number;
+  color: string;
+  activation: number;
+}
+
+interface DustSource {
+  sourceCanvas: HTMLCanvasElement;
+  pixels: DustPixel[];
+}
+
+const dustSourceCache = new Map<string, Promise<DustSource>>();
+
+function loadDustSource(spriteFile: string): Promise<DustSource> {
+  const cached = dustSourceCache.get(spriteFile);
+  if (cached) return cached;
+
+  const promise = new Promise<DustSource>((resolve, reject) => {
+    const image = new Image();
+    image.decoding = 'async';
+    image.onload = () => {
+      const sourceCanvas = document.createElement('canvas');
+      sourceCanvas.width = BASE_SPRITE_SIZE;
+      sourceCanvas.height = BASE_SPRITE_SIZE;
+      const sourceCtx = sourceCanvas.getContext('2d');
+      if (!sourceCtx) {
+        reject(new Error('Unable to create dust source canvas'));
+        return;
+      }
+
+      sourceCtx.clearRect(0, 0, BASE_SPRITE_SIZE, BASE_SPRITE_SIZE);
+      sourceCtx.imageSmoothingEnabled = false;
+      sourceCtx.drawImage(image, 0, 0, BASE_SPRITE_SIZE, BASE_SPRITE_SIZE);
+
+      const imageData = sourceCtx.getImageData(0, 0, BASE_SPRITE_SIZE, BASE_SPRITE_SIZE).data;
+      const pixels: DustPixel[] = [];
+      for (let y = BASE_SPRITE_SIZE - 1; y >= 0; y -= DUST_SAMPLE_STEP) {
+        for (let x = 0; x < BASE_SPRITE_SIZE; x += DUST_SAMPLE_STEP) {
+          const index = (y * BASE_SPRITE_SIZE + x) * 4;
+          const alpha = imageData[index + 3] ?? 0;
+          if (alpha < 120) continue;
+          pixels.push({
+            x,
+            y,
+            color: `rgba(${imageData[index]}, ${imageData[index + 1]}, ${imageData[index + 2]}, ${alpha / 255})`,
+            activation: Math.max(0, 1 - ((y + DUST_SAMPLE_STEP) / BASE_SPRITE_SIZE)),
+          });
+        }
+      }
+
+      resolve({ sourceCanvas, pixels });
+    };
+    image.onerror = reject;
+    image.src = `${import.meta.env.BASE_URL}assets/sprites/${spriteFile}`;
+  });
+
+  dustSourceCache.set(spriteFile, promise);
+  return promise;
+}
+
 const EnemyDeathDust = memo(function EnemyDeathDust({
   spriteFile,
   scale,
+  flashBeforeDust,
   onComplete,
 }: EnemyDeathDustProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const onCompleteRef = useRef(onComplete);
+  const completedRef = useRef(false);
   const [ready, setReady] = useState(false);
+  const [dustStarted, setDustStarted] = useState(!flashBeforeDust);
 
   useEffect(() => {
-    const finishId = setTimeout(onComplete, DEATH_ANIMATION_MS + 80);
-    return () => clearTimeout(finishId);
+    onCompleteRef.current = onComplete;
   }, [onComplete]);
+
+  useEffect(() => {
+    const finish = () => {
+      if (completedRef.current) return;
+      completedRef.current = true;
+      onCompleteRef.current();
+    };
+    const flashDelay = flashBeforeDust ? DAMAGE_FLASH_MS : 0;
+    const finishId = window.setTimeout(finish, flashDelay + DEATH_ANIMATION_MS + 120);
+    return () => window.clearTimeout(finishId);
+  }, [flashBeforeDust]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -472,47 +597,23 @@ const EnemyDeathDust = memo(function EnemyDeathDust({
     let frameId = 0;
     let cancelled = false;
 
-    const image = new Image();
-    image.decoding = 'async';
-    image.src = `${import.meta.env.BASE_URL}assets/sprites/${spriteFile}`;
+    let startTimeout = 0;
 
-    const startAnimation = () => {
+    const startAnimation = (source: DustSource) => {
       if (cancelled) return;
 
-      const sourceCanvas = document.createElement('canvas');
-      sourceCanvas.width = BASE_SPRITE_SIZE;
-      sourceCanvas.height = BASE_SPRITE_SIZE;
-      const sourceCtx = sourceCanvas.getContext('2d');
-      if (!sourceCtx) return;
-      sourceCtx.clearRect(0, 0, BASE_SPRITE_SIZE, BASE_SPRITE_SIZE);
-      sourceCtx.imageSmoothingEnabled = false;
-      sourceCtx.drawImage(image, 0, 0, BASE_SPRITE_SIZE, BASE_SPRITE_SIZE);
       setReady(true);
 
-      const imageData = sourceCtx.getImageData(0, 0, BASE_SPRITE_SIZE, BASE_SPRITE_SIZE).data;
-      const particles: DustParticle[] = [];
-
-      for (let y = BASE_SPRITE_SIZE - 1; y >= 0; y -= DUST_SAMPLE_STEP) {
-        for (let x = 0; x < BASE_SPRITE_SIZE; x += DUST_SAMPLE_STEP) {
-          const index = (y * BASE_SPRITE_SIZE + x) * 4;
-          const alpha = imageData[index + 3] ?? 0;
-          if (alpha < 120) continue;
-
-          const activation = Math.max(0, 1 - ((y + DUST_SAMPLE_STEP) / BASE_SPRITE_SIZE));
-          particles.push({
-            x,
-            y,
-            color: `rgba(${imageData[index]}, ${imageData[index + 1]}, ${imageData[index + 2]}, ${alpha / 255})`,
-            size: Math.random() < 0.7 ? 2 : 1,
-            driftX: (Math.random() - 0.5) * 16,
-            driftY: 8 + Math.random() * 18,
-            spin: (Math.random() - 0.5) * 10,
-            activation,
-          });
-        }
-      }
+      const particles: DustParticle[] = source.pixels.map((pixel) => ({
+        ...pixel,
+        size: Math.random() < 0.7 ? 2 : 1,
+        driftX: (Math.random() - 0.5) * 16,
+        driftY: 8 + Math.random() * 18,
+        spin: (Math.random() - 0.5) * 10,
+      }));
 
       const start = performance.now();
+      setDustStarted(true);
       const draw = (now: number) => {
         if (cancelled) return;
 
@@ -525,7 +626,7 @@ const EnemyDeathDust = memo(function EnemyDeathDust({
 
         if (cutoffY > 0) {
           ctx.drawImage(
-            sourceCanvas,
+            source.sourceCanvas,
             0,
             0,
             BASE_SPRITE_SIZE,
@@ -562,17 +663,21 @@ const EnemyDeathDust = memo(function EnemyDeathDust({
       frameId = window.requestAnimationFrame(draw);
     };
 
-    if (image.complete && image.naturalWidth > 0) {
-      startAnimation();
-    } else {
-      image.onload = startAnimation;
-    }
+    loadDustSource(spriteFile)
+      .then((source) => {
+        if (cancelled) return;
+        startTimeout = window.setTimeout(() => startAnimation(source), flashBeforeDust ? DAMAGE_FLASH_MS : 0);
+      })
+      .catch(() => {
+        if (!cancelled) setReady(true);
+      });
 
     return () => {
       cancelled = true;
+      window.clearTimeout(startTimeout);
       window.cancelAnimationFrame(frameId);
     };
-  }, [spriteFile]);
+  }, [flashBeforeDust, spriteFile]);
 
   return (
     <div
@@ -596,6 +701,7 @@ const EnemyDeathDust = memo(function EnemyDeathDust({
           transform: `scale(${Math.min(1.2, Math.max(0.9, scale))})`,
           transformOrigin: 'center',
           animation: `enemy-death-shadow ${DEATH_ANIMATION_MS}ms ease-out forwards`,
+          animationDelay: flashBeforeDust ? `${DAMAGE_FLASH_MS}ms` : undefined,
         }}
       />
       {!ready && (
@@ -606,6 +712,22 @@ const EnemyDeathDust = memo(function EnemyDeathDust({
           style={{
             position: 'absolute',
             inset: 0,
+            width: BASE_SPRITE_SIZE,
+            height: BASE_SPRITE_SIZE,
+            imageRendering: 'pixelated',
+            objectFit: 'contain',
+            transform: `scale(${scale})`,
+            transformOrigin: 'bottom center',
+          }}
+        />
+      )}
+      {!dustStarted && flashBeforeDust && (
+        <img
+          src={`${import.meta.env.BASE_URL}assets/sprites/${spriteFile}`}
+          alt=""
+          aria-hidden
+          className="enemy-damage-flash-overlay absolute top-0 left-0"
+          style={{
             width: BASE_SPRITE_SIZE,
             height: BASE_SPRITE_SIZE,
             imageRendering: 'pixelated',

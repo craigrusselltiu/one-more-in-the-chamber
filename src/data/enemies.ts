@@ -191,9 +191,9 @@ export const ACT2_NORMAL: Record<string, EnemyDefinition> = {
     abilities: ['bomb', 'bury'],
     startOfFight: [bomb(1)],
     moves: [
-      m(atk(11), bomb(2)),
+      m(atk(11), bomb(1)),
       m(multiAtk(3, 3)),
-      m(bomb(3)),
+      m(bomb(2)),
       m(atk(8), bomb(1), bury(3)),
     ],
   },
@@ -327,7 +327,7 @@ export const ACT3_NORMAL: Record<string, EnemyDefinition> = {
   train_guard: {
     type: 'train_guard',
     name: 'Train Guard',
-    health: 111,
+    health: 119,
     minDamage: 5, maxDamage: 20,
     abilities: ['lock', 'block'],
     startOfFight: [lockCol()],
@@ -342,7 +342,7 @@ export const ACT3_NORMAL: Record<string, EnemyDefinition> = {
   guard_dog: {
     type: 'guard_dog',
     name: 'Guard Dog',
-    health: 58,
+    health: 62,
     minDamage: 4, maxDamage: 12,
     abilities: [],
     moves: [
@@ -355,7 +355,7 @@ export const ACT3_NORMAL: Record<string, EnemyDefinition> = {
   hellfire_preacher: {
     type: 'hellfire_preacher',
     name: 'Hellfire Preacher',
-    health: 97,
+    health: 104,
     minDamage: 4, maxDamage: 16,
     abilities: ['block', 'bomb', 'heal'],
     startOfFight: [gainGrace(3)],
@@ -369,7 +369,7 @@ export const ACT3_NORMAL: Record<string, EnemyDefinition> = {
   hangman: {
     type: 'hangman',
     name: 'Hangman',
-    health: 159,
+    health: 170,
     minDamage: 18, maxDamage: 34,
     abilities: ['lock', 'suppress'],
     sequential: true,
@@ -384,7 +384,7 @@ export const ACT3_NORMAL: Record<string, EnemyDefinition> = {
   corrupt_deputy: {
     type: 'corrupt_deputy',
     name: 'Corrupt Deputy',
-    health: 138,
+    health: 148,
     minDamage: 6, maxDamage: 18,
     abilities: ['lock', 'suppress', 'block', 'summon'],
     moves: [
@@ -401,13 +401,13 @@ export const ACT3_ELITE: Record<string, EnemyDefinition> = {
   saloon_brawler: {
     type: 'saloon_brawler',
     name: 'Saloon Brawler',
-    health: 263,
-    minDamage: 2, maxDamage: 20,
+    health: 281,
+    minDamage: 2, maxDamage: 24,
     abilities: [],
-    firstMove: m(multiAtk(4, 2), gainRageful(3)),
+    firstMove: m(multiAtk(4, 2), gainRageful(5)),
     moves: [
       m(multiAtk(11, 2)),
-      m(multiAtk(4, 2), gainRageful(3)),
+      m(multiAtk(4, 2), gainRageful(5)),
       m(atk(24)),
       m(multiAtk(6, 2)),  // also clears own statuses (handled by CombatManager)
     ],
@@ -415,7 +415,7 @@ export const ACT3_ELITE: Record<string, EnemyDefinition> = {
   sheriffs_shadow: {
     type: 'sheriffs_shadow',
     name: "Sheriff's Shadow",
-    health: 255,
+    health: 273,
     minDamage: 12, maxDamage: 18,
     abilities: ['block', 'suppress'],
     startOfFight: [block(30), gainDeadManWalking(3)],
@@ -466,7 +466,7 @@ export const OUTLAW_KING_ACT2: EnemyDefinition = {
 export const OUTLAW_KING_ACT3: EnemyDefinition = {
   type: 'outlaw_king',
   name: 'Outlaw King',
-  health: 321,
+  health: 343,
   minDamage: 9, maxDamage: 35,
   abilities: ['block'],
   startOfFight: [applyTerrified(4), gainCloak(2), gainDeadManWalking(99)],
@@ -481,7 +481,7 @@ export const OUTLAW_KING_ACT3: EnemyDefinition = {
 export const IRON_EYE_ISABELLA: EnemyDefinition = {
   type: 'iron_eye_isabella',
   name: '"Iron Eye" Isabella',
-  health: 354,
+  health: 379,
   minDamage: 15, maxDamage: 28,
   abilities: ['lock', 'suppress'],
   startOfFight: [lockRow(), lockRow()],

@@ -10,7 +10,6 @@ import { SHOP_ITEMS } from '../../data/shopItems';
 import { SpriteIcon } from '../components/SpriteIcon';
 import { Tooltip } from '../components/Tooltip';
 import { colorizeKeywords, buildTileDescription } from '../components/KeywordText';
-import { playHover } from '../../services/sfx';
 import type { Screen } from '../../App';
 import type { TileType } from '../../types/game';
 
@@ -197,7 +196,6 @@ export const LedgerScreen = memo(function LedgerScreen() {
             <button
               key={t.key}
               onClick={() => setTab(t.key)}
-              onMouseEnter={playHover}
               className="px-3 py-1 text-[10px] rounded-sm transition-transform"
               style={{
                 backgroundColor: active ? 'rgba(120, 53, 15, 0.85)' : 'rgba(28, 25, 23, 0.8)',
@@ -227,7 +225,6 @@ export const LedgerScreen = memo(function LedgerScreen() {
       <div className="pt-5 pb-3 flex gap-3">
         <button
           onClick={handleBack}
-          onMouseEnter={playHover}
           style={{ boxShadow: '2px 2px 1px rgba(0,0,0,0.4)', cursor: 'pointer' }}
           className="px-6 py-1.5 text-xs rounded-sm bg-stone-800 text-stone-300 hover:bg-stone-700 active:translate-y-0.5 transition-transform"
         >

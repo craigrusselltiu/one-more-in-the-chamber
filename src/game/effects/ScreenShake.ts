@@ -10,9 +10,9 @@ interface ShakeConfig {
 }
 
 const SHAKE_PRESETS: Record<ShakeIntensity, ShakeConfig> = {
-  light:  { amplitude: 1, duration: 100 },
-  medium: { amplitude: 2, duration: 150 },
-  heavy:  { amplitude: 4, duration: 250 },
+  light:  { amplitude: 2, duration: 100 },
+  medium: { amplitude: 3, duration: 150 },
+  heavy:  { amplitude: 6, duration: 250 },
 };
 
 /**

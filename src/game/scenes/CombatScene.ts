@@ -16,6 +16,9 @@ import { useSettingsStore } from '../../store/settingsStore';
 import { useCombatStore } from '../../store/combatStore';
 import { useRunStore } from '../../store/runStore';
 
+const BOARD_TOP_OFFSET = 15;
+const BOARD_Y_NUDGE = 8;
+
 /**
  * Workaround for scene restart paths not reliably passing data to create().
  * Store data before requesting a run/restart, read in create() if the
@@ -49,6 +52,8 @@ export class CombatScene extends Phaser.Scene {
   private boundOnScreenShake: (...args: unknown[]) => void;
   private boundOnTileParticles: (...args: unknown[]) => void;
   private boundOnDeadeyeShotVfx: (...args: unknown[]) => void;
+  private particleBurstWindowStart = 0;
+  private particleBurstsThisWindow = 0;
 
   constructor() {
     super({ key: 'CombatScene' });
@@ -106,6 +111,8 @@ export class CombatScene extends Phaser.Scene {
       }
 
       this.screenShake = new ScreenShake(this);
+      this.particleBurstWindowStart = 0;
+      this.particleBurstsThisWindow = 0;
 
       // Clean up EventBus listeners when scene is stopped/restarted
       this.events.once('shutdown', this.shutdown, this);
@@ -169,11 +176,7 @@ export class CombatScene extends Phaser.Scene {
       traitCounts: {},
     };
 
-    const boardSize = 8 * TILE_SIZE;
-    const boardX = Math.round((GAME_WIDTH - boardSize) / 2);
-    // Offset board below the top bar area (~10px in Phaser coords)
-    const topOffset = 10;
-    const boardY = Math.round(topOffset + (GAME_HEIGHT - topOffset - boardSize) / 2);
+    const { boardX, boardY, boardSize } = this.getBoardLayout();
 
     // Checkered grid background behind the board
     this.drawCheckerboard(boardX, boardY, boardSize);
@@ -203,11 +206,7 @@ export class CombatScene extends Phaser.Scene {
    * Rebuilds board and combat manager from serialized state.
    */
   private restoreFromSnapshot(snapshot: CombatSnapshot): void {
-    const boardSize = 8 * TILE_SIZE;
-    const boardX = Math.round((GAME_WIDTH - boardSize) / 2);
-    // Offset board below the top bar area (~10px in Phaser coords)
-    const topOffset = 10;
-    const boardY = Math.round(topOffset + (GAME_HEIGHT - topOffset - boardSize) / 2);
+    const { boardX, boardY, boardSize } = this.getBoardLayout();
 
     this.drawCheckerboard(boardX, boardY, boardSize);
 
@@ -236,6 +235,14 @@ export class CombatScene extends Phaser.Scene {
     this.board.setInputEnabled(true);
   }
 
+  private getBoardLayout(): { boardX: number; boardY: number; boardSize: number } {
+    const boardSize = 8 * TILE_SIZE;
+    const boardX = Math.round((GAME_WIDTH - boardSize) / 2);
+    const centeredY = BOARD_TOP_OFFSET + (GAME_HEIGHT - BOARD_TOP_OFFSET - boardSize) / 2;
+    const boardY = Math.round(centeredY + BOARD_Y_NUDGE);
+    return { boardX, boardY, boardSize };
+  }
+
   private onCombatEnd(...args: unknown[]): void {
     const result = args[0] as CombatResult;
     if (result.victory) {
@@ -255,7 +262,7 @@ export class CombatScene extends Phaser.Scene {
         Math.round(y + size / 2),
         'board_bg',
       );
-      bg.setDisplaySize(size + 72, size + 72);
+      bg.setDisplaySize(size + 114, size + 114);
       bg.setDepth(-2);
       // color, outerStrength, innerStrength, knockout, quality, distance
       bg.preFX?.addGlow(0x000000, 2, 0, false, 0.1, 2);
@@ -264,19 +271,17 @@ export class CombatScene extends Phaser.Scene {
     const cellSize = size / 8;
     const lightColor = 0xd2b48c; // tan
     const darkColor = 0x4a3520;  // dark brown
+    const checker = this.add.graphics().setDepth(-1);
     for (let row = 0; row < 8; row++) {
       for (let col = 0; col < 8; col++) {
         const color = (row + col) % 2 === 0 ? lightColor : darkColor;
-        this.add
-          .rectangle(
-            Math.round(x + col * cellSize + cellSize / 2),
-            Math.round(y + row * cellSize + cellSize / 2),
-            cellSize,
-            cellSize,
-            color,
-            0.3,
-          )
-          .setDepth(-1);
+        checker.fillStyle(color, 0.3);
+        checker.fillRect(
+          Math.round(x + col * cellSize),
+          Math.round(y + row * cellSize),
+          cellSize,
+          cellSize,
+        );
       }
     }
   }
@@ -328,17 +333,29 @@ export class CombatScene extends Phaser.Scene {
     const colorHex = args[2] as string;
     const color = parseInt(colorHex.replace('#', ''), 16);
 
-    // Create 4-6 tiny rectangles that fly outward and fade
-    const count = 4 + Math.floor(Math.random() * 3);
+    const now = this.time.now;
+    if (now - this.particleBurstWindowStart > 80) {
+      this.particleBurstWindowStart = now;
+      this.particleBurstsThisWindow = 0;
+    }
+    this.particleBurstsThisWindow++;
+
+    const burstCount = this.particleBurstsThisWindow;
+    const count = burstCount > 20
+      ? 1
+      : burstCount > 12
+        ? 2
+        : 4 + Math.floor(Math.random() * 3);
+
     for (let i = 0; i < count; i++) {
-      const size = Math.random() < 0.5 ? 2 : 1;
+      const size = Math.random() < 0.5 ? 3 : 2;
       const particle = this.add
         .rectangle(Math.round(x), Math.round(y), size, size, color, 1)
         .setDepth(5);
 
       // Random direction + distance
       const angle = (Math.PI * 2 * i) / count + (Math.random() - 0.5) * 0.8;
-      const dist = 8 + Math.random() * 10;
+      const dist = 12 + Math.random() * 15;
       const targetX = Math.round(x + Math.cos(angle) * dist);
       const targetY = Math.round(y + Math.sin(angle) * dist);
 
@@ -373,13 +390,13 @@ export class CombatScene extends Phaser.Scene {
       // Alternate between tile color and white for the "mix" effect
       const useWhite = i % 3 === 0;
       const particleColor = useWhite ? 0xffffff : color;
-      const size = 1 + Math.floor(Math.random() * 3); // 1-3px (bigger than standard 1-2px)
+      const size = 2 + Math.floor(Math.random() * 4);
       const particle = this.add
         .rectangle(Math.round(x), Math.round(y), size, size, particleColor, 1)
         .setDepth(5);
 
       const angle = (Math.PI * 2 * i) / count + (Math.random() - 0.5) * 0.8;
-      const dist = 12 + Math.random() * 16; // farther spread than standard (8-18 -> 12-28)
+      const dist = 18 + Math.random() * 24;
       const targetX = Math.round(x + Math.cos(angle) * dist);
       const targetY = Math.round(y + Math.sin(angle) * dist);
 
@@ -396,7 +413,7 @@ export class CombatScene extends Phaser.Scene {
 
     // Bullet hole: dark circle that fades after ~1s
     const hole = this.add
-      .circle(Math.round(x), Math.round(y), 3, 0x222222, 0.8)
+      .circle(Math.round(x), Math.round(y), 5, 0x222222, 0.8)
       .setDepth(4);
     this.tweens.add({
       targets: hole,

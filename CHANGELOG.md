@@ -4,6 +4,35 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## v1.0.4
+
+### Changed
+- Bones now appears after the first tile selection instead of before it.
+- Updated several Bones rewards: Bone Tax costs more max HP, Supply Satchel gives more consumables, Big Bones heals, and Trade Up only offers additional tiles.
+- Updated event rewards and costs to match the latest event balance.
+- Updated event text highlights, including new shimmer effects.
+- Added the BoldPixels title font.
+- Deadeye now lowers combat music volume instead of pausing it, and its activation sound is quieter.
+- Enemy sprites now flash red and white when they take damage.
+- Moved the combat board slightly lower.
+- Player-to-enemy damage lines are now amber without a black outline.
+- Powder Monkey now places fewer bombs.
+- Hover sounds now play across clickable UI, excluding map nodes and enemies.
+- Bones now only gives his sendoff line after the player chooses a reward.
+- Enemy death now flashes red and white before turning to dust, except for summoned enemies cleaned up at fight end.
+- Reno now switches to his False Shuffle active frame while his ability resolves.
+- Improved combat board performance during cascades and animated tile effects.
+- Increased Act 3 enemy health.
+- Updated Saloon Brawler attacks and Obsidian tooltip text.
+- Improved combat performance in board checks, HUD floats, and enemy death effects.
+- Updated Death's Glare to grant Ready and made Ready stacks consume one at a time.
+
+### Fixed
+- Enemy death dust now reliably clears after the death animation.
+- Poison damage no longer triggers the enemy hit flash.
+- Targeting now stays on the current enemy when another enemy dies.
+- Changelog popup version headers and scrolling display correctly.
+
 ## v1.0.3
 
 ### Changed

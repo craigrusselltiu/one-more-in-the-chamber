@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useCallback, useRef } from 'react';
 import { GameEvent } from '../../game/EventBus';
 import { useCombatStore } from '../../store/combatStore';
 import { useRunStore } from '../../store/runStore';
@@ -21,12 +21,15 @@ export function CombatBridge() {
   const setCombo = useCombatStore((s) => s.setCombo);
   const syncRunHealth = useRunStore((s) => s.syncHealth);
   const syncRunGold = useRunStore((s) => s.syncGold);
+  const discoveredStatusRef = useRef(new Set(useMetaStore.getState().meta.discoveredStatusEffects));
 
   const discoverStatusEffects = useCallback((state: CombatState) => {
     const meta = useMetaStore.getState();
 
     const discoverIf = (slug: string, stacks: number | undefined) => {
-      if ((stacks ?? 0) > 0) meta.discoverStatusEffect(slug);
+      if ((stacks ?? 0) <= 0 || discoveredStatusRef.current.has(slug)) return;
+      discoveredStatusRef.current.add(slug);
+      meta.discoverStatusEffect(slug);
     };
 
     // Player statuses (fields on CombatState)

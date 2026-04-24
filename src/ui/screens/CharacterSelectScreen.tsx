@@ -230,9 +230,10 @@ export const CharacterSelectScreen = memo(function CharacterSelectScreen() {
       {/* Character info - center bottom */}
       <div className="absolute bottom-20 left-1/2 -translate-x-1/2 flex flex-col items-center">
         <span
-          className="text-lg font-bold uppercase tracking-wide"
+          className="text-4xl font-bold uppercase tracking-wide"
           style={{
-            color: '#fcd34d',
+            color: '#fbbf24',
+            fontFamily: "'BoldPixels', 'Inter', sans-serif",
             WebkitTextStroke: '3px #000',
             paintOrder: 'stroke fill',
           }}
@@ -450,7 +451,7 @@ function WantedLevelSelector({
     <div className="flex flex-col items-center gap-1" style={{ width: 160 }}>
       <span
         className="text-yellow-400 text-xs font-bold uppercase tracking-wider"
-        style={{ WebkitTextStroke: '2px #000', paintOrder: 'stroke fill' }}
+        style={{ fontFamily: "'BoldPixels', 'Inter', sans-serif", WebkitTextStroke: '2px #000', paintOrder: 'stroke fill' }}
       >
         Wanted Level
       </span>

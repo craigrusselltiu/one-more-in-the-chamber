@@ -305,21 +305,21 @@ export default function App() {
       lastAppliedScreen = next;
       setScreen(next);
 
-      // Act 1: pre-run starter encounter before anything else (requires at least one win).
-      if (next === 'map') {
-        const run = useRunStore.getState().run;
-        const hasWon = useMetaStore.getState().meta.highestWantedLevelCleared >= 0;
-        if (run && run.currentAct === 1 && !run.starterEncountered && hasWon) {
-          setScreen('starter');
-          return;
-        }
-      }
-
       // Act 1: choose 5th tile before first map visit
       if (next === 'map') {
         const run = useRunStore.getState().run;
         if (run && run.currentAct === 1 && run.activeTileTypes.length <= 4) {
           setScreen('tile-select');
+          return;
+        }
+      }
+
+      // Act 1: Bones appears after the initial tile selection (requires at least one win).
+      if (next === 'map') {
+        const run = useRunStore.getState().run;
+        const hasWon = useMetaStore.getState().meta.highestWantedLevelCleared >= 0;
+        if (run && run.currentAct === 1 && !run.starterEncountered && hasWon) {
+          setScreen('starter');
           return;
         }
       }

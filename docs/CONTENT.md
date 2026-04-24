@@ -9,7 +9,7 @@ Bullet tiles - Bullet, .50 Cal, Buckshot, and Ricochet
 - Barricade - At the end of the turn, retain block and decrease stacks by 1. (max 1)
 - Grace - Negate the next instance of damage taken.
 - Resourceful - Double all non-damage resources this turn. Decrease stacks by 1 at the end of the turn.
-- Ready - Your next non-cascade attack deals 50% more damage. (max 1)
+- Ready - Your next non-cascade attack deals 50% more damage. Consumes 1 stack.
 - Chain - Your Chain tiles gain 1 extra level per stack.
 - Thorns - When attacked, deal damage back equal to the number of stacks. Clear at the end of the turn.
 - Cloak - Cascade damage taken is reduced by 50%. Decrease stacks by 1 at the end of the turn.

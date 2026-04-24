@@ -19,8 +19,8 @@ export class CutsceneScene extends Phaser.Scene {
 
     // Boss name
     this.add
-      .text(centerX, centerY - 20, data.bossName ?? 'BOSS', {
-        fontSize: '24px',
+      .text(centerX, centerY - 30, data.bossName ?? 'BOSS', {
+        fontSize: '36px',
         color: '#FFD700',
         fontFamily: 'monospace',
         fontStyle: 'bold',
@@ -29,11 +29,11 @@ export class CutsceneScene extends Phaser.Scene {
 
     // Flavour text
     this.add
-      .text(centerX, centerY + 20, data.flavourText ?? '', {
-        fontSize: '10px',
+      .text(centerX, centerY + 30, data.flavourText ?? '', {
+        fontSize: '15px',
         color: '#E0D8C8',
         fontFamily: 'monospace',
-        wordWrap: { width: 400 },
+        wordWrap: { width: 600 },
         align: 'center',
       })
       .setOrigin(0.5);

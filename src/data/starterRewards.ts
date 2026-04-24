@@ -1,7 +1,7 @@
 import type { RunState, TileType } from '../types/game';
 import { ARTIFACTS } from './artifacts';
 import { CONSUMABLES } from './consumables';
-import { TILE_DEFINITIONS } from './tiles';
+import { ADDITIONAL_POOL, TILE_DEFINITIONS } from './tiles';
 import { useRunStore } from '../store/runStore';
 import { createSeededRandom, seededShuffle } from '../utils/seededRandom';
 import { getArtifactPoolForRun } from '../utils/artifactSelection';
@@ -113,17 +113,14 @@ function getStarterHpSacrificeAmount(run: RunState): number {
   return Math.max(1, Math.floor(run.health * 0.1));
 }
 
-function getWholeTilePool(run: RunState): TileType[] {
-  return Object.values(TILE_DEFINITIONS)
-    .filter((tile) => tile.pool !== 'special')
-    .map((tile) => tile.type)
-    .filter((tileType) => !run.activeTileTypes.includes(tileType));
+function getAdditionalTilePool(run: RunState): TileType[] {
+  return ADDITIONAL_POOL.filter((tileType) => !run.activeTileTypes.includes(tileType));
 }
 
 function getStarterSwapTile(seed: string, rewardId: string, run: RunState): TileType {
-  const pool = getWholeTilePool(run);
+  const pool = getAdditionalTilePool(run);
   const rand = createSeededRandom(`${seed}-starter-${rewardId}-swap`);
-  return pickRandom(pool, rand) ?? 'bullet';
+  return pickRandom(pool, rand) ?? 'chain';
 }
 
 const TILE_BOONS: StarterRewardFactory[] = [
@@ -183,13 +180,14 @@ const UPGRADES: StarterRewardFactory[] = [
       id: 'big_bones',
       slot: 'upgrade',
       label: 'Big Bones',
-      description: 'Gain 6 max HP.',
+      description: 'Gain 6 max HP and heal 6 HP.',
       kind: 'instant',
       apply: () => {
         const store = useRunStore.getState();
         const run = store.run;
         if (!run) return;
-        store.syncHealth(run.health, run.maxHealth + 6);
+        const amount = 6;
+        store.syncHealth(Math.min(run.health + amount, run.maxHealth + amount), run.maxHealth + amount);
       },
     }),
   },
@@ -212,9 +210,9 @@ const UPGRADES: StarterRewardFactory[] = [
       id: 'supply_satchel',
       slot: 'upgrade',
       label: 'Supply Satchel',
-      description: 'Gain 2 random consumables.',
+      description: 'Gain 3 random consumables.',
       kind: 'instant',
-      apply: (rand) => grantRandomConsumables(rand, 2),
+      apply: (rand) => grantRandomConsumables(rand, 3),
     }),
   },
   {
@@ -274,13 +272,13 @@ const SACRIFICES: StarterRewardFactory[] = [
       id: 'bone_tax',
       slot: 'sacrifice',
       label: 'Bone Tax',
-      description: 'Lose 11 max HP and upgrade 3 random tiles.',
+      description: 'Lose 18 max HP and upgrade 3 random tiles.',
       kind: 'instant',
       apply: (rand) => {
         const store = useRunStore.getState();
         const run = store.run;
         if (!run) return;
-        const newMax = Math.max(1, run.maxHealth - 11);
+        const newMax = Math.max(1, run.maxHealth - 18);
         store.syncHealth(Math.min(run.health, newMax), newMax);
         upgradeRandomTiles(rand, 3);
       },

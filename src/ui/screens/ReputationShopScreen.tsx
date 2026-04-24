@@ -8,7 +8,6 @@ import { TILE_DEFINITIONS } from '../../data/tiles';
 import { SpriteIcon } from '../components/SpriteIcon';
 import { CharacterSheetSprite } from '../components/CharacterSheetSprite';
 import { buildTileDescription } from '../components/KeywordText';
-import { playHover } from '../../services/sfx';
 import type { Screen } from '../../App';
 import type { CharacterId, TileType } from '../../types/game';
 
@@ -120,7 +119,6 @@ export const ReputationShopScreen = memo(function ReputationShopScreen() {
             <button
               key={t.key}
               onClick={() => handleTabChange(t.key)}
-              onMouseEnter={playHover}
               className="px-3 py-1 text-[10px] rounded-sm transition-transform"
               style={{
                 backgroundColor: active ? 'rgba(120, 53, 15, 0.85)' : 'rgba(28, 25, 23, 0.8)',
@@ -258,7 +256,6 @@ export const ReputationShopScreen = memo(function ReputationShopScreen() {
       <div className="py-3 flex gap-3">
         <button
           onClick={handleBack}
-          onMouseEnter={playHover}
           style={{ boxShadow: '2px 2px 1px rgba(0,0,0,0.4)', cursor: 'pointer' }}
           className="px-6 py-1.5 text-xs rounded-sm bg-stone-800 text-stone-300 hover:bg-stone-700 active:translate-y-0.5 transition-transform"
         >
@@ -266,7 +263,6 @@ export const ReputationShopScreen = memo(function ReputationShopScreen() {
         </button>
         <button
           onClick={handlePurchase}
-          onMouseEnter={playHover}
           disabled={!canPurchase}
           style={{
             boxShadow: canPurchase ? '2px 2px 1px rgba(0,0,0,0.4)' : 'none',
@@ -302,7 +298,6 @@ function ShopCard({
   return (
     <button
       onClick={onSelect}
-      onMouseEnter={playHover}
       disabled={disabled}
       className={`relative flex flex-col items-center justify-center w-36 h-36 rounded-sm text-center transition-transform ${
         owned
@@ -383,7 +378,6 @@ function NameplateShopCard({
   return (
     <button
       onClick={onSelect}
-      onMouseEnter={playHover}
       disabled={owned}
       className={`relative flex items-center w-full rounded-sm transition-transform ${
         owned
@@ -451,7 +445,6 @@ function TileShopCard({
   return (
     <button
       onClick={onSelect}
-      onMouseEnter={playHover}
       disabled={disabled}
       className={`relative flex flex-col items-center w-32 rounded-sm text-center transition-transform ${
         owned
@@ -527,7 +520,6 @@ function CharacterShopCard({
   return (
     <button
       onClick={onSelect}
-      onMouseEnter={playHover}
       disabled={disabled}
       className={`relative flex flex-col items-center w-32 rounded-sm text-center transition-transform ${
         owned

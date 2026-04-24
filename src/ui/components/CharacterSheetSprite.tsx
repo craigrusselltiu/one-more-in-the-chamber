@@ -7,6 +7,7 @@ const IDLE_FRAME_COLS = 4;
 const ATTACK_FRAME = { col: 0, row: 1 } as const;
 const HIT_FRAME = { col: 1, row: 1 } as const;
 const RUST_DEADEYE_FRAME = { col: 2, row: 1 } as const;
+const RENO_SHUFFLE_FRAME = { col: 2, row: 1 } as const;
 
 const sheetImageCache: Partial<Record<CharacterId, HTMLImageElement>> = {};
 const sheetLoadPromises: Partial<Record<CharacterId, Promise<HTMLImageElement>>> = {};
@@ -41,7 +42,7 @@ export const CharacterSheetSprite = memo(function CharacterSheetSprite({
   size,
   attacking = false,
   hit = false,
-  deadeyeActive = false,
+  abilityActive = false,
   idleFrame = 0,
   playerSprite = false,
   className,
@@ -52,7 +53,7 @@ export const CharacterSheetSprite = memo(function CharacterSheetSprite({
   size: number;
   attacking?: boolean;
   hit?: boolean;
-  deadeyeActive?: boolean;
+  abilityActive?: boolean;
   idleFrame?: number;
   playerSprite?: boolean;
   className?: string;
@@ -67,8 +68,10 @@ export const CharacterSheetSprite = memo(function CharacterSheetSprite({
     ? HIT_FRAME
     : attacking
       ? ATTACK_FRAME
-      : character === 'red_panda' && deadeyeActive
+      : character === 'red_panda' && abilityActive
         ? RUST_DEADEYE_FRAME
+      : character === 'reno' && abilityActive
+        ? RENO_SHUFFLE_FRAME
       : { col: Math.max(0, idleFrame % IDLE_FRAME_COLS), row: 0 };
 
   useEffect(() => {

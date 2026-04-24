@@ -92,17 +92,7 @@ export const CombatAttackLines = memo(function CombatAttackLines({
             y1={l.y1}
             x2={l.x2}
             y2={l.y2}
-            stroke="#000000"
-            strokeWidth={4}
-            strokeLinecap="round"
-            opacity={0.55}
-          />
-          <line
-            x1={l.x1}
-            y1={l.y1}
-            x2={l.x2}
-            y2={l.y2}
-            stroke="#ffffff"
+            stroke="#f59e0b"
             strokeWidth={2}
             strokeLinecap="round"
             opacity={0.9}

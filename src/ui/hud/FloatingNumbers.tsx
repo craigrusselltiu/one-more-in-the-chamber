@@ -1,4 +1,4 @@
-import { memo, useState, useEffect, useCallback } from 'react';
+import { memo, useState, useEffect, useCallback, useRef, type CSSProperties } from 'react';
 import { EventBus, GameEvent } from '../../game/EventBus';
 
 interface FloatingNumber {
@@ -7,8 +7,7 @@ interface FloatingNumber {
   color: string;
   x: number;
   y: number;
-  vx: number;
-  startTime: number;
+  dx: number;
   fontSize: number;
   target: 'player' | 'enemy' | 'topbar' | 'topbar-health';
 }
@@ -22,6 +21,8 @@ let nextId = 0;
  */
 export const FloatingNumbers = memo(function FloatingNumbers() {
   const [numbers, setNumbers] = useState<FloatingNumber[]>([]);
+  const removalTimers = useRef<number[]>([]);
+  const prevGoldRef = useRef(-1);
 
   const handleFloat = useCallback((...args: unknown[]) => {
     const target = args[0] as 'player' | 'enemy' | 'topbar' | 'topbar-health';
@@ -58,10 +59,15 @@ export const FloatingNumbers = memo(function FloatingNumbers() {
       y = (SLOT_Y[slot] ?? 280) + Math.random() * 40 - 20;
     }
 
-    setNumbers((prev) => [
-      ...prev,
-      { id: nextId++, text, color, x, y, vx: (target === 'topbar' || target === 'topbar-health') ? (Math.random() - 0.5) * 10 : (Math.random() - 0.5) * 40, startTime: Date.now(), fontSize, target },
-    ]);
+    const id = nextId++;
+    const dx = target === 'topbar' || target === 'topbar-health'
+      ? 10 + (Math.random() - 0.5) * 8
+      : (Math.random() - 0.5) * 40;
+
+    setNumbers((prev) => [...prev, { id, text, color, x, y, dx, fontSize, target }]);
+    removalTimers.current.push(window.setTimeout(() => {
+      setNumbers((prev) => prev.filter((n) => n.id !== id));
+    }, 1050));
   }, []);
 
   useEffect(() => {
@@ -70,7 +76,6 @@ export const FloatingNumbers = memo(function FloatingNumbers() {
   }, [handleFloat]);
 
   // Auto-float gold changes by listening to GOLD_CHANGE
-  const prevGoldRef = { current: -1 };
   useEffect(() => {
     const handleGoldChange = (...args: unknown[]) => {
       const newGold = args[0] as number;
@@ -90,49 +95,32 @@ export const FloatingNumbers = memo(function FloatingNumbers() {
     return () => { EventBus.off(GameEvent.GOLD_CHANGE, handleGoldChange); };
   }, [handleFloat]);
 
-  // Animation loop: update positions and remove expired numbers
   useEffect(() => {
-    if (numbers.length === 0) return;
-    const interval = setInterval(() => {
-      const now = Date.now();
-      setNumbers((prev) =>
-        prev
-          .filter((n) => now - n.startTime < 1000)
-          .map((n) => n) // trigger re-render for position updates
-      );
-    }, 30);
-    return () => clearInterval(interval);
-  }, [numbers.length > 0]);
+    return () => {
+      for (const timer of removalTimers.current) window.clearTimeout(timer);
+      removalTimers.current = [];
+    };
+  }, []);
 
   return (
     <div className="absolute inset-0 pointer-events-none z-[150] overflow-hidden">
       {numbers.map((n) => {
-        const elapsed = (Date.now() - n.startTime) / 1000;
-        const t = elapsed;
-        // Topbar floats drift left and stay level; others pop up then arc down
         const isTopbar = n.target === 'topbar' || n.target === 'topbar-health';
-        const startVy = isTopbar ? 0 : -50;
-        const gravity = isTopbar ? 0 : 150;
-        const dx = isTopbar ? 10 * t : n.vx * t;
-        const px = n.x + dx;
-        const py = n.y + startVy * t + 0.5 * gravity * t * t;
-        const alpha = Math.max(0, 1 - elapsed);
-
         return (
           <span
             key={n.id}
             className="absolute font-bold"
             style={{
-              left: px,
-              top: py,
+              left: n.x,
+              top: n.y,
               color: n.color,
               fontSize: `${n.fontSize}px`,
-              opacity: alpha,
               WebkitTextStroke: '2px #000',
               paintOrder: 'stroke fill',
-              transform: 'translate(-50%, -50%)',
               whiteSpace: 'nowrap',
-            }}
+              animation: `${isTopbar ? 'combat-float-topbar' : 'combat-float-arc'} 1000ms ease-out forwards`,
+              '--float-dx': `${n.dx}px`,
+            } as CSSProperties}
           >
             {n.text}
           </span>

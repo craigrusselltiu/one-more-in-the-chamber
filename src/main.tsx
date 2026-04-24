@@ -59,6 +59,22 @@ style.textContent = `
 `;
 document.head.appendChild(style);
 
+const CLICKABLE_SELECTOR = [
+  'button:not(:disabled)',
+  'a[href]',
+  "input[type='button']:not(:disabled)",
+  "input[type='submit']:not(:disabled)",
+  "input[type='checkbox']:not(:disabled)",
+  "input[type='radio']:not(:disabled)",
+  'select:not(:disabled)',
+  'summary',
+  "label",
+  "[role='button']:not([aria-disabled='true'])",
+  '.cursor-pointer',
+  "[style*='cursor: pointer']",
+  "[style*='cursor:pointer']",
+].join(',');
+
 // Generate lasso cursor from sprite sheet (frame 685, 16x16 -> 32x32)
 {
   const img = new Image();
@@ -83,6 +99,17 @@ document.addEventListener('click', (e) => {
   if (target.closest('button') && !target.closest('[data-no-click-sfx]')) {
     import('./services/sfx').then(({ playClick }) => playClick());
   }
+}, true);
+
+// Global hover SFX: any clickable UI hover plays the same sound as the main menu.
+document.addEventListener('pointerover', (e) => {
+  if (e.pointerType === 'touch') return;
+  const target = e.target as HTMLElement;
+  const clickable = target.closest(CLICKABLE_SELECTOR) as HTMLElement | null;
+  if (!clickable || clickable.closest('[data-no-hover-sfx]')) return;
+  const previous = e.relatedTarget as Node | null;
+  if (previous && clickable.contains(previous)) return;
+  import('./services/sfx').then(({ playHover }) => playHover());
 }, true);
 
 // Recover from WebGL context loss (rare, but happens on some devices).

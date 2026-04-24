@@ -5,13 +5,21 @@ import { TILE_FRAMES, HAZARD_FRAMES } from '../../data/spriteConfig';
 import { EventBus, GameEvent } from '../EventBus';
 import { useSettingsStore, getSpeedMultiplier } from '../../store/settingsStore';
 
-/** Grid spacing. Larger than sprite (32px) to leave room for VFX outlines. */
-export const TILE_SIZE = 36;
-const STATUS_OFFSET = 12;
+/** Grid spacing. Larger than sprite (48px at 3x) to leave room for VFX outlines. */
+export const TILE_SIZE = 54;
+const STATUS_OFFSET = 18;
+
+export interface TileEffectFrame {
+  breath: number;
+  sandBreath: number;
+  slowBreath: number;
+  showdownTint: number;
+}
 
 /**
  * Tile: sprite + state for a single board cell.
- * Renders a 16x16 frame from the sprite sheet at 2x scale (32x32).
+ * Renders a 16x16 frame from the sprite sheet at 3x scale (48x48).
+ * The 960x540 canvas maps 1:1 to screen pixels.
  *
  * Effect overlays:
  *   - Showdown tile: rainbow breathing overlay
@@ -53,6 +61,11 @@ export class Tile {
   private sandLabel: Phaser.GameObjects.Text | null = null;
   /** Next time to emit shadow idle particles. */
   private nextShadowParticle = 0;
+  private lastOverlayTint = -1;
+  private lastOverlayAlpha = -1;
+  private lastOutlineAlpha = -1;
+  private effectActivity = false;
+  private onEffectActivityChanged?: (tile: Tile, active: boolean) => void;
 
   get hazard(): TileHazardState | null {
     return this._hazard;
@@ -80,6 +93,7 @@ export class Tile {
 
       this.updateOverlay();
       this.updateStatusIndicator();
+      this.notifyEffectActivityChanged();
     }
   }
 
@@ -90,18 +104,20 @@ export class Tile {
     type: TileType,
     row: number,
     col: number,
+    onEffectActivityChanged?: (tile: Tile, active: boolean) => void,
   ) {
     this.scene = scene;
     this.type = type;
     this.row = row;
     this.col = col;
+    this.onEffectActivityChanged = onEffectActivityChanged;
 
     const cx = Math.round(x + TILE_SIZE / 2);
     const cy = Math.round(y + TILE_SIZE / 2);
 
     this.sprite = scene.add
       .image(cx, cy, 'items_sheet', TILE_FRAMES[type])
-      .setScale(2);
+      .setScale(3);
   }
 
   setType(newType: TileType): void {
@@ -114,6 +130,7 @@ export class Tile {
       for (const s of this.outlineSprites) s.setFrame(frame);
     }
     this.updateOverlay();
+    this.notifyEffectActivityChanged();
   }
 
   setTint(color: number): void {
@@ -152,6 +169,7 @@ export class Tile {
     if (!this.destroyed) {
       this.updateOverlay();
       this.updateStatusIndicator();
+      this.notifyEffectActivityChanged();
     }
   }
 
@@ -159,58 +177,62 @@ export class Tile {
   // Animated overlay system
   // ---------------------------------------------------------------------------
 
+  needsEffectUpdate(): boolean {
+    return !this.destroyed && (!!this.sandLabel || !!this.overlay || this.hintUntil > 0 || this.isShadow);
+  }
+
+  private notifyEffectActivityChanged(): void {
+    const active = this.needsEffectUpdate();
+    if (active === this.effectActivity) return;
+    this.effectActivity = active;
+    this.onEffectActivityChanged?.(this, active);
+  }
+
   /** Per-frame update called by Board.update(). Drives breathing animations. */
-  updateEffects(time: number): void {
+  updateEffects(time: number, frame: TileEffectFrame): void {
     if (this.destroyed) return;
 
     // Sand label breathing
     if (this.sandLabel) {
-      const sandBreath = 0.5 + 0.5 * Math.sin(time / 600);
-      this.sandLabel.setAlpha(0.5 + sandBreath * 0.5);
+      this.sandLabel.setAlpha(0.5 + frame.sandBreath * 0.5);
     }
 
     if (!this.overlay) return;
-
-    const breath = 0.5 + 0.5 * Math.sin(time / 400);
 
     let tint = 0;
     let overlayAlpha = 0;
     let outlineAlpha = 0;
 
     if (this.isShowdown) {
-      const hue = (time / 20) % 360;
-      const color = Phaser.Display.Color.HSLToColor(hue / 360, 0.8, 0.5);
-      tint = color.color;
-      overlayAlpha = 0.2 + breath * 0.25;
-      outlineAlpha = 0.6 + breath * 0.4;
+      tint = frame.showdownTint;
+      overlayAlpha = 0.2 + frame.breath * 0.25;
+      outlineAlpha = 0.6 + frame.breath * 0.4;
     } else if (this.isShadow) {
       // Dark purple-to-black gradient: cycle between deep purple and near-black
-      const shadowPhase = 0.5 + 0.5 * Math.sin(time / 600);
-      const r = Math.floor(0x30 + shadowPhase * 0x30); // 0x30..0x60
-      const g = Math.floor(0x00 + shadowPhase * 0x10); // 0x00..0x10
-      const b = Math.floor(0x40 + shadowPhase * 0x40); // 0x40..0x80
+      const r = Math.floor(0x30 + frame.slowBreath * 0x30); // 0x30..0x60
+      const g = Math.floor(0x00 + frame.slowBreath * 0x10); // 0x00..0x10
+      const b = Math.floor(0x40 + frame.slowBreath * 0x40); // 0x40..0x80
       tint = (r << 16) | (g << 8) | b;
-      overlayAlpha = 0.25 + breath * 0.2;
-      outlineAlpha = 0.6 + breath * 0.3;
+      overlayAlpha = 0.25 + frame.breath * 0.2;
+      outlineAlpha = 0.6 + frame.breath * 0.3;
     } else if (this._hazard?.type === 'suppress') {
       // Grey gradient: cycle between dark grey and near-black
-      const suppressPhase = 0.5 + 0.5 * Math.sin(time / 600);
-      const v = Math.floor(0x30 + suppressPhase * 0x30); // 0x30..0x60
+      const v = Math.floor(0x30 + frame.slowBreath * 0x30); // 0x30..0x60
       tint = (v << 16) | (v << 8) | v;
-      overlayAlpha = 0.25 + breath * 0.2;
-      outlineAlpha = 0.6 + breath * 0.3;
+      overlayAlpha = 0.25 + frame.breath * 0.2;
+      outlineAlpha = 0.6 + frame.breath * 0.3;
     } else if (this.isExplosive) {
       tint = 0xff8800;
-      overlayAlpha = 0.15 + breath * 0.2;
-      outlineAlpha = 0.5 + breath * 0.4;
+      overlayAlpha = 0.15 + frame.breath * 0.2;
+      outlineAlpha = 0.5 + frame.breath * 0.4;
     } else if (this._hazard?.type === 'bomb') {
       tint = 0xff2020;
-      overlayAlpha = 0.15 + breath * 0.25;
-      outlineAlpha = 0.5 + breath * 0.4;
+      overlayAlpha = 0.15 + frame.breath * 0.25;
+      outlineAlpha = 0.5 + frame.breath * 0.4;
     } else if (this._hazard?.type === 'poison') {
       tint = 0x40ff40;
-      overlayAlpha = 0.15 + breath * 0.25;
-      outlineAlpha = 0.5 + breath * 0.4;
+      overlayAlpha = 0.15 + frame.breath * 0.25;
+      outlineAlpha = 0.5 + frame.breath * 0.4;
     } else if (this.hintUntil > 0 && time < this.hintUntil) {
       // Hint: 3 fade in/out pulses over the duration
       const duration = this.hintUntil - this.hintStart;
@@ -237,22 +259,45 @@ export class Tile {
         this.destroyOverlay();
         this.destroyOutline();
       }
+      this.notifyEffectActivityChanged();
     }
 
     if (tint) {
-      this.overlay.setTintFill(tint);
-      this.overlay.setAlpha(overlayAlpha);
-      for (const s of this.outlineSprites) {
-        s.setTintFill(tint);
-        s.setAlpha(outlineAlpha);
-      }
+      this.applyOverlayVisual(tint, overlayAlpha, outlineAlpha);
     }
   }
 
+  private applyOverlayVisual(tint: number, overlayAlpha: number, outlineAlpha: number): void {
+    if (!this.overlay) return;
+
+    const roundedOverlayAlpha = Math.round(overlayAlpha * 100) / 100;
+    const roundedOutlineAlpha = Math.round(outlineAlpha * 100) / 100;
+
+    if (this.lastOverlayTint !== tint) {
+      this.overlay.setTintFill(tint);
+      for (const s of this.outlineSprites) s.setTintFill(tint);
+      this.lastOverlayTint = tint;
+    }
+    if (this.lastOverlayAlpha !== roundedOverlayAlpha) {
+      this.overlay.setAlpha(roundedOverlayAlpha);
+      this.lastOverlayAlpha = roundedOverlayAlpha;
+    }
+    if (this.lastOutlineAlpha !== roundedOutlineAlpha) {
+      for (const s of this.outlineSprites) s.setAlpha(roundedOutlineAlpha);
+      this.lastOutlineAlpha = roundedOutlineAlpha;
+    }
+  }
+
+  private resetOverlayVisualCache(): void {
+    this.lastOverlayTint = -1;
+    this.lastOverlayAlpha = -1;
+    this.lastOutlineAlpha = -1;
+  }
+
   private static readonly OUTLINE_OFFSETS: [number, number][] = [
-    [-2, -2], [0, -2], [2, -2],
-    [-2,  0],          [2,  0],
-    [-2,  2], [0,  2], [2,  2],
+    [0, -3],
+    [-3, 0], [3, 0],
+    [0, 3],
   ];
 
   /** Start a hint effect that lasts for `durationMs` milliseconds. */
@@ -263,6 +308,7 @@ export class Tile {
     if (!this.overlay || this.outlineSprites.length === 0) {
       this.updateOverlay();
     }
+    this.notifyEffectActivityChanged();
   }
 
   private updateOverlay(): void {
@@ -277,10 +323,11 @@ export class Tile {
         // Duplicate the sprite as a tinted overlay - only covers non-transparent pixels
         this.overlay = this.scene.add
           .image(cx, cy, 'items_sheet', frame)
-          .setScale(2)
+          .setScale(3)
           .setDepth(1)
           .setAlpha(0);
         if (this._mask) this.overlay.setMask(this._mask);
+        this.resetOverlayVisualCache();
       } else {
         this.overlay.setPosition(cx, cy);
         this.overlay.setFrame(frame);
@@ -291,12 +338,13 @@ export class Tile {
         for (const [dx, dy] of Tile.OUTLINE_OFFSETS) {
           const s = this.scene.add
             .image(cx + dx, cy + dy, 'items_sheet', frame)
-            .setScale(2)
+            .setScale(3)
             .setDepth(-1)
             .setAlpha(0);
           if (this._mask) s.setMask(this._mask);
           this.outlineSprites.push(s);
         }
+        this.resetOverlayVisualCache();
       } else {
         for (let i = 0; i < this.outlineSprites.length; i++) {
           const [dx, dy] = Tile.OUTLINE_OFFSETS[i];
@@ -308,6 +356,7 @@ export class Tile {
       this.destroyOverlay();
       this.destroyOutline();
     }
+    this.notifyEffectActivityChanged();
 
     // Bomb hazard: centered countdown number
     if (this._hazard?.type === 'bomb') {
@@ -315,14 +364,14 @@ export class Tile {
       if (!this.bombLabel) {
         this.bombLabel = this.scene.add
           .text(cx, cy, countdown, {
-            fontSize: '14px',
+            fontSize: '21px',
             fontFamily: 'Inter, sans-serif',
             color: '#ffffff',
             fontStyle: 'bold',
           })
           .setOrigin(0.5)
           .setDepth(2)
-          .setStroke('#000000', 4);
+          .setStroke('#000000', 6);
       } else {
         this.bombLabel.setPosition(cx, cy);
         this.bombLabel.setText(countdown);
@@ -336,12 +385,16 @@ export class Tile {
     if (this.overlay) {
       this.overlay.destroy();
       this.overlay = null;
+      this.resetOverlayVisualCache();
+      this.notifyEffectActivityChanged();
     }
   }
 
   private destroyOutline(): void {
     for (const s of this.outlineSprites) s.destroy();
     this.outlineSprites.length = 0;
+    this.resetOverlayVisualCache();
+    this.notifyEffectActivityChanged();
   }
 
   private destroyBombLabel(): void {
@@ -392,18 +445,11 @@ export class Tile {
       this.sprite.setTint(0x666666);
 
       if (!this.lockIcon) {
-        // Crisp 1x lock (16px) with dark outline copies to increase
-        // visual footprint to ~20px without any fractional scaling.
         const frame = HAZARD_FRAMES.lock;
-        const offsets: [number, number][] = [
-          [-2, -2], [0, -2], [2, -2],
-          [-2,  0],          [2,  0],
-          [-2,  2], [0,  2], [2,  2],
-        ];
-        for (const [dx, dy] of offsets) {
+        for (const [dx, dy] of Tile.OUTLINE_OFFSETS) {
           const s = this.scene.add
             .image(cx + dx, cy + dy, 'items_sheet', frame)
-            .setScale(1)
+            .setScale(2)
             .setDepth(2)
             .setTintFill(0x000000)
             .setAlpha(0.8);
@@ -411,17 +457,12 @@ export class Tile {
         }
         this.lockIcon = this.scene.add
           .image(cx, cy, 'items_sheet', frame)
-          .setScale(1)
+          .setScale(2)
           .setDepth(3);
       } else {
         this.lockIcon.setPosition(cx, cy);
-        const offsets: [number, number][] = [
-          [-2, -2], [0, -2], [2, -2],
-          [-2,  0],          [2,  0],
-          [-2,  2], [0,  2], [2,  2],
-        ];
         for (let i = 0; i < this.lockOutline.length; i++) {
-          const [dx, dy] = offsets[i];
+          const [dx, dy] = Tile.OUTLINE_OFFSETS[i];
           this.lockOutline[i].setPosition(cx + dx, cy + dy);
         }
       }
@@ -431,17 +472,17 @@ export class Tile {
         const text = String(this._hazard.hits);
         if (!this.statusLabel) {
           this.statusLabel = this.scene.add
-            .text(cx, Math.round(cy + 10), text, {
-              fontSize: '8px',
+            .text(cx, Math.round(cy + 15), text, {
+              fontSize: '12px',
               color: '#ffffff',
               fontFamily: 'Inter, sans-serif',
               fontStyle: 'bold',
             })
             .setOrigin(0.5)
             .setDepth(4)
-            .setStroke('#000000', 3);
+            .setStroke('#000000', 5);
         } else {
-          this.statusLabel.setPosition(cx, Math.round(cy + 10));
+          this.statusLabel.setPosition(cx, Math.round(cy + 15));
           this.statusLabel.setText(text);
         }
       } else {
@@ -469,14 +510,14 @@ export class Tile {
       if (!this.sandLabel) {
         this.sandLabel = this.scene.add
           .text(cx, cy, '?', {
-            fontSize: '16px',
+            fontSize: '24px',
             color: '#ffffff',
             fontFamily: 'Inter, sans-serif',
             fontStyle: 'bold',
           })
           .setOrigin(0.5)
           .setDepth(4)
-          .setStroke('#000000', 4);
+          .setStroke('#000000', 6);
       } else {
         this.sandLabel.setPosition(cx, cy);
       }
@@ -493,7 +534,7 @@ export class Tile {
 
     if (!this.statusDot) {
       this.statusDot = this.scene.add
-        .rectangle(ix, iy, 10, 10, dotColor, 1)
+        .rectangle(ix, iy, 15, 15, dotColor, 1)
         .setDepth(1);
     } else {
       this.statusDot.setPosition(ix, iy);
@@ -503,7 +544,7 @@ export class Tile {
     if (!this.statusLabel) {
       this.statusLabel = this.scene.add
         .text(ix, iy, text, {
-          fontSize: '7px',
+          fontSize: '10px',
           color: '#000000',
           fontFamily: 'monospace',
         })
@@ -542,6 +583,7 @@ export class Tile {
     if (this.sandLabel) {
       this.sandLabel.destroy();
       this.sandLabel = null;
+      this.notifyEffectActivityChanged();
     }
   }
 
@@ -575,7 +617,7 @@ export class Tile {
       this.statusDot.setPosition(Math.round(cx + STATUS_OFFSET), Math.round(cy + STATUS_OFFSET));
     }
     if (this.statusLabel) {
-      const labelY = this.lockIcon ? Math.round(cy + 10) : Math.round(cy + STATUS_OFFSET);
+      const labelY = this.lockIcon ? Math.round(cy + 15) : Math.round(cy + STATUS_OFFSET);
       this.statusLabel.setPosition(Math.round(cx + STATUS_OFFSET), labelY);
     }
     if (this.lockIcon) this.lockIcon.setPosition(cx, cy);
@@ -587,7 +629,7 @@ export class Tile {
     if (selected && !this.highlight) {
       this.highlight = this.scene.add
         .rectangle(Math.round(this.sprite.x), Math.round(this.sprite.y), TILE_SIZE, TILE_SIZE)
-        .setStrokeStyle(2, 0xffffff)
+        .setStrokeStyle(3, 0xffffff)
         .setFillStyle(0xffffff, 0.15);
     } else if (!selected && this.highlight) {
       this.highlight.destroy();
@@ -629,65 +671,40 @@ export class Tile {
       if (this.lockIcon) targets.push(this.lockIcon);
       if (this.sandLabel) targets.push(this.sandLabel);
 
-      // Lock outline sprites tween individually (each has its own offset)
-      {
-        const offsets: [number, number][] = [
-          [-2, -2], [0, -2], [2, -2],
-          [-2,  0],          [2,  0],
-          [-2,  2], [0,  2], [2,  2],
-        ];
-        for (let i = 0; i < this.lockOutline.length; i++) {
-          const [dx, dy] = offsets[i];
-          this.scene.tweens.add({
-            targets: this.lockOutline[i],
-            x: targetX + dx,
-            y: targetY + dy,
-            duration,
-            delay,
-            ease,
-          });
-        }
+      const offsetTargets: Array<{ target: Phaser.GameObjects.Components.Transform; dx: number; dy: number }> = [];
+      const lockOutlineOffsets = Tile.OUTLINE_OFFSETS;
+      for (let i = 0; i < this.lockOutline.length; i++) {
+        const [dx, dy] = lockOutlineOffsets[i];
+        offsetTargets.push({ target: this.lockOutline[i], dx, dy });
       }
-
-      // Outline sprites tween individually (each has its own offset)
       for (let i = 0; i < this.outlineSprites.length; i++) {
         const [dx, dy] = Tile.OUTLINE_OFFSETS[i];
-        this.scene.tweens.add({
-          targets: this.outlineSprites[i],
-          x: targetX + dx,
-          y: targetY + dy,
-          duration,
-          delay,
-          ease,
-        });
+        offsetTargets.push({ target: this.outlineSprites[i], dx, dy });
       }
+      if (this.statusDot) offsetTargets.push({ target: this.statusDot, dx: STATUS_OFFSET, dy: STATUS_OFFSET });
+      if (this.statusLabel && !this.lockIcon) offsetTargets.push({ target: this.statusLabel, dx: STATUS_OFFSET, dy: STATUS_OFFSET });
+      if (this.poisonIcon) offsetTargets.push({ target: this.poisonIcon, dx: STATUS_OFFSET, dy: STATUS_OFFSET });
+      if (this.statusLabel && this.lockIcon) offsetTargets.push({ target: this.statusLabel, dx: 0, dy: 15 });
 
-      // Corner-offset targets (status dot, label, poison icon)
-      const cornerTargets: Phaser.GameObjects.GameObject[] = [];
-      if (this.statusDot) cornerTargets.push(this.statusDot);
-      if (this.statusLabel && !this.lockIcon) cornerTargets.push(this.statusLabel);
-      if (this.poisonIcon) cornerTargets.push(this.poisonIcon);
+      if (offsetTargets.length > 0) {
+        const offsetProxy = { x: this.sprite.x, y: this.sprite.y };
+        const updateOffsetTargets = () => {
+          const cx = Math.round(offsetProxy.x);
+          const cy = Math.round(offsetProxy.y);
+          for (const { target, dx, dy } of offsetTargets) {
+            target.setPosition(Math.round(cx + dx), Math.round(cy + dy));
+          }
+        };
 
-      if (cornerTargets.length > 0) {
         this.scene.tweens.add({
-          targets: cornerTargets,
-          x: Math.round(targetX + STATUS_OFFSET),
-          y: Math.round(targetY + STATUS_OFFSET),
-          duration,
-          delay,
-          ease,
-        });
-      }
-
-      // Hardened lock label follows the lock icon (centered, offset down)
-      if (this.statusLabel && this.lockIcon) {
-        this.scene.tweens.add({
-          targets: this.statusLabel,
+          targets: offsetProxy,
           x: targetX,
-          y: Math.round(targetY + 10),
+          y: targetY,
           duration,
           delay,
           ease,
+          onUpdate: updateOffsetTargets,
+          onComplete: updateOffsetTargets,
         });
       }
 
@@ -709,31 +726,33 @@ export class Tile {
     duration = Math.round(duration / getSpeedMultiplier());
     if (!useSettingsStore.getState().juiceAnimationsEnabled) return Promise.resolve();
 
-    const targets: Phaser.GameObjects.GameObject[] = [this.sprite];
-    if (this.overlay) targets.push(this.overlay);
-    targets.push(...this.outlineSprites);
-    targets.push(...this.lockOutline);
-    if (this.bombLabel) targets.push(this.bombLabel);
-    if (this.statusDot) targets.push(this.statusDot);
-    if (this.statusLabel) targets.push(this.statusLabel);
-    if (this.lockIcon) targets.push(this.lockIcon);
-    if (this.poisonIcon) targets.push(this.poisonIcon);
-    if (this.sandLabel) targets.push(this.sandLabel);
-
-    // Lock/status icons are at scale 1, main sprite/overlay/outlines at scale 2
+    // Main sprites at scale 3
     const mainTargets: Phaser.GameObjects.GameObject[] = [this.sprite];
     if (this.overlay) mainTargets.push(this.overlay);
     mainTargets.push(...this.outlineSprites);
 
+    // Lock at scale 2
+    const lockTargets: Phaser.GameObjects.GameObject[] = [...this.lockOutline];
+    if (this.lockIcon) lockTargets.push(this.lockIcon);
+
+    // Text/shape elements at scale 1
     const smallTargets: Phaser.GameObjects.GameObject[] = [];
-    smallTargets.push(...this.lockOutline);
     if (this.bombLabel) smallTargets.push(this.bombLabel);
     if (this.statusDot) smallTargets.push(this.statusDot);
     if (this.statusLabel) smallTargets.push(this.statusLabel);
-    if (this.lockIcon) smallTargets.push(this.lockIcon);
     if (this.poisonIcon) smallTargets.push(this.poisonIcon);
+    if (this.sandLabel) smallTargets.push(this.sandLabel);
 
     return new Promise((resolve) => {
+      if (lockTargets.length > 0) {
+        this.scene.tweens.add({
+          targets: lockTargets,
+          scaleX: scale * 2,
+          scaleY: scale * 2,
+          duration,
+          ease: 'Cubic.easeInOut',
+        });
+      }
       if (smallTargets.length > 0) {
         this.scene.tweens.add({
           targets: smallTargets,
@@ -745,8 +764,8 @@ export class Tile {
       }
       this.scene.tweens.add({
         targets: mainTargets,
-        scaleX: scale * 2,
-        scaleY: scale * 2,
+        scaleX: scale * 3,
+        scaleY: scale * 3,
         duration,
         ease: 'Cubic.easeInOut',
         onComplete: () => resolve(),
@@ -782,8 +801,8 @@ export class Tile {
       // Phase 1: quick pop-up scale
       this.scene.tweens.add({
         targets,
-        scaleX: '+=0.6',
-        scaleY: '+=0.6',
+        scaleX: '+=0.9',
+        scaleY: '+=0.9',
         duration: popDuration,
         ease: 'Quad.easeOut',
         onComplete: () => {
@@ -820,5 +839,6 @@ export class Tile {
     this.destroyLockIcon();
     this.destroyPoisonIcon();
     this.destroySandLabel();
+    this.notifyEffectActivityChanged();
   }
 }

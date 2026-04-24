@@ -360,6 +360,7 @@ export const MapScreen = memo(function MapScreen({ readonly }: { readonly?: bool
             onClick={readonly ? undefined : handleCanvasClick}
             onMouseMove={handleCanvasHover}
             onMouseLeave={() => setTooltip(null)}
+            data-no-hover-sfx
             className={readonly ? 'shrink-0' : 'cursor-pointer shrink-0'}
             style={{ imageRendering: 'auto' }}
           />

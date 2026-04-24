@@ -45,7 +45,7 @@ const STARTER_UPGRADE_REWARD_IDS = new Set(['bonesmith', 'bone_rattle', 'bone_ta
 /**
  * Pre-run starter encounter rendered in the event-screen visual style:
  * full-scene saloon background, side-aligned dialogue panel, stacked
- * choice buttons. Applies the chosen reward before handing off to tile-select.
+ * choice buttons. Applies the chosen reward before handing off to the map.
  */
 export const StarterScreen = memo(function StarterScreen() {
   const run = useRunStore((s) => s.run);
@@ -132,11 +132,11 @@ export const StarterScreen = memo(function StarterScreen() {
   const bg = `${import.meta.env.BASE_URL}assets/backgrounds/bones.png`;
 
   const paragraphs: string[] = [];
-  paragraphs.push(CHARACTER_GREETINGS[run.character]);
-  if (lastRun) paragraphs.push(buildLastRunLine(lastRun));
   if (resolved) {
     paragraphs.push(SENDOFF_LINE);
   } else {
+    paragraphs.push(CHARACTER_GREETINGS[run.character]);
+    if (lastRun) paragraphs.push(buildLastRunLine(lastRun));
     paragraphs.push(OFFER_INTRO);
   }
 
