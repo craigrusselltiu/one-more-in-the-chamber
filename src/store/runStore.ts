@@ -27,6 +27,24 @@ interface PendingNewGame {
   wantedLevel: number;
 }
 
+const CHARCOAL_OBSIDIAN_LEVEL = 9; // Stored level 9 is displayed as Lv 10.
+
+function transformCharcoalIfReady(run: RunState): RunState {
+  const charcoalLevel = run.tileUpgrades.charcoal ?? 0;
+  if (charcoalLevel < CHARCOAL_OBSIDIAN_LEVEL || !run.activeTileTypes.includes('charcoal')) {
+    return run;
+  }
+
+  const activeTileTypes = Array.from(
+    new Set(run.activeTileTypes.map((t) => (t === 'charcoal' ? 'obsidian' : t))),
+  );
+  const tileUpgrades = { ...run.tileUpgrades };
+  tileUpgrades.obsidian = Math.max(tileUpgrades.obsidian ?? 0, charcoalLevel);
+  delete tileUpgrades.charcoal;
+  useMetaStore.getState().discoverTile('obsidian');
+  return { ...run, activeTileTypes, tileUpgrades };
+}
+
 interface RunStore {
   run: RunState | null;
   pendingNewGame: PendingNewGame | null;
@@ -151,7 +169,7 @@ export const useRunStore = create<RunStore>((set, get) => ({
       };
     }
 
-    set({ run: migrated });
+    set({ run: transformCharcoalIfReady(migrated) });
   },
 
   clearRun: async () => {
@@ -406,13 +424,7 @@ export const useRunStore = create<RunStore>((set, get) => ({
       const tileUpgrades = { ...state.run.tileUpgrades };
       const nextLevel = (tileUpgrades[type] ?? 0) + 1;
       tileUpgrades[type] = nextLevel;
-      let activeTileTypes = state.run.activeTileTypes;
-      if (type === 'charcoal' && nextLevel >= 10 && activeTileTypes.includes('charcoal') && !activeTileTypes.includes('obsidian')) {
-        activeTileTypes = activeTileTypes.map((t) => (t === 'charcoal' ? 'obsidian' : t));
-        tileUpgrades.obsidian = nextLevel;
-        delete tileUpgrades.charcoal;
-      }
-      return { run: { ...state.run, activeTileTypes, tileUpgrades } };
+      return { run: transformCharcoalIfReady({ ...state.run, tileUpgrades }) };
     }),
 
   setTileUpgrade: (type, level) =>
@@ -422,13 +434,7 @@ export const useRunStore = create<RunStore>((set, get) => ({
       const tileUpgrades = { ...state.run.tileUpgrades };
       if (level > 0) tileUpgrades[type] = level;
       else delete tileUpgrades[type];
-      let activeTileTypes = state.run.activeTileTypes;
-      if (type === 'charcoal' && level >= 10 && activeTileTypes.includes('charcoal') && !activeTileTypes.includes('obsidian')) {
-        activeTileTypes = activeTileTypes.map((t) => (t === 'charcoal' ? 'obsidian' : t));
-        tileUpgrades.obsidian = level;
-        delete tileUpgrades.charcoal;
-      }
-      return { run: { ...state.run, activeTileTypes, tileUpgrades } };
+      return { run: transformCharcoalIfReady({ ...state.run, tileUpgrades }) };
     }),
 
   tickPlayTime: () =>
