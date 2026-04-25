@@ -2,22 +2,26 @@ import { memo, useMemo, useState, type ReactNode } from 'react';
 import { EventBus, GameEvent } from '../../game/EventBus';
 import { useMetaStore } from '../../store/metaStore';
 import { TILE_DEFINITIONS } from '../../data/tiles';
-import { ARTIFACTS, RARITY_BREATHE_CLASS } from '../../data/artifacts';
+import { ARTIFACTS } from '../../data/artifacts';
 import { CONSUMABLES } from '../../data/consumables';
+import { TRAITS } from '../../data/traits';
 import { KEYWORDS } from '../../data/keywords';
 import { TILE_FRAMES, ARTIFACT_FRAMES, CONSUMABLE_FRAMES, STATUS_FRAMES, HAZARD_FRAMES, TRAIT_FRAMES } from '../../data/spriteConfig';
 import { SHOP_ITEMS } from '../../data/shopItems';
 import { SpriteIcon } from '../components/SpriteIcon';
 import { Tooltip } from '../components/Tooltip';
+import { ArtifactTooltipContent } from '../components/ArtifactTooltipContent';
 import { colorizeKeywords, buildTileDescription } from '../components/KeywordText';
+import { TraitTooltipContent } from '../hud/TraitRow';
 import type { Screen } from '../../App';
 import type { TileType } from '../../types/game';
 
-type TabKey = 'tiles' | 'artifacts' | 'consumables' | 'status';
+type TabKey = 'tiles' | 'artifacts' | 'traits' | 'consumables' | 'status';
 
 const TABS: { key: TabKey; label: string }[] = [
   { key: 'tiles', label: 'Tiles' },
   { key: 'artifacts', label: 'Artifacts' },
+  { key: 'traits', label: 'Traits' },
   { key: 'consumables', label: 'Consumables' },
   { key: 'status', label: 'Status Effects' },
 ];
@@ -69,6 +73,7 @@ export const LedgerScreen = memo(function LedgerScreen() {
   const discoveredTiles = useMetaStore((s) => s.meta.discoveredTiles);
   const discoveredArtifacts = useMetaStore((s) => s.meta.discoveredArtifacts);
   const discoveredConsumables = useMetaStore((s) => s.meta.discoveredConsumables);
+  const discoveredTraits = useMetaStore((s) => s.meta.discoveredTraits);
   const discoveredStatusEffects = useMetaStore((s) => s.meta.discoveredStatusEffects);
   const unlockedTiles = useMetaStore((s) => s.meta.unlockedTiles);
   const unlockedArtifacts = useMetaStore((s) => s.meta.unlockedArtifacts);
@@ -105,19 +110,30 @@ export const LedgerScreen = memo(function LedgerScreen() {
         const discovered = discoveredArtifacts.includes(a.id);
         const locked = LOCKED_ARTIFACT_SET.has(a.id) && !unlockedArtifacts.includes(a.id);
         const tooltip = discovered ? (
-          <EntryTooltip
-            name={a.name}
-            nameClass={RARITY_BREATHE_CLASS[a.rarity ?? 'common']}
-            effectNode={colorizeKeywords(a.effect)}
-            effectText={a.effect}
-            flavor={a.description}
-            locked={locked}
-          />
+          <ArtifactTooltipContent artifact={a} locked={locked} />
         ) : (
           <UnknownTooltip />
         );
         return (
           <LedgerCell key={`a-${a.id}`} frame={ARTIFACT_FRAMES[a.id]} discovered={discovered} locked={locked} tooltip={tooltip} />
+        );
+      });
+    }
+    if (tab === 'traits') {
+      return TRAITS.map((trait) => {
+        const discovered = discoveredTraits.includes(trait.id);
+        const tooltip = discovered
+          ? <TraitTooltipContent traitId={trait.id} count={Number.POSITIVE_INFINITY} forceAllReached />
+          : <UnknownTooltip />;
+        return (
+          <LedgerCell
+            key={`tr-${trait.id}`}
+            frame={TRAIT_FRAMES[trait.id]}
+            discovered={discovered}
+            tooltip={tooltip}
+            fallbackLabel={discovered ? trait.name : '?'}
+            fallbackColor="#fbbf24"
+          />
         );
       });
     }
@@ -165,7 +181,7 @@ export const LedgerScreen = memo(function LedgerScreen() {
           />
         );
       });
-  }, [tab, discoveredTiles, discoveredArtifacts, discoveredConsumables, unlockedTiles, unlockedArtifacts]);
+  }, [tab, discoveredTiles, discoveredArtifacts, discoveredConsumables, discoveredTraits, unlockedTiles, unlockedArtifacts]);
 
   return (
     <div

@@ -47,7 +47,7 @@ export const KEYWORDS: Record<string, KeywordDefinition> = {
   },
   Shadow: {
     color: '#6b2fa0',
-    description: 'When matched, fires a shadow bolt dealing 10 damage to a random enemy.',
+    description: 'When matched, fires a shadow bolt dealing 10 damage to the targeted enemy.',
   },
   Chain: {
     color: '#A08040',

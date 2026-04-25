@@ -277,7 +277,7 @@ Diagonal = single-trait artifacts. Off-diagonal = artifacts with both traits.
 ### Barkeep's Shotgun
 - Tags: Saloon Keeper, Gunslinger
 - Rarity: Common
-- Effect: Using a consumable deals 5 damage to a random enemy.
+- Effect: Using a consumable deals 5 damage to the targeted enemy.
 - Flavor: "And stay out."
 - NOTE: New artifact
 

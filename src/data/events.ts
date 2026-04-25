@@ -105,7 +105,7 @@ const trainWreck: EventDefinition = {
     },
     {
       label: 'Check for survivors',
-      description: "Gain a Merchant's Token.",
+      description: "The next merchant's items are 25% off.",
       effect: 'train_survivors',
       resultText: "One man still breathes. He presses a merchant's token into your hand before his eyes close.",
     },
@@ -304,7 +304,7 @@ const medicineWagon: EventDefinition = {
     },
     {
       label: 'Threaten him',
-      description: 'Gain 1 Snake Oil, and 129 gold. Merchants cost 20% more this act.',
+      description: 'Gain 1 Snake Oil, and 129 gold. Merchants cost 25% more this act.',
       effect: 'medicine_threaten',
       resultText: "Doc raises his hands with the same easy smile. Word travels faster than wagons out here, and every shopkeeper this act will know your face.",
     },

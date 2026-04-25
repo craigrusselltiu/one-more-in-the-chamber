@@ -406,7 +406,7 @@ export const EventScreen = memo(function EventScreen() {
       case 'medicine_threaten': {
         addConsumable({ id: 'snake_oil' });
         gainGold(129);
-        useRunStore.getState().setActMerchantSurcharge(0.20);
+        useRunStore.getState().setActMerchantSurcharge(0.25);
         finishChoice(choice);
         return;
       }

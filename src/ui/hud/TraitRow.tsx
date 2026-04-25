@@ -4,6 +4,7 @@ import { SpriteIcon } from '../components/SpriteIcon';
 import { Tooltip } from '../components/Tooltip';
 import { colorizeKeywords, getReferencedKeywords, KeywordLine } from '../components/KeywordText';
 import { TRAIT_FRAMES, TRAIT_BREAKPOINTS } from '../../data/spriteConfig';
+import { TRAITS } from '../../data/traits';
 import type { ArtifactInstance, TraitId } from '../../types/game';
 
 // Stable empty fallbacks: a fresh literal from a zustand selector triggers an
@@ -16,84 +17,54 @@ const OUTLINE_STYLE: React.CSSProperties = {
   paintOrder: 'stroke fill',
 };
 
-const TRAIT_LABELS: Record<TraitId, string> = {
-  outlaw: 'Outlaw', sheriff: 'Sheriff', prospector: 'Prospector', sapper: 'Sapper',
-  mustang: 'Mustang', gunslinger: 'Gunslinger', saloon_keeper: 'Saloon Keeper',
-  desperado: 'Desperado', sniper: 'Sniper', dead_man_walking: 'Dead Man Walking',
-  tracker: 'Tracker', preacher: 'Preacher', antivenom: 'Antivenom', undertaker: 'Undertaker',
-  rattlesnake: 'Rattlesnake', corrupt: 'Corrupt',
-};
+export const TRAIT_LABELS: Record<TraitId, string> = Object.fromEntries(
+  TRAITS.map((trait) => [trait.id, trait.name]),
+) as Record<TraitId, string>;
 
-const TRAIT_DESCRIPTIONS: Record<string, Record<number, string>> = {
-  sheriff: {
-    2: 'Double the first time you gain block each combat.',
-    4: 'At the start of combat, gain 3 Sturdy.',
-    6: 'Block reflects 100% of absorbed damage back to attacker.',
-    8: 'Become immune to Suppress.',
-  },
-  outlaw: {
-    2: 'Killing an enemy grants 3 Rageful.',
-    5: 'At the start of boss encounters, gain 5 Rageful and apply 3 Vulnerable to all enemies.',
-  },
-  prospector: {
-    2: 'On any match, 25% chance to generate 6 gold.',
-    4: 'Whenever you gain gold during combat, deal 1 damage to a random enemy.',
-    6: 'Deal 3% of your current gold as extra damage.',
-  },
-  gunslinger: {
-    2: 'Bullet-type tiles deal 1 extra damage per tile.',
-    4: 'Gain 1 Lucky for every bullet-type tile matched.',
-    6: 'Lucky deals 2x damage instead of 1.5x.',
-  },
-  saloon_keeper: {
-    2: 'Consumables heal 5 HP on use (any consumable).',
-    5: 'At the start of combat, gain a random consumable.',
-  },
-  sapper: {
-    2: 'Enemy bomb timers are increased by 2.',
-    4: 'Increase the radius of explosive tiles by 1.',
-  },
-  sniper: {
-    3: 'On 5-match, gain 1 swap for that turn.',
-    5: 'On 6+ match, if the targeted enemy is not a boss, kill it.',
-  },
-  dead_man_walking: {
-    3: 'Whenever you would take damage, take 1 less damage.',
-    5: 'When at or below 20% HP, all damage is doubled.',
-    7: 'Once per combat when taking lethal damage, prevent it and heal 20% HP.',
-  },
-  mustang: {
-    4: 'Gain 1 swap per turn.',
-  },
-  tracker: {
-    1: 'Buried tiles get revealed at the end of your turn automatically.',
-    3: 'Gain 1 Rageful whenever a Buried tile gets revealed.',
-  },
-  preacher: {
-    2: "Whenever you don't deal damage in a turn, heal 5.",
-    4: 'Take 20% less damage from enemies with lower HP than you.',
-    6: 'At the start of combat, gain 1 Grace.',
-  },
-  antivenom: {
-    2: 'Matching next to a Poison tile clears it.',
-    4: 'At the start of every turn, halve your Poison.',
-  },
-  undertaker: {
-    2: 'Deal 50% more damage to summoned enemies.',
-    4: 'Killing an enemy grants 1 max HP.',
-  },
-  desperado: {
-    2: 'Desperado-tagged artifacts are more common.',
-    5: 'At the start of every turn, gain 4 Ace.',
-  },
-  rattlesnake: {
-    2: 'Your tiles that apply Poison have +1 level.',
-    4: 'When you would apply Poison, apply it to ALL enemies.',
-  },
-  corrupt: {
-    2: 'At the start of combat, add Shadow to 2 random tiles for each Corrupt artifact you own.',
-  },
-};
+export function TraitTooltipContent({
+  traitId,
+  count,
+  forceAllReached = false,
+}: {
+  traitId: TraitId;
+  count: number;
+  forceAllReached?: boolean;
+}) {
+  const trait = TRAITS.find((entry) => entry.id === traitId);
+  const breakpoints = trait?.breakpoints ?? [];
+  const tooltipLines = breakpoints.map((bp) => ({
+    threshold: bp.threshold,
+    text: bp.description,
+    reached: forceAllReached || count >= bp.threshold,
+  }));
+
+  const allText = tooltipLines.map((l) => l.text).join(' ');
+  const referencedKeywords = getReferencedKeywords(allText);
+
+  return (
+    <div className="flex flex-col gap-0.5">
+      <div className="font-bold text-amber-400" style={{ fontSize: '10px' }}>
+        {trait?.name ?? TRAIT_LABELS[traitId]}
+      </div>
+      {tooltipLines.map(({ threshold, text, reached }) => (
+        <div
+          key={threshold}
+          className="whitespace-nowrap"
+          style={{ fontSize: '9px', color: reached ? '#e5e5e5' : '#666', lineHeight: 1.4 }}
+        >
+          <span className="font-bold">{threshold}</span> - {colorizeKeywords(text)}
+        </div>
+      ))}
+      {referencedKeywords.length > 0 && (
+        <div className="flex flex-col gap-px mt-0.5 pt-0.5" style={{ borderTop: '1px solid #44403c' }}>
+          {referencedKeywords.map((kw) => (
+            <KeywordLine key={kw.name} name={kw.name} color={kw.color} description={kw.description} />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
 
 /**
  * TraitRow: right-aligned row in the top bar area showing active traits.
@@ -125,43 +96,9 @@ export const TraitRow = memo(function TraitRow() {
         const breakpoints = TRAIT_BREAKPOINTS[traitId] ?? [];
         const firstBreakpoint = breakpoints[0] ?? 1;
         const isActive = count >= firstBreakpoint;
-        const descriptions = TRAIT_DESCRIPTIONS[traitId] ?? {};
-
-        const tooltipLines = breakpoints.map((bp) => ({
-          threshold: bp,
-          text: descriptions[bp] ?? `Breakpoint ${bp}`,
-          reached: count >= bp,
-        }));
-
-        const allText = tooltipLines.map((l) => l.text).join(' ');
-        const referencedKeywords = getReferencedKeywords(allText);
-
-        const tooltipContent = (
-          <div className="flex flex-col gap-0.5">
-            <div className="font-bold text-amber-400" style={{ fontSize: '10px' }}>
-              {TRAIT_LABELS[traitId]}
-            </div>
-            {tooltipLines.map(({ threshold, text, reached }) => (
-              <div
-                key={threshold}
-                className="whitespace-nowrap"
-                style={{ fontSize: '9px', color: reached ? '#e5e5e5' : '#666', lineHeight: 1.4 }}
-              >
-                <span className="font-bold">{threshold}</span> - {colorizeKeywords(text)}
-              </div>
-            ))}
-            {referencedKeywords.length > 0 && (
-              <div className="flex flex-col gap-px mt-0.5 pt-0.5" style={{ borderTop: '1px solid #44403c' }}>
-                {referencedKeywords.map((kw) => (
-                  <KeywordLine key={kw.name} name={kw.name} color={kw.color} description={kw.description} />
-                ))}
-              </div>
-            )}
-          </div>
-        );
 
         return (
-          <Tooltip key={traitId} content={tooltipContent} position="bottom">
+          <Tooltip key={traitId} content={<TraitTooltipContent traitId={traitId} count={count} />} position="bottom">
             <div
               className="relative"
               style={{

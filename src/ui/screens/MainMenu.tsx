@@ -3,6 +3,7 @@ import { EventBus, GameEvent } from '../../game/EventBus';
 import { useRunStore } from '../../store/runStore';
 import { useMetaStore } from '../../store/metaStore';
 import { checkForCombatResume } from '../../services/combatResume';
+import { forceSaveRun } from '../../services/runPersistence';
 import { calculateScore } from '../../utils/scoring';
 import { getAuthState, subscribeAuth, type AuthState } from '../../services/auth';
 import { Tooltip } from '../components/Tooltip';
@@ -181,6 +182,10 @@ export const MainMenu = memo(function MainMenu({ buttonEntryState = 'static' }: 
       EventBus.emit(GameEvent.SCREEN_CHANGE, 'artifact');
       return;
     }
+    if (currentRun?.pendingActTileSelection) {
+      EventBus.emit(GameEvent.SCREEN_CHANGE, 'tile-select');
+      return;
+    }
 
     // Check if player was at an incomplete node
     const currentNode = currentRun?.mapState?.nodes.find((n) => n.id === currentRun?.currentNodeId);
@@ -217,7 +222,13 @@ export const MainMenu = memo(function MainMenu({ buttonEntryState = 'static' }: 
         return;
       }
       // Reward already taken -> tile select; otherwise -> treasure
-      EventBus.emit(GameEvent.SCREEN_CHANGE, currentRun!.bossRewardTaken ? 'tile-select' : 'artifact');
+      if (currentRun!.bossRewardTaken) {
+        useRunStore.getState().advanceAct();
+        forceSaveRun();
+        EventBus.emit(GameEvent.SCREEN_CHANGE, 'tile-select');
+      } else {
+        EventBus.emit(GameEvent.SCREEN_CHANGE, 'artifact');
+      }
       return;
     }
 

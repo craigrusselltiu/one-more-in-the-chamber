@@ -36,17 +36,17 @@ const GATED_TILES: Set<string> = new Set(
 export const TileSelectScreen = memo(function TileSelectScreen() {
   const run = useRunStore((s) => s.run);
   const addTileType = useRunStore((s) => s.addTileType);
-  const advanceAct = useRunStore((s) => s.advanceAct);
+  const setPendingActTileSelection = useRunStore((s) => s.setPendingActTileSelection);
   const [selected, setSelected] = useState<TileType | null>(null);
 
   // Starter selection: Act 1, player has only their 4 character tiles
-  const isStarterSelection = run?.currentAct === 1 && (run?.activeTileTypes.length ?? 0) <= 4;
-  const isBossReward = !isStarterSelection;
+  const isActStartSelection = run?.pendingActTileSelection === true;
+  const isStarterSelection = !isActStartSelection && run?.currentAct === 1 && (run?.activeTileTypes.length ?? 0) <= 4;
   const pool = isStarterSelection ? STARTER_POOL : ADDITIONAL_POOL;
 
-  // Between-act selections roll levels for the next act's distribution.
+  // Act-start selections roll levels for the act the player has just entered.
   // Starter selection is always level 0.
-  const targetAct = isBossReward ? (run?.currentAct ?? 1) + 1 : 1;
+  const targetAct = isActStartSelection ? (run?.currentAct ?? 1) : 1;
   const wantedLevel = run?.wantedLevel ?? 0;
 
   // L30: the starter selection is replaced with a single forced Charcoal pick.
@@ -100,7 +100,7 @@ export const TileSelectScreen = memo(function TileSelectScreen() {
     // Persist the rolled level if the offered card had one.
     const picked = offered.find((t) => t.type === selected);
     if (picked && picked.level > 0) setTileUpgrade(selected, picked.level);
-    if (isBossReward) advanceAct();
+    if (isActStartSelection) setPendingActTileSelection(undefined);
     EventBus.emit(GameEvent.SCREEN_CHANGE, 'map' satisfies Screen);
   };
 

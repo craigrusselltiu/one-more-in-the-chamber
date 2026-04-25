@@ -1,6 +1,7 @@
-import type { RunState, TileType } from '../types/game';
+import type { RunState, TileType, TraitId } from '../types/game';
 import { ARTIFACTS } from './artifacts';
 import { CONSUMABLES } from './consumables';
+import { TRAITS } from './traits';
 import { ADDITIONAL_POOL, TILE_DEFINITIONS } from './tiles';
 import { useRunStore } from '../store/runStore';
 import { createSeededRandom, seededShuffle } from '../utils/seededRandom';
@@ -121,6 +122,16 @@ function recomputeTraitCounts(artifacts: RunState['artifacts']): RunState['trait
   return traitCounts;
 }
 
+function discoverActivatedTraits(traitCounts: Partial<Record<TraitId, number>>): void {
+  const meta = useMetaStore.getState();
+  for (const trait of TRAITS) {
+    const firstBreakpoint = trait.breakpoints[0]?.threshold ?? 1;
+    if ((traitCounts[trait.id] ?? 0) >= firstBreakpoint) {
+      meta.discoverTrait(trait.id);
+    }
+  }
+}
+
 function applyGoldenHunger(): void {
   useRunStore.setState((state) => {
     if (!state.run) return state;
@@ -131,11 +142,14 @@ function applyGoldenHunger(): void {
 
     const payout = alreadyHasGreed ? 0 : applyArtifactGoldGainModifier(287, state.run.artifacts);
 
+    const traitCounts = recomputeTraitCounts(artifacts);
+    discoverActivatedTraits(traitCounts);
+
     return {
       run: {
         ...state.run,
         artifacts,
-        traitCounts: recomputeTraitCounts(artifacts),
+        traitCounts,
         gold: state.run.gold + payout,
         goldObtained: state.run.goldObtained + payout,
         artifactsObtained: state.run.artifactsObtained + (alreadyHasGreed ? 0 : 1),

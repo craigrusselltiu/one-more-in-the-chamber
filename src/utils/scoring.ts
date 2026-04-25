@@ -21,8 +21,9 @@ export function calculateScore(run: RunState): number {
   const combatBonus = n(run.combatsCleared) * 100;
   const eliteBonus = n(run.elitesCleared) * 250;
   const bossBonus = n(run.bossesDefeated) * 500;
+  const outlawKingBonus = n(run.outlawKingsDefeated) * 1000;
   const flawlessBonus = n(run.flawlessFights) * 100;
-  const baseScore = combatBonus + eliteBonus + bossBonus + flawlessBonus;
+  const baseScore = combatBonus + eliteBonus + bossBonus + outlawKingBonus + flawlessBonus;
 
   const goldBonus = n(run.goldObtained);
   const artifactBonus = n(run.artifactsObtained) * 50;

@@ -305,6 +305,16 @@ export default function App() {
       lastAppliedScreen = next;
       setScreen(next);
 
+      // New acts begin with a tile choice; keep the map visible via the
+      // TopBar popup but prevent entering nodes before the pick is made.
+      if (next === 'map') {
+        const run = useRunStore.getState().run;
+        if (run?.pendingActTileSelection) {
+          setScreen('tile-select');
+          return;
+        }
+      }
+
       // Act 1: choose 5th tile before first map visit
       if (next === 'map') {
         const run = useRunStore.getState().run;
@@ -692,6 +702,7 @@ export default function App() {
         // Outlaw King defeat guarantees a legendary artifact reward.
         // Flag the run so ArtifactScreen forces legendary on the next visit.
         if (result.defeatedOutlawKing) {
+          store.addOutlawKingDefeated();
           store.setPendingLegendaryReward(true);
         }
 

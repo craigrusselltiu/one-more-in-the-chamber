@@ -66,7 +66,7 @@ don't use double dashes, just single
 - Choices:
     - **Loot the cargo** — Gain 20 gold, 1 random consumable, and 1 random artifact.
     - **Search the engine** — Lose 13 HP from debris. Pick 1 of 3 artifacts.
-    - **Check for survivors** — Gain a Merchant's Token.
+    - **Check for survivors** — The next merchant's items are 25% off.
 - Result text:
     - **Loot the cargo** — "You pry open the splintered crates and pocket what you can carry."
     - **Search the engine** — "You crawl through the twisted steel, bleeding but richer for it."
@@ -136,7 +136,7 @@ don't use double dashes, just single
 - Choices:
     - **Buy Strong Whiskey** — Gain 1 Strong Whiskey and lose 15 gold.
     - **Buy Panacea** — Gain 1 Panacea and lose 30 gold.
-    - **Threaten him** — Gain 1 Snake Oil, and 129 gold. Merchants cost 20% more this act.
+    - **Threaten him** — Gain 1 Snake Oil, and 129 gold. Merchants cost 25% more this act.
     - **Leave**
 
 # Event Ideas

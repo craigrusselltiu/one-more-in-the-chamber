@@ -333,7 +333,7 @@ export const ARTIFACTS: ArtifactDefinition[] = [
     name: "Barkeep's Shotgun",
     description: 'And stay out.',
     tags: ['saloon_keeper', 'gunslinger'],
-    effect: 'Using a consumable deals 5 damage to a random enemy.',
+    effect: 'Using a consumable deals 5 damage to the targeted enemy.',
     rarity: 'common',
   },
   {

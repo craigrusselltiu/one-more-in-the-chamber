@@ -15,12 +15,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 - Golden Hunger now replaces other corruption with Greed and grants Greed's gold only once.
 - Train Wreck now grants a Merchant's Token instead of an invisible merchant discount.
 - Merchant discounts, sales, and surcharges now stack additively and show adjusted prices in the shop.
+- Between-act tile selection now happens at the start of the next act, so the map popup and act label show the new act.
+- The Ledger now includes discovered traits and shows artifact traits in artifact entries.
+- Broom now clears Tumbleweed and Fake Coin tiles, then resolves any resulting cascades.
+- Victory and defeat score screens now use updated subtitle styling and smaller score breakdown text.
+- Defeating the Outlaw King now grants a score bonus.
 
 ### Fixed
 - Existing Charcoal tiles now transform into Obsidian when continuing a combat save at Lv 10.
 - Shadow tiles now fire their shadow bolt when destroyed by Deadeye, explosions, and other special clears.
 - Starter reward choices can no longer be applied more than once from rapid clicks.
 - Milk and Mirage transformations now appear correctly in the combat tile popup.
+- Copperhead's Fake Coin move now resolves any matches it creates.
+- Shadow bolts and Barkeep's Shotgun now hit the targeted enemy.
+- Bounty executions now count their Bounty stacks toward damage score.
+- Cheese, Fake Coin, and Showdown tiles now appear in the Ledger when first created.
 
 ## v1.0.6
 

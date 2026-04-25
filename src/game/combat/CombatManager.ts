@@ -1,5 +1,5 @@
 import type { Board, SwapResult } from '../board/Board';
-import type { CombatState, CombatPhase, MatchResult, EnemyDefinition, CombatSwapSource, DestroyedTileInfo } from '../../types/combat';
+import type { CombatState, CombatPhase, MatchResult, EnemyDefinition, CombatSwapSource, DestroyedTileInfo, GridPosition } from '../../types/combat';
 import { ALL_ENEMIES } from '../../data/enemies';
 import type { TileType, ArtifactInstance, TraitId, CharacterId } from '../../types/game';
 import type { CombatSnapshot, SerializedEnemy } from '../../types/combatSnapshot';
@@ -18,6 +18,7 @@ import { BossController } from './BossController';
 import { playSwapFail, playMatch, playDeadeyeShot, playDeadeyeActivate, playHolster, playHit, playBlock, playAbilityReady, playShuffle, playRevolverSpin } from '../../services/sfx';
 import { useRunStore } from '../../store/runStore';
 import { useCombatStore } from '../../store/combatStore';
+import { useMetaStore } from '../../store/metaStore';
 import { CONSUMABLES } from '../../data/consumables';
 import { getSpeedMultiplier } from '../../store/settingsStore';
 
@@ -835,6 +836,7 @@ export class CombatManager {
 
     if (!ownedTilesChanged && !boardTilesChanged) return;
 
+    useMetaStore.getState().discoverTile('cheese');
     this.player.activeTileTypes = transformedTileTypes;
     this.board.setActiveTileTypes(transformedTileTypes);
 
@@ -1431,13 +1433,22 @@ export class CombatManager {
           document.body.classList.add('cursor-lasso');
           break;
         case 'broom': {
+          const positionsToClear = this.getBroomTileClearPositions();
+          this.board.setIsResolving(true);
           this.hazardManager.clearAllOfType('poison');
           this.hazardManager.clearAllOfType('bomb');
           this.hazardManager.clearAllOfType('sand');
-          this.hazardManager.clearAllOfType('fools_gold');
           const cleared = this.hazardManager.clearAllOfType('lock');
           this.hazardManager.clearAllOfType('suppress');
           this.grantJailCellKeysBlock(cleared.length);
+          if (positionsToClear.length > 0) {
+            await this.board.destroyTilesWithEffects(positionsToClear);
+            await this.board.applyGravityAnimated();
+            await this.board.fillEmptyTilesAnimated();
+          }
+          await this.resolveBoardCascades(true);
+          this.board.setIsResolving(false);
+          this.ensureSwapPhaseHasValidMoves();
           break;
         }
         case 'panacea': {
@@ -1459,9 +1470,8 @@ export class CombatManager {
       // Artifact consumable hooks (Barkeep's Shotgun, Top-Shelf Reserve)
       const consumableArt = this.artifacts.onConsumableUsed();
       if (consumableArt.bonusDamage > 0) {
-        const alive = this.aliveEnemies();
-        if (alive.length > 0) {
-          const target = alive[Math.floor(Math.random() * alive.length)];
+        const target = this.getTargetedAliveEnemy();
+        if (target) {
           this.dealAuxiliaryDamageToEnemy(target, consumableArt.bonusDamage, '#D04040');
           EventBus.emit(GameEvent.ENEMY_HP_CHANGE, { ...target.state });
         }
@@ -1601,7 +1611,7 @@ export class CombatManager {
         this.floatOnPlayer(`+${match.poisonCount} POISON`, '#40ff40', 9);
       }
 
-      // Shadow tiles: each fires a shadow bolt dealing 10 damage to a random enemy
+      // Shadow tiles: each fires a shadow bolt dealing 10 damage to the targeted enemy
       if (match.shadowCount && match.shadowCount > 0) {
         this.fireShadowBolts(match.shadowCount);
       }
@@ -2046,7 +2056,9 @@ export class CombatManager {
 
   /** Check and handle bounty kill: execute. Bounty Hunter(1): +10 gold if non-summoned. */
   private handleBountyKill(enemy: Enemy): boolean {
+    const bountyStacks = enemy.state.bountyStacks;
     if (enemy.checkBountyKill()) {
+      this.damageDealtThisFight += bountyStacks;
       this.floatOnEnemy(enemy, 'COLLECTED', '#FFD700');
       // Bounty kills on non-summoned enemies grant 10 gold
       if (!enemy.summoned) {
@@ -2772,7 +2784,13 @@ export class CombatManager {
         if (this.player.protectedStacks <= 0 && !this.traits.isSuppressImmune()) this.hazardManager.placeRandomSuppress(ma.value);
         break;
       case 'fools_gold':
-        if (this.player.protectedStacks <= 0) this.hazardManager.placeRandomFoolsGold(ma.value);
+        if (this.player.protectedStacks <= 0) {
+          const placements = this.hazardManager.placeRandomFoolsGold(ma.value);
+          if (placements.length > 0) {
+            useMetaStore.getState().discoverTile('fools_gold');
+          }
+          await this.resolveBoardCascades(true);
+        }
         break;
       case 'summon':
         this.trySummonEnemy(enemy, ma.summonType, ma.summonFullHp);
@@ -3316,11 +3334,39 @@ export class CombatManager {
     }
   }
 
+  private getBroomTileClearPositions(): GridPosition[] {
+    const grid = this.board.getGrid();
+    const positions: GridPosition[] = [];
+    for (let row = 0; row < this.board.getBoardSize(); row++) {
+      for (let col = 0; col < this.board.getBoardSize(); col++) {
+        const tile = grid[row]?.[col];
+        if (!tile) continue;
+        if (tile.type === 'tumbleweed' || tile.type === 'fools_gold' || tile.hazard?.type === 'fools_gold') {
+          positions.push({ row, col });
+        }
+      }
+    }
+    return positions;
+  }
+
+  private async resolveBoardCascades(forceCascadeForCloak = true): Promise<void> {
+    this.ricochetTriggeredThisResolution = false;
+    let cascadeSteps = 0;
+    const onCascadeStep = this.makeCascadeStepHandler(() => ++cascadeSteps, forceCascadeForCloak);
+    await this.board.resolveMatchesFull(onCascadeStep);
+    while (this.ricochetTriggeredThisResolution) {
+      this.ricochetTriggeredThisResolution = false;
+      await this.board.applyGravityAnimated();
+      await this.board.fillEmptyTilesAnimated();
+      await this.board.resolveMatchesFull(onCascadeStep);
+    }
+    EventBus.emit(GameEvent.COMBO_UPDATE, 0);
+  }
+
   private fireShadowBolts(count: number): void {
     for (let s = 0; s < count; s++) {
-      const alive = this.aliveEnemies();
-      if (alive.length === 0) break;
-      const target = alive[Math.floor(Math.random() * alive.length)];
+      const target = this.getTargetedAliveEnemy();
+      if (!target) break;
       this.dealAuxiliaryDamageToEnemy(target, 10, '#6b2fa0');
       EventBus.emit(GameEvent.ENEMY_HP_CHANGE, { ...target.state });
     }

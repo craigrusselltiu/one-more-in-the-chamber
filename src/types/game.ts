@@ -23,6 +23,8 @@ export interface RunState {
   longestCascade: number;
   flawlessFights: number;
   bossesDefeated: number;
+  /** Number of Outlaw King encounters defeated during the run. */
+  outlawKingsDefeated?: number;
   /** Cumulative combat nodes cleared across all acts (not derived from mapState, which resets). */
   combatsCleared: number;
   /** Cumulative elite nodes cleared across all acts. */
@@ -36,8 +38,10 @@ export interface RunState {
   merchantPurchases?: Record<string, string[]>;
   /** Snapshot of owned artifact IDs + active tile types at first merchant visit, keyed by nodeId. */
   merchantSnapshots?: Record<string, MerchantSnapshot>;
-  /** True after boss treasure is taken/skipped but before act advances. */
+  /** True after boss treasure is taken/skipped. Kept for resume safety around act transitions. */
   bossRewardTaken?: boolean;
+  /** True after a new act starts but before the player picks that act's starting tile. */
+  pendingActTileSelection?: boolean;
   /** True after elite treasure is taken/skipped. */
   eliteRewardTaken?: boolean;
   /** True after the once-per-run Outlaw King encounter has been rolled. */

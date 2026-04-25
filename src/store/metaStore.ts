@@ -75,6 +75,7 @@ interface MetaProgression {
   discoveredTiles: string[];
   discoveredArtifacts: string[];
   discoveredConsumables: string[];
+  discoveredTraits: string[];
   discoveredStatusEffects: string[];
 }
 
@@ -90,6 +91,7 @@ interface MetaStore {
   discoverTile: (type: string) => void;
   discoverArtifact: (id: string) => void;
   discoverConsumable: (id: string) => void;
+  discoverTrait: (id: string) => void;
   discoverStatusEffect: (slug: string) => void;
   /** Purchase a shop item: deducts reputation and unlocks into the correct category. */
   purchaseShopItem: (unlockId: string, cost: number, category: ShopCategory) => boolean;
@@ -161,6 +163,7 @@ const DEFAULT_META: MetaProgression = {
   discoveredTiles: [],
   discoveredArtifacts: [],
   discoveredConsumables: [],
+  discoveredTraits: [],
   discoveredStatusEffects: [],
 };
 
@@ -301,6 +304,14 @@ export const useMetaStore = create<MetaStore>((set, get) => ({
     set((state) => {
       if (state.meta.discoveredConsumables.includes(id)) return state;
       const meta = { ...state.meta, discoveredConsumables: [...state.meta.discoveredConsumables, id] };
+      persistMeta(meta);
+      return { meta };
+    }),
+
+  discoverTrait: (id) =>
+    set((state) => {
+      if (state.meta.discoveredTraits.includes(id)) return state;
+      const meta = { ...state.meta, discoveredTraits: [...state.meta.discoveredTraits, id] };
       persistMeta(meta);
       return { meta };
     }),

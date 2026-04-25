@@ -98,14 +98,23 @@ export const ArtifactScreen = memo(function ArtifactScreen() {
   };
 
   const takenRef = useRef(false);
+  const completeReward = (): Screen => {
+    markRewardTaken();
+    const next = getNextScreen();
+    if (isBossReward && next === 'tile-select') {
+      useRunStore.getState().advanceAct();
+      forceSaveRun();
+    }
+    return next;
+  };
+
   const handleChoose = (index: number) => {
     if (taken || takenRef.current) return;
     takenRef.current = true;
     setTaken(true);
     const chosen = artifacts[index];
     addArtifact({ id: chosen.id, tags: chosen.tags });
-    markRewardTaken();
-    const next = getNextScreen();
+    const next = completeReward();
     if (next === 'score') {
       useRunStore.getState().endRun(true);
     }
@@ -116,8 +125,7 @@ export const ArtifactScreen = memo(function ArtifactScreen() {
     if (taken || takenRef.current) return;
     takenRef.current = true;
     setTaken(true);
-    markRewardTaken();
-    const next = getNextScreen();
+    const next = completeReward();
     if (next === 'score') {
       useRunStore.getState().endRun(true);
     }

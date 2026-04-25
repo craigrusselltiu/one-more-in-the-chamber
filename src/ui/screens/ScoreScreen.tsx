@@ -34,13 +34,15 @@ export const ScoreScreen = memo(function ScoreScreen() {
     const combatsCleared = run.combatsCleared ?? 0;
     const elitesCleared = run.elitesCleared ?? 0;
     const bossesDefeated = run.bossesDefeated ?? 0;
+    const outlawKingsDefeated = run.outlawKingsDefeated ?? 0;
     const flawlessFights = run.flawlessFights ?? 0;
 
     const combatBonus = combatsCleared * 100;
     const eliteBonus = elitesCleared * 250;
     const bossBonus = bossesDefeated * 500;
+    const outlawKingBonus = outlawKingsDefeated * 1000;
     const flawlessBonus = flawlessFights * 100;
-    const baseScore = combatBonus + eliteBonus + bossBonus + flawlessBonus;
+    const baseScore = combatBonus + eliteBonus + bossBonus + outlawKingBonus + flawlessBonus;
 
     const goldObtained = run.goldObtained ?? 0;
     const artifactCount = run.artifactsObtained ?? 0;
@@ -75,10 +77,12 @@ export const ScoreScreen = memo(function ScoreScreen() {
       combatsCleared,
       elitesCleared,
       bossesDefeated,
+      outlawKingsDefeated,
       flawlessFights,
       combatBonus,
       eliteBonus,
       bossBonus,
+      outlawKingBonus,
       flawlessBonus,
       goldObtained,
       artifactCount,
@@ -160,10 +164,18 @@ export const ScoreScreen = memo(function ScoreScreen() {
       <h2 className="text-xl text-amber-400 mb-0.5 font-bold uppercase" style={{ WebkitTextStroke: '4px #000', paintOrder: 'stroke fill' }}>
         {score.completed ? 'Victory' : 'Defeat'}
       </h2>
-      <p className="text-stone-400 mb-4" style={{ fontSize: '10px' }}>
+      <p
+        className="mb-4 uppercase"
+        style={{
+          fontSize: '10px',
+          letterSpacing: '1px',
+          color: '#b8b8b8',
+          textShadow: '1px 1px 3px rgba(0,0,0,1), 1px 1px 6px rgba(0,0,0,0.95), 1px 1px 9px rgba(0,0,0,0.85)',
+        }}
+      >
         {score.completed
-          ? 'The West remembers your name.'
-          : 'The trail claims another soul.'}
+          ? 'The West remembers your name'
+          : 'The trail claims another soul'}
       </p>
 
       {/* Score breakdown */}
@@ -172,6 +184,9 @@ export const ScoreScreen = memo(function ScoreScreen() {
           <ScoreLine label="Combats" value={score.combatBonus} detail={`${score.combatsCleared} cleared`} />
           <ScoreLine label="Elites" value={score.eliteBonus} detail={`${score.elitesCleared} cleared`} />
           <ScoreLine label="Bosses" value={score.bossBonus} detail={`${score.bossesDefeated} cleared`} />
+          {score.outlawKingsDefeated > 0 && (
+            <ScoreLine label="Outlaw King" value={score.outlawKingBonus} detail={`${score.outlawKingsDefeated} killed`} />
+          )}
           <ScoreLine label="Flawless" value={score.flawlessBonus} detail={`${score.flawlessFights} fights`} />
 
           <div className="border-t border-stone-600 my-1" />
@@ -227,7 +242,12 @@ export const ScoreScreen = memo(function ScoreScreen() {
 
       <button
         onClick={handleMainMenu}
-        className="px-6 py-2 bg-amber-900/60 text-amber-300 text-sm border border-amber-700 hover:bg-amber-800/60"
+        style={{
+          boxShadow: '2px 2px 1px rgba(0,0,0,0.4)',
+          cursor: 'pointer',
+          textShadow: '1px 1px 3px rgba(0,0,0,1), 1px 1px 6px rgba(0,0,0,0.95), 1px 1px 9px rgba(0,0,0,0.85)',
+        }}
+        className="px-3.5 py-1 text-[10px] uppercase rounded-sm bg-amber-800 text-amber-200 hover:bg-amber-700 active:translate-y-0.5 transition-transform"
       >
         Main Menu
       </button>
@@ -249,10 +269,10 @@ function ScoreLine({
   return (
     <div className="flex items-center justify-between">
       <div className="flex items-center gap-2">
-        <span className="text-stone-400 text-xs">{label}</span>
-        {detail && <span className="text-stone-500" style={{ fontSize: '10px' }}>({detail})</span>}
+        <span className="text-stone-400" style={{ fontSize: '9px' }}>{label}</span>
+        {detail && <span className="text-stone-500" style={{ fontSize: '8px' }}>({detail})</span>}
       </div>
-      <span className={`font-mono text-xs ${isMultiplier ? 'text-blue-300' : 'text-stone-200'}`}>
+      <span className={`font-mono ${isMultiplier ? 'text-blue-300' : 'text-stone-200'}`} style={{ fontSize: '10px' }}>
         {typeof value === 'number' ? (value > 0 ? `+${value}` : value.toString()) : value}
       </span>
     </div>

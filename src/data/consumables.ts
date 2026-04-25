@@ -110,7 +110,7 @@ export const CONSUMABLES: ConsumableDefinition[] = [
     name: 'Broom',
     category: 'utility',
     description: 'Less boom, more broom.',
-    effect: 'Clear all tile hazards.',
+    effect: 'Clear all tile hazards, Tumbleweed, and Fake Coin tiles. Any resulting matches resolve as cascades.',
     cost: 65,
   },
   {

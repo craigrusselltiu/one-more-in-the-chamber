@@ -56,9 +56,11 @@ function extractKeywords(text: string): string[] {
 export function ArtifactTooltipContent({
   artifact,
   tags = artifact.tags,
+  locked = false,
 }: {
   artifact: ArtifactDefinition;
   tags?: TraitId[];
+  locked?: boolean;
 }) {
   return (
     <div className="flex flex-col gap-0.5">
@@ -81,6 +83,11 @@ export function ArtifactTooltipContent({
       {artifact.description && (
         <div className="text-stone-500 italic whitespace-nowrap" style={{ fontSize: '8px' }}>
           "{artifact.description}"
+        </div>
+      )}
+      {locked && (
+        <div className="whitespace-nowrap text-amber-400" style={{ fontSize: '8px', fontWeight: 'bold' }}>
+          Locked -- unlock in the Reputation Shop
         </div>
       )}
       {(() => {

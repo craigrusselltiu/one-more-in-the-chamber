@@ -10,6 +10,7 @@ import type { SerializedBoard, SerializedTile } from '../../types/combatSnapshot
 import { EventBus, GameEvent } from '../EventBus';
 import { TILE_COLORS } from '../../data/tiles';
 import { playMatch } from '../../services/sfx';
+import { useMetaStore } from '../../store/metaStore';
 
 const BOARD_SIZE = 8;
 
@@ -1041,6 +1042,7 @@ export class Board {
       tile.setExplosive(true);
     } else if (kind === 'showdown') {
       tile.setShowdown(true);
+      useMetaStore.getState().discoverTile('showdown');
     } else if (kind === 'shadow') {
       tile.setShadow(true);
     }

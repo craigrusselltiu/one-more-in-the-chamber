@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import type {
   RunState,
   TileType,
+  TraitId,
   ArtifactInstance,
   ConsumableInstance,
   Act,
@@ -14,6 +15,7 @@ import { generateMap } from '../game/map/MapGenerator';
 import { useMetaStore } from './metaStore';
 import { useSettingsStore } from './settingsStore';
 import { ARTIFACTS } from '../data/artifacts';
+import { TRAITS } from '../data/traits';
 import { CHARACTER_TILES, TILE_DEFINITIONS } from '../data/tiles';
 import { getWantedLevelMutations } from '../data/wantedLevel';
 import { getMaxConsumableSlots } from '../utils/consumableSlots';
@@ -26,6 +28,16 @@ import { saveLastRunSummary } from '../services/lastRunSummary';
 interface PendingNewGame {
   character: CharacterId;
   wantedLevel: number;
+}
+
+function discoverActivatedTraits(traitCounts: Partial<Record<TraitId, number>>): void {
+  const meta = useMetaStore.getState();
+  for (const trait of TRAITS) {
+    const firstBreakpoint = trait.breakpoints[0]?.threshold ?? 1;
+    if ((traitCounts[trait.id] ?? 0) >= firstBreakpoint) {
+      meta.discoverTrait(trait.id);
+    }
+  }
 }
 
 interface RunStore {
@@ -58,6 +70,7 @@ interface RunStore {
   updateLongestCascade: (steps: number) => void;
   addFlawlessFight: () => void;
   addBossDefeated: () => void;
+  addOutlawKingDefeated: () => void;
   addCombatCleared: () => void;
   addEliteCleared: () => void;
   addGoldObtained: (amount: number) => void;
@@ -82,6 +95,7 @@ interface RunStore {
   setPendingNextFightSwapBonus: (amount: number | undefined) => void;
   setPendingCampfireOutcome: (outcome: PendingCampfireOutcome | undefined) => void;
   setPendingStarterOffer: (offer: { tileId: string; upgradeId: string; sacrificeId: string } | undefined) => void;
+  setPendingActTileSelection: (value: boolean | undefined) => void;
   markStarterEncountered: () => void;
   incrementMerchantUpgradesPurchased: () => void;
   setActMerchantSurcharge: (amount: number | undefined) => void;
@@ -130,6 +144,7 @@ export const useRunStore = create<RunStore>((set, get) => ({
     // Starting gold (~100) and starting artifacts (1 character + optional loadout) shouldn't count.
     if (migrated.combatsCleared == null) migrated.combatsCleared = 0;
     if (migrated.elitesCleared == null) migrated.elitesCleared = 0;
+    if (migrated.outlawKingsDefeated == null) migrated.outlawKingsDefeated = 0;
     if (migrated.goldObtained == null) migrated.goldObtained = Math.max(0, migrated.gold - 100);
     if (migrated.artifactsObtained == null) {
       migrated.artifactsObtained = Math.max(0, migrated.artifacts.length - 1);
@@ -154,6 +169,7 @@ export const useRunStore = create<RunStore>((set, get) => ({
 
     const transformed = transformCharcoalRunIfReady(migrated);
     if (transformed !== migrated) useMetaStore.getState().discoverTile('obsidian');
+    discoverActivatedTraits(transformed.traitCounts);
     set({ run: transformed });
   },
 
@@ -185,7 +201,7 @@ export const useRunStore = create<RunStore>((set, get) => ({
     let gold = ascMods.startingGoldOverride ?? 100;
     const consumables: ConsumableInstance[] = [];
     const artifacts: ArtifactInstance[] = [];
-    const traitCounts: Partial<Record<string, number>> = {};
+    const traitCounts: Partial<Record<TraitId, number>> = {};
 
     if (loadouts.includes('outlaws_stash')) gold += 15;
     if (loadouts.includes('healers_kit')) consumables.push({ id: 'strong_whiskey' });
@@ -257,6 +273,7 @@ export const useRunStore = create<RunStore>((set, get) => ({
         longestCascade: 0,
         flawlessFights: 0,
         bossesDefeated: 0,
+        outlawKingsDefeated: 0,
         combatsCleared: 0,
         elitesCleared: 0,
         goldObtained: 0,
@@ -270,6 +287,7 @@ export const useRunStore = create<RunStore>((set, get) => ({
     for (const t of coreTiles) meta.discoverTile(t);
     for (const a of artifacts) meta.discoverArtifact(a.id);
     for (const c of consumables) meta.discoverConsumable(c.id);
+    discoverActivatedTraits(traitCounts);
   },
 
   updateHealth: (delta) =>
@@ -337,6 +355,7 @@ export const useRunStore = create<RunStore>((set, get) => ({
       }
       const artifactsObtained = state.run.artifactsObtained + 1;
       useMetaStore.getState().discoverArtifact(artifact.id);
+      discoverActivatedTraits(traitCounts);
       return { run: { ...state.run, artifacts, traitCounts, gold, goldObtained, artifactsObtained } };
     }),
 
@@ -460,6 +479,12 @@ export const useRunStore = create<RunStore>((set, get) => ({
     set((state) => {
       if (!state.run) return state;
       return { run: { ...state.run, bossesDefeated: state.run.bossesDefeated + 1 } };
+    }),
+
+  addOutlawKingDefeated: () =>
+    set((state) => {
+      if (!state.run) return state;
+      return { run: { ...state.run, outlawKingsDefeated: (state.run.outlawKingsDefeated ?? 0) + 1 } };
     }),
 
   addCombatCleared: () =>
@@ -656,6 +681,12 @@ export const useRunStore = create<RunStore>((set, get) => ({
       return { run: { ...state.run, pendingStarterOffer: offer } };
     }),
 
+  setPendingActTileSelection: (value) =>
+    set((state) => {
+      if (!state.run) return state;
+      return { run: { ...state.run, pendingActTileSelection: value } };
+    }),
+
   markStarterEncountered: () =>
     set((state) => {
       if (!state.run) return state;
@@ -692,6 +723,7 @@ export const useRunStore = create<RunStore>((set, get) => ({
           currentNodeId: null,
           health: newHealth,
           bossRewardTaken: false,
+          pendingActTileSelection: true,
           pendingActBossHpBonus: undefined,
           actMerchantSurcharge: undefined,
           mapState,

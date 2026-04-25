@@ -17,8 +17,7 @@ import { TILE_DEFINITIONS } from '../data/tiles';
  *
  * Used by:
  *   - Merchant (targetAct = run.currentAct)
- *   - Between-acts tile select (targetAct = run.currentAct + 1, since advanceAct
- *     hasn't fired yet at the point the offer is rolled)
+ *   - Act-start tile select (targetAct = run.currentAct)
  */
 export function rollTileRewardLevel(
   targetAct: number,
