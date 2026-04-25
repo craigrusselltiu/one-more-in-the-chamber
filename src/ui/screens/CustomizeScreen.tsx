@@ -162,9 +162,6 @@ export const CustomizeScreen = memo(function CustomizeScreen() {
       {/* Header */}
       <div className="mt-4 mb-2 text-center">
         <h2 className="text-xl text-amber-400 font-bold uppercase" style={{ WebkitTextStroke: '4px #000', paintOrder: 'stroke fill' }}>Customize</h2>
-        <p className="text-xs text-stone-400 mt-1" style={{ WebkitTextStroke: '2px #000', paintOrder: 'stroke fill' }}>
-          Equip unlocks you&apos;ve earned.
-        </p>
       </div>
 
       {/* Tabs */}

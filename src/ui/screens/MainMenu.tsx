@@ -55,13 +55,12 @@ function MenuButton({
   if (disabled) {
     const body = (
       <div
-        className="py-1 px-3 text-left"
+        className="py-0.5 px-2.5 text-left uppercase"
         style={{
-          fontSize: '14px',
+          fontSize: '12px',
           letterSpacing: '1px',
           color: '#5a3a3a',
-          WebkitTextStroke: '3px #000',
-          paintOrder: 'stroke fill',
+          textShadow: '1px 1px 3px rgba(0,0,0,1), 1px 1px 6px rgba(0,0,0,0.95), 1px 1px 9px rgba(0,0,0,0.85)',
           cursor: disabledTooltip ? 'help' : 'default',
         }}
       >
@@ -81,13 +80,12 @@ function MenuButton({
     <div className={wrapperClassName} style={wrapperStyle}>
       <button
         onClick={onClick}
-        className="group relative text-left py-1 px-3 bg-transparent border-none outline-none"
+        className="group relative text-left py-0.5 px-2.5 bg-transparent border-none outline-none uppercase"
         style={{
-          fontSize: '14px',
+          fontSize: '12px',
           letterSpacing: '1px',
           color: '#e8e8e8',
-          WebkitTextStroke: '3px #000',
-          paintOrder: 'stroke fill',
+          textShadow: '1px 1px 3px rgba(0,0,0,1), 1px 1px 6px rgba(0,0,0,0.95), 1px 1px 9px rgba(0,0,0,0.85)',
           cursor: 'pointer',
         }}
       >
@@ -289,9 +287,8 @@ export const MainMenu = memo(function MainMenu({ buttonEntryState = 'static' }: 
           <span
             style={{
               fontSize: '12px',
-              color: 'rgba(255,255,255,0.5)',
-              WebkitTextStroke: '2px #000',
-              paintOrder: 'stroke fill',
+              color: '#b8b8b8',
+              textShadow: '1px 1px 3px rgba(0,0,0,1), 1px 1px 6px rgba(0,0,0,0.95), 1px 1px 9px rgba(0,0,0,0.85)',
             }}
           >
             <>
@@ -305,7 +302,7 @@ export const MainMenu = memo(function MainMenu({ buttonEntryState = 'static' }: 
       )}
 
       {/* Menu items -- bottom left */}
-      <div className="absolute left-8 bottom-10 flex flex-col gap-0.5">
+      <div className="absolute left-8 bottom-10 flex flex-col gap-1.5">
         {hasActiveRun && (
           <MenuButton label="Continue" onClick={handleContinue} entryIndex={menuButtonIndex++} entryState={buttonEntryState} />
         )}
@@ -337,11 +334,12 @@ export const MainMenu = memo(function MainMenu({ buttonEntryState = 'static' }: 
       <div className="absolute right-2 bottom-4 text-right">
         {auth.isLoggedIn ? (
           <span
+            className="uppercase"
             style={{
               fontSize: '10px',
-              color: 'rgba(231, 229, 228, 0.7)',
-              WebkitTextStroke: '2px #000',
-              paintOrder: 'stroke fill',
+              color: '#b8b8b8',
+              letterSpacing: '1px',
+              textShadow: '1px 1px 3px rgba(0,0,0,1), 1px 1px 6px rgba(0,0,0,0.95), 1px 1px 9px rgba(0,0,0,0.85)',
             }}
           >
             Signed In
@@ -350,7 +348,7 @@ export const MainMenu = memo(function MainMenu({ buttonEntryState = 'static' }: 
           <button
             onClick={handleLogin}
             style={{ boxShadow: '2px 2px 1px rgba(0,0,0,0.4)', cursor: 'pointer' }}
-            className="px-4 py-1.5 text-[11px] rounded-sm bg-amber-800 text-amber-200 hover:bg-amber-700 active:translate-y-0.5 transition-transform"
+            className="px-3.5 py-1 text-[10px] uppercase rounded-sm bg-amber-800 text-amber-200 hover:bg-amber-700 active:translate-y-0.5 transition-transform"
           >
             Login
           </button>
@@ -391,11 +389,11 @@ export const MainMenu = memo(function MainMenu({ buttonEntryState = 'static' }: 
       {/* Changelog popup */}
       {showChangelog && (
         <div
-          className="absolute inset-0 flex items-center justify-center bg-black/80 z-10"
+          className="absolute inset-0 flex items-center justify-center bg-black/65 z-10"
           onClick={(e) => { if (e.target === e.currentTarget) setShowChangelog(false); }}
         >
           <div
-            className="border border-stone-600 bg-stone-950/95 px-7 py-6 flex flex-col shadow-2xl"
+            className="bg-stone-950/80 px-7 py-6 flex flex-col shadow-2xl"
             style={{ width: 'min(560px, calc(100vw - 32px))', maxHeight: 'min(470px, calc(100vh - 48px))' }}
           >
             <h2
@@ -429,8 +427,8 @@ export const MainMenu = memo(function MainMenu({ buttonEntryState = 'static' }: 
             </div>
             <button
               onClick={() => setShowChangelog(false)}
-              className="mt-3 px-6 py-1.5 text-xs bg-stone-700/50 text-stone-300 border border-stone-600 hover:bg-stone-600/50 self-center"
-              style={{ cursor: 'pointer' }}
+              className="mt-3 px-4 py-1.5 text-[11px] rounded-sm bg-stone-800 text-stone-300 hover:bg-stone-700 active:translate-y-0.5 transition-transform self-center"
+              style={{ boxShadow: '2px 2px 1px rgba(0,0,0,0.4)', cursor: 'pointer' }}
             >
               Close
             </button>

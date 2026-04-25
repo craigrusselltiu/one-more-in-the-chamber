@@ -106,8 +106,15 @@ export const ReputationShopScreen = memo(function ReputationShopScreen() {
       {/* Header */}
       <div className="mt-4 mb-2 text-center">
         <h2 className="text-xl text-amber-400 font-bold uppercase" style={{ WebkitTextStroke: '4px #000', paintOrder: 'stroke fill' }}>Reputation Shop</h2>
-        <p className="text-xs text-stone-400 mt-1" style={{ WebkitTextStroke: '2px #000', paintOrder: 'stroke fill' }}>
-          Reputation: <span className="text-amber-300 font-bold">{reputation.toLocaleString()}</span>
+        <p
+          className="text-[10px] mt-1 uppercase"
+          style={{
+            letterSpacing: '1px',
+            textShadow: '1px 1px 3px rgba(0,0,0,1), 1px 1px 6px rgba(0,0,0,0.95), 1px 1px 9px rgba(0,0,0,0.85)',
+          }}
+        >
+          <span style={{ color: '#b8b8b8' }}>REPUTATION</span>
+          <span style={{ color: '#fcd34d', fontWeight: 700, marginLeft: 8 }}>{reputation.toLocaleString()}</span>
         </p>
       </div>
 

@@ -6,6 +6,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
 ## v1.0.7
 
+### Changed
+- Polished menu, shop, leaderboard, and popup UI styling.
+
 ### Fixed
 - Existing Charcoal tiles now transform into Obsidian when continuing a combat save at Lv 10.
 

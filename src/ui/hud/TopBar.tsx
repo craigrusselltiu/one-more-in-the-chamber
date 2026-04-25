@@ -186,7 +186,7 @@ export const TopBar = memo(function TopBar({ mapDisabled, deadeyeCursorEnabled =
         <div className="absolute z-0 left-2 pointer-events-auto" style={{ bottom: 4, fontSize: '7px' }}>
           <Tooltip text={seedCopied ? 'Copied!' : 'Copy seed'} position="bottom">
             <button
-              className="text-white/40 hover:text-white/70"
+              className="text-white/70 hover:text-white/80 uppercase"
               data-no-click-sfx
               onClick={() => {
                 navigator.clipboard.writeText(seed.toUpperCase());
@@ -194,7 +194,7 @@ export const TopBar = memo(function TopBar({ mapDisabled, deadeyeCursorEnabled =
                 setTimeout(() => setSeedCopied(false), 2000);
               }}
             >
-              Seed: {seed.toUpperCase()}
+              SEED {seed.toUpperCase()}
             </button>
           </Tooltip>
         </div>
@@ -224,8 +224,8 @@ export const TopBar = memo(function TopBar({ mapDisabled, deadeyeCursorEnabled =
           {/* Close button positioned at top-right near the map icon */}
           <button
             onClick={() => setShowMap(false)}
-            className="absolute flex items-center justify-center bg-stone-800/80 text-red-400 font-bold border border-red-900/50 hover:bg-red-900/40"
-            style={{ top: 6, right: 34, width: 16, height: 16, fontSize: '8px' }}
+            className="absolute w-4 h-4 flex items-center justify-center rounded-sm bg-red-900 text-red-200 hover:bg-red-800 active:translate-y-px transition-transform"
+            style={{ top: 6, right: 34, fontSize: '8px', boxShadow: '2px 2px 1px rgba(0,0,0,0.4)', cursor: 'pointer' }}
           >
             X
           </button>

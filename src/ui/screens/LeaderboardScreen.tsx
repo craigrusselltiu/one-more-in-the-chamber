@@ -79,7 +79,15 @@ export const LeaderboardScreen = memo(function LeaderboardScreen() {
         >
           Leaderboard
         </h2>
-        <p className="text-[11px] text-stone-400 mt-1">Top gunslingers of the West</p>
+        <p
+          className="text-[10px] mt-1 uppercase"
+          style={{
+            letterSpacing: '1px',
+            textShadow: '1px 1px 3px rgba(0,0,0,1), 1px 1px 6px rgba(0,0,0,0.95), 1px 1px 9px rgba(0,0,0,0.85)',
+          }}
+        >
+          <span style={{ color: '#b8b8b8' }}>TOP GUNSLINGERS OF THE WEST</span>
+        </p>
       </div>
 
       {/* Period tabs */}
