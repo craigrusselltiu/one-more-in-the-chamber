@@ -4,10 +4,15 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## v1.0.7
+
+### Fixed
+- Existing Charcoal tiles now transform into Obsidian when continuing a combat save at Lv 10.
+
 ## v1.0.6
 
 ### Fixed
-- Charcoal now transforms into Obsidian at Lv 10, including existing combat saves, and keeps its level.
+- Charcoal now transforms into Obsidian at Lv 10 and keeps its level.
 
 ## v1.0.5
 
