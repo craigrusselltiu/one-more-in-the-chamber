@@ -50,6 +50,10 @@ export interface CombatState {
   shuffleMaxHolds: number;
   /** Tile types currently suppressed by warrants (produce no output when matched). */
   suppressedTileTypes: TileType[];
+  /** Tile types currently active for this fight, including combat-only transforms. */
+  activeTileTypes: TileType[];
+  /** Tile upgrade levels currently active for this fight, including combat-only transforms. */
+  tileUpgrades: Partial<Record<TileType, number>>;
   /** If mirage is active, the tile type it transformed into this combat. */
   mirageType: TileType | null;
 }

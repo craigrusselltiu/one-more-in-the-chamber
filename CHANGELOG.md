@@ -6,15 +6,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
 ## v1.0.7
 
+### Added
+- Added Merchant's Token, an artifact that makes the next merchant 25% cheaper and disables after use.
+
 ### Changed
 - Polished menu, shop, leaderboard, and popup UI styling.
 - Updated the Travelling Preacher event text and choices.
 - Golden Hunger now replaces other corruption with Greed and grants Greed's gold only once.
+- Train Wreck now grants a Merchant's Token instead of an invisible merchant discount.
+- Merchant discounts, sales, and surcharges now stack additively and show adjusted prices in the shop.
 
 ### Fixed
 - Existing Charcoal tiles now transform into Obsidian when continuing a combat save at Lv 10.
 - Shadow tiles now fire their shadow bolt when destroyed by Deadeye, explosions, and other special clears.
 - Starter reward choices can no longer be applied more than once from rapid clicks.
+- Milk and Mirage transformations now appear correctly in the combat tile popup.
 
 ## v1.0.6
 

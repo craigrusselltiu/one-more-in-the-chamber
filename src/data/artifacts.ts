@@ -228,6 +228,14 @@ export const ARTIFACTS: ArtifactDefinition[] = [
     effect: 'Upon pickup, gain 333 gold.',
     rarity: 'rare',
   },
+  {
+    id: 'merchants_token',
+    name: "Merchant's Token",
+    description: "Saturday is bargain day at the supermarket! I can't miss it!",
+    tags: [],
+    effect: "The next merchant's prices are 25% cheaper.",
+    rarity: 'rare',
+  },
 
   // ======================= Sapper =======================
 

@@ -105,7 +105,7 @@ const trainWreck: EventDefinition = {
     },
     {
       label: 'Check for survivors',
-      description: "The next merchant's items are discounted by 25%.",
+      description: "Gain a Merchant's Token.",
       effect: 'train_survivors',
       resultText: "One man still breathes. He presses a merchant's token into your hand before his eyes close.",
     },

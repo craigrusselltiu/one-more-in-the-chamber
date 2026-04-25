@@ -10,7 +10,7 @@ import { Tooltip } from '../components/Tooltip';
 import { KeywordSubTooltips, getReferencedKeywords, buildTileDescription } from '../components/KeywordText';
 import { TILE_DEFINITIONS } from '../../data/tiles';
 import { TILE_FRAMES, UI_FRAMES } from '../../data/spriteConfig';
-import type { Act, MapNodeType } from '../../types/game';
+import type { Act, MapNodeType, TileType } from '../../types/game';
 import type { Screen } from '../../App';
 
 /** Color class per map node type for the top-bar indicator. */
@@ -55,7 +55,7 @@ type TopBarProps = {
   deadeyeCursorEnabled?: boolean;
 };
 
-export const TopBar = memo(function TopBar({ mapDisabled, deadeyeCursorEnabled = false }: TopBarProps) {
+export const TopBar = memo(function TopBar({ showConsumables = false, mapDisabled, deadeyeCursorEnabled = false }: TopBarProps) {
   const run = useRunStore((s) => s.run);
   const act = (run?.currentAct ?? 1) as Act;
   const health = run?.health ?? 100;
@@ -67,6 +67,8 @@ export const TopBar = memo(function TopBar({ mapDisabled, deadeyeCursorEnabled =
   const [showSettings, setShowSettings] = useState(false);
   const [showTiles, setShowTiles] = useState(false);
   const mirageType = useCombatStore((s) => s.mirageType);
+  const combatActiveTileTypes = useCombatStore((s) => s.activeTileTypes);
+  const combatTileUpgrades = useCombatStore((s) => s.tileUpgrades);
   const [seedCopied, setSeedCopied] = useState(false);
   const [elapsed, setElapsed] = useState(playTimeSeconds);
   const endRun = useRunStore((s) => s.endRun);
@@ -126,6 +128,16 @@ export const TopBar = memo(function TopBar({ mapDisabled, deadeyeCursorEnabled =
   };
 
   const seed = run?.seed ?? '';
+  const tilePopupData = run
+    ? getTilePopupData(
+      showConsumables,
+      run.activeTileTypes,
+      run.tileUpgrades,
+      combatActiveTileTypes,
+      combatTileUpgrades,
+      mirageType,
+    )
+    : null;
 
   return (
     <>
@@ -201,9 +213,8 @@ export const TopBar = memo(function TopBar({ mapDisabled, deadeyeCursorEnabled =
       )}
       {showTiles && run && (
         <TilesPopup
-          activeTileTypes={run.activeTileTypes}
-          tileUpgrades={run.tileUpgrades}
-          mirageType={mirageType}
+          activeTileTypes={tilePopupData?.activeTileTypes ?? run.activeTileTypes}
+          tileUpgrades={tilePopupData?.tileUpgrades ?? run.tileUpgrades}
           poisonBonus={(run.traitCounts?.rattlesnake ?? 0) >= 2 ? 1 : 0}
           onClose={() => setShowTiles(false)}
         />
@@ -239,17 +250,15 @@ export const TopBar = memo(function TopBar({ mapDisabled, deadeyeCursorEnabled =
 function TilesPopup({
   activeTileTypes,
   tileUpgrades,
-  mirageType,
   poisonBonus,
   onClose,
 }: {
-  activeTileTypes: import('../../types/game').TileType[];
-  tileUpgrades: Partial<Record<import('../../types/game').TileType, number>>;
-  mirageType: import('../../types/game').TileType | null;
+  activeTileTypes: TileType[];
+  tileUpgrades: Partial<Record<TileType, number>>;
   poisonBonus: number;
   onClose: () => void;
 }) {
-  const getBonus = (t: import('../../types/game').TileType) => {
+  const getBonus = (t: TileType) => {
     if (poisonBonus > 0 && (t === 'waste' || t === 'rattler')) return poisonBonus;
     return 0;
   };
@@ -307,33 +316,6 @@ function TilesPopup({
                 </div>
               </Tooltip>,
             ];
-            // Show mirage transformed tile right after the Mirage entry
-            if (tileType === 'mirage' && mirageType) {
-              const mDef = TILE_DEFINITIONS[mirageType];
-              if (mDef) {
-                // Mirage adds its upgrade level to the transformed tile's level.
-                const mLevel = (tileUpgrades[mirageType] ?? 0) + (tileUpgrades['mirage'] ?? 0) + getBonus(mirageType);
-                const mTooltip = (
-                  <div className="flex flex-col gap-0.5">
-                    <div className="font-bold text-amber-400" style={{ fontSize: '10px' }}>{mDef.label}</div>
-                    <div className="text-stone-200 whitespace-nowrap" style={{ fontSize: '9px' }}>{buildTileDescription(mirageType, mLevel)}</div>
-                    {mDef.flavor && (
-                      <div className="text-stone-500 italic whitespace-nowrap" style={{ fontSize: '8px' }}>"{mDef.flavor}"</div>
-                    )}
-                  </div>
-                );
-                const mHasKeywords = getReferencedKeywords(mDef.description).length > 0;
-                const mKeywordTooltip = mHasKeywords ? <KeywordSubTooltips text={mDef.description} /> : undefined;
-                items.push(
-                  <Tooltip key="mirage-transformed" content={mTooltip} secondContent={mKeywordTooltip} position="bottom" align="left">
-                    <div className="flex items-center gap-2 opacity-50">
-                      <SpriteIcon frame={TILE_FRAMES[mirageType]} scale={1} />
-                      <span className="text-stone-400 text-xs">{mDef.label} <span className="text-stone-500">(Mirage)</span></span>
-                    </div>
-                  </Tooltip>,
-                );
-              }
-            }
             return items;
           })}
           {activeTileTypes.length === 0 && (
@@ -343,4 +325,30 @@ function TilesPopup({
       </div>
     </div>
   );
+}
+
+function getTilePopupData(
+  isCombat: boolean,
+  runActiveTileTypes: TileType[],
+  runTileUpgrades: Partial<Record<TileType, number>>,
+  combatActiveTileTypes: TileType[],
+  combatTileUpgrades: Partial<Record<TileType, number>>,
+  mirageType: TileType | null,
+): { activeTileTypes: TileType[]; tileUpgrades: Partial<Record<TileType, number>> } {
+  if (!isCombat || combatActiveTileTypes.length === 0) {
+    return { activeTileTypes: runActiveTileTypes, tileUpgrades: runTileUpgrades };
+  }
+
+  const tileUpgrades = { ...combatTileUpgrades };
+  const activeTileTypes = combatActiveTileTypes.map((tileType) => {
+    if (tileType !== 'mirage' || !mirageType) return tileType;
+
+    tileUpgrades[mirageType] = (tileUpgrades[mirageType] ?? 0) + (tileUpgrades.mirage ?? 0);
+    return mirageType;
+  });
+
+  return {
+    activeTileTypes: Array.from(new Set(activeTileTypes)),
+    tileUpgrades,
+  };
 }

@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import type { CombatState, EnemyState, PlayerStatusEffect, EnemyStatusEffect, CombatPhase, CombatSwapSource } from '../types/combat';
-import type { CharacterId } from '../types/game';
+import type { CharacterId, TileType } from '../types/game';
 
 /**
  * Combat store: reactive state for React HUD components.
@@ -59,7 +59,9 @@ interface CombatStore {
   turnNumber: number;
   comboCount: number;
   currentAct: number;
-  mirageType: import('../types/game').TileType | null;
+  activeTileTypes: TileType[];
+  tileUpgrades: Partial<Record<TileType, number>>;
+  mirageType: TileType | null;
   /** Tinnitus: when true, enemy intents are hidden (turn 1 only). */
   intentsHidden: boolean;
   /** Lethargic: when true, the next swap attempt will do nothing. Cleared once consumed. */
@@ -125,6 +127,8 @@ const initialState = {
   turnNumber: 0,
   comboCount: 0,
   currentAct: 1,
+  activeTileTypes: [] as TileType[],
+  tileUpgrades: {} as Partial<Record<TileType, number>>,
   mirageType: null,
   intentsHidden: false,
   lethargicActive: false,
@@ -173,6 +177,8 @@ export const useCombatStore = create<CombatStore>((set) => ({
       targetedEnemyIndex: state.targetedEnemyIndex,
       phase: state.phase,
       turnNumber: state.turnNumber,
+      activeTileTypes: state.activeTileTypes,
+      tileUpgrades: state.tileUpgrades,
       mirageType: state.mirageType,
     }),
 

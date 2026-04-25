@@ -73,6 +73,7 @@ export const ARTIFACT_FRAMES: Record<string, number> = {
   cactus_spine_vest: 229,
   rattlesnake_fang_necklace: 830,
   gold_tooth: 1185,
+  merchants_token: 1159,
   blasting_pan: 1248,
   black_powder_cache: 724,
   tinkers_wrench: 928,

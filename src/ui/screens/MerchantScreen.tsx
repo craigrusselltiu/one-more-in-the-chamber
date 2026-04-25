@@ -47,9 +47,10 @@ interface MerchantItem {
   name: string;
   description: string;
   price: number;
-  /** Set when the item is on sale. `price` holds the discounted cost; this
-   *  field holds the pre-discount price so the card can strikethrough it. */
+  /** Pre-modifier price shown struck through when merchant modifiers alter the final price. */
   originalPrice?: number;
+  priceModifierLabel?: string;
+  priceModifierKind?: 'discount' | 'surcharge';
   tileLevel?: number;
 }
 
@@ -80,38 +81,45 @@ export const MerchantScreen = memo(function MerchantScreen() {
   // On remount (quit+resume), use the saved snapshot so stock doesn't re-roll.
   const merchantSnapshots = useRunStore((s) => s.run?.merchantSnapshots);
   const setMerchantSnapshot = useRunStore((s) => s.setMerchantSnapshot);
+  const markArtifactUsed = useRunStore((s) => s.markArtifactUsed);
   const setNextMerchantDiscount = useRunStore((s) => s.setNextMerchantDiscount);
   const setNextMerchantAllArtifactsOnSale = useRunStore((s) => s.setNextMerchantAllArtifactsOnSale);
+
+  const pendingMerchantTokenDiscount =
+    run?.artifacts.some((artifact) => artifact.id === 'merchants_token' && !artifact.used) ? 0.25 : 0;
 
   const snapshot = useMemo(() => {
     if (!run || !nodeId) return null;
     return merchantSnapshots?.[nodeId] ?? {
       ownedArtifactIds: run.artifacts.map(a => a.id),
       activeTileTypes: [...run.activeTileTypes],
-      discount: run.nextMerchantDiscount ?? 0,
+      discount: (run.nextMerchantDiscount ?? 0) + pendingMerchantTokenDiscount,
       surcharge: run.actMerchantSurcharge ?? 0,
       allArtifactSales: run.nextMerchantAllArtifactsOnSale ?? false,
     };
-  }, [merchantSnapshots, nodeId, run]);
+  }, [merchantSnapshots, nodeId, pendingMerchantTokenDiscount, run]);
 
   useEffect(() => {
     if (!run || !nodeId || merchantSnapshots?.[nodeId]) return;
     const entrySnapshot = {
       ownedArtifactIds: run.artifacts.map((a) => a.id),
       activeTileTypes: [...run.activeTileTypes],
-      discount: run.nextMerchantDiscount ?? 0,
+      discount: (run.nextMerchantDiscount ?? 0) + pendingMerchantTokenDiscount,
       surcharge: run.actMerchantSurcharge ?? 0,
       allArtifactSales: run.nextMerchantAllArtifactsOnSale ?? false,
     };
     setMerchantSnapshot(nodeId, entrySnapshot);
-    if (entrySnapshot.discount > 0) {
+    if (pendingMerchantTokenDiscount > 0) {
+      markArtifactUsed('merchants_token');
+    }
+    if ((run.nextMerchantDiscount ?? 0) > 0) {
       setNextMerchantDiscount(undefined);
     }
     if (entrySnapshot.allArtifactSales) {
       setNextMerchantAllArtifactsOnSale(undefined);
     }
     forceSaveRun();
-  }, [merchantSnapshots, nodeId, run, setMerchantSnapshot, setNextMerchantAllArtifactsOnSale, setNextMerchantDiscount]);
+  }, [markArtifactUsed, merchantSnapshots, nodeId, pendingMerchantTokenDiscount, run, setMerchantSnapshot, setNextMerchantAllArtifactsOnSale, setNextMerchantDiscount]);
 
   const stock = useMemo(() => {
     if (!run || !snapshot) return { consumables: [] as MerchantItem[], artifacts: [] as MerchantItem[], tiles: [] as MerchantItem[] };
@@ -119,7 +127,21 @@ export const MerchantScreen = memo(function MerchantScreen() {
     const ascPriceMult = getWantedLevelMutations(run.wantedLevel).merchantPriceMultiplier;
     const discount = snapshot.discount ?? 0;
     const surcharge = snapshot.surcharge ?? 0;
-    const priceMult = ascPriceMult * (1 - discount) * (1 + surcharge);
+    const priceBaseMult = ascPriceMult;
+    const priceItem = (basePrice: number, itemDiscount = 0): Pick<MerchantItem, 'price' | 'originalPrice' | 'priceModifierLabel' | 'priceModifierKind'> => {
+      const originalPrice = Math.round(basePrice * priceBaseMult);
+      const netDiscount = Math.min(1, itemDiscount + discount - surcharge);
+      const price = Math.max(0, Math.round(originalPrice * (1 - netDiscount)));
+      if (netDiscount === 0) return { price };
+      return {
+        price,
+        originalPrice,
+        priceModifierLabel: netDiscount > 0
+          ? `${Math.round(netDiscount * 100)}% OFF`
+          : `${Math.round(Math.abs(netDiscount) * 100)}% MORE`,
+        priceModifierKind: netDiscount > 0 ? 'discount' : 'surcharge',
+      };
+    };
 
     const consumables: MerchantItem[] = [];
     const shuffledConsumables = seededShuffle(CONSUMABLES, rand);
@@ -133,7 +155,7 @@ export const MerchantScreen = memo(function MerchantScreen() {
         id: `cons-${c.id}`,
         name: c.name,
         description: c.effect,
-        price: Math.round(basePrice * priceMult),
+        ...priceItem(basePrice),
       });
     }
 
@@ -172,15 +194,13 @@ export const MerchantScreen = memo(function MerchantScreen() {
       const a = pickedArtifacts[i];
       const tier = RARITY_PRICE[a.rarity ?? 'common'] ?? RARITY_PRICE.common;
       const basePrice = tier.min + Math.floor(rand() * tier.range);
-      const fullPrice = Math.round(basePrice * priceMult);
       const onSale = allArtifactSales || i === saleIndex;
       artifacts.push({
         type: 'artifact',
         id: `art-${a.id}`,
         name: a.name,
         description: a.effect,
-        price: onSale ? Math.max(1, Math.round(fullPrice * 0.25)) : fullPrice,
-        originalPrice: onSale ? fullPrice : undefined,
+        ...priceItem(basePrice, onSale ? 0.75 : 0),
       });
     }
 
@@ -204,7 +224,7 @@ export const MerchantScreen = memo(function MerchantScreen() {
           id: `swap-${swapTile}`,
           name: def.label,
           description: def.description,
-          price: Math.round((77 + Math.floor(rand() * 40)) * priceMult),
+          ...priceItem(77 + Math.floor(rand() * 40)),
           tileLevel,
         });
       }
@@ -215,7 +235,7 @@ export const MerchantScreen = memo(function MerchantScreen() {
     const upgradesBought = run.merchantUpgradesPurchased ?? 0;
     const wl = getWantedLevelMutations(run.wantedLevel);
     const upgradeBase = 200 + wl.merchantUpgradeBasePriceBonus;
-    const upgradePrice = Math.round((upgradeBase + 50 * upgradesBought) * priceMult);
+    const upgradePrice = priceItem(upgradeBase + 50 * upgradesBought);
     const hasUpgradeableTiles = snapTileTypes.some((t) => TILE_DEFINITIONS[t]?.upgradeText);
     if (hasUpgradeableTiles) {
       tiles.push({
@@ -223,7 +243,7 @@ export const MerchantScreen = memo(function MerchantScreen() {
         id: 'upgrade',
         name: 'Upgrade',
         description: 'Upgrade a tile permanently.',
-        price: upgradePrice,
+        ...upgradePrice,
       });
     }
 
@@ -335,6 +355,8 @@ export const MerchantScreen = memo(function MerchantScreen() {
                     flavor={artDef?.description}
                     price={item.price}
                     originalPrice={item.originalPrice}
+                    priceModifierLabel={item.priceModifierLabel}
+                    priceModifierKind={item.priceModifierKind}
                     sold={isSold}
                     disabled={isSold || !canAfford}
                     onClick={() => handleBuy(item)}
@@ -356,6 +378,9 @@ export const MerchantScreen = memo(function MerchantScreen() {
                   name={upgradeItem.name}
                   description={upgradeItem.description}
                   price={upgradeItem.price}
+                  originalPrice={upgradeItem.originalPrice}
+                  priceModifierLabel={upgradeItem.priceModifierLabel}
+                  priceModifierKind={upgradeItem.priceModifierKind}
                   sold={isSold}
                   disabled={isSold || !canAfford}
                   onClick={() => handleBuy(upgradeItem)}
@@ -382,6 +407,9 @@ export const MerchantScreen = memo(function MerchantScreen() {
                   description={<>{colorizeKeywords(item.description)}</>}
                   flavor={CONSUMABLES.find((c) => c.id === consId)?.description}
                   price={item.price}
+                  originalPrice={item.originalPrice}
+                  priceModifierLabel={item.priceModifierLabel}
+                  priceModifierKind={item.priceModifierKind}
                   sold={isSold}
                   disabled={isSold || !canAfford || full}
                   onClick={() => handleBuy(item)}
@@ -413,6 +441,9 @@ export const MerchantScreen = memo(function MerchantScreen() {
                     description={<>{buildTileDescription(tileType, level)}</>}
                     flavor={def.flavor}
                     price={tileItem.price}
+                    originalPrice={tileItem.originalPrice}
+                    priceModifierLabel={tileItem.priceModifierLabel}
+                    priceModifierKind={tileItem.priceModifierKind}
                     sold={isSold}
                     disabled={isSold || !canAfford}
                     onClick={() => handleBuy(tileItem)}
@@ -655,6 +686,8 @@ function MerchantCard({
   flavor,
   price,
   originalPrice,
+  priceModifierLabel,
+  priceModifierKind,
   sold,
   disabled,
   onClick,
@@ -667,13 +700,15 @@ function MerchantCard({
   description: React.ReactNode;
   flavor?: React.ReactNode;
   price: number;
-  /** When set, the card shows a strikethrough original + discounted price + SALE badge. */
+  /** When set, the card shows a strikethrough original price and adjusted final price. */
   originalPrice?: number;
+  priceModifierLabel?: string;
+  priceModifierKind?: 'discount' | 'surcharge';
   sold: boolean;
   disabled: boolean;
   onClick: () => void;
 }) {
-  const onSale = !sold && originalPrice != null && originalPrice > price;
+  const hasPriceModifier = !sold && originalPrice != null && priceModifierLabel;
   return (
     <button
       onClick={onClick}
@@ -691,24 +726,24 @@ function MerchantCard({
         boxShadow: '3px 3px 2px rgba(0,0,0,0.7)',
       }}
     >
-      {onSale && (
+      {hasPriceModifier && (
         <span
           className="absolute top-1 left-1.5 font-bold"
           style={{
             fontSize: '9px',
-            color: '#f87171',
+            color: priceModifierKind === 'surcharge' ? '#fb923c' : '#f87171',
             WebkitTextStroke: '2px #000',
             paintOrder: 'stroke fill',
             letterSpacing: '0.5px',
           }}
         >
-          75% OFF
+          {priceModifierLabel}
         </span>
       )}
       <span className="absolute top-1 right-1.5 font-bold flex flex-col items-end leading-none" style={{ fontSize: '10px' }}>
         {sold ? (
           <span className="text-yellow-400">SOLD</span>
-        ) : onSale ? (
+        ) : hasPriceModifier ? (
           <>
             <span className="text-stone-500 line-through" style={{ fontSize: '8px' }}>
               {originalPrice}g

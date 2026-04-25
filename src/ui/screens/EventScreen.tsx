@@ -279,7 +279,8 @@ export const EventScreen = memo(function EventScreen() {
         return;
       }
       case 'train_survivors': {
-        useRunStore.getState().setNextMerchantDiscount(0.25);
+        const token = ARTIFACTS.find((artifact) => artifact.id === 'merchants_token');
+        if (token) addArtifact({ id: token.id, tags: token.tags });
         finishChoice(choice);
         return;
       }

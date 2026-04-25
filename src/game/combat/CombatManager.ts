@@ -3283,6 +3283,8 @@ export class CombatManager {
       shuffleHoldsRemaining: 0,
       shuffleMaxHolds: 0,
       suppressedTileTypes: [],
+      activeTileTypes: [...this.player.activeTileTypes],
+      tileUpgrades: { ...this.player.tileUpgrades },
       mirageType: this.board.getMirageType(),
     };
   }

@@ -66,7 +66,7 @@ don't use double dashes, just single
 - Choices:
     - **Loot the cargo** — Gain 20 gold, 1 random consumable, and 1 random artifact.
     - **Search the engine** — Lose 13 HP from debris. Pick 1 of 3 artifacts.
-    - **Check for survivors** — The next merchant's items are discounted by 25%.
+    - **Check for survivors** — Gain a Merchant's Token.
 - Result text:
     - **Loot the cargo** — "You pry open the splintered crates and pocket what you can carry."
     - **Search the engine** — "You crawl through the twisted steel, bleeding but richer for it."

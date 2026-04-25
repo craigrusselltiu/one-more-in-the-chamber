@@ -515,3 +515,11 @@ Diagonal = single-trait artifacts. Off-diagonal = artifacts with both traits.
 - Rarity: Corrupt
 - Effect: All gold gain is reduced by 10%.
 - Flavor: "Greed never leaves you richer, only hungrier."
+
+## Misc Artifacts
+
+### Merchant's Token
+- Tags: -
+- Rarity: Rare
+- Effect: The next merchant's prices are 25% cheaper.
+- Flavor: "Saturday is bargain day at the supermarket! I can't miss it!"
