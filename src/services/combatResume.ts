@@ -6,6 +6,7 @@
 import type { CombatSnapshot } from '../types/combatSnapshot';
 import { loadCombatSnapshot } from './localSave';
 import { useRunStore } from '../store/runStore';
+import { transformCharcoalSnapshotIfReady } from '../utils/charcoalObsidian';
 
 /** Pending snapshot set by checkForCombatResume, consumed by App on combat entry. */
 let pendingSnapshot: CombatSnapshot | null = null;
@@ -28,7 +29,7 @@ export async function checkForCombatResume(): Promise<boolean> {
   try {
     const snapshot = (await loadCombatSnapshot(run.id)) as CombatSnapshot | null;
     if (snapshot && snapshot.runId === run.id && snapshot.phase !== 'combat-end') {
-      pendingSnapshot = snapshot;
+      pendingSnapshot = transformCharcoalSnapshotIfReady(snapshot);
       return true;
     }
   } catch {

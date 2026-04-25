@@ -18,6 +18,7 @@ import { CHARACTER_TILES, TILE_DEFINITIONS } from '../data/tiles';
 import { getWantedLevelMutations } from '../data/wantedLevel';
 import { getMaxConsumableSlots } from '../utils/consumableSlots';
 import { applyArtifactGoldGainModifier } from '../utils/goldGain';
+import { transformCharcoalRunIfReady } from '../utils/charcoalObsidian';
 import { deleteRun as deleteRunFromDB, clearCombatSnapshot } from '../services/localSave';
 import { abandonOtherActiveRuns, clearRemoteCombatSnapshot } from '../services/syncService';
 import { saveLastRunSummary } from '../services/lastRunSummary';
@@ -25,24 +26,6 @@ import { saveLastRunSummary } from '../services/lastRunSummary';
 interface PendingNewGame {
   character: CharacterId;
   wantedLevel: number;
-}
-
-const CHARCOAL_OBSIDIAN_LEVEL = 9; // Stored level 9 is displayed as Lv 10.
-
-function transformCharcoalIfReady(run: RunState): RunState {
-  const charcoalLevel = run.tileUpgrades.charcoal ?? 0;
-  if (charcoalLevel < CHARCOAL_OBSIDIAN_LEVEL || !run.activeTileTypes.includes('charcoal')) {
-    return run;
-  }
-
-  const activeTileTypes = Array.from(
-    new Set(run.activeTileTypes.map((t) => (t === 'charcoal' ? 'obsidian' : t))),
-  );
-  const tileUpgrades = { ...run.tileUpgrades };
-  tileUpgrades.obsidian = Math.max(tileUpgrades.obsidian ?? 0, charcoalLevel);
-  delete tileUpgrades.charcoal;
-  useMetaStore.getState().discoverTile('obsidian');
-  return { ...run, activeTileTypes, tileUpgrades };
 }
 
 interface RunStore {
@@ -169,7 +152,9 @@ export const useRunStore = create<RunStore>((set, get) => ({
       };
     }
 
-    set({ run: transformCharcoalIfReady(migrated) });
+    const transformed = transformCharcoalRunIfReady(migrated);
+    if (transformed !== migrated) useMetaStore.getState().discoverTile('obsidian');
+    set({ run: transformed });
   },
 
   clearRun: async () => {
@@ -424,7 +409,12 @@ export const useRunStore = create<RunStore>((set, get) => ({
       const tileUpgrades = { ...state.run.tileUpgrades };
       const nextLevel = (tileUpgrades[type] ?? 0) + 1;
       tileUpgrades[type] = nextLevel;
-      return { run: transformCharcoalIfReady({ ...state.run, tileUpgrades }) };
+      const nextRun = { ...state.run, tileUpgrades };
+      const run = transformCharcoalRunIfReady(nextRun);
+      if (run !== nextRun) {
+        useMetaStore.getState().discoverTile('obsidian');
+      }
+      return { run };
     }),
 
   setTileUpgrade: (type, level) =>
@@ -434,7 +424,12 @@ export const useRunStore = create<RunStore>((set, get) => ({
       const tileUpgrades = { ...state.run.tileUpgrades };
       if (level > 0) tileUpgrades[type] = level;
       else delete tileUpgrades[type];
-      return { run: transformCharcoalIfReady({ ...state.run, tileUpgrades }) };
+      const nextRun = { ...state.run, tileUpgrades };
+      const run = transformCharcoalRunIfReady(nextRun);
+      if (run !== nextRun) {
+        useMetaStore.getState().discoverTile('obsidian');
+      }
+      return { run };
     }),
 
   tickPlayTime: () =>

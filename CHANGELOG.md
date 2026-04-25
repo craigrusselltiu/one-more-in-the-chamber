@@ -7,7 +7,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 ## v1.0.6
 
 ### Fixed
-- Charcoal now transforms into Obsidian at Lv 10, including existing saves, and keeps its level.
+- Charcoal now transforms into Obsidian at Lv 10, including existing combat saves, and keeps its level.
 
 ## v1.0.5
 

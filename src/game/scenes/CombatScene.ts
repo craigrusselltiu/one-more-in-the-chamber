@@ -7,6 +7,7 @@ import { EventBus, GameEvent } from '../EventBus';
 import { GAME_WIDTH, GAME_HEIGHT } from '../GameConfig';
 import { TILE_SIZE } from '../board/Tile';
 import { TILE_COLORS, STARTER_POOL, ADDITIONAL_POOL } from '../../data/tiles';
+import { transformCharcoalSnapshotIfReady } from '../../utils/charcoalObsidian';
 import { ACT1_ENEMIES } from '../../data/enemies';
 import { ScreenShake } from '../effects/ScreenShake';
 import type { ShakeIntensity } from '../effects/ScreenShake';
@@ -206,6 +207,7 @@ export class CombatScene extends Phaser.Scene {
    * Rebuilds board and combat manager from serialized state.
    */
   private restoreFromSnapshot(snapshot: CombatSnapshot): void {
+    snapshot = transformCharcoalSnapshotIfReady(snapshot);
     const { boardX, boardY, boardSize } = this.getBoardLayout();
 
     this.drawCheckerboard(boardX, boardY, boardSize);
