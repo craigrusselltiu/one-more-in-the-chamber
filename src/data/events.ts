@@ -157,18 +157,18 @@ const vultureCircle: EventDefinition = {
 const travelingPreacher: EventDefinition = {
   id: 'traveling_preacher',
   title: 'The Travelling Preacher',
-  flavourText: "He stands in the middle of the {{brown:wiggle:cracked earth}} like he grew out of it, black coat still as stone, bible heavy in one hand and the other never far from the pistol at his hip. His wagon sags behind him with its silent bell and its perched congregation of vultures, and a {{yellow:jump:crooked cross}} strung with rosaries leans toward him as if listening for a sermon.\nThe brim of his hat swallows his face, but you can feel him {{blue:breathe:watching}}, weighing your soul against the weight of the lead in his holster, and deciding which he means to deliver first.",
+  flavourText: "He kneels in the middle of the {{brown:wiggle:cracked earth}} like he grew out of it, black coat still as stone, bible heavy in one hand and the other never far from the pistol at his hip. His wagon sags behind him with its silent bell and its perched congregation of vultures, and a {{yellow:jump:crooked cross}} strung with rosaries leans toward him as if listening for a sermon.\nThe brim of his hat swallows his face, but you can feel him {{blue:breathe:watching}}, weighing your soul against the weight of the lead in his holster, and deciding which he means to deliver first.",
   align: 'left',
   background: 'event_preacher.png',
   choices: [
     {
-      label: 'Confess',
+      label: 'Confess your sins',
       description: 'Lose 100 gold, heal to full HP and start the next fight with 3 Grace.',
       effect: 'preacher_confess',
       resultText: 'You kneel in the dust and speak. He listens without moving, then nods once and lets you go clean.',
     },
     {
-      label: 'Draw',
+      label: 'Draw your gun',
       description: 'Gain 1 corruption, 146 gold, and a Preacher-tagged artifact.',
       effect: 'preacher_draw',
       resultText: 'Smoke, ringing, and two new weights in your pocket. He watches you leave with eyes like scripture.',

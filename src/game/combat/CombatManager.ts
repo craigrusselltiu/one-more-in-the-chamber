@@ -1,5 +1,5 @@
 import type { Board, SwapResult } from '../board/Board';
-import type { CombatState, CombatPhase, MatchResult, EnemyDefinition, CombatSwapSource } from '../../types/combat';
+import type { CombatState, CombatPhase, MatchResult, EnemyDefinition, CombatSwapSource, DestroyedTileInfo } from '../../types/combat';
 import { ALL_ENEMIES } from '../../data/enemies';
 import type { TileType, ArtifactInstance, TraitId, CharacterId } from '../../types/game';
 import type { CombatSnapshot, SerializedEnemy } from '../../types/combatSnapshot';
@@ -1603,13 +1603,7 @@ export class CombatManager {
 
       // Shadow tiles: each fires a shadow bolt dealing 10 damage to a random enemy
       if (match.shadowCount && match.shadowCount > 0) {
-        for (let s = 0; s < match.shadowCount; s++) {
-          const alive = this.aliveEnemies();
-          if (alive.length === 0) break;
-          const target = alive[Math.floor(Math.random() * alive.length)];
-          this.dealAuxiliaryDamageToEnemy(target, 10, '#6b2fa0');
-          EventBus.emit(GameEvent.ENEMY_HP_CHANGE, { ...target.state });
-        }
+        this.fireShadowBolts(match.shadowCount);
       }
 
       // Blasting Pan: defusing bombs grants 8 gold each
@@ -3309,13 +3303,24 @@ export class CombatManager {
    * (e.g. explosive chain). Per-tile effects (poison, ace, lucky, bounty) stack normally.
    */
   /** Resolve a batch of individually destroyed tiles (explosive/showdown/ricochet chains). */
-  private resolveDestroyedTiles(destroyed: { type: import('../../types/game').TileType; row: number; col: number }[]): void {
+  private resolveDestroyedTiles(destroyed: DestroyedTileInfo[]): void {
     const seen = new Set<string>();
     for (const info of destroyed) {
       const upgradeLevel = this.player.getUpgradeLevel(info.type);
       const output = this.resolver.resolveSingle(info.type, upgradeLevel, this.player.block, this.swapsRemaining);
       this.capFlatEffects(output, seen);
       this.applyResourceOutput(output, false, true);
+      if (info.isShadow) this.fireShadowBolts(1);
+    }
+  }
+
+  private fireShadowBolts(count: number): void {
+    for (let s = 0; s < count; s++) {
+      const alive = this.aliveEnemies();
+      if (alive.length === 0) break;
+      const target = alive[Math.floor(Math.random() * alive.length)];
+      this.dealAuxiliaryDamageToEnemy(target, 10, '#6b2fa0');
+      EventBus.emit(GameEvent.ENEMY_HP_CHANGE, { ...target.state });
     }
   }
 

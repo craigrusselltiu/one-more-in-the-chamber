@@ -59,6 +59,7 @@ export const StarterScreen = memo(function StarterScreen() {
   const [upgradeSelectedTile, setUpgradeSelectedTile] = useState<TileType | null>(null);
   const [swapSelectedTile, setSwapSelectedTile] = useState<TileType | null>(null);
   const [lastRun, setLastRun] = useState<LastRunSummary | null>(null);
+  const [isApplying, setIsApplying] = useState(false);
   const appliedRef = useRef(false);
 
   useEffect(() => {
@@ -96,12 +97,13 @@ export const StarterScreen = memo(function StarterScreen() {
   const swappableTiles = run.activeTileTypes.filter((tileType) => !SWAPPABLE_TILE_EXCLUSIONS.has(tileType));
 
   const applyReward = (reward: StarterReward, selectedTileType?: TileType) => {
-    if (appliedRef.current) return;
+    if (appliedRef.current || isApplying) return;
+    appliedRef.current = true;
+    setIsApplying(true);
     reward.apply(makeApplyRand(run.seed, reward.id), selectedTileType);
     if (STARTER_UPGRADE_REWARD_IDS.has(reward.id)) {
       playUpgrade();
     }
-    appliedRef.current = true;
     setUpgradePending(null);
     setSwapPending(null);
     setUpgradeSelectedTile(null);
@@ -112,6 +114,7 @@ export const StarterScreen = memo(function StarterScreen() {
   };
 
   const handleChoose = (reward: StarterReward) => {
+    if (appliedRef.current || isApplying) return;
     if (reward.kind === 'upgrade_choice') {
       setUpgradePending(reward);
       setUpgradeSelectedTile(null);
@@ -192,8 +195,9 @@ export const StarterScreen = memo(function StarterScreen() {
                 <button
                   key={reward.id}
                   onClick={() => handleChoose(reward)}
+                  disabled={isApplying}
                   style={{ fontSize: 10, boxShadow: '3px 3px 2px rgba(0,0,0,0.7)' }}
-                  className="p-2 rounded-sm text-left transition-transform active:translate-y-0.5 bg-stone-800 hover:bg-stone-700"
+                  className="p-2 rounded-sm text-left transition-transform active:translate-y-0.5 bg-stone-800 hover:bg-stone-700 disabled:opacity-70 disabled:cursor-not-allowed"
                   >
                     <span
                       className={`block font-bold ${SLOT_ACCENT[reward.slot]}`}
@@ -270,11 +274,13 @@ export const StarterScreen = memo(function StarterScreen() {
             <div className="flex gap-3 mt-4">
               <button
                 onClick={() => {
+                  if (isApplying) return;
                   setUpgradePending(null);
                   setUpgradeSelectedTile(null);
                 }}
+                disabled={isApplying}
                 style={{ boxShadow: '3px 3px 2px rgba(0,0,0,0.7)' }}
-                className="px-4 py-2 text-sm rounded-sm bg-stone-800 text-stone-300 hover:bg-stone-700 transition-transform active:translate-y-0.5"
+                className="px-4 py-2 text-sm rounded-sm bg-stone-800 text-stone-300 hover:bg-stone-700 transition-transform active:translate-y-0.5 disabled:opacity-70 disabled:cursor-not-allowed"
               >
                 Back
               </button>
@@ -282,7 +288,7 @@ export const StarterScreen = memo(function StarterScreen() {
                 onClick={() => {
                   if (upgradeSelectedTile) applyReward(upgradePending, upgradeSelectedTile);
                 }}
-                disabled={!upgradeSelectedTile}
+                disabled={!upgradeSelectedTile || isApplying}
                 style={{ boxShadow: '3px 3px 2px rgba(0,0,0,0.7)' }}
                 className={`px-6 py-2 text-sm rounded-sm transition-transform ${
                   upgradeSelectedTile
@@ -366,11 +372,13 @@ export const StarterScreen = memo(function StarterScreen() {
               <div className="flex gap-3 mt-4">
                 <button
                   onClick={() => {
+                    if (isApplying) return;
                     setSwapPending(null);
                     setSwapSelectedTile(null);
                   }}
+                  disabled={isApplying}
                   style={{ boxShadow: '3px 3px 2px rgba(0,0,0,0.7)' }}
-                  className="px-4 py-2 text-sm rounded-sm bg-stone-800 text-stone-300 hover:bg-stone-700 transition-transform active:translate-y-0.5"
+                  className="px-4 py-2 text-sm rounded-sm bg-stone-800 text-stone-300 hover:bg-stone-700 transition-transform active:translate-y-0.5 disabled:opacity-70 disabled:cursor-not-allowed"
                 >
                   Back
                 </button>
@@ -378,7 +386,7 @@ export const StarterScreen = memo(function StarterScreen() {
                   onClick={() => {
                     if (swapSelectedTile) applyReward(swapPending, swapSelectedTile);
                   }}
-                  disabled={!swapSelectedTile}
+                  disabled={!swapSelectedTile || isApplying}
                   style={{ boxShadow: '3px 3px 2px rgba(0,0,0,0.7)' }}
                   className={`px-6 py-2 text-sm rounded-sm transition-transform ${
                     swapSelectedTile

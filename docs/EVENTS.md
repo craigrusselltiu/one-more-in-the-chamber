@@ -92,11 +92,11 @@ don't use double dashes, just single
     - **Bury him** — Heal 11 HP and gain 33 gold from his pockets.
 
 ## The Travelling Preacher
-- Text: "He stands in the middle of the cracked earth like he grew out of it, black coat still as stone, bible heavy in one hand and the other never far from the pistol at his hip. His wagon sags behind him with its silent bell and its perched congregation of vultures, and a crooked cross strung with rosaries leans toward him as if listening for a sermon.\nThe brim of his hat swallows his face, but you can feel him watching, weighing your soul against the weight of the lead in his holster, and deciding which he means to deliver first."
+- Text: "He kneels in the middle of the cracked earth like he grew out of it, black coat still as stone, bible heavy in one hand and the other never far from the pistol at his hip. His wagon sags behind him with its silent bell and its perched congregation of vultures, and a crooked cross strung with rosaries leans toward him as if listening for a sermon.\nThe brim of his hat swallows his face, but you can feel him watching, weighing your soul against the weight of the lead in his holster, and deciding which he means to deliver first."
 - Effects: "cracked earth" (brown wiggle), "crooked cross" (yellow jump), "watching" (blue breathe)
 - Choices:
-    - **Confess** — Lose 100 gold, heal to full HP and start the next fight with 3 Grace.
-    - **Draw** — Gain 1 corruption, 146 gold, and a Preacher-tagged artifact.
+    - **Confess your sins** — Lose 100 gold, heal to full HP and start the next fight with 3 Grace.
+    - **Draw your gun** — Gain 1 corruption, 146 gold, and a Preacher-tagged artifact.
     - **Walk away**
 
 ## The Campfire Stranger

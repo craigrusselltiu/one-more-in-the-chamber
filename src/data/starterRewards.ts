@@ -5,6 +5,8 @@ import { ADDITIONAL_POOL, TILE_DEFINITIONS } from './tiles';
 import { useRunStore } from '../store/runStore';
 import { createSeededRandom, seededShuffle } from '../utils/seededRandom';
 import { getArtifactPoolForRun } from '../utils/artifactSelection';
+import { applyArtifactGoldGainModifier } from '../utils/goldGain';
+import { useMetaStore } from '../store/metaStore';
 
 /**
  * Pre-run starter reward definitions. Three pools (tile / upgrade / sacrifice).
@@ -107,6 +109,40 @@ function grantRandomConsumables(rand: () => number, count: number): void {
     if (!pick) return;
     store.addConsumable({ id: pick.id });
   }
+}
+
+function recomputeTraitCounts(artifacts: RunState['artifacts']): RunState['traitCounts'] {
+  const traitCounts: RunState['traitCounts'] = {};
+  for (const artifact of artifacts) {
+    for (const tag of artifact.tags) {
+      traitCounts[tag] = (traitCounts[tag] ?? 0) + 1;
+    }
+  }
+  return traitCounts;
+}
+
+function applyGoldenHunger(): void {
+  useRunStore.setState((state) => {
+    if (!state.run) return state;
+
+    const alreadyHasGreed = state.run.artifacts.some((artifact) => artifact.id === 'greed');
+    const artifacts = state.run.artifacts.filter((artifact) => !artifact.tags.includes('corrupt'));
+    artifacts.push({ id: 'greed', tags: ['corrupt'] });
+
+    const payout = alreadyHasGreed ? 0 : applyArtifactGoldGainModifier(287, state.run.artifacts);
+
+    return {
+      run: {
+        ...state.run,
+        artifacts,
+        traitCounts: recomputeTraitCounts(artifacts),
+        gold: state.run.gold + payout,
+        goldObtained: state.run.goldObtained + payout,
+        artifactsObtained: state.run.artifactsObtained + (alreadyHasGreed ? 0 : 1),
+      },
+    };
+  });
+  useMetaStore.getState().discoverArtifact('greed');
 }
 
 function getStarterHpSacrificeAmount(run: RunState): number {
@@ -258,11 +294,7 @@ const SACRIFICES: StarterRewardFactory[] = [
       description: 'Gain 287 gold and Greed.',
       kind: 'instant',
       artifactKeyword: { text: 'Greed', artifactId: 'greed' },
-      apply: () => {
-        const store = useRunStore.getState();
-        store.gainGold(287);
-        store.addArtifact({ id: 'greed', tags: ['corrupt'] });
-      },
+      apply: () => applyGoldenHunger(),
     }),
   },
   {

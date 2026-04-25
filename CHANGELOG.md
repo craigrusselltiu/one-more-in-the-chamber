@@ -8,9 +8,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
 ### Changed
 - Polished menu, shop, leaderboard, and popup UI styling.
+- Updated the Travelling Preacher event text and choices.
+- Golden Hunger now replaces other corruption with Greed and grants Greed's gold only once.
 
 ### Fixed
 - Existing Charcoal tiles now transform into Obsidian when continuing a combat save at Lv 10.
+- Shadow tiles now fire their shadow bolt when destroyed by Deadeye, explosions, and other special clears.
+- Starter reward choices can no longer be applied more than once from rapid clicks.
 
 ## v1.0.6
 

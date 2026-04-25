@@ -598,10 +598,15 @@ export class Board {
     const destroyed = await this.destroyTilesWithEffects(targetPositions, { staggerMs: 100 });
 
     // Build MatchResults for resource generation, grouped by type.
-    const byType = new Map<TileType, number>();
-    for (const info of destroyed) byType.set(info.type, (byType.get(info.type) ?? 0) + 1);
+    const byType = new Map<TileType, { count: number; shadowCount: number }>();
+    for (const info of destroyed) {
+      const bucket = byType.get(info.type) ?? { count: 0, shadowCount: 0 };
+      bucket.count++;
+      if (info.isShadow) bucket.shadowCount++;
+      byType.set(info.type, bucket);
+    }
     const matchResults: MatchResult[] = [];
-    for (const [tType, count] of byType) {
+    for (const [tType, { count, shadowCount }] of byType) {
       matchResults.push({
         tiles: Array.from({ length: count }, (_, i) => ({ row: 0, col: i })),
         tileType: tType,
@@ -614,6 +619,7 @@ export class Board {
         matchBonus: 1.0,
         isChainDestruction: true,
         consumesAce: tType === targetType,
+        shadowCount: shadowCount > 0 ? shadowCount : undefined,
       });
     }
 
@@ -670,10 +676,15 @@ export class Board {
     const destroyed = await this.destroyTilesWithEffects(allPositions, { staggerMs: 20 });
 
     // Build match results grouped by type
-    const byType = new Map<TileType, number>();
-    for (const info of destroyed) byType.set(info.type, (byType.get(info.type) ?? 0) + 1);
+    const byType = new Map<TileType, { count: number; shadowCount: number }>();
+    for (const info of destroyed) {
+      const bucket = byType.get(info.type) ?? { count: 0, shadowCount: 0 };
+      bucket.count++;
+      if (info.isShadow) bucket.shadowCount++;
+      byType.set(info.type, bucket);
+    }
     const matchResults: MatchResult[] = [];
-    for (const [tType, count] of byType) {
+    for (const [tType, { count, shadowCount }] of byType) {
       matchResults.push({
         tiles: Array.from({ length: count }, (_, i) => ({ row: 0, col: i })),
         tileType: tType,
@@ -685,6 +696,7 @@ export class Board {
         crossIntersections: [],
         matchBonus: 1.0,
         isChainDestruction: true,
+        shadowCount: shadowCount > 0 ? shadowCount : undefined,
       });
     }
 
@@ -826,10 +838,15 @@ export class Board {
     const destroyed = await this.destroyTilesWithEffects(targets);
 
     // Build match results grouped by type
-    const byType = new Map<TileType, number>();
-    for (const info of destroyed) byType.set(info.type, (byType.get(info.type) ?? 0) + 1);
+    const byType = new Map<TileType, { count: number; shadowCount: number }>();
+    for (const info of destroyed) {
+      const bucket = byType.get(info.type) ?? { count: 0, shadowCount: 0 };
+      bucket.count++;
+      if (info.isShadow) bucket.shadowCount++;
+      byType.set(info.type, bucket);
+    }
     const matchResults: MatchResult[] = [];
-    for (const [tType, count] of byType) {
+    for (const [tType, { count, shadowCount }] of byType) {
       matchResults.push({
         tiles: Array.from({ length: count }, (_, i) => ({ row: 0, col: i })),
         tileType: tType,
@@ -841,6 +858,7 @@ export class Board {
         crossIntersections: [],
         matchBonus: 1.0,
         isChainDestruction: true,
+        shadowCount: shadowCount > 0 ? shadowCount : undefined,
       });
     }
 
