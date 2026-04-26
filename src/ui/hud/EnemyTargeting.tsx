@@ -6,6 +6,7 @@ import { BlockBadge } from './BlockBadge';
 import { StatusEffects } from './StatusEffects';
 import { EnemyIntent } from './EnemyIntent';
 import { Tooltip } from '../components/Tooltip';
+import { HudSpriteEffect } from '../components/HudSpriteEffect';
 import { ALL_ENEMIES } from '../../data/enemies';
 import type { EnemyState } from '../../types/combat';
 import { useSettingsStore } from '../../store/settingsStore';
@@ -262,6 +263,7 @@ const EnemySlot = memo(function EnemySlot({
 }: EnemySlotProps) {
   const [shaking, setShaking] = useState(false);
   const [damageFlashing, setDamageFlashing] = useState(false);
+  const [coinsTrigger, setCoinsTrigger] = useState(0);
   const damageFlashTimeouts = useRef<number[]>([]);
   const juiceAnimationsEnabled = useSettingsStore((s) => s.juiceAnimationsEnabled);
 
@@ -298,6 +300,16 @@ const EnemySlot = memo(function EnemySlot({
       clearDamageFlashTimeouts();
     };
   }, [enemy?.id, juiceAnimationsEnabled]);
+
+  useEffect(() => {
+    const coinsHandler = (...args: unknown[]) => {
+      if (args[0] === enemy?.id) setCoinsTrigger((trigger) => trigger + 1);
+    };
+    EventBus.on(GameEvent.ENEMY_COINS_EFFECT, coinsHandler);
+    return () => {
+      EventBus.off(GameEvent.ENEMY_COINS_EFFECT, coinsHandler);
+    };
+  }, [enemy?.id]);
 
   const handleClick = useCallback(() => {
     if (enemy && !enemy.isDead) {
@@ -354,6 +366,11 @@ const EnemySlot = memo(function EnemySlot({
                 transformOrigin: 'bottom center',
               }}
             />
+            <HudSpriteEffect
+              effect="coins"
+              trigger={coinsTrigger}
+              className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
+            />
           </div>
         ) : (
           <div style={{ width: 96, height: 96 }} />
@@ -407,6 +424,11 @@ const EnemySlot = memo(function EnemySlot({
                   : undefined,
                 transformOrigin: 'bottom center',
               }}
+            />
+            <HudSpriteEffect
+              effect="coins"
+              trigger={coinsTrigger}
+              className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
             />
             {damageFlashing && (
               <img

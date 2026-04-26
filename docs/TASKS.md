@@ -37,7 +37,6 @@ todo:
 - NPCs
 - dialogue
 - update Hardened - should be every damage taken reduces hardened. when 0 become incincible.
-- change UI and font
 - update artifacts
 - update traits
 - update enemies
@@ -45,5 +44,4 @@ todo:
 - add artifacts
 - add character
 - add more sound effects, ult animation
-- hint can sometimes be wrong
-- seems like locked tiles can still cause lock-out? (no moves)
+- cascade keyword

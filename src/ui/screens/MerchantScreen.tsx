@@ -10,6 +10,7 @@ import { ADDITIONAL_POOL, STARTER_POOL, TILE_DEFINITIONS } from '../../data/tile
 import { TILE_FRAMES, UI_FRAMES, CONSUMABLE_FRAMES, ARTIFACT_FRAMES } from '../../data/spriteConfig';
 import { SpriteIcon } from '../components/SpriteIcon';
 import { Tooltip } from '../components/Tooltip';
+import { FullScreenOverlay } from '../components/FullScreenOverlay';
 import { buildTileDescription, buildUpgradePreview, colorizeKeywords } from '../components/KeywordText';
 import { createSeededRandom, seededShuffle } from '../../utils/seededRandom';
 import { weightedArtifactPickN } from '../../utils/weightedSelection';
@@ -317,7 +318,7 @@ export const MerchantScreen = memo(function MerchantScreen() {
   const maxSlots = getMaxConsumableSlots(run);
 
   return (
-    <div className="flex flex-col items-center justify-center h-full" style={{ padding: '24px 0', backgroundImage: `linear-gradient(rgba(0,0,0,0.45), rgba(0,0,0,0.45)), url(${import.meta.env.BASE_URL}assets/backgrounds/merchant_bg.png)`, backgroundSize: 'cover', backgroundPosition: 'center' }}>
+    <div className="flex flex-col items-center justify-center h-full" style={{ padding: '24px 0' }}>
       <h2 className="text-xl text-amber-400 mb-4 font-bold uppercase" style={{ WebkitTextStroke: '4px #000', paintOrder: 'stroke fill' }}>General Merchant</h2>
 
       <div className="flex flex-col gap-4 px-2">
@@ -469,8 +470,8 @@ export const MerchantScreen = memo(function MerchantScreen() {
         const newDef = TILE_DEFINITIONS[newTileType];
         const newLevel = swapPending.tileLevel ?? 0;
         return (
-          <div className="absolute inset-0 flex flex-col bg-black/80 z-10">
-            <div className="flex-1 flex flex-col items-center justify-center">
+          <FullScreenOverlay backdropClass="bg-black/40" zIndex={120}>
+            <div className="flex flex-col items-center justify-center">
               <h2 className="text-xl text-amber-400 mb-2 font-bold uppercase" style={{ WebkitTextStroke: '4px #000', paintOrder: 'stroke fill' }}>Choose Tile to Swap Out</h2>
               <p className="text-stone-400 text-xs mb-4">Choose a tile to replace with the tile on the right.</p>
 
@@ -567,14 +568,14 @@ export const MerchantScreen = memo(function MerchantScreen() {
                 </button>
               </div>
             </div>
-          </div>
+          </FullScreenOverlay>
         );
       })()}
 
       {/* Upgrade: tile selection (same layout as campfire) */}
       {upgradePhase === 'selecting' && (
-        <div className="absolute inset-0 flex flex-col bg-black/80 z-10">
-          <div className="flex-1 flex flex-col items-center justify-center">
+        <FullScreenOverlay backdropClass="bg-black/40" zIndex={120}>
+          <div className="flex flex-col items-center justify-center">
             <h2 className="text-xl text-amber-400 mb-2 font-bold uppercase" style={{ WebkitTextStroke: '4px #000', paintOrder: 'stroke fill' }}>Upgrade a Tile</h2>
             <p className="text-stone-400 text-xs mb-4">Permanent +1 tier for the rest of the run</p>
 
@@ -638,15 +639,15 @@ export const MerchantScreen = memo(function MerchantScreen() {
               </button>
             </div>
           </div>
-        </div>
+        </FullScreenOverlay>
       )}
 
       {/* Upgrade: confirmation (same layout as campfire) */}
       {upgradePhase === 'upgraded' && (() => {
         const tileDef = upgradeSelectedTile ? TILE_DEFINITIONS[upgradeSelectedTile] : null;
         return (
-          <div className="absolute inset-0 flex flex-col bg-black/80 z-10">
-            <div className="flex-1 flex flex-col items-center justify-center">
+          <FullScreenOverlay backdropClass="bg-black/40" zIndex={120}>
+            <div className="flex flex-col items-center justify-center">
               <div className="mb-4"><SpriteIcon frame={UI_FRAMES.upgrade} scale={3} /></div>
               <h2 className="text-xl text-amber-400 mb-2 font-bold uppercase" style={{ WebkitTextStroke: '4px #000', paintOrder: 'stroke fill' }}>Upgraded</h2>
               <p className="text-stone-300 text-sm mb-4">
@@ -660,7 +661,7 @@ export const MerchantScreen = memo(function MerchantScreen() {
                 Back to Merchant
               </button>
             </div>
-          </div>
+          </FullScreenOverlay>
         );
       })()}
     </div>

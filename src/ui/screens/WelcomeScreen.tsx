@@ -19,9 +19,6 @@ export const WelcomeScreen = memo(function WelcomeScreen() {
     <div
       className="relative flex flex-col items-center justify-center h-full"
       style={{
-        backgroundImage: `linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.6)), url(${import.meta.env.BASE_URL}assets/backgrounds/main_menu_bg.png)`,
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
       }}
     >
       <img

@@ -26,9 +26,8 @@ export function useGameScale() {
 function computeLayout() {
   const vw = window.innerWidth;
   const vh = window.innerHeight;
-  // Scale so UI_WIDTH x UI_HEIGHT fills the same area as Phaser's canvas
   const scale = Math.min(vw / UI_WIDTH, vh / UI_HEIGHT);
   const offsetX = (vw - UI_WIDTH * scale) / 2;
   const offsetY = (vh - UI_HEIGHT * scale) / 2;
-  return { scale, offsetX, offsetY };
+  return { scale, offsetX, offsetY, viewportWidth: vw, viewportHeight: vh };
 }

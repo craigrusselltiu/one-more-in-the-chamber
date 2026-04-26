@@ -4,6 +4,43 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## v1.0.8
+
+### Added
+- Added Rudy character notes and background art.
+- Added combat effects for bomb detonations, player shots, and Deadeye shots.
+- Main menu visits now randomly pick one of five new backgrounds (church, mine, overlook, town, train) and re-roll on each return.
+- Translucent dim overlay over reputation shop, customize, ledger, leaderboard, combat, map, campfire, merchant, tile-select, and event backgrounds for foreground readability.
+- Top bar, artifact row, and trait row now stretch to the viewport edges and anchor to the top of the screen.
+- Map popup background now extends to the entire screen with the crate art and a dim layer behind the map.
+- Character-select background now uses the selected character's full-screen art and updates live on selection.
+- Character-select character buttons now anchor to the actual viewport's left edge.
+
+### Changed
+- Top bar dark overlay alpha unified to 0.4 across every popup (settings, tiles, changelog, merchant, starter, sign-out, kickout, sync).
+- SEED indicator and version label are slightly more transparent.
+- Enemy target outline is one pixel thicker; the breathe pulse now runs from 0.5 to 1.0 opacity.
+- Loading screen, version label, seed indicator, and main-menu Sign-In / Login button anchor to the actual viewport, not the scaled UI.
+- Login button (and Sign-In label) is 1.5x larger.
+- Refined tooltip, title, and button label styling across the UI.
+- Updated the main menu title art, welcome message placement, and button layout.
+- Updated Rust and Reno character notes to match their current kits.
+
+### Fixed
+- Merchant's Token is now event-only -- it no longer appears in the regular artifact reward pool.
+- Tile popup tooltips were missing after the overlay refactor (data-tooltip-root now propagates through FullScreenOverlay).
+- Tooltip auto-flip no longer oscillates inside short host containers (now checks the actual window bounds).
+- Leaderboard scroll-to-bottom no longer spazzes (added min-h-0 + overscroll-behavior contain on the scroll area).
+- Bones screen no longer renders without a background (folder lookup corrected).
+- Spark, ability, and coins effect sheets now use the correct 64x64 frame size; the previous 32x32 setting split each frame into four offset quadrants.
+- Bomb explosions now show floating damage numbers on the player.
+- Fixed duplicated screen backgrounds after the full-window background scaling update.
+- Cleaned up build warnings from font loading, UI sound imports, and production chunk sizes.
+
+### Removed
+- Blood splatter and heal HUD effects (and their preloaded sprite sheets).
+- Old `main_menu_bg.png` / `main_menu_bg_alt.png` files.
+
 ## v1.0.7
 
 ### Added

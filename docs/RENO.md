@@ -1,13 +1,15 @@
-# "Slick" Reno -- Second Playable Character
+# "Slick" Reno -- Raccoon Gambler
 
 ## Overview
 
 **Name:** "Slick" Reno
 **Species:** Raccoon
 **Archetype:** Card sharp / gambler
-**Sprite:** 64x64 pixel art
+**Character ID:** `reno`
+**Unlock:** Reputation Shop character unlock, 2500 reputation
+**HP:** 100
 
-A raccoon card sharp in a silk vest and bowler hat. Where Rust is a scrappy gunslinger who aims true, Reno is a smooth-talking gambler who stacks the odds. He doesn't fight fair -- he fights lucky.
+A raccoon card sharp in a silk vest and bowler hat. Reno is the luck and board-reset character: he starts with Ace scaling, gold economy, and Chip's high-variance damage, then uses False Shuffle to reroll the board into cascade opportunities.
 
 ## Backstory
 
@@ -29,67 +31,91 @@ Now the running stops and the real game starts. Reno has to get to the Town, get
 
 ## Pixel Art Personality
 
-- **Idle:** Flips a poker chip across his knuckles
-- **Match:** Smirks and tips his hat
-- **Hit:** Catches his falling bowler hat, annoyed
-- **Ability:** Fans a deck of cards, then scatters them across the board
-- **Boss kill:** Leans back, puts feet up on the table
+- **Idle:** Smooth gambler stance
+- **Attack:** Flashy card-sharp strike
+- **Hit:** Catches himself with annoyed composure
+- **Ability:** False Shuffle pose
+
+## Starting Kit
+
+Reno starts each run with:
+
+- **Starting artifact:** Rigged Deck
+- **Core tiles:** Ace, Iron, Gold, Chip
+- **Starter tile choice:** At run start, choose 1 of 3 offered starter-pool tiles to become the fifth active tile
 
 ## Core Tiles
 
-Reno starts with 4 core tiles (other characters start with 3):
-
-| Tile | Per-tile | Upgrade | Description |
-|------|----------|---------|-------------|
-| Bullet | 2 damage | +2 damage/level | Standard damage tile. |
-| Iron | 2 block | +2 block/level | Standard block tile. |
-| Gold | 1 gold | +2 gold/level | Standard gold tile. |
-| **Chip** | 2 or 0 damage | +1 damage/tile/level | 50% chance to deal 2 damage per tile; 50% chance to deal 0. |
-
-**Chip** flavor: *"What's the most you ever lost on a coin toss?"*
-
-Act 1 has 5 tile types (4 core + 1 starter) instead of 4. Board dilution starts earlier, but the character-specific tile gives Reno a unique strategic identity.
+| Tile | Per-tile / Match Output | Upgrade | Notes |
+|------|--------------------------|---------|-------|
+| Ace | 1 Ace stack per tile | +1 stack to match total per level | Ace increases the next non-Ace match multiplier, then is consumed. |
+| Iron | 2 block per tile | +2 block to match total per level | Standard defense. |
+| Gold | 1 gold per tile | +2 gold to match total per level | Early economy tile. |
+| **Chip** | 50% chance for 6 damage per tile, 50% chance for 0 | +1 damage per tile per level | Reno-exclusive gamble damage. |
 
 ### Chip Mechanic
 
-- Each Chip match rolls a 50/50: hit or miss
-- Hit: deal 2 damage per tile (+ upgrade bonus per tile) to the targeted enemy
-- Miss: deal 0 damage
-- Upgrades add +1 damage per tile per level
+- Each Chip match rolls hit or miss.
+- Without Reno's Coin, Chip is an independent 50/50 roll.
+- On hit, Chip deals `(6 + tile level)` damage per Chip tile matched.
+- On miss, Chip deals 0 damage.
+- Chip hit/miss feedback appears in combat.
 
-## Ability -- Shuffle the Deck
+**Chip** flavor: *"What's the most you ever lost on a coin toss?"*
 
-**Charge:** +1 per player turn. Requires **7 charges** to activate. Meter carries over between fights.
+## Ability -- False Shuffle
 
-**Activation (press Space):**
-1. Enter **Hold mode** -- select up to **3 tiles** to hold (marked with a gold tint, locked in place)
-2. Press Space again (or click SHUFFLE) to confirm
-3. All non-held tiles shuffle to random board positions
-4. Board resolves: any matches created by the shuffle cascade normally, generating resources
+**Charge threshold:** 5
 
-**Key interactions:**
-- Hold a Showdown or Explosive tile to protect it through the shuffle
-- Shuffle can break a dead board when no good swaps exist
-- Cascades from the shuffle generate full resources
-- The shuffle itself is the value -- a board reset that creates new match opportunities
+**Charge gain:**
+- +1 charge at the start of each player turn, up to the threshold.
+- Battery matches and other charge effects can add charge.
 
-### Ability Bar
+**Activation:** Press Space or click the chamber button while fully charged.
 
-The ability bar spans the full width of the board at the bottom, split into 7 segments (one per charge threshold).
+False Shuffle immediately consumes 5 charge, shuffles all unlocked board tiles, and allows any matches created by the shuffle to cascade normally.
 
-- **Charging:** Filled segments are PURPLE (#B060D0). Unfilled segments are dark gray.
-- **Ready (7/7):** All segments turn YELLOW with a pulsing glow VFX.
-- **Active Hold Mode:** Shows holds used as gold dots. SHUFFLE button to confirm.
+### False Shuffle Behavior
 
-### Contrast with Deadeye
+- Shuffles all unlocked tiles on the board.
+- Locked tiles stay locked.
+- The shuffle animation can create immediate matches.
+- Matches created by False Shuffle resolve as cascades.
+- Resources from those cascade matches are generated normally.
+- After shuffle cascades resolve, the board is checked for valid moves and reshuffled if needed.
+- False Shuffle does not currently use a tile-hold selection mode.
 
-| | Deadeye (Rust) | Shuffle the Deck (Reno) |
-|---|---|---|
-| Charge | +1/turn, threshold 10 | +1/turn, threshold 7 |
-| Value type | Direct (destroy tiles = immediate resources) | Setup (rearrange board = create opportunities) |
-| Skill expression | Pick the 3 best tiles to shoot | Pick the 3 best tiles to hold |
-| Feel | Precision marksman | Chaos with a safety net |
+### Ability UI
+
+- The chamber meter uses 5 segments.
+- The ability label is `FALSE SHUFFLE`.
+- Activation plays shuffle SFX.
+- Ability finish triggers the shared chamber spin SFX/VFX.
+
+## Exclusive Starting Artifact
+
+### Rigged Deck
+
+- **Tags:** Prospector
+- **Rarity:** Rare
+- **Effect:** Chip hits have a 50% chance to hit another enemy. Chip misses generate 2 gold.
+- **Flavor:** *"Bad luck is still luck."*
 
 ## Exclusive Artifact
 
-**Double Down** -- Chip damage doubled on hit. On miss, lose HP (starts at 1, increases by 1 per miss permanently). *"The stakes just got higher."*
+### Reno's Coin
+
+- **Tags:** Desperado
+- **Rarity:** Legendary
+- **Effect:** Chip damage is doubled and hit chance is increased to 75%. On miss, lose 1 HP.
+- **Implementation detail:** Reno's Coin uses a Chip bucket of 6 hits and 2 misses per 8 draws, instead of independent 75% rolls.
+- **Flavor:** *"Double or nothing. Emphasis on nothing."*
+
+## Implementation Notes
+
+- `CharacterId`: `reno`
+- Starting tiles are defined in `CHARACTER_TILES.reno`.
+- Reno is unlocked through the Reputation Shop item `shop_character_reno`.
+- Starting artifact is assigned in `runStore.startRun()`.
+- False Shuffle behavior lives in `CombatManager.activateShuffle()`.
+- Chip hit/miss output comes from `ResourceResolver`; Rigged Deck and Reno's Coin modifications are applied by `ArtifactSystem` and `CombatManager`.

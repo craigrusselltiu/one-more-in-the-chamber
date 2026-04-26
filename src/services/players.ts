@@ -67,12 +67,12 @@ export async function claimDisplayName(name: string): Promise<ClaimResult> {
 export const updateDisplayName = claimDisplayName;
 
 /** Read the logged-in user's players row. */
-export async function getMyPlayer(): Promise<{ displayName: string } | null> {
+export async function getMyPlayer(): Promise<{ displayName: string; isDev: boolean } | null> {
   const sb = getSupabase();
   if (!sb) return null;
   const { userId } = getAuthState();
   if (!userId) return null;
-  const { data } = await sb.from('players').select('display_name').eq('id', userId).maybeSingle();
+  const { data } = await sb.from('players').select('display_name,is_dev').eq('id', userId).maybeSingle();
   if (!data?.display_name) return null;
-  return { displayName: data.display_name as string };
+  return { displayName: data.display_name as string, isDev: data.is_dev === true };
 }

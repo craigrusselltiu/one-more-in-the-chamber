@@ -1,5 +1,6 @@
 import { memo, useEffect, useState } from 'react';
 import { subscribeLoginSync } from '../../services/auth';
+import { FullScreenOverlay } from './FullScreenOverlay';
 
 /**
  * Blocking full-screen overlay shown during the post-login sync window
@@ -14,10 +15,7 @@ export const LoginSyncOverlay = memo(function LoginSyncOverlay() {
   if (!active) return null;
 
   return (
-    <div
-      className="absolute inset-0 z-[250] flex items-center justify-center"
-      style={{ backgroundColor: 'rgba(0, 0, 0, 0.75)', pointerEvents: 'auto' }}
-    >
+    <FullScreenOverlay zIndex={250} backdropClass="" style={{ backgroundColor: 'rgba(0, 0, 0, 0.4)' }}>
       <div
         className="rounded-sm px-6 py-5 flex flex-col items-center gap-3"
         style={{ backgroundColor: 'rgba(28, 25, 23, 0.95)', boxShadow: '3px 3px 2px rgba(0,0,0,0.7)' }}
@@ -43,6 +41,6 @@ export const LoginSyncOverlay = memo(function LoginSyncOverlay() {
           Pulling your progress from the server.
         </p>
       </div>
-    </div>
+    </FullScreenOverlay>
   );
 });

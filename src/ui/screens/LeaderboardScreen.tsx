@@ -65,11 +65,6 @@ export const LeaderboardScreen = memo(function LeaderboardScreen() {
   return (
     <div
       className="flex flex-col items-center h-full"
-      style={{
-        backgroundImage: `url(${import.meta.env.BASE_URL}assets/backgrounds/leaderboard.png)`,
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-      }}
     >
       {/* Header */}
       <div className="mt-5 mb-3 text-center">
@@ -114,7 +109,10 @@ export const LeaderboardScreen = memo(function LeaderboardScreen() {
       </div>
 
       {/* Table */}
-      <div className="flex-1 overflow-y-auto w-full max-w-[820px] px-4 thin-scroll">
+      <div
+        className="flex-1 min-h-0 overflow-y-auto w-full max-w-[820px] px-4 thin-scroll"
+        style={{ overscrollBehavior: 'contain' }}
+      >
         {loading && (
           <p className="text-stone-400 text-xs text-center mt-8">Loading...</p>
         )}

@@ -7,11 +7,26 @@ import { forceSaveRun } from '../../services/runPersistence';
 import { calculateScore } from '../../utils/scoring';
 import { getAuthState, subscribeAuth, type AuthState } from '../../services/auth';
 import { Tooltip } from '../components/Tooltip';
+import { FullScreenOverlay } from '../components/FullScreenOverlay';
 import changelogRaw from '../../../CHANGELOG.md?raw';
 
 import type { Screen } from '../../App';
 
 type MenuButtonEntryState = 'pending' | 'animate' | 'static';
+
+export const MAIN_MENU_BACKGROUNDS = [
+  'church.png',
+  'mine.png',
+  'overlook.png',
+  'town.png',
+  'train.png',
+] as const;
+export type MainMenuBackground = typeof MAIN_MENU_BACKGROUNDS[number];
+
+/** Pick a random main-menu background. Each visit to the main menu re-rolls. */
+export function pickRandomMainMenuBackground(): MainMenuBackground {
+  return MAIN_MENU_BACKGROUNDS[Math.floor(Math.random() * MAIN_MENU_BACKGROUNDS.length)];
+}
 
 function pickMainMenuMessage(playerName: string, isLoggedIn: boolean): { text: string; showGuestTag: boolean } {
   const displayName = playerName || 'Challenger';
@@ -107,7 +122,11 @@ function MenuButton({
   );
 }
 
-export const MainMenu = memo(function MainMenu({ buttonEntryState = 'static' }: { buttonEntryState?: MenuButtonEntryState }) {
+export const MainMenu = memo(function MainMenu({
+  buttonEntryState = 'static',
+}: {
+  buttonEntryState?: MenuButtonEntryState;
+}) {
   const run = useRunStore((s) => s.run);
   const clearRun = useRunStore((s) => s.clearRun);
   const hasActiveRun = run && run.status === 'active';
@@ -262,10 +281,6 @@ export const MainMenu = memo(function MainMenu({ buttonEntryState = 'static' }: 
     EventBus.emit(GameEvent.SCREEN_CHANGE, 'settings' satisfies Screen);
   };
 
-  const handleLogin = () => {
-    EventBus.emit(GameEvent.SCREEN_CHANGE, 'login' satisfies Screen);
-  };
-
   let menuButtonIndex = 0;
 
   return (
@@ -274,17 +289,14 @@ export const MainMenu = memo(function MainMenu({ buttonEntryState = 'static' }: 
       style={{
         width: 960,
         height: 540,
-        backgroundImage: `url(${import.meta.env.BASE_URL}assets/backgrounds/main_menu_bg.png)`,
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
       }}
     >
       {/* Title logo -- top left */}
       <img
         src={`${import.meta.env.BASE_URL}assets/title.png`}
         alt="One More in the Chamber"
-        className="absolute left-11 top-6"
-        style={{ width: 280, imageRendering: 'auto' }}
+        className="absolute left-11 top-10"
+        style={{ width: 360, imageRendering: 'auto' }}
         draggable={false}
       />
 
@@ -294,7 +306,7 @@ export const MainMenu = memo(function MainMenu({ buttonEntryState = 'static' }: 
           Guest with no name yet: "Challenger" fallback (they'll be prompted
           for a name anyway by the modal below). */}
       {(auth.isLoggedIn ? playerName : true) && (
-        <div className="absolute left-13 animate-welcome-breathe" style={{ top: 175, transformOrigin: 'left center' }}>
+        <div className="absolute left-13 animate-welcome-breathe" style={{ top: 148, transformOrigin: 'left center' }}>
           <span
             style={{
               fontSize: '12px',
@@ -313,7 +325,7 @@ export const MainMenu = memo(function MainMenu({ buttonEntryState = 'static' }: 
       )}
 
       {/* Menu items -- bottom left */}
-      <div className="absolute left-8 bottom-10 flex flex-col gap-1.5">
+      <div className="absolute left-11 bottom-10 flex flex-col gap-1.5">
         {hasActiveRun && (
           <MenuButton label="Continue" onClick={handleContinue} entryIndex={menuButtonIndex++} entryState={buttonEntryState} />
         )}
@@ -340,35 +352,9 @@ export const MainMenu = memo(function MainMenu({ buttonEntryState = 'static' }: 
         <MenuButton label="Settings" onClick={handleSettings} entryIndex={menuButtonIndex++} entryState={buttonEntryState} />
       </div>
 
-      {/* Account indicator -- bottom right: shows login button when logged out,
-          "signed in as" label when logged in. */}
-      <div className="absolute right-2 bottom-4 text-right">
-        {auth.isLoggedIn ? (
-          <span
-            className="uppercase"
-            style={{
-              fontSize: '10px',
-              color: '#b8b8b8',
-              letterSpacing: '1px',
-              textShadow: '1px 1px 3px rgba(0,0,0,1), 1px 1px 6px rgba(0,0,0,0.95), 1px 1px 9px rgba(0,0,0,0.85)',
-            }}
-          >
-            Signed In
-          </span>
-        ) : (
-          <button
-            onClick={handleLogin}
-            style={{ boxShadow: '2px 2px 1px rgba(0,0,0,0.4)', cursor: 'pointer' }}
-            className="px-3.5 py-1 text-[10px] uppercase rounded-sm bg-amber-800 text-amber-200 hover:bg-amber-700 active:translate-y-0.5 transition-transform"
-          >
-            Login
-          </button>
-        )}
-      </div>
-
       {/* Confirmation dialog */}
       {showConfirm && (
-        <div className="absolute inset-0 flex items-center justify-center bg-black/70 z-10">
+        <FullScreenOverlay backdropClass="bg-black/40" zIndex={120}>
           <div
             className="rounded-sm p-5 max-w-xs text-center"
             style={{ backgroundColor: 'rgba(28, 25, 23, 0.95)', boxShadow: '3px 3px 2px rgba(0,0,0,0.7)' }}
@@ -393,19 +379,16 @@ export const MainMenu = memo(function MainMenu({ buttonEntryState = 'static' }: 
               </button>
             </div>
           </div>
-        </div>
+        </FullScreenOverlay>
       )}
 
 
       {/* Changelog popup */}
       {showChangelog && (
-        <div
-          className="absolute inset-0 flex items-center justify-center bg-black/65 z-10"
-          onClick={(e) => { if (e.target === e.currentTarget) setShowChangelog(false); }}
-        >
+        <FullScreenOverlay backdropClass="bg-black/40" zIndex={150} onBackdropClick={() => setShowChangelog(false)}>
           <div
             className="bg-stone-950/80 px-7 py-6 flex flex-col shadow-2xl"
-            style={{ width: 'min(560px, calc(100vw - 32px))', maxHeight: 'min(470px, calc(100vh - 48px))' }}
+            style={{ width: 560, maxHeight: 470 }}
           >
             <h2
               className="text-amber-400 text-center uppercase mb-5"
@@ -444,13 +427,13 @@ export const MainMenu = memo(function MainMenu({ buttonEntryState = 'static' }: 
               Close
             </button>
           </div>
-        </div>
+        </FullScreenOverlay>
       )}
 
       {/* Name prompt -- shown once on first visit (guest mode only; signed-in users
           get their name from public.players via hydrateProfile). */}
       {!playerName && !auth.isLoggedIn && (
-        <div className="absolute inset-0 flex items-center justify-center bg-black/80 z-20">
+        <FullScreenOverlay backdropClass="bg-black/40" zIndex={130}>
           <div
             className="rounded-sm p-6 text-center"
             style={{ width: 300, backgroundColor: 'rgba(28, 25, 23, 0.95)', boxShadow: '3px 3px 2px rgba(0,0,0,0.7)' }}
@@ -485,7 +468,7 @@ export const MainMenu = memo(function MainMenu({ buttonEntryState = 'static' }: 
               Confirm
             </button>
           </div>
-        </div>
+        </FullScreenOverlay>
       )}
     </div>
   );

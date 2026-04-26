@@ -112,6 +112,10 @@ export function playBlock(): void {
   play('sfx_block', 0.4);
 }
 
+export function playBomb(): void {
+  play('sfx_bomb', 0.45);
+}
+
 let lastHitTime = 0;
 export function playHit(): void {
   const now = Date.now();

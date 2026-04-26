@@ -587,8 +587,6 @@ export const EventScreen = memo(function EventScreen() {
     EventBus.emit(GameEvent.SCREEN_CHANGE, 'map' satisfies Screen);
   };
 
-  const eventBg = `${import.meta.env.BASE_URL}assets/events/${event.background}`;
-
   // For each cardIdx, find its current slot.
   const slotOf = (cardIdx: number) => cardOrder.indexOf(cardIdx);
 
@@ -605,11 +603,6 @@ export const EventScreen = memo(function EventScreen() {
   return (
     <div
       className="relative flex flex-col h-full"
-      style={{
-        backgroundImage: `url(${eventBg})`,
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-      }}
     >
       <div className="pt-10 px-4 flex flex-col items-center">
         <h2

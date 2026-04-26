@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client';
 import App from './App';
 import { initAuth } from './services/auth';
 import { CONSUMABLE_FRAMES } from './data/spriteConfig';
+import { playClick, playHover } from './services/sfx';
 import './styles.css';
 
 // Set up custom cursors using BASE_URL so they work in both dev and production
@@ -97,7 +98,7 @@ const CLICKABLE_SELECTOR = [
 document.addEventListener('click', (e) => {
   const target = e.target as HTMLElement;
   if (target.closest('button') && !target.closest('[data-no-click-sfx]')) {
-    import('./services/sfx').then(({ playClick }) => playClick());
+    playClick();
   }
 }, true);
 
@@ -109,7 +110,7 @@ document.addEventListener('pointerover', (e) => {
   if (!clickable || clickable.closest('[data-no-hover-sfx]')) return;
   const previous = e.relatedTarget as Node | null;
   if (previous && clickable.contains(previous)) return;
-  import('./services/sfx').then(({ playHover }) => playHover());
+  playHover();
 }, true);
 
 // Recover from WebGL context loss (rare, but happens on some devices).

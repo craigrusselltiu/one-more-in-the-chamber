@@ -21,6 +21,6 @@ export const gameConfig: Phaser.Types.Core.GameConfig = {
     mode: Phaser.Scale.FIT,
     autoCenter: Phaser.Scale.CENTER_BOTH,
   },
-  backgroundColor: '#1a1a2e',
+  transparent: true,
   scene: [BootScene, CombatScene, CutsceneScene],
 };

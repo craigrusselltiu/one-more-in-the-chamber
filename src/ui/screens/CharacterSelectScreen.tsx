@@ -1,5 +1,7 @@
 import { memo, useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useTutorialStore } from '../../store/tutorialStore';
+import { useGameScale } from '../hooks/useGameScale';
 import { TUTORIAL_INTRO } from '../../data/tutorials';
 import { EventBus, GameEvent } from '../../game/EventBus';
 import { useRunStore } from '../../store/runStore';
@@ -29,7 +31,7 @@ interface CharacterInfo {
   exclusiveTileType: TileType;
 }
 
-const CHARACTERS: CharacterInfo[] = [
+export const CHARACTERS: CharacterInfo[] = [
   {
     id: 'red_panda',
     name: 'Rust',
@@ -73,6 +75,7 @@ export const CharacterSelectScreen = memo(function CharacterSelectScreen() {
   const [selectedCharacter, setSelectedCharacter] = useState<CharacterId>(defaultCharacter);
   const [wantedLevel, setWantedLevel] = useState(lastWantedLevel ?? 0);
   const [customSeed, setCustomSeed] = useState('');
+  const { scale: uiScale } = useGameScale();
 
   // Wanted Level caps at 30. Scaling beyond 30 is disabled.
   const maxSelectable = Math.min(30, highestCleared + 1);
@@ -99,14 +102,7 @@ export const CharacterSelectScreen = memo(function CharacterSelectScreen() {
   return (
     <div
       className="relative flex flex-col overflow-hidden"
-      style={{
-        width: 960,
-        height: 540,
-        backgroundImage: `url(${import.meta.env.BASE_URL}assets/${char.bg})`,
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-        transition: 'background-image 0.3s',
-      }}
+      style={{ width: 960, height: 540 }}
     >
       {/* Title */}
       <div className="text-center mt-8">
@@ -118,15 +114,34 @@ export const CharacterSelectScreen = memo(function CharacterSelectScreen() {
         </h2>
       </div>
 
-      {/* Character tabs on the left edge */}
-      <div className="absolute -left-2 top-1/2 -translate-y-1/2 flex flex-col gap-2">
+      {/* Character tabs anchored to the viewport left edge (portaled to body
+          and scaled so they stay at the screen edge regardless of letterbox). */}
+      {createPortal(
+        <div
+          data-tooltip-root
+          className="fixed z-[70]"
+          style={{
+            left: 0,
+            top: '50%',
+            transform: `translateY(-50%) scale(${uiScale})`,
+            transformOrigin: 'left center',
+            pointerEvents: 'auto',
+          }}
+        >
+          <div className="flex flex-col gap-2" style={{ marginLeft: -8 }}>
         {CHARACTERS.map((c) => {
           const isSelected = selectedCharacter === c.id;
           const locked = isLocked(c.id);
           const button = (
             <button
               key={c.id}
-              onClick={() => { if (!locked) setSelectedCharacter(c.id); }}
+              onClick={() => {
+                if (locked) return;
+                setSelectedCharacter(c.id);
+                // Persist immediately so App.tsx can render the matching bg
+                // at the viewport level.
+                setLastCharacter(c.id);
+              }}
               className="flex items-center gap-2"
               style={{
                 padding: '10px 16px 10px 48px',
@@ -194,38 +209,51 @@ export const CharacterSelectScreen = memo(function CharacterSelectScreen() {
             }}
             >
               <div className="relative" style={{ width: 40, height: 40 }}>
-              <CharacterSheetSprite
-                character="red_panda"
-                size={40}
-                alt="???"
-                style={{ filter: 'brightness(0)' }}
-              />
-              <div
+                {/* Show the (0,0) frame of rudy_sheet.png (256x128, 4x2 grid
+                    of 64x64). Scale 64 -> 40, so background-size 160x80. */}
+                <div
+                  aria-label="Rudy"
+                  role="img"
+                  style={{
+                    width: 40,
+                    height: 40,
+                    backgroundImage: `url(${import.meta.env.BASE_URL}assets/sprites/rudy_sheet.png)`,
+                    backgroundSize: '160px 80px',
+                    backgroundPosition: '0 0',
+                    backgroundRepeat: 'no-repeat',
+                    imageRendering: 'pixelated',
+                    filter: 'brightness(0)',
+                  }}
+                />
+                <div
+                  style={{
+                    position: 'absolute',
+                    inset: 0,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    pointerEvents: 'none',
+                  }}
+                >
+                  <SpriteIcon frame={HAZARD_FRAMES.lock} scale={1} outline="#000" outlineWidth={2} />
+                </div>
+              </div>
+              <span
+                className="text-sm font-bold"
                 style={{
-                  position: 'absolute',
-                  inset: 0,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  pointerEvents: 'none',
+                  color: '#57534e',
+                  WebkitTextStroke: '2px #000',
+                  paintOrder: 'stroke fill',
                 }}
               >
-                <SpriteIcon frame={HAZARD_FRAMES.lock} scale={1} outline="#000" outlineWidth={2} />
-              </div>
-            </div>
-            <span
-              className="text-sm font-bold"
-              style={{
-                color: '#57534e',
-                WebkitTextStroke: '2px #000',
-                paintOrder: 'stroke fill',
-              }}
-            >
-              ???
-            </span>
+                Rudy
+              </span>
           </button>
         </Tooltip>
-      </div>
+          </div>
+        </div>,
+        document.body,
+      )}
 
       {/* Character info - center bottom */}
       <div className="absolute bottom-20 left-1/2 -translate-x-1/2 flex flex-col items-center">

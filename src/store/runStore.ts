@@ -97,6 +97,13 @@ interface RunStore {
   setPendingStarterOffer: (offer: { tileId: string; upgradeId: string; sacrificeId: string } | undefined) => void;
   setPendingActTileSelection: (value: boolean | undefined) => void;
   markStarterEncountered: () => void;
+  markDevControlsUsed: () => void;
+  devSkipToAct: (act: Act) => void;
+  devSetGold: (amount: number) => void;
+  devSetHealth: (current: number, max: number) => void;
+  devSetAbilityCharge: (charge: number) => void;
+  devAddArtifact: (artifact: ArtifactInstance) => void;
+  devRemoveArtifact: (id: string) => void;
   incrementMerchantUpgradesPurchased: () => void;
   setActMerchantSurcharge: (amount: number | undefined) => void;
   advanceAct: () => void;
@@ -691,6 +698,80 @@ export const useRunStore = create<RunStore>((set, get) => ({
     set((state) => {
       if (!state.run) return state;
       return { run: { ...state.run, starterEncountered: true, pendingStarterOffer: undefined } };
+    }),
+
+  markDevControlsUsed: () =>
+    set((state) => {
+      if (!state.run || state.run.devControlsUsed) return state;
+      return { run: { ...state.run, devControlsUsed: true } };
+    }),
+
+  devSkipToAct: (act) =>
+    set((state) => {
+      if (!state.run) return state;
+      const mods = getWantedLevelMutations(state.run.wantedLevel);
+      return {
+        run: {
+          ...state.run,
+          currentAct: act,
+          currentNodeId: null,
+          bossRewardTaken: false,
+          eliteRewardTaken: false,
+          pendingActTileSelection: false,
+          pendingActBossHpBonus: undefined,
+          actMerchantSurcharge: undefined,
+          mapState: generateMap(state.run.seed, act, mods.eliteCountBonus, mods.campfireCountPenalty),
+          devControlsUsed: true,
+        },
+      };
+    }),
+
+  devSetGold: (amount) =>
+    set((state) => {
+      if (!state.run) return state;
+      return { run: { ...state.run, gold: Math.max(0, Math.floor(amount)), devControlsUsed: true } };
+    }),
+
+  devSetHealth: (current, max) =>
+    set((state) => {
+      if (!state.run) return state;
+      const nextMax = Math.max(1, Math.floor(max));
+      const nextHealth = Math.max(0, Math.min(nextMax, Math.floor(current)));
+      return { run: { ...state.run, health: nextHealth, maxHealth: nextMax, devControlsUsed: true } };
+    }),
+
+  devSetAbilityCharge: (charge) =>
+    set((state) => {
+      if (!state.run) return state;
+      return { run: { ...state.run, abilityCharge: Math.max(0, Math.floor(charge)), devControlsUsed: true } };
+    }),
+
+  devAddArtifact: (artifact) =>
+    set((state) => {
+      if (!state.run) return state;
+      if (state.run.artifacts.some((a) => a.id === artifact.id)) {
+        return { run: { ...state.run, devControlsUsed: true } };
+      }
+      useMetaStore.getState().discoverArtifact(artifact.id);
+      const artifacts = [...state.run.artifacts, artifact];
+      const traitCounts: Partial<Record<TraitId, number>> = {};
+      for (const a of artifacts) {
+        for (const tag of a.tags) traitCounts[tag] = (traitCounts[tag] ?? 0) + 1;
+      }
+      discoverActivatedTraits(traitCounts);
+      return { run: { ...state.run, artifacts, traitCounts, devControlsUsed: true } };
+    }),
+
+  devRemoveArtifact: (id) =>
+    set((state) => {
+      if (!state.run) return state;
+      const artifacts = state.run.artifacts.filter((a) => a.id !== id);
+      const traitCounts: Partial<Record<TraitId, number>> = {};
+      for (const a of artifacts) {
+        for (const tag of a.tags) traitCounts[tag] = (traitCounts[tag] ?? 0) + 1;
+      }
+      discoverActivatedTraits(traitCounts);
+      return { run: { ...state.run, artifacts, traitCounts, devControlsUsed: true } };
     }),
 
   incrementMerchantUpgradesPurchased: () =>

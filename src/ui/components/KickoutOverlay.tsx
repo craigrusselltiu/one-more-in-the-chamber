@@ -1,6 +1,7 @@
 import { memo, useEffect, useState } from 'react';
 import { subscribeKicked } from '../../services/kickout';
 import { logout } from '../../services/auth';
+import { FullScreenOverlay } from './FullScreenOverlay';
 
 /**
  * Blocking full-screen overlay shown when another browser tab / device has
@@ -14,17 +15,11 @@ export const KickoutOverlay = memo(function KickoutOverlay() {
   if (!kicked) return null;
 
   const handleReturn = () => {
-    // Same flow as Settings -> Sign Out: flips auth state, restores the
-    // pre-login guest name if any, clears the active run, and navigates to
-    // the main menu. No page reload.
     logout().catch(console.error);
   };
 
   return (
-    <div
-      className="absolute inset-0 z-[260] flex items-center justify-center"
-      style={{ backgroundColor: 'rgba(0, 0, 0, 0.85)', pointerEvents: 'auto' }}
-    >
+    <FullScreenOverlay zIndex={260} backdropClass="" style={{ backgroundColor: 'rgba(0, 0, 0, 0.4)' }}>
       <div
         className="rounded-sm px-6 py-5 max-w-sm text-center flex flex-col items-center gap-3"
         style={{ backgroundColor: 'rgba(28, 25, 23, 0.95)', boxShadow: '3px 3px 2px rgba(0,0,0,0.7)' }}
@@ -47,6 +42,6 @@ export const KickoutOverlay = memo(function KickoutOverlay() {
           Back to Main Menu
         </button>
       </div>
-    </div>
+    </FullScreenOverlay>
   );
 });

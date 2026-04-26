@@ -10,6 +10,10 @@ interface ArtifactPickOptions {
   bossReward?: boolean;
 }
 
+/** Artifacts that should never appear in the regular reward pool -- they're
+ *  only granted by specific events. */
+const EVENT_ONLY_ARTIFACT_IDS = new Set<string>(['merchants_token']);
+
 /**
  * Filter the full artifact list to what's valid for this run: unowned and
  * character-compatible. Corrupt-tagged artifacts are excluded -- they can
@@ -18,7 +22,9 @@ interface ArtifactPickOptions {
  */
 export function getArtifactPoolForRun(run: RunState, opts: ArtifactPickOptions = {}): ArtifactDefinition[] {
   const ownedIds = new Set(run.artifacts.map((a) => a.id));
-  const nonCorrupt = ARTIFACTS.filter((a) => !a.tags.includes('corrupt'));
+  const nonCorrupt = ARTIFACTS.filter(
+    (a) => !a.tags.includes('corrupt') && !EVENT_ONLY_ARTIFACT_IDS.has(a.id),
+  );
   const available = nonCorrupt.filter(
     (a) => !ownedIds.has(a.id) && (!a.exclusive || a.exclusive === run.character),
   );

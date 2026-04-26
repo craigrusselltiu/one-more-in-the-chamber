@@ -100,6 +100,7 @@ export const ScoreScreen = memo(function ScoreScreen() {
   useEffect(() => {
     if (!run || !score || submittedRef.current) return;
     submittedRef.current = true;
+    if (run.devControlsUsed) return;
 
     const tiles = (run.activeTileTypes ?? []).map((t: string) => ({
       type: t,
@@ -133,10 +134,11 @@ export const ScoreScreen = memo(function ScoreScreen() {
 
   const handleMainMenu = () => {
     const completed = score?.completed ?? false;
-    if (completed && run) {
+    const devRun = !!run?.devControlsUsed;
+    if (completed && run && !devRun) {
       setHighestWantedLevel(run.wantedLevel);
     }
-    if (score) {
+    if (score && !devRun) {
       const rep = Math.floor(score.finalScore / 10);
       if (rep > 0) addReputation(rep);
     }
@@ -155,11 +157,6 @@ export const ScoreScreen = memo(function ScoreScreen() {
   return (
     <div
       className="flex flex-col items-center justify-center h-full px-8"
-      style={{
-        backgroundImage: `linear-gradient(rgba(0,0,0,0.55), rgba(0,0,0,0.55)), url(${import.meta.env.BASE_URL}assets/backgrounds/${score.completed ? 'victory' : 'defeat'}.png)`,
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-      }}
     >
       <h2 className="text-xl text-amber-400 mb-0.5 font-bold uppercase" style={{ WebkitTextStroke: '4px #000', paintOrder: 'stroke fill' }}>
         {score.completed ? 'Victory' : 'Defeat'}
@@ -177,6 +174,11 @@ export const ScoreScreen = memo(function ScoreScreen() {
           ? 'The West remembers your name'
           : 'The trail claims another soul'}
       </p>
+      {run.devControlsUsed && (
+        <p className="mb-2 text-red-300 font-bold uppercase" style={{ fontSize: '9px' }}>
+          Dev Run - Score Not Submitted
+        </p>
+      )}
 
       {/* Score breakdown */}
       <div className="w-64 border border-stone-600 bg-stone-800/50 p-3 mb-3">

@@ -189,9 +189,6 @@ export const LedgerScreen = memo(function LedgerScreen() {
       style={{
         width: 960,
         height: 540,
-        backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.55), rgba(0, 0, 0, 0.55)), url(${import.meta.env.BASE_URL}assets/backgrounds/ledger.png)`,
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
       }}
     >
       {/* Header */}

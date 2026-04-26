@@ -72,6 +72,7 @@ export class BootScene extends Phaser.Scene {
     this.load.audio('sfx_hit', `${base}assets/audio/sfx/hit.wav`);
     this.load.audio('sfx_ability_ready', `${base}assets/audio/sfx/ability_ready.wav`);
     this.load.audio('sfx_block', `${base}assets/audio/sfx/block.wav`);
+    this.load.audio('sfx_bomb', `${base}assets/audio/sfx/bomb.wav`);
     this.load.audio('sfx_campfire', `${base}assets/audio/sfx/campfire.wav`);
     this.load.audio('sfx_treasure', `${base}assets/audio/sfx/treasure.wav`);
     this.load.audio('sfx_shop', `${base}assets/audio/sfx/shop.wav`);
@@ -88,7 +89,6 @@ export class BootScene extends Phaser.Scene {
     this.load.image('dusty_bg', `${base}assets/backgrounds/dusty_bg.png`);
     this.load.image('copperhead_bg', `${base}assets/backgrounds/copperhead_bg.png`);
     this.load.image('ironeye_bg', `${base}assets/backgrounds/ironeye_bg.png`);
-    this.load.image('main_menu_bg', `${base}assets/backgrounds/main_menu_bg.png`);
     this.load.image('campfire_bg', `${base}assets/backgrounds/campfire_bg.png`);
     this.load.image('board_bg', `${base}assets/board_bg.png`);
     this.load.image('merchant_bg', `${base}assets/backgrounds/merchant_bg.png`);
@@ -123,6 +123,22 @@ export class BootScene extends Phaser.Scene {
     this.load.spritesheet('items_sheet', `${base}assets/sprites/items_sheet.png`, {
       frameWidth: 16,
       frameHeight: 16,
+    });
+    this.load.spritesheet('effect_bomb', `${base}assets/effects/bomb.png`, {
+      frameWidth: 32,
+      frameHeight: 32,
+    });
+    this.load.spritesheet('effect_spark', `${base}assets/effects/spark.png`, {
+      frameWidth: 64,
+      frameHeight: 64,
+    });
+    this.load.spritesheet('effect_ability', `${base}assets/effects/ability.png`, {
+      frameWidth: 64,
+      frameHeight: 64,
+    });
+    this.load.spritesheet('effect_coins', `${base}assets/effects/coins.png`, {
+      frameWidth: 64,
+      frameHeight: 64,
     });
     // Character/enemy sprites rendered by React <img> tags. Preloading here
     // warms the browser HTTP cache so first-render on combat screens is instant

@@ -78,6 +78,8 @@ export interface RunState {
   starterEncountered?: boolean;
   /** Persisted reward-ID triplet so quitting mid-starter-screen doesn't let the player re-roll offers. */
   pendingStarterOffer?: { tileId: string; upgradeId: string; sacrificeId: string };
+  /** True once dev controls have altered this run. Dev runs do not submit scores or grant progression rewards. */
+  devControlsUsed?: boolean;
   status: 'active' | 'completed' | 'abandoned';
 }
 

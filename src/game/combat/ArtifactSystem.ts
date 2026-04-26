@@ -55,6 +55,12 @@ export class ArtifactSystem {
     return this.artifactInstances;
   }
 
+  /** Replace artifacts during dev-control edits. Per-fight one-shot flags are not re-triggered. */
+  setArtifacts(artifacts: ArtifactInstance[]): void {
+    this.artifactInstances = artifacts;
+    this.artifactIds = new Set(artifacts.filter((a) => !a.used).map((a) => a.id));
+  }
+
   /** Remove an artifact (e.g. Shed Skin self-destruct). */
   removeArtifact(id: string): void {
     this.artifactIds.delete(id);

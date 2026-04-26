@@ -1,6 +1,8 @@
 import type { CombatState, EnemyState } from '../types/combat';
 import type { CombatSnapshot } from '../types/combatSnapshot';
 import type { CombatConfig } from './combat/CombatManager';
+import type { DevBoardEditOperation } from '../types/devControls';
+import type { ArtifactInstance, TileType } from '../types/game';
 
 type Listener = (...args: unknown[]) => void;
 
@@ -87,6 +89,34 @@ export const GameEvent = {
   PLAYER_DAMAGE_LINE: 'vfx:player-damage-line',
   /** Enemy took HP damage and should flash. Payload: enemyId */
   ENEMY_DAMAGED: 'vfx:enemy-damaged',
+  /** Player took visible HP damage and should show blood on the sprite. */
+  PLAYER_BLOOD_EFFECT: 'vfx:player-blood-effect',
+  /** Enemy took visible HP damage and should show blood on the sprite. Payload: enemyId */
+  ENEMY_BLOOD_EFFECT: 'vfx:enemy-blood-effect',
+  /** Last non-summoned enemy died and should show coin effect. Payload: enemyId */
+  ENEMY_COINS_EFFECT: 'vfx:enemy-coins-effect',
+  /** Player restored HP and should show heal effect. */
+  PLAYER_HEAL_EFFECT: 'vfx:player-heal-effect',
+  /** Enemy restored HP and should show heal effect. Payload: enemyId */
+  ENEMY_HEAL_EFFECT: 'vfx:enemy-heal-effect',
+  /** Bomb timer reached 0 and detonated. Payload: { row, col } */
+  BOMB_EFFECT: 'vfx:bomb-effect',
+  /** Deadeye spark effect in combat canvas coordinates. Payload: { x, y } */
+  SPARK_EFFECT: 'vfx:spark-effect',
+  /** Player gunshot effect in HUD coordinates. Payload: { x, y } */
+  SHOOT_EFFECT: 'vfx:shoot-effect',
+
+  // Dev controls
+  DEV_SET_BOARD_EDIT: 'dev:board-edit-set',
+  DEV_BOARD_CELL_CLICKED: 'dev:board-cell-clicked',
+  DEV_ADD_TILE: 'dev:add-tile',
+  DEV_REMOVE_TILE: 'dev:remove-tile',
+  DEV_SET_TILE_LEVEL: 'dev:set-tile-level',
+  DEV_SET_GOLD: 'dev:set-gold',
+  DEV_SET_HP: 'dev:set-hp',
+  DEV_SET_ABILITY_CHARGE: 'dev:set-ability-charge',
+  DEV_ADD_ARTIFACT: 'dev:add-artifact',
+  DEV_REMOVE_ARTIFACT: 'dev:remove-artifact',
 
   // Board input -> CombatManager
   SWAP_REQUESTED: 'board:swap-requested',
@@ -152,4 +182,22 @@ export interface EventPayloads {
   [GameEvent.ARTIFACT_USED]: [artifactId: string];
   [GameEvent.PLAYER_DAMAGE_LINE]: [enemyId: string];
   [GameEvent.ENEMY_DAMAGED]: [enemyId: string];
+  [GameEvent.PLAYER_BLOOD_EFFECT]: [];
+  [GameEvent.ENEMY_BLOOD_EFFECT]: [enemyId: string];
+  [GameEvent.ENEMY_COINS_EFFECT]: [enemyId: string];
+  [GameEvent.PLAYER_HEAL_EFFECT]: [];
+  [GameEvent.ENEMY_HEAL_EFFECT]: [enemyId: string];
+  [GameEvent.BOMB_EFFECT]: [payload: { row: number; col: number }];
+  [GameEvent.SPARK_EFFECT]: [payload: { x: number; y: number }];
+  [GameEvent.SHOOT_EFFECT]: [payload: { x: number; y: number }];
+  [GameEvent.DEV_SET_BOARD_EDIT]: [operation: DevBoardEditOperation | null];
+  [GameEvent.DEV_BOARD_CELL_CLICKED]: [row: number, col: number];
+  [GameEvent.DEV_ADD_TILE]: [type: TileType, level?: number];
+  [GameEvent.DEV_REMOVE_TILE]: [type: TileType];
+  [GameEvent.DEV_SET_TILE_LEVEL]: [type: TileType, level: number];
+  [GameEvent.DEV_SET_GOLD]: [amount: number];
+  [GameEvent.DEV_SET_HP]: [current: number, max: number];
+  [GameEvent.DEV_SET_ABILITY_CHARGE]: [charge: number];
+  [GameEvent.DEV_ADD_ARTIFACT]: [artifact: ArtifactInstance];
+  [GameEvent.DEV_REMOVE_ARTIFACT]: [id: string];
 }

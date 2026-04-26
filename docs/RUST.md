@@ -5,8 +5,11 @@
 **Name:** Rust
 **Species:** Red Panda
 **Archetype:** Bounty hunter / sharpshooter
+**Character ID:** `red_panda`
+**Unlock:** Available by default
+**HP:** 100
 
-Small, scrappy, cowboy gear. The underdog. Pixel art with expressive reactions -- flinch on hit, grin on big match, hat tip on boss kill.
+Small, scrappy, cowboy gear. Rust is the direct damage character: he starts with reliable attacks, a Vulnerable setup tile, and Bounty for executions and gold payouts.
 
 ## Backstory
 
@@ -24,56 +27,97 @@ Now Rust is a wanted animal with his face on every board from the Dusty Trail to
 
 *"It was one shot. One stupid, lucky, terrible shot. And I've been paying for it ever since."*
 
+## Pixel Art Personality
+
+- **Idle:** Small, alert gunslinger stance
+- **Attack:** Quick revolver shot
+- **Hit:** Flinches but stays upright
+- **Ability:** Deadeye focus pose
+
+## Starting Kit
+
+Rust starts each run with:
+
+- **Starting artifact:** Bamboo Canteen
+- **Core tiles:** Bullet, Iron, Shank, Bounty
+- **Starter tile choice:** At run start, choose 1 of 3 offered starter-pool tiles to become the fifth active tile
+
 ## Core Tiles
 
-Rust starts with 4 core tiles (other characters start with 3):
-
-| Tile | Per-tile | Upgrade | Description |
-|------|----------|---------|-------------|
-| Bullet | 2 damage | +2 damage/level | Standard damage tile. |
-| Iron | 2 block | +2 block/level | Standard block tile. |
-| Gold | 1 gold | +2 gold/level | Standard gold tile. |
-| **Bounty** | 2 stacks | +2 stacks/level | Apply 2 Bounty stacks per 3-match; +1 per extra tile. If enemy HP <= Bounty stacks, enemy dies. |
-
-Act 1 has 5 tile types (4 core + 1 starter) instead of 4. Board dilution starts earlier, but the character-specific tile gives Rust a unique strategic identity.
+| Tile | Per-tile / Match Output | Upgrade | Notes |
+|------|--------------------------|---------|-------|
+| Bullet | 2 damage per tile | +2 damage to match total per level | Reliable targeted damage. |
+| Iron | 2 block per tile | +2 block to match total per level | Standard defense. |
+| Shank | 1 damage per tile + 1 Vulnerable | +2 damage to match total per level | Adds Vulnerable after the match damage resolves. |
+| **Bounty** | 1 Bounty stack per tile | +1 stack per tile per level | Rust-exclusive execution setup. |
 
 ### Bounty Mechanic
 
-- Bounty stacks are applied to the **targeted enemy** when Bounty tiles are matched
-- A 3-match applies 2 stacks; each extra tile in the match adds +1 stack
-- Upgrades add +2 stacks to the match total per level
-- Stacks persist until the enemy dies
-- **Kill threshold:** whenever Bounty stacks are applied or the enemy takes damage, if the enemy's current HP is less than or equal to its Bounty stacks, the enemy dies instantly
-- Bounty stacks are displayed as a status effect icon under enemy HP bars
+- Bounty stacks are applied to the targeted enemy.
+- Bounty applies `1 + tile level` stack per Bounty tile matched.
+- After Bounty is applied, and after any enemy takes damage, the game checks that enemy's Bounty threshold.
+- If an enemy's current HP is less than or equal to its Bounty stacks, it is killed immediately.
+- Bounty kills count the enemy's Bounty stacks toward damage score.
+- Bounty kills on non-summoned enemies grant 10 gold.
+- Bounty stacks persist until the enemy dies.
+
+**Bounty** flavor: *"The S is silent."*
 
 ## Ability -- Deadeye
 
-**Charge:** +1 per player turn. Requires **10 charges** to activate. Meter carries over between fights.
+**Charge threshold:** 6
 
-**Activation:** Crosshair cursor appears. Select **3 tiles** anywhere on the board (6 with Fully Loaded). Each selected tile is destroyed and generates its resource. Gravity + cascades resolve after each shot.
+**Charge gain:**
+- +1 charge at the start of each player turn, up to the threshold.
+- Battery matches and other charge effects can add charge.
+- Charge gained while Deadeye is active is held as pending charge and rolls in when Deadeye ends.
 
-**Deadeye + Showdown:** Shooting a Showdown tile clears all tiles of a random type on the board.
+**Activation:** Press Space or click the chamber button while fully charged.
 
-**Deadeye + Explosive:** Shooting an explosive tile detonates its 3x3 area.
+Deadeye enters tile-targeting mode. Rust can shoot tiles anywhere on the board.
 
-**Deadeye + Bounty:** Shooting a Bounty tile applies stacks as normal and triggers the kill threshold check.
+### Base Deadeye Behavior
 
-### Ability Bar
+- Base Deadeye has 3 shots.
+- Each shot destroys the selected tile through `Board.destroyTilesWithEffects`.
+- Destroyed tiles generate their normal resources.
+- Gravity, refill, and cascades resolve after each shot.
+- Special destruction is handled by the board:
+  - Explosive tiles detonate through the normal explosive chain system.
+  - Showdown tiles trigger their normal type-clear effect.
+  - Bounty tiles apply Bounty normally and can trigger execution.
+- If Deadeye creates a dead board, the board reshuffles before control returns.
+- Deadeye can be canceled after a short lockout. Canceling before any shot keeps the charge; canceling after shots does not refund spent charge, but pending charge gained during Deadeye can roll over.
 
-The ability bar spans the full width of the board at the bottom, split into 10 segments (one per charge threshold).
+### Ability UI
 
-- **Charging:** Filled segments are RED. Unfilled segments are dark gray.
-- **Ready (10/10):** All segments turn YELLOW with a pulsing glow VFX.
-- **Active Deadeye:** Shows shots remaining as gold indicator dots.
+- The chamber meter uses 6 segments while charging.
+- When active, the chamber displays remaining shots instead of charge.
+- Deadeye uses a crosshair cursor. With Rust's Cylinder, the final shot uses the alternate enemy-target cursor.
+- Ability finish triggers the shared chamber spin SFX/VFX.
 
-### Shot VFX & SFX
+## Exclusive Starting Artifact
 
-Each Deadeye shot:
-- Plays a gunshot sound effect
-- Triggers an enhanced particle explosion (bigger and more particles than standard tile clears, mix of tile color + white)
-- Leaves a bullet hole at the tile position that fades away after ~1 second
-- Light screen shake on impact
+### Bamboo Canteen
+
+- **Tags:** Saloon Keeper
+- **Rarity:** Rare
+- **Effect:** After completing combat, restore 6 HP.
+- **Flavor:** *"Bamboo doesn't rust."*
 
 ## Exclusive Artifact
 
-**Fully Loaded** -- Deadeye: 3 shots become 6. *"Six in the chamber. No reloads."*
+### Rust's Cylinder
+
+- **Tags:** Gunslinger, Outlaw
+- **Rarity:** Legendary
+- **Effect:** Increase Deadeye shots to 6. The last shot can be used on an enemy, dealing 7 damage plus 1 damage per Bounty stack on that enemy.
+- **Flavor:** *"Six in the chamber. No reloads."*
+
+## Implementation Notes
+
+- `CharacterId`: `red_panda`
+- Starting tiles are defined in `CHARACTER_TILES.red_panda`.
+- Starting artifact is assigned in `runStore.startRun()`.
+- Deadeye and Rust's Cylinder behavior live in `CombatManager`.
+- Bounty resource output comes from `ResourceResolver`; execution is handled by `CombatManager.handleBountyKill()`.

@@ -1,8 +1,8 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import Phaser from 'phaser';
 import { gameConfig } from './game/GameConfig';
-import { MainMenu } from './ui/screens/MainMenu';
-import { CharacterSelectScreen } from './ui/screens/CharacterSelectScreen';
+import { MainMenu, pickRandomMainMenuBackground, type MainMenuBackground } from './ui/screens/MainMenu';
+import { CharacterSelectScreen, CHARACTERS } from './ui/screens/CharacterSelectScreen';
 import { TileSelectScreen } from './ui/screens/TileSelectScreen';
 import { StarterScreen } from './ui/screens/StarterScreen';
 import { MapScreen } from './ui/screens/MapScreen';
@@ -32,11 +32,12 @@ import { SyncIndicator } from './ui/components/SyncIndicator';
 import { LoginSyncOverlay } from './ui/components/LoginSyncOverlay';
 import { KickoutOverlay } from './ui/components/KickoutOverlay';
 import { BloodOverlay } from './ui/components/BloodOverlay';
+import { DevPanel } from './ui/components/DevPanel';
 import { EventBus, GameEvent } from './game/EventBus';
 import { useRunStore } from './store/runStore';
 import { useCombatStore } from './store/combatStore';
 import { useGameScale, UI_WIDTH, UI_HEIGHT } from './ui/hooks/useGameScale';
-import { subscribeAuth, getAuthState } from './services/auth';
+import { subscribeAuth, getAuthState, type AuthState } from './services/auth';
 import type { CombatConfig, CombatResult } from './game/combat/CombatManager';
 import type { CombatSnapshot } from './types/combatSnapshot';
 import { saveCombatSnapshot, clearCombatSnapshot, purgeCorruptSnapshots } from './services/localSave';
@@ -60,10 +61,11 @@ import {
   OUTLAW_KING_ENCOUNTER_CHANCE_BY_ACT,
 } from './data/enemies';
 import type { EnemyDefinition } from './types/combat';
-import type { MapNodeType, Act } from './types/game';
+import type { MapNodeType, Act, RunState } from './types/game';
 import { applyWantedLevelToEnemies, getWantedLevelMutations } from './data/wantedLevel';
 import { createSeededRandom } from './utils/seededRandom';
 import { APP_VERSION_LABEL } from './version';
+import { pickEventFromBag } from './data/events';
 
 export type Screen =
   | 'main-menu'
@@ -123,6 +125,67 @@ function isCombatSceneBootstrapping(status: number | null): boolean {
     || status === Phaser.Scenes.START
     || status === Phaser.Scenes.LOADING
     || status === Phaser.Scenes.CREATING;
+}
+
+function getScreenBackground(
+  screen: Screen,
+  run: RunState | null,
+  mainMenuBackground: MainMenuBackground,
+  eventBackground?: string,
+  characterSelectId?: string,
+): string {
+  const base = import.meta.env.BASE_URL;
+  const act = run?.currentAct ?? 1;
+  const currentNodeId = run?.currentNodeId ?? run?.mapState?.currentNodeId ?? null;
+  const currentNodeType = currentNodeId && run?.mapState
+    ? run.mapState.nodes.find((node) => node.id === currentNodeId)?.type
+    : null;
+
+  if (screen === 'event' && eventBackground) {
+    return `${base}assets/events/${eventBackground}`;
+  }
+
+  if (screen === 'character-select') {
+    const charBg = CHARACTERS.find((c) => c.id === characterSelectId)?.bg
+      ?? CHARACTERS[0].bg;
+    return `${base}assets/${charBg}`;
+  }
+
+  if (screen === 'main-menu' || screen === 'welcome') {
+    return `${base}assets/main_menu/${mainMenuBackground}`;
+  }
+
+  if (screen === 'combat' || screen === 'artifact') {
+    if (currentNodeType === 'boss') {
+      const bossBgs: Record<number, string> = { 1: 'dusty_bg', 2: 'copperhead_bg', 3: 'ironeye_bg' };
+      return `${base}assets/backgrounds/${bossBgs[act] ?? 'act1_bg'}.png`;
+    }
+    if (screen === 'combat' || currentNodeType === 'elite') {
+      return `${base}assets/backgrounds/act${act}_bg.png`;
+    }
+  }
+
+  const byScreen: Partial<Record<Screen, string>> = {
+    map: 'crate_bg.png',
+    merchant: 'merchant_bg.png',
+    campfire: 'campfire_bg.png',
+    event: 'artifact_bg.png',
+    artifact: 'artifact_bg.png',
+    'tile-select': 'tile_bg.png',
+    starter: 'bones.png',
+    score: run?.status === 'completed' ? 'victory.png' : 'defeat.png',
+    'reputation-shop': 'reputation.png',
+    customize: 'customize.png',
+    ledger: 'ledger.png',
+    settings: 'blur.png',
+    login: 'artifact_bg.png',
+    'pick-name': 'artifact_bg.png',
+    leaderboard: 'leaderboard.png',
+  };
+
+  const file = byScreen[screen] ?? 'artifact_bg.png';
+  const folder = file === 'blur.png' ? 'assets' : 'assets/backgrounds';
+  return `${base}${folder}/${file}`;
 }
 
 function isCombatSceneRunningLike(game: Phaser.Game, status: number | null): boolean {
@@ -193,6 +256,11 @@ export default function App() {
   const [loadingDismissed, setLoadingDismissed] = useState(false);
   const [mainMenuIntroPlayed, setMainMenuIntroPlayed] = useState(false);
   const [bootProgress, setBootProgress] = useState<{ loaded: number; total: number }>({ loaded: 0, total: 0 });
+  const run = useRunStore((s) => s.run);
+  const [mainMenuBackground, setMainMenuBackground] = useState<MainMenuBackground>(pickRandomMainMenuBackground);
+  const [devPanelOpen, setDevPanelOpen] = useState(false);
+  const [auth, setAuth] = useState<AuthState>(() => ({ ...getAuthState() }));
+  const canUseDevControls = auth.isLoggedIn && auth.isDev;
   const currentScreenRef = useRef<Screen>(screen);
   const [wipePhase, setWipePhase] = useState<'none' | 'in' | 'out'>('none');
   /** Ref mirror of wipePhase so the onAnimationEnd handler always reads the latest value. */
@@ -244,6 +312,9 @@ export default function App() {
     gameRef.current = new Phaser.Game(config);
     initSfx(gameRef.current);
     const canvas = gameRef.current.canvas;
+    if (canvas) {
+      canvas.style.imageRendering = 'pixelated';
+    }
 
     const handleContextLost = () => {
       const game = gameRef.current;
@@ -424,6 +495,34 @@ export default function App() {
   useEffect(() => {
     currentScreenRef.current = screen;
   }, [screen]);
+
+  // Re-roll the main-menu background each time we land on it (or the welcome
+  // gate, which uses the same random pool).
+  useEffect(() => {
+    if (screen === 'main-menu' || screen === 'welcome') {
+      setMainMenuBackground(pickRandomMainMenuBackground());
+    }
+  }, [screen]);
+
+  useEffect(() => subscribeAuth(setAuth), []);
+
+  useEffect(() => {
+    if (!canUseDevControls) setDevPanelOpen(false);
+  }, [canUseDevControls]);
+
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      const isDevToggle =
+        event.key === 'F9' ||
+        (event.ctrlKey && event.shiftKey && event.key.toLowerCase() === 'd');
+      if (isDevToggle) {
+        event.preventDefault();
+        if (canUseDevControls) setDevPanelOpen((open) => !open);
+      }
+    };
+    document.addEventListener('keydown', handleKeyDown, true);
+    return () => document.removeEventListener('keydown', handleKeyDown, true);
+  }, [canUseDevControls]);
 
   const shouldAnimateMainMenuButtons =
     screen === 'main-menu'
@@ -817,7 +916,20 @@ export default function App() {
     }
   };
 
-  const { scale, offsetX, offsetY } = useGameScale();
+  const { scale, offsetX, offsetY, viewportWidth } = useGameScale();
+  const lastCharacter = useMetaStore((s) => s.meta.lastCharacter);
+  const eventBackground = useMemo(() => {
+    if (screen !== 'event' || !run) return undefined;
+    return pickEventFromBag(
+      run.currentAct,
+      `${run.seed}-event-${run.currentNodeId ?? ''}`,
+      run.eventBag ?? [],
+    ).event.background;
+    // Match EventScreen: the event stays stable for the current node even after
+    // the bag is persisted on entry.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [screen, run?.currentAct, run?.seed, run?.currentNodeId]);
+  const windowBackground = getScreenBackground(screen, run, mainMenuBackground, eventBackground, lastCharacter);
 
   // Don't render until persisted run is loaded from IndexedDB
   if (!ready) return null;
@@ -832,8 +944,34 @@ export default function App() {
   ]);
   const showTopBar = IN_RUN_SCREENS.has(screen);
 
+  // Screens whose background gets a translucent dim layer for foreground readability.
+  const DIM_BG_SCREENS: Set<Screen> = new Set([
+    'reputation-shop', 'customize', 'ledger', 'leaderboard', 'combat', 'map',
+    'campfire', 'merchant', 'tile-select',
+  ]);
+
+  const dimBackground = DIM_BG_SCREENS.has(screen);
+
   return (
-    <div className="relative w-full h-full" onContextMenu={(e) => e.preventDefault()}>
+    <div className="relative w-full h-full overflow-hidden bg-black" onContextMenu={(e) => e.preventDefault()}>
+      <div
+        aria-hidden
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          backgroundImage: `url(${windowBackground})`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          backgroundRepeat: 'no-repeat',
+          imageRendering: 'pixelated',
+        }}
+      />
+      {dimBackground && (
+        <div
+          aria-hidden
+          className="absolute inset-0 pointer-events-none"
+          style={{ backgroundColor: 'rgba(0,0,0,0.3)' }}
+        />
+      )}
       <div ref={gameContainerRef} className="absolute inset-0" />
       <OfflineIndicator />
 
@@ -844,7 +982,7 @@ export default function App() {
       <svg width="0" height="0" style={{ position: 'absolute', pointerEvents: 'none' }} aria-hidden>
         <defs>
           <filter id="enemy-target-outline" x="-20%" y="-20%" width="140%" height="140%">
-            <feMorphology in="SourceAlpha" operator="dilate" radius="1" result="dilated" />
+            <feMorphology in="SourceAlpha" operator="dilate" radius="2" result="dilated" />
             <feComposite in="dilated" in2="SourceAlpha" operator="out" result="ring" />
             <feFlood floodColor="white" result="white" />
             <feComposite in="white" in2="ring" operator="in" />
@@ -880,6 +1018,7 @@ export default function App() {
       {/* Scaled overlay: 960x540 virtual pixels, CSS-transformed to match Phaser canvas */}
       <div
         data-tooltip-root
+        id="scaled-ui-root"
         className={`absolute overflow-hidden select-none ${showTopBar ? 'flex flex-col' : ''}`}
         style={{
           width: UI_WIDTH,
@@ -893,6 +1032,9 @@ export default function App() {
         }}
       >
         <GameNotification />
+        {canUseDevControls && (
+          <DevPanel open={devPanelOpen} screen={screen} onClose={() => setDevPanelOpen(false)} />
+        )}
 
         {/* Full-area screens rendered behind TopBar */}
         {screen === 'artifact' && (
@@ -911,18 +1053,10 @@ export default function App() {
           </div>
         )}
 
-        {/* Unified TopBar + ArtifactBar for all in-run screens */}
-        {showTopBar && (
-          <>
-            <TopBar
-              mapDisabled={screen === 'map'}
-              showConsumables={screen === 'combat'}
-              deadeyeCursorEnabled={screen === 'combat' && wipePhase === 'none'}
-            />
-            <ArtifactBar />
-            <TraitRow />
-          </>
-        )}
+        {/* Top bar reserves vertical space here so screens lay out underneath;
+            the actual TopBar / ArtifactBar / TraitRow are rendered in a
+            viewport-wide container outside the scaled overlay (see below). */}
+        {showTopBar && <div style={{ height: 28, flexShrink: 0 }} aria-hidden />}
 
         {/* Combat HUD: uses absolute positioning, overlays full area */}
         {screen === 'combat' && <CombatHUD />}
@@ -963,55 +1097,143 @@ export default function App() {
 
         {/* Blocking "Signed in elsewhere" overlay when another device takes over. */}
         <KickoutOverlay />
-
-        {/* Loading screen -- shown until assets are loaded, then slides left */}
-        {!loadingDismissed && (
-          <div
-            className={`absolute inset-0 bg-black z-[200] flex flex-col items-end justify-end p-4 ${bootComplete ? 'screen-wipe-out' : ''}`}
-            onAnimationEnd={() => setLoadingDismissed(true)}
-          >
-            {!bootComplete && (
-              <div className="flex flex-col items-end gap-2 mr-4">
-                <span className="text-xl text-white tracking-widest font-bold animate-loading-breathe">LOADING</span>
-                <div
-                  className="relative overflow-hidden bg-stone-800 rounded-sm"
-                  style={{ width: 240, height: 8, boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.6)' }}
-                >
-                  <div
-                    className="h-full bg-amber-600 transition-[width] duration-150 ease-linear"
-                    style={{
-                      width: bootProgress.total > 0
-                        ? `${(bootProgress.loaded / bootProgress.total) * 100}%`
-                        : '0%',
-                    }}
-                  />
-                </div>
-                <span className="text-[10px] text-stone-400 font-bold tabular-nums">
-                  {bootProgress.loaded} / {bootProgress.total || '?'}
-                </span>
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Screen transition wipe overlay */}
-        {wipePhase !== 'none' && (
-          <div
-            className={`absolute inset-0 bg-black z-[100] ${wipePhase === 'in' ? 'screen-wipe-in' : 'screen-wipe-out'}`}
-            onAnimationEnd={() => handleWipeComplete.current?.()}
-          />
-        )}
-
-        {/* Global version label */}
-        <span
-          className="absolute right-2 bottom-1 pointer-events-none z-[60]"
-          style={{ fontSize: '7px', color: 'rgba(255,255,255,0.7)' }}
-        >
-          {APP_VERSION_LABEL.toUpperCase().replace(/^ALPHA V/, 'ALPHA v')}
-        </span>
       </div>
 
+      {/* Viewport-wide top bar: scaled like the UI overlay but fills the
+          entire viewport width so the bar stripe and its content reach the
+          screen edges. Anchored to viewport top:0. */}
+      {showTopBar && (
+        <div
+          data-tooltip-root
+          className="absolute top-0 left-0 z-[80]"
+          style={{
+            width: viewportWidth / scale,
+            height: 60,
+            transform: `scale(${scale})`,
+            transformOrigin: 'top left',
+            pointerEvents: 'none',
+          }}
+        >
+          <TopBar
+            mapDisabled={screen === 'map'}
+            showConsumables={screen === 'combat'}
+            deadeyeCursorEnabled={screen === 'combat' && wipePhase === 'none'}
+          />
+          <ArtifactBar />
+          <TraitRow />
+        </div>
+      )}
+
+      {/* Seed indicator -- viewport-anchored bottom-left, only while in a run */}
+      {showTopBar && <SeedIndicator />}
+
+      {/* Main-menu account indicator -- viewport-anchored bottom-right */}
+      {screen === 'main-menu' && <MainMenuAccountIndicator />}
+
+      {/* Screen transition wipe overlay -- covers the entire viewport */}
+      {wipePhase !== 'none' && (
+        <div
+          className={`absolute inset-0 bg-black z-[100] ${wipePhase === 'in' ? 'screen-wipe-in' : 'screen-wipe-out'}`}
+          onAnimationEnd={() => handleWipeComplete.current?.()}
+        />
+      )}
+
+      {/* Loading screen -- covers the entire viewport, anchors text+bar bottom-right */}
+      {!loadingDismissed && (
+        <div
+          className={`absolute inset-0 bg-black z-[200] flex flex-col items-end justify-end p-8 ${bootComplete ? 'screen-wipe-out' : ''}`}
+          onAnimationEnd={() => setLoadingDismissed(true)}
+        >
+          {!bootComplete && (
+            <div className="flex flex-col items-end gap-4">
+              <span className="text-6xl text-white tracking-widest font-bold animate-loading-breathe">LOADING</span>
+              <div
+                className="relative overflow-hidden bg-stone-800 rounded-sm"
+                style={{ width: 720, height: 20, boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.6)' }}
+              >
+                <div
+                  className="h-full bg-amber-600 transition-[width] duration-150 ease-linear"
+                  style={{
+                    width: bootProgress.total > 0
+                      ? `${(bootProgress.loaded / bootProgress.total) * 100}%`
+                      : '0%',
+                  }}
+                />
+              </div>
+              <span className="text-2xl text-stone-400 font-bold tabular-nums">
+                {bootProgress.loaded} / {bootProgress.total || '?'}
+              </span>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Global version label -- viewport-anchored bottom-right */}
+      <span
+        className="absolute right-2 bottom-1 pointer-events-none z-[60]"
+        style={{ fontSize: '17px', color: 'rgba(255,255,255,0.45)' }}
+      >
+        {APP_VERSION_LABEL.toUpperCase().replace(/^ALPHA V/, 'ALPHA v')}
+      </span>
+
       <BloodOverlay />
+    </div>
+  );
+}
+
+function SeedIndicator() {
+  const seed = useRunStore((s) => s.run?.seed ?? '');
+  const [copied, setCopied] = useState(false);
+  if (!seed) return null;
+  return (
+    <div
+      className="absolute left-2 bottom-1 z-[60] pointer-events-auto"
+      style={{ fontSize: '17px' }}
+    >
+      <button
+        className="text-white/45 hover:text-white/70 uppercase tracking-wider"
+        data-no-click-sfx
+        onClick={() => {
+          navigator.clipboard.writeText(seed.toUpperCase());
+          setCopied(true);
+          setTimeout(() => setCopied(false), 2000);
+        }}
+        title={copied ? 'Copied!' : 'Copy seed'}
+      >
+        SEED {seed.toUpperCase()}
+      </button>
+    </div>
+  );
+}
+
+function MainMenuAccountIndicator() {
+  const [auth, setAuthState] = useState<AuthState>(() => ({ ...getAuthState() }));
+  useEffect(() => subscribeAuth(setAuthState), []);
+  const handleLogin = () => EventBus.emit(GameEvent.SCREEN_CHANGE, 'login' satisfies Screen);
+
+  return (
+    <div className="absolute right-3 bottom-12 z-[60] pointer-events-auto text-right">
+      {auth.isLoggedIn ? (
+        <span
+          className="uppercase"
+          style={{
+            fontSize: '24px',
+            color: '#b8b8b8',
+            letterSpacing: '1px',
+            textShadow: '1px 1px 3px rgba(0,0,0,1), 1px 1px 6px rgba(0,0,0,0.95)',
+          }}
+        >
+          Signed In
+        </span>
+      ) : (
+        <button
+          onClick={handleLogin}
+          style={{ boxShadow: '2px 2px 1px rgba(0,0,0,0.4)', cursor: 'pointer', fontSize: '24px' }}
+          className="px-7 py-3 uppercase rounded-sm bg-amber-800 text-amber-200 hover:bg-amber-700 active:translate-y-0.5 transition-transform"
+        >
+          Login
+        </button>
+      )}
     </div>
   );
 }

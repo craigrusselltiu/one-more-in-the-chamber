@@ -183,9 +183,13 @@ export class Board {
   // -- Input handling --
 
   private dragStart: GridPosition | null = null;
+  private devPaintActive = false;
+  private devPaintLastKey: string | null = null;
 
   /** Whether deadeye targeting mode is active (clicks shoot instead of swap). */
   private deadeyeMode = false;
+  /** Whether dev board-edit targeting mode is active. */
+  private devBoardEditMode = false;
   /** Whether lasso mode is active (clicks can target non-adjacent tiles). */
   private lassoMode = false;
 
@@ -202,6 +206,13 @@ export class Board {
 
   setDeadeyeMode(active: boolean): void {
     this.deadeyeMode = active;
+    if (active) this.clearSelection();
+  }
+
+  setDevBoardEditMode(active: boolean): void {
+    this.devBoardEditMode = active;
+    this.devPaintActive = false;
+    this.devPaintLastKey = null;
     if (active) this.clearSelection();
   }
 
@@ -276,10 +287,24 @@ export class Board {
   }
 
   private setupInput(): void {
+    const emitDevPaint = (pos: GridPosition): void => {
+      const key = `${pos.row},${pos.col}`;
+      if (key === this.devPaintLastKey) return;
+      this.devPaintLastKey = key;
+      EventBus.emit(GameEvent.DEV_BOARD_CELL_CLICKED, pos.row, pos.col);
+    };
+
     this.scene.input.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
       if (!this.inputEnabled || this.isResolving) return;
       const pos = this.pointerToGrid(pointer);
       if (!pos) return;
+
+      if (this.devBoardEditMode) {
+        this.devPaintActive = true;
+        this.devPaintLastKey = null;
+        emitDevPaint(pos);
+        return;
+      }
 
       // Deadeye mode: click to shoot a tile (pass pointer position for VFX)
       if (this.deadeyeMode) {
@@ -317,7 +342,19 @@ export class Board {
       }
     });
 
+    this.scene.input.on('pointermove', (pointer: Phaser.Input.Pointer) => {
+      if (!this.inputEnabled || this.isResolving || !this.devBoardEditMode || !this.devPaintActive) return;
+      const pos = this.pointerToGrid(pointer);
+      if (!pos) return;
+      emitDevPaint(pos);
+    });
+
     this.scene.input.on('pointerup', (pointer: Phaser.Input.Pointer) => {
+      if (this.devBoardEditMode) {
+        this.devPaintActive = false;
+        this.devPaintLastKey = null;
+        return;
+      }
       if (!this.inputEnabled || this.isResolving || !this.dragStart) return;
 
       // Compute drag direction from pixel distance, not grid position.
@@ -352,6 +389,11 @@ export class Board {
       }
 
       this.dragStart = null;
+    });
+
+    this.scene.input.on('pointerupoutside', () => {
+      this.devPaintActive = false;
+      this.devPaintLastKey = null;
     });
   }
 

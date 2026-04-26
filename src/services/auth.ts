@@ -25,20 +25,9 @@ export interface AuthState {
   displayName: string | null;
   /** True when the user is authenticated but has no players row yet (OAuth first sign-in). */
   needsDisplayName: boolean;
-  /** True when the signed-in account is a creator/dev -- unlocks hidden-only
-   *  content (e.g. the "One Above All" title). Client-side gate; treat as a
-   *  cosmetic indicator, not a security boundary. */
+  /** True when the signed-in account is a creator/dev. Loaded from public.players.is_dev. */
   isDev: boolean;
 }
-
-/** Supabase auth.users.id values that count as creator/dev accounts. UUIDs
- *  aren't personally identifying the way an email is, so safe to commit.
- *  Replace the placeholder below with your own player ID (found in the
- *  Supabase dashboard: Authentication -> Users -> your row -> UID). */
-const DEV_USER_IDS: string[] = [
-  // 'paste-your-uuid-here',
-  '0a4e7520-a94a-4003-8873-f5c5fca6da7d',
-];
 
 /** Listeners notified whenever auth state changes (login/logout/display-name set). */
 type Listener = (state: AuthState) => void;
@@ -104,6 +93,8 @@ function readGuestNameStash(): string {
 
 function applySession(session: Session | null): void {
   if (session?.user) {
+    const sameUser = state.userId === session.user.id;
+    const currentIsDev = state.isDev;
     state.isLoggedIn = true;
     state.userId = session.user.id;
     state.displayName =
@@ -112,7 +103,10 @@ function applySession(session: Session | null): void {
       session.user.email ??
       null;
     state.needsDisplayName = false;
-    state.isDev = DEV_USER_IDS.includes(session.user.id);
+    // `isDev` is loaded from public.players.is_dev, not the auth session.
+    // Supabase can re-emit the current session on tab focus/token refresh; keep
+    // the known DB-backed value for the same user until hydrateProfile updates it.
+    state.isDev = sameUser ? currentIsDev : false;
   } else {
     state.isLoggedIn = false;
     state.userId = null;
@@ -128,9 +122,11 @@ async function hydrateProfile(): Promise<void> {
   const profile = await getMyPlayer();
   if (profile) {
     state.displayName = profile.displayName;
+    state.isDev = profile.isDev;
     state.needsDisplayName = false;
     useMetaStore.getState().setPlayerName(profile.displayName);
   } else {
+    state.isDev = false;
     state.needsDisplayName = true;
   }
   notify();
@@ -192,6 +188,8 @@ export async function initAuth(): Promise<void> {
     applySession(session);
     if (!wasLoggedIn && state.isLoggedIn) {
       onLogin().catch(console.error);
+    } else if (state.isLoggedIn) {
+      hydrateProfile().catch(console.error);
     } else {
       notify();
     }

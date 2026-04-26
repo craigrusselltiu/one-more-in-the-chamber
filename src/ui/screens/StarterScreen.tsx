@@ -21,6 +21,7 @@ import {
 import { renderNarrativeText } from '../components/AnimatedNarrativeText';
 import { Tooltip } from '../components/Tooltip';
 import { SpriteIcon } from '../components/SpriteIcon';
+import { FullScreenOverlay } from '../components/FullScreenOverlay';
 import { buildTileDescription, buildUpgradePreview } from '../components/KeywordText';
 import { ARTIFACTS } from '../../data/artifacts';
 import { TILE_FRAMES } from '../../data/spriteConfig';
@@ -132,8 +133,6 @@ export const StarterScreen = memo(function StarterScreen() {
     EventBus.emit(GameEvent.SCREEN_CHANGE, 'map' satisfies Screen);
   };
 
-  const bg = `${import.meta.env.BASE_URL}assets/backgrounds/bones.png`;
-
   const paragraphs: string[] = [];
   if (resolved) {
     paragraphs.push(SENDOFF_LINE);
@@ -148,11 +147,6 @@ export const StarterScreen = memo(function StarterScreen() {
   return (
     <div
       className="relative flex flex-col h-full"
-      style={{
-        backgroundImage: `url(${bg})`,
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-      }}
     >
       {/* Title */}
       <div className="pt-10 px-4 flex flex-col items-center">
@@ -224,8 +218,8 @@ export const StarterScreen = memo(function StarterScreen() {
       </div>
 
       {upgradePending && (
-        <div className="absolute inset-0 flex flex-col bg-black/80 z-10">
-          <div className="flex-1 flex flex-col items-center justify-center">
+        <FullScreenOverlay backdropClass="bg-black/40" zIndex={120}>
+          <div className="flex flex-col items-center justify-center">
             <h2 className="text-xl text-amber-400 mb-2 font-bold uppercase" style={{ WebkitTextStroke: '4px #000', paintOrder: 'stroke fill' }}>Upgrade a Tile</h2>
             <p className="text-stone-400 text-xs mb-4">Choose which tile Bones sharpens before the run starts.</p>
 
@@ -300,15 +294,15 @@ export const StarterScreen = memo(function StarterScreen() {
               </button>
             </div>
           </div>
-        </div>
+        </FullScreenOverlay>
       )}
 
       {swapPending && swapPending.swapTileType && (() => {
         const newTileType = swapPending.swapTileType;
         const newDef = TILE_DEFINITIONS[newTileType];
         return (
-          <div className="absolute inset-0 flex flex-col bg-black/80 z-10">
-            <div className="flex-1 flex flex-col items-center justify-center">
+          <FullScreenOverlay backdropClass="bg-black/40" zIndex={120}>
+            <div className="flex flex-col items-center justify-center">
               <h2 className="text-xl text-amber-400 mb-2 font-bold uppercase" style={{ WebkitTextStroke: '4px #000', paintOrder: 'stroke fill' }}>Swap a Tile</h2>
               <p className="text-stone-400 text-xs mb-4">Choose which tile Bones trades away.</p>
 
@@ -398,7 +392,7 @@ export const StarterScreen = memo(function StarterScreen() {
                 </button>
               </div>
             </div>
-          </div>
+          </FullScreenOverlay>
         );
       })()}
     </div>

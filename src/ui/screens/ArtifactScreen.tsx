@@ -63,16 +63,6 @@ export const ArtifactScreen = memo(function ArtifactScreen() {
   const artifacts = lockedRef.current?.artifacts ?? [];
 
   const [taken, setTaken] = useState(false);
-  const act = run?.currentAct ?? 1;
-
-  const bgImage = (() => {
-    if (isBossReward) {
-      const bossBgs: Record<number, string> = { 1: 'dusty_bg', 2: 'copperhead_bg', 3: 'ironeye_bg' };
-      return `${import.meta.env.BASE_URL}assets/backgrounds/${bossBgs[act]}.png`;
-    }
-    if (isEliteReward) return `${import.meta.env.BASE_URL}assets/backgrounds/act${act}_bg.png`;
-    return `${import.meta.env.BASE_URL}assets/backgrounds/artifact_bg.png`;
-  })();
 
   const getNextScreen = (): Screen => {
     if (!isBossReward) return 'map';
@@ -176,7 +166,7 @@ export const ArtifactScreen = memo(function ArtifactScreen() {
   );
 
   return (
-    <div className="flex flex-col items-center justify-center" style={{ width: 960, height: 540, backgroundImage: `linear-gradient(rgba(0,0,0,0.45), rgba(0,0,0,0.45)), url(${bgImage})`, backgroundSize: 'cover', backgroundPosition: 'center' }}>
+    <div className="flex flex-col items-center justify-center" style={{ width: 960, height: 540 }}>
       <div className="text-center mb-8">
         <h2 className="text-lg text-amber-400 font-bold uppercase" style={{ WebkitTextStroke: '4px #000', paintOrder: 'stroke fill' }}>
           {isChoiceMode ? 'Choose an Artifact' : 'Artifact Found'}

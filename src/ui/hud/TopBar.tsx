@@ -1,5 +1,7 @@
 import { memo, useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useRunStore } from '../../store/runStore';
+import { FullScreenOverlay } from '../components/FullScreenOverlay';
 import { useCombatStore } from '../../store/combatStore';
 import { EventBus, GameEvent } from '../../game/EventBus';
 import { MapScreen } from '../screens/MapScreen';
@@ -69,7 +71,6 @@ export const TopBar = memo(function TopBar({ showConsumables = false, mapDisable
   const mirageType = useCombatStore((s) => s.mirageType);
   const combatActiveTileTypes = useCombatStore((s) => s.activeTileTypes);
   const combatTileUpgrades = useCombatStore((s) => s.tileUpgrades);
-  const [seedCopied, setSeedCopied] = useState(false);
   const [elapsed, setElapsed] = useState(playTimeSeconds);
   const endRun = useRunStore((s) => s.endRun);
   const tickPlayTime = useRunStore((s) => s.tickPlayTime);
@@ -127,7 +128,6 @@ export const TopBar = memo(function TopBar({ showConsumables = false, mapDisable
     EventBus.emit(GameEvent.SCREEN_CHANGE, 'main-menu' satisfies Screen);
   };
 
-  const seed = run?.seed ?? '';
   const tilePopupData = run
     ? getTilePopupData(
       showConsumables,
@@ -193,58 +193,59 @@ export const TopBar = memo(function TopBar({ showConsumables = false, mapDisable
           </Tooltip>
         </div>
       </div>
-      {/* Seed indicator — absolute so it doesn't affect layout */}
-      {seed && (
-        <div className="absolute z-0 left-2 pointer-events-auto" style={{ bottom: 4, fontSize: '7px' }}>
-          <Tooltip text={seedCopied ? 'Copied!' : 'Copy seed'} position="bottom">
-            <button
-              className="text-white/70 hover:text-white/80 uppercase"
-              data-no-click-sfx
-              onClick={() => {
-                navigator.clipboard.writeText(seed.toUpperCase());
-                setSeedCopied(true);
-                setTimeout(() => setSeedCopied(false), 2000);
-              }}
-            >
-              SEED {seed.toUpperCase()}
-            </button>
-          </Tooltip>
-        </div>
-      )}
-      {showTiles && run && (
+      {showTiles && run && portalToScaledUi(
         <TilesPopup
           activeTileTypes={tilePopupData?.activeTileTypes ?? run.activeTileTypes}
           tileUpgrades={tilePopupData?.tileUpgrades ?? run.tileUpgrades}
           poisonBonus={(run.traitCounts?.rattlesnake ?? 0) >= 2 ? 1 : 0}
           onClose={() => setShowTiles(false)}
-        />
+        />,
       )}
-      {showSettings && (
+      {showSettings && portalToScaledUi(
         <CombatSettingsPopup
           onClose={() => setShowSettings(false)}
           onGiveUp={handleGiveUp}
           onMainMenu={handleMainMenu}
-        />
+        />,
       )}
       {showMap && (
-        <div
-          className="absolute inset-0 z-50 pointer-events-auto"
-          onClick={(e) => { if (e.target === e.currentTarget) setShowMap(false); }}
+        <FullScreenOverlay
+          backdropClass=""
+          zIndex={140}
+          dimAlpha={0.3}
+          style={{
+            backgroundImage: `url(${import.meta.env.BASE_URL}assets/backgrounds/crate_bg.png)`,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+            backgroundRepeat: 'no-repeat',
+            imageRendering: 'pixelated',
+          }}
+          onBackdropClick={() => setShowMap(false)}
         >
-          <MapScreen readonly />
-          {/* Close button positioned at top-right near the map icon */}
-          <button
-            onClick={() => setShowMap(false)}
-            className="absolute w-4 h-4 flex items-center justify-center rounded-sm bg-red-900 text-red-200 hover:bg-red-800 active:translate-y-px transition-transform"
-            style={{ top: 6, right: 34, fontSize: '8px', boxShadow: '2px 2px 1px rgba(0,0,0,0.4)', cursor: 'pointer' }}
-          >
-            X
-          </button>
-        </div>
+          <div className="relative" style={{ width: 960, height: 540 }}>
+            <MapScreen readonly />
+            <button
+              onClick={() => setShowMap(false)}
+              className="absolute w-4 h-4 flex items-center justify-center rounded-sm bg-red-900 text-red-200 hover:bg-red-800 active:translate-y-px transition-transform"
+              style={{ top: 6, right: 34, fontSize: '8px', boxShadow: '2px 2px 1px rgba(0,0,0,0.4)', cursor: 'pointer' }}
+            >
+              X
+            </button>
+          </div>
+        </FullScreenOverlay>
       )}
     </>
   );
 });
+
+/** Render `node` into the scaled-UI overlay so absolute/inset-0 positioning
+ *  matches the original 960x540 design space, even when the caller (TopBar)
+ *  has been hoisted into the viewport-wide top-bar container. */
+function portalToScaledUi(node: React.ReactNode): React.ReactNode {
+  const target = typeof document !== 'undefined' ? document.getElementById('scaled-ui-root') : null;
+  if (!target) return node;
+  return createPortal(node, target);
+}
 
 /** Popup overlay showing the player's active tile types. */
 function TilesPopup({
@@ -263,21 +264,17 @@ function TilesPopup({
     return 0;
   };
   return (
-    <div
-      className="absolute inset-0 z-50 flex items-center justify-center bg-black/60 pointer-events-auto"
-      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
-    >
+    <FullScreenOverlay backdropClass="bg-black/40" zIndex={140} onBackdropClick={onClose}>
       <div
         className="rounded-sm p-3"
         style={{ minWidth: 180, backgroundColor: 'rgba(28, 25, 23, 0.95)', boxShadow: '3px 3px 2px rgba(0,0,0,0.7)' }}
-        onClick={(e) => e.stopPropagation()}
       >
         <div className="relative flex items-center justify-center mb-3">
           <span
-            className="text-[11px] text-amber-400 font-bold uppercase"
-            style={{ WebkitTextStroke: '2px #000', paintOrder: 'stroke fill', letterSpacing: '1px' }}
+            className="font-title text-sm text-amber-400 font-bold uppercase"
+            style={{ WebkitTextStroke: '2px #000', paintOrder: 'stroke fill' }}
           >
-            Tiles
+            TILES
           </span>
           <button
             onClick={onClose}
@@ -323,7 +320,7 @@ function TilesPopup({
           )}
         </div>
       </div>
-    </div>
+    </FullScreenOverlay>
   );
 }
 

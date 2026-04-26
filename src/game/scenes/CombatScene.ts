@@ -11,6 +11,7 @@ import { transformCharcoalSnapshotIfReady } from '../../utils/charcoalObsidian';
 import { ACT1_ENEMIES } from '../../data/enemies';
 import { ScreenShake } from '../effects/ScreenShake';
 import type { ShakeIntensity } from '../effects/ScreenShake';
+import { CombatEffectPlayer } from '../effects/CombatEffectPlayer';
 import type { GridPosition } from '../../types/combat';
 import type { TileType } from '../../types/game';
 import { useSettingsStore } from '../../store/settingsStore';
@@ -48,11 +49,14 @@ export class CombatScene extends Phaser.Scene {
   board!: Board;
   combatManager!: CombatManager;
   private screenShake!: ScreenShake;
+  private effects!: CombatEffectPlayer;
   private boundOnCombatEnd: (...args: unknown[]) => void;
   private boundOnFlashLine: (...args: unknown[]) => void;
   private boundOnScreenShake: (...args: unknown[]) => void;
   private boundOnTileParticles: (...args: unknown[]) => void;
   private boundOnDeadeyeShotVfx: (...args: unknown[]) => void;
+  private boundOnBombEffect: (...args: unknown[]) => void;
+  private boundOnSparkEffect: (...args: unknown[]) => void;
   private particleBurstWindowStart = 0;
   private particleBurstsThisWindow = 0;
 
@@ -63,6 +67,8 @@ export class CombatScene extends Phaser.Scene {
     this.boundOnScreenShake = this.onScreenShake.bind(this);
     this.boundOnTileParticles = this.onTileParticles.bind(this);
     this.boundOnDeadeyeShotVfx = this.onDeadeyeShotVfx.bind(this);
+    this.boundOnBombEffect = this.onBombEffect.bind(this);
+    this.boundOnSparkEffect = this.onSparkEffect.bind(this);
   }
 
   create(data?: { config?: CombatConfig; snapshot?: CombatSnapshot }): void {
@@ -89,29 +95,10 @@ export class CombatScene extends Phaser.Scene {
       data = resolvedData;
 
       this.cameras.main.setRoundPixels(true);
-      this.cameras.main.setBackgroundColor('#2a1a0e');
-
-      // Combat background: boss-specific bg per act, regular uses act bg
-      const isBoss = data?.config?.isBoss || data?.snapshot?.isBoss;
-      const actBg = `act${act}_bg`;
-      const bossBgMap: Record<number, string> = { 1: 'dusty_bg', 2: 'copperhead_bg', 3: 'ironeye_bg' };
-      const bgCandidates = isBoss ? [bossBgMap[act], actBg] : [actBg, 'act1_bg'];
-      const bgKey = bgCandidates.find(k => this.textures.exists(k));
-      if (bgKey) {
-        const bg = this.add.image(GAME_WIDTH / 2, GAME_HEIGHT / 2, bgKey);
-        bg.setDisplaySize(GAME_WIDTH, GAME_HEIGHT);
-        bg.setDepth(-10);
-        bg.setAlpha(0.4);
-        // Photographic backgrounds look aliased under nearest-neighbor sampling
-        // (pixelArt is scene-global); force LINEAR for this sprite only.
-        bg.texture.setFilter(Phaser.Textures.FilterMode.LINEAR);
-      } else {
-        // Fallback: solid color rectangle if no background texture loaded
-        const fallback = this.add.rectangle(GAME_WIDTH / 2, GAME_HEIGHT / 2, GAME_WIDTH, GAME_HEIGHT, 0x3a2a1e);
-        fallback.setDepth(-10);
-      }
+      this.cameras.main.setBackgroundColor('rgba(0,0,0,0)');
 
       this.screenShake = new ScreenShake(this);
+      this.effects = new CombatEffectPlayer(this);
       this.particleBurstWindowStart = 0;
       this.particleBurstsThisWindow = 0;
 
@@ -124,6 +111,8 @@ export class CombatScene extends Phaser.Scene {
       EventBus.on(GameEvent.SCREEN_SHAKE, this.boundOnScreenShake);
       EventBus.on(GameEvent.TILE_PARTICLES, this.boundOnTileParticles);
       EventBus.on(GameEvent.DEADEYE_SHOT_VFX, this.boundOnDeadeyeShotVfx);
+      EventBus.on(GameEvent.BOMB_EFFECT, this.boundOnBombEffect);
+      EventBus.on(GameEvent.SPARK_EFFECT, this.boundOnSparkEffect);
 
       // Spacebar activates deadeye ability.
       // Also prevent default so space doesn't trigger focused UI buttons.
@@ -373,61 +362,29 @@ export class CombatScene extends Phaser.Scene {
     }
   }
 
-  /**
-   * Enhanced VFX for a Deadeye shot:
-   *  - Bigger particle burst (more particles, mix of tile color + white)
-   *  - Bullet hole at tile position that fades after ~1s
-   *  - Light screen shake
-   */
+  /** Enhanced VFX for a Deadeye shot. */
   private onDeadeyeShotVfx(...args: unknown[]): void {
     if (!useSettingsStore.getState().juiceAnimationsEnabled) return;
     const x = args[0] as number;
     const y = args[1] as number;
-    const colorHex = args[2] as string;
-    const color = parseInt(colorHex.replace('#', ''), 16);
-
-    // Enhanced particle burst: 10-14 particles (vs 4-6 for standard clears)
-    const count = 10 + Math.floor(Math.random() * 5);
-    for (let i = 0; i < count; i++) {
-      // Alternate between tile color and white for the "mix" effect
-      const useWhite = i % 3 === 0;
-      const particleColor = useWhite ? 0xffffff : color;
-      const size = 2 + Math.floor(Math.random() * 4);
-      const particle = this.add
-        .rectangle(Math.round(x), Math.round(y), size, size, particleColor, 1)
-        .setDepth(5);
-
-      const angle = (Math.PI * 2 * i) / count + (Math.random() - 0.5) * 0.8;
-      const dist = 18 + Math.random() * 24;
-      const targetX = Math.round(x + Math.cos(angle) * dist);
-      const targetY = Math.round(y + Math.sin(angle) * dist);
-
-      this.tweens.add({
-        targets: particle,
-        x: targetX,
-        y: targetY,
-        alpha: 0,
-        duration: 250 + Math.random() * 200,
-        ease: 'Quad.easeOut',
-        onComplete: () => particle.destroy(),
-      });
-    }
-
-    // Bullet hole: dark circle that fades after ~1s
-    const hole = this.add
-      .circle(Math.round(x), Math.round(y), 5, 0x222222, 0.8)
-      .setDepth(4);
-    this.tweens.add({
-      targets: hole,
-      alpha: 0,
-      duration: 1000,
-      delay: 200,
-      ease: 'Power2',
-      onComplete: () => hole.destroy(),
-    });
-
-    // Light screen shake
+    EventBus.emit(GameEvent.SPARK_EFFECT, { x, y });
     this.screenShake.shake('light');
+  }
+
+  private onBombEffect(...args: unknown[]): void {
+    if (!useSettingsStore.getState().juiceAnimationsEnabled) return;
+    if (!this.board) return;
+    const payload = args[0] as { row: number; col: number };
+    const origin = this.board.getOrigin();
+    const x = origin.x + payload.col * TILE_SIZE + TILE_SIZE / 2;
+    const y = origin.y + payload.row * TILE_SIZE + TILE_SIZE / 2;
+    this.effects.play('bomb', x, y);
+  }
+
+  private onSparkEffect(...args: unknown[]): void {
+    if (!useSettingsStore.getState().juiceAnimationsEnabled) return;
+    const payload = args[0] as { x: number; y: number };
+    this.effects.play('spark', payload.x, payload.y);
   }
 
   // Floating numbers are rendered by React (FloatingNumbers component in CombatHUD)
@@ -442,6 +399,8 @@ export class CombatScene extends Phaser.Scene {
     EventBus.off(GameEvent.SCREEN_SHAKE, this.boundOnScreenShake);
     EventBus.off(GameEvent.TILE_PARTICLES, this.boundOnTileParticles);
     EventBus.off(GameEvent.DEADEYE_SHOT_VFX, this.boundOnDeadeyeShotVfx);
+    EventBus.off(GameEvent.BOMB_EFFECT, this.boundOnBombEffect);
+    EventBus.off(GameEvent.SPARK_EFFECT, this.boundOnSparkEffect);
     this.screenShake?.destroy();
     this.combatManager?.destroy();
     this.board?.destroy();

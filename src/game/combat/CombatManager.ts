@@ -5,6 +5,7 @@ import type { TileType, ArtifactInstance, TraitId, CharacterId } from '../../typ
 import type { CombatSnapshot, SerializedEnemy } from '../../types/combatSnapshot';
 import { SNAPSHOT_VERSION } from '../../types/combatSnapshot';
 import { EventBus, GameEvent } from '../EventBus';
+import type { DevBoardEditOperation } from '../../types/devControls';
 import { Player } from './Player';
 import { Enemy } from './Enemy';
 import { ResourceResolver } from './ResourceResolver';
@@ -15,7 +16,7 @@ import { BoardHazardManager } from '../board/BoardHazardManager';
 import { TILE_COLORS, TILE_DEFINITIONS } from '../../data/tiles';
 import { chooseEnemyIntent } from './EnemyAI';
 import { BossController } from './BossController';
-import { playSwapFail, playMatch, playDeadeyeShot, playDeadeyeActivate, playHolster, playHit, playBlock, playAbilityReady, playShuffle, playRevolverSpin } from '../../services/sfx';
+import { playSwapFail, playMatch, playDeadeyeShot, playDeadeyeActivate, playHolster, playHit, playBlock, playBomb, playAbilityReady, playShuffle, playRevolverSpin } from '../../services/sfx';
 import { useRunStore } from '../../store/runStore';
 import { useCombatStore } from '../../store/combatStore';
 import { useMetaStore } from '../../store/metaStore';
@@ -131,6 +132,7 @@ export class CombatManager {
   private lassoSwapsRemaining = 0;
   /** Whether a ricochet triggered a random tile removal that needs gravity+cascade resolution. */
   private ricochetTriggeredThisResolution = false;
+  private devBoardEditOperation: DevBoardEditOperation | null = null;
   /** Total damage dealt to enemies this fight (for scoring). */
   private damageDealtThisFight = 0;
   /** Longest cascade chain (number of steps) across all swaps this fight. */
@@ -408,11 +410,57 @@ export class CombatManager {
       const [enemyIndex] = args as number[];
       this.deadeyeShootEnemy(enemyIndex);
     });
+
+    on(GameEvent.DEV_SET_BOARD_EDIT, (...args: unknown[]) => {
+      this.devBoardEditOperation = args[0] as DevBoardEditOperation | null;
+      this.board.setDevBoardEditMode(this.devBoardEditOperation !== null);
+    });
+
+    on(GameEvent.DEV_BOARD_CELL_CLICKED, (...args: unknown[]) => {
+      const [row, col] = args as number[];
+      this.devApplyBoardEdit(row, col);
+    });
+
+    on(GameEvent.DEV_ADD_TILE, (...args: unknown[]) => {
+      const [type, level] = args as [TileType, number | undefined];
+      this.devAddTile(type, level);
+    });
+
+    on(GameEvent.DEV_REMOVE_TILE, (...args: unknown[]) => {
+      this.devRemoveTile(args[0] as TileType);
+    });
+
+    on(GameEvent.DEV_SET_TILE_LEVEL, (...args: unknown[]) => {
+      const [type, level] = args as [TileType, number];
+      this.devSetTileLevel(type, level);
+    });
+
+    on(GameEvent.DEV_SET_GOLD, (...args: unknown[]) => {
+      this.devSetGold(args[0] as number);
+    });
+
+    on(GameEvent.DEV_SET_HP, (...args: unknown[]) => {
+      const [current, max] = args as [number, number];
+      this.devSetHp(current, max);
+    });
+
+    on(GameEvent.DEV_SET_ABILITY_CHARGE, (...args: unknown[]) => {
+      this.devSetAbilityCharge(args[0] as number);
+    });
+
+    on(GameEvent.DEV_ADD_ARTIFACT, (...args: unknown[]) => {
+      this.devRefreshArtifacts(() => useRunStore.getState().devAddArtifact(args[0] as ArtifactInstance));
+    });
+
+    on(GameEvent.DEV_REMOVE_ARTIFACT, (...args: unknown[]) => {
+      this.devRefreshArtifacts(() => useRunStore.getState().devRemoveArtifact(args[0] as string));
+    });
   }
 
   /** Remove all EventBus listeners. Call on scene shutdown. */
   destroy(): void {
     this.board.setDeadeyeMode(false);
+    this.board.setDevBoardEditMode(false);
     this.clearDeadeyeCursor();
     document.body.classList.remove('cursor-lasso');
     for (const { event, fn } of this.boundListeners) {
@@ -430,6 +478,137 @@ export class CombatManager {
   private clearDeadeyeCursor(): void {
     document.body.classList.remove('cursor-crosshair');
     document.body.classList.remove('cursor-crosshair-alt');
+  }
+
+  private markDevChanged(): void {
+    useRunStore.getState().markDevControlsUsed();
+  }
+
+  private devAddTile(type: TileType, level = 0): void {
+    const store = useRunStore.getState();
+    store.addTileType(type);
+    if (level > 0) store.setTileUpgrade(type, level);
+    store.markDevControlsUsed();
+
+    if (!this.player.activeTileTypes.includes(type)) {
+      this.player.activeTileTypes = [...this.player.activeTileTypes, type];
+    }
+    if (level > 0) this.player.tileUpgrades = { ...this.player.tileUpgrades, [type]: level };
+    this.board.setActiveTileTypes(this.player.activeTileTypes);
+    this.emitFullState();
+    this.requestCombatSaveIfStable();
+  }
+
+  private devRemoveTile(type: TileType): void {
+    const store = useRunStore.getState();
+    store.removeTileType(type);
+    store.markDevControlsUsed();
+    this.player.activeTileTypes = this.player.activeTileTypes.filter((t) => t !== type);
+    const tileUpgrades = { ...this.player.tileUpgrades };
+    delete tileUpgrades[type];
+    this.player.tileUpgrades = tileUpgrades;
+    this.board.setActiveTileTypes(this.player.activeTileTypes);
+    this.emitFullState();
+    this.requestCombatSaveIfStable();
+  }
+
+  private devSetTileLevel(type: TileType, level: number): void {
+    const nextLevel = Math.max(0, Math.floor(level));
+    const store = useRunStore.getState();
+    store.setTileUpgrade(type, nextLevel);
+    store.markDevControlsUsed();
+    const tileUpgrades = { ...this.player.tileUpgrades };
+    if (nextLevel > 0) tileUpgrades[type] = nextLevel;
+    else delete tileUpgrades[type];
+    this.player.tileUpgrades = tileUpgrades;
+    this.emitFullState();
+    this.requestCombatSaveIfStable();
+  }
+
+  private devSetGold(amount: number): void {
+    const gold = Math.max(0, Math.floor(amount));
+    useRunStore.getState().devSetGold(gold);
+    this.player.gold = gold;
+    EventBus.emit(GameEvent.GOLD_CHANGE, gold);
+    this.emitFullState();
+    this.requestCombatSaveIfStable();
+  }
+
+  private devSetHp(current: number, max: number): void {
+    const nextMax = Math.max(1, Math.floor(max));
+    const nextHealth = Math.max(0, Math.min(nextMax, Math.floor(current)));
+    useRunStore.getState().devSetHealth(nextHealth, nextMax);
+    this.player.maxHealth = nextMax;
+    this.player.health = nextHealth;
+    EventBus.emit(GameEvent.PLAYER_HP_CHANGE, this.player.health, this.player.maxHealth);
+    this.emitFullState();
+    this.requestCombatSaveIfStable();
+  }
+
+  private devSetAbilityCharge(charge: number): void {
+    const nextCharge = Math.max(0, Math.min(this.player.abilityThreshold, Math.floor(charge)));
+    useRunStore.getState().devSetAbilityCharge(nextCharge);
+    this.player.abilityCharge = nextCharge;
+    EventBus.emit(GameEvent.ABILITY_CHARGE_CHANGE, this.player.abilityCharge, this.player.abilityThreshold);
+    this.emitFullState();
+    this.requestCombatSaveIfStable();
+  }
+
+  private devRefreshArtifacts(mutator: () => void): void {
+    mutator();
+    const run = useRunStore.getState().run;
+    if (!run) return;
+    this.artifacts.setArtifacts(run.artifacts);
+    this.traits = new TraitSystem(run.traitCounts);
+    this.resolver = new ResourceResolver();
+    if (this.artifacts.has('renos_coin')) this.resolver.setChipBucket(6, 8);
+    this.deadeyeMaxShots = this.artifacts.getDeadeyeShots();
+    this.player.deadeyeShots = this.deadeyeMaxShots;
+    this.player.damageReduction = this.traits.getDamageReduction();
+    this.player.deadManWalkingAvailable = this.traits.isActive('dead_man_walking', 7);
+    this.player.poisonTileBonus = this.traits.getPoisonTileLevelBonus();
+    this.emitFullState();
+    this.requestCombatSaveIfStable();
+  }
+
+  private devApplyBoardEdit(row: number, col: number): void {
+    if (!this.devBoardEditOperation) return;
+    const op = this.devBoardEditOperation;
+    let tile = this.board.getTileAt({ row, col });
+
+    if (!tile && op.kind === 'set_tile') {
+      this.board.spawnSpecialTile(row, col, op.tileType, 'none');
+      tile = this.board.getTileAt({ row, col });
+    }
+    if (!tile) return;
+
+    if (op.kind === 'set_tile') {
+      tile.setType(op.tileType);
+    } else if (op.kind === 'special') {
+      if (op.special === 'showdown') {
+        this.board.spawnSpecialTile(row, col, 'showdown', 'showdown');
+        tile = this.board.getTileAt({ row, col });
+      } else {
+        tile.setExplosive(false);
+        tile.setShowdown(false);
+        tile.setShadow(false);
+        if (op.special === 'explosive') tile.setExplosive(true);
+        else if (op.special === 'shadow') tile.setShadow(true);
+      }
+    } else if (op.kind === 'hazard') {
+      tile.hazard = { ...op.hazard };
+    } else if (op.kind === 'clear_effects') {
+      tile.hazard = null;
+      tile.setExplosive(false);
+      tile.setShowdown(false);
+      tile.setShadow(false);
+    }
+
+    if (!tile) return;
+    tile.refreshStatusIndicator();
+    this.markDevChanged();
+    this.emitFullState();
+    this.requestCombatSaveIfStable();
   }
 
   // ---------------------------------------------------------------------------
@@ -775,6 +954,7 @@ export class CombatManager {
       const healed = this.player.heal(healAmt);
       if (healed > 0) {
         this.floatOnPlayer(`+${healed}`, '#40D840');
+        this.emitPlayerHealEffect();
         EventBus.emit(GameEvent.PLAYER_HP_CHANGE, this.player.health, this.player.maxHealth);
       }
     }
@@ -1376,10 +1556,10 @@ export class CombatManager {
       const healMult = this.artifacts.getConsumableHealMultiplier();
       switch (consumableId) {
         case 'strong_whiskey':
-          this.player.heal(Math.round(20 * healMult));
+          if (this.player.heal(Math.round(20 * healMult)) > 0) this.emitPlayerHealEffect();
           break;
         case 'bandage':
-          this.player.heal(Math.round(10 * healMult));
+          if (this.player.heal(Math.round(10 * healMult)) > 0) this.emitPlayerHealEffect();
           this.hazardManager.clearAllOfType('poison');
           break;
         case 'strong_coffee':
@@ -1463,7 +1643,7 @@ export class CombatManager {
 
       // Saloon Keeper(2): consumables heal 5 HP on use
       if (this.traits.isActive('saloon_keeper', 2)) {
-        this.player.heal(5);
+        if (this.player.heal(5) > 0) this.emitPlayerHealEffect();
         this.floatOnPlayer('+5', '#40D840');
       }
 
@@ -1499,7 +1679,7 @@ export class CombatManager {
   private resolveSnakeOil(healMult: number): void {
     const roll = Math.random();
     if (roll < 0.2) {
-      this.player.heal(Math.round(23 * healMult));
+      if (this.player.heal(Math.round(23 * healMult)) > 0) this.emitPlayerHealEffect();
       return;
     }
     if (roll < 0.4) {
@@ -1513,7 +1693,9 @@ export class CombatManager {
       return;
     }
     if (roll < 0.8) {
-      if (this.player.takeDamage(14).hpLost > 0) {
+      const snakeOilDamage = this.player.takeDamage(14);
+      if (snakeOilDamage.hpLost > 0) {
+        this.emitPlayerBlood();
         this.playerTookDamageThisFight = true;
         this.lastDamageSource = 'Snake Oil';
       }
@@ -1962,6 +2144,7 @@ export class CombatManager {
     this.emitEnemyDamaged(enemy, hpLost);
     if (hpLost > 0) {
       this.floatOnEnemy(enemy, `-${hpLost}`, color, fontSize);
+      this.emitEnemyBlood(enemy);
     }
     this.handleBountyKill(enemy);
     this.processEnemyDeaths(null);
@@ -1976,6 +2159,22 @@ export class CombatManager {
   /** Emit a floating number on the player. */
   private floatOnPlayer(text: string, color: string, fontSize?: number): void {
     EventBus.emit(GameEvent.FLOATING_NUMBER, 'player', 0, text, color, fontSize);
+  }
+
+  private emitPlayerBlood(): void {
+    EventBus.emit(GameEvent.PLAYER_BLOOD_EFFECT);
+  }
+
+  private emitPlayerHealEffect(): void {
+    EventBus.emit(GameEvent.PLAYER_HEAL_EFFECT);
+  }
+
+  private emitEnemyBlood(enemy: Enemy): void {
+    EventBus.emit(GameEvent.ENEMY_BLOOD_EFFECT, enemy.state.id);
+  }
+
+  private emitEnemyHealEffect(enemy: Enemy): void {
+    EventBus.emit(GameEvent.ENEMY_HEAL_EFFECT, enemy.state.id);
   }
 
   /** Grant Jail Cell Keys block per lock cleared by consumables (Skeleton Key, Panacea). */
@@ -2000,6 +2199,7 @@ export class CombatManager {
     const goldGain = Math.max(1, Math.round(12 * this.goldMultiplier));
     this.player.addGold(goldGain);
     this.floatOnPlayer(`+${goldGain}g +8 BLOCK${healed > 0 ? ` +${healed}` : ''}`, '#C89030', 9);
+    if (healed > 0) this.emitPlayerHealEffect();
     EventBus.emit(GameEvent.PLAYER_HP_CHANGE, this.player.health, this.player.maxHealth);
     EventBus.emit(GameEvent.GOLD_CHANGE, this.player.gold);
   }
@@ -2038,6 +2238,7 @@ export class CombatManager {
       playHit();
       const label = isCrit ? `-${hpLost}!` : `-${hpLost}`;
       this.floatOnEnemy(enemy, label, '#ff4444', critSize);
+      this.emitEnemyBlood(enemy);
     }
     // Enemy thorns: reflect damage back to player
     if (enemy.state.thorns > 0 && damage > 0) {
@@ -2091,6 +2292,9 @@ export class CombatManager {
           enemyIndex: this.enemies.indexOf(enemy),
           flashBeforeDust,
         });
+        if (!enemy.summoned && this.enemies.every((e) => e.summoned || e.state.isDead)) {
+          EventBus.emit(GameEvent.ENEMY_COINS_EFFECT, enemy.state.id);
+        }
         enemy.state._deathProcessed = true;
 
         const ragefulGain = this.traits.onEnemyKilled();
@@ -2113,6 +2317,7 @@ export class CombatManager {
             this.emitEnemyDamaged(alive, hpLost);
             if (hpLost > 0) {
               this.floatOnEnemy(alive, `-${hpLost}`, '#D06060');
+              this.emitEnemyBlood(alive);
             }
             this.handleBountyKill(alive);
           }
@@ -2131,6 +2336,7 @@ export class CombatManager {
           const healed = this.player.heal(killArt.healAmount);
           if (healed > 0) {
             this.floatOnPlayer(`+${healed}`, '#40D840');
+            this.emitPlayerHealEffect();
             EventBus.emit(GameEvent.PLAYER_HP_CHANGE, this.player.health, this.player.maxHealth);
           }
         }
@@ -2142,6 +2348,7 @@ export class CombatManager {
             if (healAmt > 0) {
               ally.state.health += healAmt;
               this.floatOnEnemy(ally, `+${healAmt}`, '#40D840');
+              this.emitEnemyHealEffect(ally);
             }
           }
         }
@@ -2239,6 +2446,7 @@ export class CombatManager {
     if (output.healing > 0) {
       const healed = this.player.heal(output.healing);
       this.floatOnPlayer(`+${healed}`, '#40D840');
+      if (healed > 0) this.emitPlayerHealEffect();
       EventBus.emit(GameEvent.PLAYER_HP_CHANGE, this.player.health, this.player.maxHealth);
       // Offering Plate: healing grants gold. Absolution Rounds: damage to target.
       const healArt = this.artifacts.onPlayerHealed(healed, this.player);
@@ -2483,7 +2691,7 @@ export class CombatManager {
     // Preacher(2): heal 5 if no damage dealt this turn
     const preacherHealing = this.traits.getPreacherHealing();
     if (preacherHealing > 0) {
-      this.player.heal(preacherHealing);
+      if (this.player.heal(preacherHealing) > 0) this.emitPlayerHealEffect();
       this.floatOnPlayer(`+${preacherHealing}`, '#40D840');
       EventBus.emit(GameEvent.PLAYER_HP_CHANGE, this.player.health, this.player.maxHealth);
     }
@@ -2523,10 +2731,15 @@ export class CombatManager {
     if (!this.isCombatOver()) {
       const bombResult = this.hazardManager.tickBombs();
       if (bombResult.totalDamage > 0) {
+        for (const detonation of bombResult.detonations) {
+          EventBus.emit(GameEvent.BOMB_EFFECT, detonation);
+        }
+        playBomb();
         const bombDmg = this.player.takeDamage(bombResult.totalDamage);
         if (bombDmg.hpLost > 0 || bombDmg.blocked > 0) EventBus.emit(GameEvent.PLAYER_HIT);
         if (bombDmg.hpLost > 0) { playHit(); this.playerTookDamageThisFight = true; this.lastDamageSource = 'Bomb'; }
-        if (bombDmg.blocked > 0) { playBlock(); }
+        if (bombDmg.blocked > 0) { playBlock(); this.floatOnPlayer(`-${bombDmg.blocked}`, '#6888A0'); }
+        if (bombDmg.hpLost > 0) this.floatOnPlayer(`-${bombDmg.hpLost}`, '#ff4444');
         EventBus.emit(GameEvent.PLAYER_HP_CHANGE, this.player.health, this.player.maxHealth);
         EventBus.emit(GameEvent.SCREEN_SHAKE, bombResult.detonations.length > 1 ? 'heavy' : 'medium');
       }
@@ -2814,9 +3027,14 @@ export class CombatManager {
           const healTarget = enemy.getDefinition().type === 'hellfire_preacher'
             ? (this.aliveEnemies().filter(e => e !== enemy && e.state.health < e.state.maxHealth)[0] ?? enemy)
             : enemy;
+          const before = healTarget.state.health;
           healTarget.state.health = Math.min(healTarget.state.maxHealth, healTarget.state.health + healAmount);
-          this.floatOnEnemy(healTarget, `+${healAmount}`, '#40D840');
-          EventBus.emit(GameEvent.ENEMY_HP_CHANGE, { ...healTarget.state });
+          const healed = healTarget.state.health - before;
+          if (healed > 0) {
+            this.floatOnEnemy(healTarget, `+${healed}`, '#40D840');
+            this.emitEnemyHealEffect(healTarget);
+            EventBus.emit(GameEvent.ENEMY_HP_CHANGE, { ...healTarget.state });
+          }
         }
         break;
       }

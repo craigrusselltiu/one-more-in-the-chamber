@@ -107,7 +107,7 @@ export const TutorialOverlay = memo(function TutorialOverlay() {
       {/* Tooltip */}
       <div
         ref={tooltipRef}
-        className="absolute bg-stone-900/95 border border-stone-600 px-3 py-2.5"
+        className="absolute bg-stone-900/95 px-3 py-2.5"
         style={{
           maxWidth: TOOLTIP_MAX_W,
           ...(pos

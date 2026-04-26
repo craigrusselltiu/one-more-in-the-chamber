@@ -4,6 +4,7 @@ import { useSettingsStore } from '../../store/settingsStore';
 import { useMetaStore } from '../../store/metaStore';
 import { getAuthState, subscribeAuth, logout, type AuthState } from '../../services/auth';
 import { updateDisplayName, validateDisplayName, checkDisplayNameAvailable, DISPLAY_NAME_MAX } from '../../services/players';
+import { FullScreenOverlay } from '../components/FullScreenOverlay';
 import type { GameSpeed } from '../../store/settingsStore';
 import type { Screen } from '../../App';
 
@@ -289,11 +290,6 @@ export const SettingsScreen = memo(function SettingsScreen() {
   return (
     <div
       className="relative flex flex-col items-center h-full"
-      style={{
-        backgroundImage: `linear-gradient(rgba(0,0,0,0.45), rgba(0,0,0,0.45)), url(${import.meta.env.BASE_URL}assets/blur.png)`,
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-      }}
     >
       {/* Header */}
       <div className="mt-5 mb-3 text-center">
@@ -405,7 +401,7 @@ export const SettingsScreen = memo(function SettingsScreen() {
 
       {/* Sign-out confirmation */}
       {showLogoutConfirm && (
-        <div className="absolute inset-0 flex items-center justify-center bg-black/70 z-10">
+        <FullScreenOverlay backdropClass="bg-black/40" zIndex={150}>
           <div
             className="rounded-sm p-5 max-w-xs text-center"
             style={{ backgroundColor: 'rgba(28, 25, 23, 0.95)', boxShadow: '3px 3px 2px rgba(0,0,0,0.7)' }}
@@ -418,7 +414,7 @@ export const SettingsScreen = memo(function SettingsScreen() {
               <StoneButton onClick={() => setShowLogoutConfirm(false)}>Cancel</StoneButton>
             </div>
           </div>
-        </div>
+        </FullScreenOverlay>
       )}
     </div>
   );
@@ -452,10 +448,7 @@ export const CombatSettingsPopup = memo(function CombatSettingsPopup({
   const setTutorialsEnabled = useSettingsStore((s) => s.setTutorialsEnabled);
 
   return (
-    <div
-      className="absolute inset-0 flex items-center justify-center bg-black/60 z-50 pointer-events-auto"
-      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
-    >
+    <FullScreenOverlay backdropClass="bg-black/40" zIndex={140} onBackdropClick={onClose}>
       <div
         className="rounded-sm p-3 flex flex-col gap-2"
         style={{ width: 280, backgroundColor: 'rgba(28, 25, 23, 0.95)', boxShadow: '3px 3px 2px rgba(0,0,0,0.7)' }}
@@ -506,6 +499,6 @@ export const CombatSettingsPopup = memo(function CombatSettingsPopup({
           <StoneButton small onClick={onClose}>Close</StoneButton>
         </div>
       </div>
-    </div>
+    </FullScreenOverlay>
   );
 });

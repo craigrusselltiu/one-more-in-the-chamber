@@ -81,7 +81,7 @@ export const CustomizeScreen = memo(function CustomizeScreen() {
     // Titles -- rendered like a leaderboard subtitle inside CustomizeCard,
     // so no separate description (it'd just duplicate the title text).
     // devOnly titles bypass the unlockedTitles check and surface only when
-    // the signed-in account is a dev (auth.isDev from DEV_USER_IDS).
+    // the signed-in account is a dev (auth.isDev from public.players.is_dev).
     for (const t of TITLES) {
       const unlocked = meta.unlockedTitles.includes(t.id);
       const devUnlocked = !!t.devOnly && auth.isDev;
@@ -154,9 +154,6 @@ export const CustomizeScreen = memo(function CustomizeScreen() {
       style={{
         width: 960,
         height: 540,
-        backgroundImage: `linear-gradient(rgba(0,0,0,0.18), rgba(0,0,0,0.18)), url(${import.meta.env.BASE_URL}assets/backgrounds/customize.png)`,
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
       }}
     >
       {/* Header */}

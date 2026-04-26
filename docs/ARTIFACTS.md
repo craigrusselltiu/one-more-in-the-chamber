@@ -94,6 +94,20 @@ Diagonal = single-trait artifacts. Off-diagonal = artifacts with both traits.
 - Effect: Chip damage is doubled and hit chance is increased to 75%. On miss, lose 1 HP.
 - Flavor: "Double or nothing. Emphasis on nothing."
 
+### Used Cigarette
+- Rudy exclusive starting artifact
+- Tags: Sheriff
+- Rarity: Rare
+- Effect: Gain 10 block after taking damage for the first time each combat.
+- Flavor: "Still got some left in him."
+
+### Hard Exterior
+- Rudy exclusive artifact
+- Tags: Sheriff
+- Rarity: Legendary
+- Effect: Gain 10 max HP and 20 Hardened.
+- Flavor: "I can do this all day."
+
 ## Outlaw
 
 ### Outlaw's Spurs

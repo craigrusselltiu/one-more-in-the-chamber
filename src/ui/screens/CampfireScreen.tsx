@@ -70,7 +70,7 @@ export const CampfireScreen = memo(function CampfireScreen() {
   // Rested
   if (choice === 'rest') {
     return (
-      <div className="flex flex-col h-full" style={{ backgroundImage: `linear-gradient(rgba(0,0,0,0.45), rgba(0,0,0,0.45)), url(${import.meta.env.BASE_URL}assets/backgrounds/campfire_bg.png)`, backgroundSize: 'cover', backgroundPosition: 'center' }}><div className="flex-1 flex flex-col items-center justify-center">
+      <div className="flex flex-col h-full"><div className="flex-1 flex flex-col items-center justify-center">
         <div className="mb-4"><SpriteIcon frame={NODE_FRAMES.campfire} scale={3} /></div>
         <h2 className="text-xl text-amber-400 mb-2 font-bold uppercase" style={{ WebkitTextStroke: '4px #000', paintOrder: 'stroke fill' }}>Rested</h2>
         <p className="text-stone-300 text-sm mb-4">
@@ -94,7 +94,7 @@ export const CampfireScreen = memo(function CampfireScreen() {
   if (choice === 'upgraded') {
     const tileDef = selectedTile ? TILE_DEFINITIONS[selectedTile] : null;
     return (
-      <div className="flex flex-col h-full" style={{ backgroundImage: `linear-gradient(rgba(0,0,0,0.45), rgba(0,0,0,0.45)), url(${import.meta.env.BASE_URL}assets/backgrounds/campfire_bg.png)`, backgroundSize: 'cover', backgroundPosition: 'center' }}><div className="flex-1 flex flex-col items-center justify-center">
+      <div className="flex flex-col h-full"><div className="flex-1 flex flex-col items-center justify-center">
         <div className="mb-4"><SpriteIcon frame={UI_FRAMES.upgrade} scale={3} /></div>
         <h2 className="text-xl text-amber-400 mb-2 font-bold uppercase" style={{ WebkitTextStroke: '4px #000', paintOrder: 'stroke fill' }}>Upgraded</h2>
         <p className="text-stone-300 text-sm mb-4">
@@ -114,7 +114,7 @@ export const CampfireScreen = memo(function CampfireScreen() {
   // Upgrade tile selection
   if (choice === 'upgrade') {
     return (
-      <div className="flex flex-col h-full" style={{ backgroundImage: `linear-gradient(rgba(0,0,0,0.45), rgba(0,0,0,0.45)), url(${import.meta.env.BASE_URL}assets/backgrounds/campfire_bg.png)`, backgroundSize: 'cover', backgroundPosition: 'center' }}><div className="flex-1 flex flex-col items-center justify-center">
+      <div className="flex flex-col h-full"><div className="flex-1 flex flex-col items-center justify-center">
         <h2 className="text-xl text-amber-400 mb-2 font-bold uppercase" style={{ WebkitTextStroke: '4px #000', paintOrder: 'stroke fill' }}>Upgrade a Tile</h2>
         <p className="text-stone-400 text-xs mb-4">
           Permanent +1 tier for the rest of the run
@@ -187,7 +187,7 @@ export const CampfireScreen = memo(function CampfireScreen() {
 
   // Initial choice
   return (
-    <div className="flex flex-col h-full" style={{ backgroundImage: `linear-gradient(rgba(0,0,0,0.45), rgba(0,0,0,0.45)), url(${import.meta.env.BASE_URL}assets/backgrounds/campfire_bg.png)`, backgroundSize: 'cover', backgroundPosition: 'center' }}><div className="flex-1 flex flex-col items-center justify-center">
+    <div className="flex flex-col h-full"><div className="flex-1 flex flex-col items-center justify-center">
       <div className="mb-4">
         <SpriteIcon frame={NODE_FRAMES.campfire} scale={3} />
       </div>

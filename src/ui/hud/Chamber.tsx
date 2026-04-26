@@ -1,4 +1,5 @@
 import { memo, useEffect, useRef, useState } from 'react';
+import { HudSpriteEffect } from '../components/HudSpriteEffect';
 
 const SRC = `${import.meta.env.BASE_URL}assets/chamber.png`;
 const FRAME = 128;
@@ -42,7 +43,9 @@ export const Chamber = memo(function Chamber({ charge, threshold, ready, spinTri
   const baseAngle = -charge * 60;
   const [spinBonus, setSpinBonus] = useState(0);
   const [isFinishSpinAnimating, setIsFinishSpinAnimating] = useState(false);
+  const [readyEffectTrigger, setReadyEffectTrigger] = useState(0);
   const prevSpinTriggerRef = useRef(spinTrigger);
+  const prevReadyRef = useRef(ready);
 
   useEffect(() => {
     let timeoutId: ReturnType<typeof setTimeout> | undefined;
@@ -56,6 +59,13 @@ export const Chamber = memo(function Chamber({ charge, threshold, ready, spinTri
       if (timeoutId) clearTimeout(timeoutId);
     };
   }, [spinTrigger]);
+
+  useEffect(() => {
+    if (ready && !prevReadyRef.current) {
+      setReadyEffectTrigger((trigger) => trigger + 1);
+    }
+    prevReadyRef.current = ready;
+  }, [ready]);
 
   return (
     <div
@@ -73,6 +83,14 @@ export const Chamber = memo(function Chamber({ charge, threshold, ready, spinTri
           transformOrigin: 'top left',
         }}
       >
+        <HudSpriteEffect
+          effect="ability"
+          trigger={readyEffectTrigger}
+          scale={3}
+          fps={18}
+          className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
+          style={{ zIndex: 5 }}
+        />
         <div
         style={{
           width: FRAME,

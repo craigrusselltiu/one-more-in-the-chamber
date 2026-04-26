@@ -382,11 +382,6 @@ export const LoginScreen = memo(function LoginScreen() {
   return (
     <div
       className="relative flex flex-col items-center justify-center h-full"
-      style={{
-        backgroundImage: `linear-gradient(rgba(0,0,0,0.55), rgba(0,0,0,0.55)), url(${import.meta.env.BASE_URL}assets/backgrounds/artifact_bg.png)`,
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-      }}
     >
       {/* Tabs sit on top of the card */}
       <div className="flex gap-2 mb-3">
@@ -513,11 +508,6 @@ export const PickNameScreen = memo(function PickNameScreen() {
   return (
     <div
       className="relative flex flex-col items-center justify-center h-full"
-      style={{
-        backgroundImage: `linear-gradient(rgba(0,0,0,0.55), rgba(0,0,0,0.55)), url(${import.meta.env.BASE_URL}assets/backgrounds/artifact_bg.png)`,
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-      }}
     >
       <AuthCard
         title="Pick a Display Name"

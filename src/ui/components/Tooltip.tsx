@@ -1,8 +1,6 @@
 import { memo, useState, useRef, useEffect, useCallback, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 
-const TOOLTIP_ROOT_WIDTH = 960;
-
 interface TooltipProps {
   /** Simple string tooltip text. */
   text?: string;
@@ -54,7 +52,11 @@ export const Tooltip = memo(function Tooltip({ text, content, secondContent, chi
     if (!viewport) return;
     const rect = wrapperRef.current.getBoundingClientRect();
     const vRect = viewport?.getBoundingClientRect();
-    const scale = vRect ? vRect.width / TOOLTIP_ROOT_WIDTH : 1;
+    // Actual scale = painted-CSS-width / unscaled-DOM-width. Works regardless
+    // of the host container's design width (was hardcoded to 960 before).
+    const scale = vRect && viewport.offsetWidth > 0
+      ? vRect.width / viewport.offsetWidth
+      : 1;
 
     const x = align === 'left'
       ? (rect.left - (vRect?.left ?? 0)) / scale
@@ -84,11 +86,13 @@ export const Tooltip = memo(function Tooltip({ text, content, secondContent, chi
         tip.style.transform = effectivePosition === 'top' ? 'translateY(-100%)' : 'none';
       }
 
-      // Vertical auto-flip: if the tooltip overflows past the viewport top or
-      // bottom, flip to the opposite side. Guarded to flip at most once per
-      // show so we don't oscillate when both sides lack room.
-      const overflowsBottom = tr.bottom > vr.bottom;
-      const overflowsTop = tr.top < vr.top;
+      // Vertical auto-flip: check against the actual window, not the host
+      // container. A short positioning container (e.g. the viewport-wide top
+      // bar) would otherwise oscillate -- tooltip overflows container bottom,
+      // flips up, then overflows container top, flips back down, repeat.
+      const winBottom = window.innerHeight;
+      const overflowsBottom = tr.bottom > winBottom;
+      const overflowsTop = tr.top < 0;
       if (effectivePosition === 'bottom' && overflowsBottom && !overflowsTop) {
         setEffectivePosition('top');
       } else if (effectivePosition === 'top' && overflowsTop && !overflowsBottom) {
@@ -121,7 +125,7 @@ export const Tooltip = memo(function Tooltip({ text, content, secondContent, chi
         >
           {tooltipBody && (
             <div
-              className={`bg-stone-900/95 border border-stone-600 px-1.5 py-0.5 text-stone-200 ${content ? '' : 'whitespace-nowrap'}`}
+              className={`bg-stone-900/95 px-1.5 py-0.5 text-stone-200 ${content ? '' : 'whitespace-nowrap'}`}
               style={{ fontSize: '9px' }}
             >
               {tooltipBody}
@@ -129,7 +133,7 @@ export const Tooltip = memo(function Tooltip({ text, content, secondContent, chi
           )}
           {secondContent && (
             <div
-              className="bg-stone-900/95 border border-stone-600 px-1.5 py-0.5 text-stone-200 whitespace-nowrap"
+              className="bg-stone-900/95 px-1.5 py-0.5 text-stone-200 whitespace-nowrap"
               style={{ fontSize: '9px' }}
             >
               {secondContent}
