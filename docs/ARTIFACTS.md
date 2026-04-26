@@ -101,7 +101,7 @@ Diagonal = single-trait artifacts. Off-diagonal = artifacts with both traits.
 - Effect: Gain 10 block after taking damage for the first time each combat.
 - Flavor: "Still got some left in him."
 
-### Hard Exterior
+### Rudy's Hard Exterior
 - Rudy exclusive artifact
 - Tags: Sheriff
 - Rarity: Legendary

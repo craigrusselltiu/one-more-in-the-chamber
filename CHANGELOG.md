@@ -4,6 +4,17 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## v1.0.9
+
+### Added
+- Added Cascade keyword: "Indirect matches that happen after swap." -- referenced by artifacts, tiles, and consumables.
+- Added Riverbed to the main menu background pool.
+- Locked character slot now previews Rudy's silhouette and label instead of the placeholder.
+
+### Changed
+- "Signed In" indicator on the main menu is mixed-case (no longer all-caps) and nudged inward.
+- Tooltips with wide content (e.g. tile popup entries with keyword tooltips like Shank, Bounty) now clamp to the window edge instead of the host container, so they no longer get pulled left of the trigger when the popup is narrower than the tooltip.
+
 ## v1.0.8
 
 ### Added

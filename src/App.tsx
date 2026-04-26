@@ -1212,10 +1212,9 @@ function MainMenuAccountIndicator() {
   const handleLogin = () => EventBus.emit(GameEvent.SCREEN_CHANGE, 'login' satisfies Screen);
 
   return (
-    <div className="absolute right-3 bottom-12 z-[60] pointer-events-auto text-right">
+    <div className="absolute right-5 bottom-9 z-[60] pointer-events-auto text-right">
       {auth.isLoggedIn ? (
         <span
-          className="uppercase"
           style={{
             fontSize: '24px',
             color: '#b8b8b8',

@@ -58,6 +58,15 @@ export const CHARACTERS: CharacterInfo[] = [
   },
 ];
 
+/** Placeholder "Coming soon" tabs in the character-select left rail. The
+ *  sheet path resolves under public/assets/sprites/. */
+const COMING_SOON_CHARACTERS: { name: string; sheet: string }[] = [
+  { name: 'Rudy', sheet: 'rudy_sheet.png' },
+  { name: 'Reap', sheet: 'reap_sheet.png' },
+  { name: 'Rita', sheet: 'rita_sheet.png' },
+  { name: 'Riff', sheet: 'riff_sheet.png' },
+];
+
 export const CharacterSelectScreen = memo(function CharacterSelectScreen() {
   const setPendingNewGame = useRunStore((s) => s.setPendingNewGame);
   const startRun = useRunStore((s) => s.startRun);
@@ -195,61 +204,9 @@ export const CharacterSelectScreen = memo(function CharacterSelectScreen() {
             </Tooltip>
           ) : button;
         })}
-        <Tooltip text="Coming soon" position="top">
-          <button
-            disabled
-            className="flex items-center gap-2"
-            style={{
-              padding: '10px 16px 10px 48px',
-              backgroundColor: 'rgba(28, 25, 23, 0.8)',
-              borderRadius: '0 6px 6px 0',
-              transform: 'translateX(-20px)',
-              minWidth: 170,
-              cursor: 'not-allowed',
-            }}
-            >
-              <div className="relative" style={{ width: 40, height: 40 }}>
-                {/* Show the (0,0) frame of rudy_sheet.png (256x128, 4x2 grid
-                    of 64x64). Scale 64 -> 40, so background-size 160x80. */}
-                <div
-                  aria-label="Rudy"
-                  role="img"
-                  style={{
-                    width: 40,
-                    height: 40,
-                    backgroundImage: `url(${import.meta.env.BASE_URL}assets/sprites/rudy_sheet.png)`,
-                    backgroundSize: '160px 80px',
-                    backgroundPosition: '0 0',
-                    backgroundRepeat: 'no-repeat',
-                    imageRendering: 'pixelated',
-                    filter: 'brightness(0)',
-                  }}
-                />
-                <div
-                  style={{
-                    position: 'absolute',
-                    inset: 0,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    pointerEvents: 'none',
-                  }}
-                >
-                  <SpriteIcon frame={HAZARD_FRAMES.lock} scale={1} outline="#000" outlineWidth={2} />
-                </div>
-              </div>
-              <span
-                className="text-sm font-bold"
-                style={{
-                  color: '#57534e',
-                  WebkitTextStroke: '2px #000',
-                  paintOrder: 'stroke fill',
-                }}
-              >
-                Rudy
-              </span>
-          </button>
-        </Tooltip>
+        {COMING_SOON_CHARACTERS.map((char) => (
+          <LockedCharTab key={char.name} name={char.name} sheet={char.sheet} />
+        ))}
           </div>
         </div>,
         document.body,
@@ -463,6 +420,66 @@ const WANTED_LEVEL_EFFECTS: string[] = [
   'Campfires are less common.',
   'The first tile selection is replaced with a single Charcoal tile.',
 ];
+
+function LockedCharTab({ name, sheet }: { name: string; sheet: string }) {
+  return (
+    <Tooltip text="Coming soon" position="top">
+      <button
+        disabled
+        className="flex items-center gap-2"
+        style={{
+          padding: '10px 16px 10px 48px',
+          backgroundColor: 'rgba(28, 25, 23, 0.8)',
+          borderRadius: '0 6px 6px 0',
+          transform: 'translateX(-20px)',
+          minWidth: 170,
+          cursor: 'not-allowed',
+        }}
+      >
+        <div className="relative" style={{ width: 40, height: 40 }}>
+          {/* Show the (0,0) frame of a 256x128 sheet (4x2 grid of 64x64).
+              Scale 64 -> 40, so background-size 160x80. */}
+          <div
+            aria-label={name}
+            role="img"
+            style={{
+              width: 40,
+              height: 40,
+              backgroundImage: `url(${import.meta.env.BASE_URL}assets/sprites/${sheet})`,
+              backgroundSize: '160px 80px',
+              backgroundPosition: '0 0',
+              backgroundRepeat: 'no-repeat',
+              imageRendering: 'pixelated',
+              filter: 'brightness(0)',
+            }}
+          />
+          <div
+            style={{
+              position: 'absolute',
+              inset: 0,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              pointerEvents: 'none',
+            }}
+          >
+            <SpriteIcon frame={HAZARD_FRAMES.lock} scale={1} outline="#000" outlineWidth={2} />
+          </div>
+        </div>
+        <span
+          className="text-sm font-bold"
+          style={{
+            color: '#57534e',
+            WebkitTextStroke: '2px #000',
+            paintOrder: 'stroke fill',
+          }}
+        >
+          {name}
+        </span>
+      </button>
+    </Tooltip>
+  );
+}
 
 function WantedLevelSelector({
   level,

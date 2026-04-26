@@ -77,12 +77,17 @@ export const Tooltip = memo(function Tooltip({ text, content, secondContent, chi
       const tr = tip.getBoundingClientRect();
       const margin = 6;
 
-      if (tr.left < vr.left) {
-        tip.style.left = `${margin}px`;
+      // Clamp against the actual window, not the host container. A small
+      // host (e.g. a centered FullScreenOverlay popup card) would otherwise
+      // pin a wide tooltip to the popup's edge and visually pull it off
+      // the trigger; clamping to the window lets tooltips overflow the
+      // popup as long as they fit on screen.
+      if (tr.left < 0) {
+        tip.style.left = `${(margin - vr.left) / scale}px`;
         tip.style.transform = effectivePosition === 'top' ? 'translateY(-100%)' : 'none';
-      } else if (tr.right > vr.right) {
+      } else if (tr.right > window.innerWidth) {
         tip.style.left = 'auto';
-        tip.style.right = `${margin}px`;
+        tip.style.right = `${(vr.right - window.innerWidth + margin) / scale}px`;
         tip.style.transform = effectivePosition === 'top' ? 'translateY(-100%)' : 'none';
       }
 

@@ -18,6 +18,7 @@ export const MAIN_MENU_BACKGROUNDS = [
   'church.png',
   'mine.png',
   'overlook.png',
+  'riverbed.png',
   'town.png',
   'train.png',
 ] as const;

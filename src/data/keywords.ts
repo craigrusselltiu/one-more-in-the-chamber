@@ -101,4 +101,8 @@ export const KEYWORDS: Record<string, KeywordDefinition> = {
     color: '#E8C040',
     description: 'Gain 4 block per tile. Heal 1 per tile.',
   },
+  Cascade: {
+    color: '#7CC2FF',
+    description: 'Indirect matches that happen after swap.',
+  },
 };
