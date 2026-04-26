@@ -29,8 +29,9 @@ const TABS: { key: TabKey; label: string }[] = [
 /** Keywords that live in KEYWORDS for coloring text but are not actually
  *  combatant status effects, so they don't belong in the Status tab. Shadow
  *  is a per-tile attribute (Tile.isShadow); Obsidian and Cheese are per-tile
- *  resource-generators (tile types), not stackable buffs/debuffs. */
-const NON_STATUS_KEYWORDS = new Set<string>(['Shadow', 'Obsidian', 'Cheese']);
+ *  resource-generators (tile types), not stackable buffs/debuffs; Cascade
+ *  is a swap-resolution descriptor used in artifact/tile/consumable text. */
+const NON_STATUS_KEYWORDS = new Set<string>(['Shadow', 'Obsidian', 'Cheese', 'Cascade']);
 
 /** Tile/artifact ids that require a shop purchase. Derived once so the Ledger
  *  can show a lock overlay on discovered-but-not-unlocked entries. */
