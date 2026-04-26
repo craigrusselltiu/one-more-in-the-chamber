@@ -104,6 +104,14 @@ export class BootScene extends Phaser.Scene {
     this.load.image('reputation', `${base}assets/backgrounds/reputation.png`);
     this.load.image('customize', `${base}assets/backgrounds/customize.png`);
     this.load.image('ledger', `${base}assets/backgrounds/ledger.png`);
+    // Main menu background pool (re-rolled each visit; preload so the swap
+    // is instant without a network fetch flash).
+    this.load.image('main_menu_church', `${base}assets/main_menu/church.png`);
+    this.load.image('main_menu_mine', `${base}assets/main_menu/mine.png`);
+    this.load.image('main_menu_overlook', `${base}assets/main_menu/overlook.png`);
+    this.load.image('main_menu_riverbed', `${base}assets/main_menu/riverbed.png`);
+    this.load.image('main_menu_town', `${base}assets/main_menu/town.png`);
+    this.load.image('main_menu_train', `${base}assets/main_menu/train.png`);
     this.load.image('event_bridge', `${base}assets/events/event_bridge.png`);
     this.load.image('event_stranger', `${base}assets/events/event_stranger.png`);
     this.load.image('event_card', `${base}assets/events/event_card.png`);
