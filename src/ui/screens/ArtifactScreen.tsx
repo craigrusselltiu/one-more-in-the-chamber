@@ -184,7 +184,7 @@ export const ArtifactScreen = memo(function ArtifactScreen() {
                 <button
                   onClick={() => handleChoose(i)}
                   style={{ boxShadow: '2px 2px 1px rgba(0,0,0,0.4)', cursor: 'pointer' }}
-                  className="mt-3 px-6 py-1.5 text-xs rounded-sm bg-amber-800 text-amber-200 hover:bg-amber-700 active:translate-y-0.5 transition-transform"
+                  className="mt-3 px-6 py-1.5 text-xs font-bold rounded-sm bg-amber-800 text-amber-200 hover:bg-amber-700 active:translate-y-0.5 transition-transform"
                 >
                   Choose
                 </button>
@@ -201,14 +201,14 @@ export const ArtifactScreen = memo(function ArtifactScreen() {
             <button
               onClick={handleSkip}
               style={{ boxShadow: '2px 2px 1px rgba(0,0,0,0.4)', cursor: 'pointer' }}
-              className="px-6 py-1.5 text-xs rounded-sm bg-stone-800 text-stone-300 hover:bg-stone-700 active:translate-y-0.5 transition-transform"
+              className="px-6 py-1.5 text-xs font-bold rounded-sm bg-stone-800 text-stone-300 hover:bg-stone-700 active:translate-y-0.5 transition-transform"
             >
               Skip
             </button>
             <button
               onClick={() => handleChoose(0)}
               style={{ boxShadow: '2px 2px 1px rgba(0,0,0,0.4)', cursor: 'pointer' }}
-              className="px-6 py-1.5 text-xs rounded-sm bg-amber-800 text-amber-200 hover:bg-amber-700 active:translate-y-0.5 transition-transform"
+              className="px-6 py-1.5 text-xs font-bold rounded-sm bg-amber-800 text-amber-200 hover:bg-amber-700 active:translate-y-0.5 transition-transform"
             >
               Take It
             </button>

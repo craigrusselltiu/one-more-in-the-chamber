@@ -249,7 +249,7 @@ export const ScoreScreen = memo(function ScoreScreen() {
           cursor: 'pointer',
           textShadow: '1px 1px 3px rgba(0,0,0,1), 1px 1px 6px rgba(0,0,0,0.95), 1px 1px 9px rgba(0,0,0,0.85)',
         }}
-        className="px-3.5 py-1 text-[10px] uppercase rounded-sm bg-amber-800 text-amber-200 hover:bg-amber-700 active:translate-y-0.5 transition-transform"
+        className="px-3.5 py-1 text-[10px] font-bold uppercase rounded-sm bg-amber-800 text-amber-200 hover:bg-amber-700 active:translate-y-0.5 transition-transform"
       >
         Main Menu
       </button>

@@ -13,7 +13,8 @@ const sheetImageCache: Partial<Record<CharacterId, HTMLImageElement>> = {};
 const sheetLoadPromises: Partial<Record<CharacterId, Promise<HTMLImageElement>>> = {};
 
 function getSheetFilename(character: CharacterId): string {
-  return character === 'reno' ? 'reno_sheet.png' : 'rust_sheet.png';
+  if (character === 'red_panda') return 'rust_sheet.png';
+  return `${character}_sheet.png`;
 }
 
 function loadCharacterSheet(character: CharacterId): Promise<HTMLImageElement> {
@@ -64,7 +65,10 @@ export const CharacterSheetSprite = memo(function CharacterSheetSprite({
 
   const intScale = Math.max(1, Math.ceil(size / SHEET_FRAME_SIZE));
   const canvasSize = SHEET_FRAME_SIZE * intScale;
-  const frame = hit
+  const isAnimated = character === 'red_panda' || character === 'reno';
+  const frame = !isAnimated
+    ? { col: 0, row: 0 }
+    : hit
     ? HIT_FRAME
     : attacking
       ? ATTACK_FRAME

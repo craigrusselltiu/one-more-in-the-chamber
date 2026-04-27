@@ -18,6 +18,27 @@ interface TooltipProps {
 }
 
 /**
+ * Walk up from the portal target collecting the intersection of every
+ * overflow:hidden ancestor's bounds with the window. The result is the
+ * region within which a tooltip will actually be visible.
+ */
+function computeClipBounds(start: HTMLElement): { left: number; right: number } {
+  let left = 0;
+  let right = window.innerWidth;
+  let el: HTMLElement | null = start;
+  while (el) {
+    const cs = getComputedStyle(el);
+    if (cs.overflowX === 'hidden' || cs.overflow === 'hidden') {
+      const r = el.getBoundingClientRect();
+      if (r.left > left) left = r.left;
+      if (r.right < right) right = r.right;
+    }
+    el = el.parentElement;
+  }
+  return { left, right };
+}
+
+/**
  * Tooltip: wrap any element to show a styled tooltip on hover.
  * Renders via portal to escape stacking contexts (transform, z-index).
  */
@@ -77,17 +98,20 @@ export const Tooltip = memo(function Tooltip({ text, content, secondContent, chi
       const tr = tip.getBoundingClientRect();
       const margin = 6;
 
-      // Clamp against the actual window, not the host container. A small
-      // host (e.g. a centered FullScreenOverlay popup card) would otherwise
-      // pin a wide tooltip to the popup's edge and visually pull it off
-      // the trigger; clamping to the window lets tooltips overflow the
-      // popup as long as they fit on screen.
-      if (tr.left < 0) {
-        tip.style.left = `${(margin - vr.left) / scale}px`;
+      // Horizontal clamp uses the nearest visibly-clipping bounds: window
+      // intersected with any overflow:hidden ancestor of the portal target.
+      // For FullScreenOverlay popups (no overflow:hidden on the portal root)
+      // this resolves to the window, so wide tooltips can overflow narrow
+      // popup cards. For the scaled-ui-root (which DOES clip overflow), this
+      // pins to the UI's actual painted bounds so edge-aligned triggers
+      // (HUD status effects on the far left/right) don't render under a clip.
+      const clip = computeClipBounds(viewport);
+      if (tr.left < clip.left) {
+        tip.style.left = `${(clip.left + margin - vr.left) / scale}px`;
         tip.style.transform = effectivePosition === 'top' ? 'translateY(-100%)' : 'none';
-      } else if (tr.right > window.innerWidth) {
+      } else if (tr.right > clip.right) {
         tip.style.left = 'auto';
-        tip.style.right = `${(vr.right - window.innerWidth + margin) / scale}px`;
+        tip.style.right = `${(vr.right - clip.right + margin) / scale}px`;
         tip.style.transform = effectivePosition === 'top' ? 'translateY(-100%)' : 'none';
       }
 
@@ -130,7 +154,7 @@ export const Tooltip = memo(function Tooltip({ text, content, secondContent, chi
         >
           {tooltipBody && (
             <div
-              className={`bg-stone-900/95 px-1.5 py-0.5 text-stone-200 ${content ? '' : 'whitespace-nowrap'}`}
+              className={`bg-stone-900/85 rounded-sm px-2 py-1 text-stone-200 ${content ? '' : 'whitespace-nowrap'}`}
               style={{ fontSize: '9px' }}
             >
               {tooltipBody}
@@ -138,7 +162,7 @@ export const Tooltip = memo(function Tooltip({ text, content, secondContent, chi
           )}
           {secondContent && (
             <div
-              className="bg-stone-900/95 px-1.5 py-0.5 text-stone-200 whitespace-nowrap"
+              className="bg-stone-900/85 rounded-sm px-2 py-1 text-stone-200 whitespace-nowrap"
               style={{ fontSize: '9px' }}
             >
               {secondContent}

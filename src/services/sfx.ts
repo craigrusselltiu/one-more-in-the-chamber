@@ -125,10 +125,19 @@ export function playHit(): void {
 }
 
 export function playAbilityReady(): void {
-  play('sfx_ability_ready', 0.5);
+  play('sfx_ability_ready', 0.25);
 }
 
 export function playDeadeyeShot(): void {
   // Gunshot SFX for Deadeye shots (lower pitch match as fallback until gunshot.wav is added)
   play('sfx_gunshot', 0.3);
+}
+
+let lastHealTime = 0;
+export function playHeal(): void {
+  // Debounce so multi-tile heal cascades don't stack the SFX into a wall of sound.
+  const now = Date.now();
+  if (now - lastHealTime < 80) return;
+  lastHealTime = now;
+  play('sfx_heal', 0.4);
 }

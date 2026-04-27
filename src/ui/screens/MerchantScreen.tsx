@@ -144,19 +144,28 @@ export const MerchantScreen = memo(function MerchantScreen() {
       };
     };
 
+    // L21+ wanted-level disables every merchant sale (consumable + artifact).
+    const salesDisabled = getWantedLevelMutations(run.wantedLevel).disableMerchantSales;
+
     const consumables: MerchantItem[] = [];
     const shuffledConsumables = seededShuffle(CONSUMABLES, rand);
     // Shop stocks 3 consumables; price fluctuates +/-5 around each consumable's base cost.
-    for (let i = 0; i < Math.min(3, shuffledConsumables.length); i++) {
+    const consumableCount = Math.min(3, shuffledConsumables.length);
+    // One random consumable in the stock gets a 75%-off tag (matches artifact sale behavior).
+    const consumableSaleIndex = !salesDisabled && consumableCount > 0
+      ? Math.floor(rand() * consumableCount)
+      : -1;
+    for (let i = 0; i < consumableCount; i++) {
       const c = shuffledConsumables[i];
       const jitter = Math.floor(rand() * 11) - 5; // [-5, +5]
       const basePrice = Math.max(1, c.cost + jitter);
+      const onSale = i === consumableSaleIndex;
       consumables.push({
         type: 'consumable',
         id: `cons-${c.id}`,
         name: c.name,
         description: c.effect,
-        ...priceItem(basePrice),
+        ...priceItem(basePrice, onSale ? 0.75 : 0),
       });
     }
 
@@ -184,9 +193,8 @@ export const MerchantScreen = memo(function MerchantScreen() {
       rare: { min: 181, range: 40 },
       legendary: { min: 261, range: 40 },
     };
-    // One random artifact in the stock gets a 75%-off tag. L21 disables
-    // sales entirely for the rest of the run.
-    const salesDisabled = getWantedLevelMutations(run.wantedLevel).disableMerchantSales;
+    // One random artifact in the stock gets a 75%-off tag. (salesDisabled
+    // declared above for the consumable sale roll.)
     const allArtifactSales = snapshot.allArtifactSales ?? false;
     const saleIndex = !allArtifactSales && !salesDisabled && pickedArtifacts.length > 0
       ? Math.floor(rand() * pickedArtifacts.length)
@@ -459,7 +467,7 @@ export const MerchantScreen = memo(function MerchantScreen() {
       <button
         onClick={handleLeave}
         style={{ boxShadow: '3px 3px 2px rgba(0,0,0,0.7)' }}
-        className="mt-4 px-6 py-2 text-sm rounded-sm bg-stone-800 text-stone-300 hover:bg-stone-700 transition-transform active:translate-y-0.5"
+        className="mt-4 px-6 py-2 text-sm font-bold rounded-sm bg-stone-800 text-stone-300 hover:bg-stone-700 transition-transform active:translate-y-0.5"
       >
         Leave
       </button>
@@ -550,7 +558,7 @@ export const MerchantScreen = memo(function MerchantScreen() {
                 <button
                   onClick={() => setSwapPending(null)}
                   style={{ boxShadow: '3px 3px 2px rgba(0,0,0,0.7)' }}
-                  className="px-4 py-2 text-sm rounded-sm bg-stone-800 text-stone-300 hover:bg-stone-700 transition-transform active:translate-y-0.5"
+                  className="px-4 py-2 text-sm font-bold rounded-sm bg-stone-800 text-stone-300 hover:bg-stone-700 transition-transform active:translate-y-0.5"
                 >
                   Cancel
                 </button>
@@ -621,7 +629,7 @@ export const MerchantScreen = memo(function MerchantScreen() {
               <button
                 onClick={() => setUpgradePhase('none')}
                 style={{ boxShadow: '3px 3px 2px rgba(0,0,0,0.7)' }}
-                className="px-4 py-2 text-sm rounded-sm bg-stone-800 text-stone-300 hover:bg-stone-700 transition-transform active:translate-y-0.5"
+                className="px-4 py-2 text-sm font-bold rounded-sm bg-stone-800 text-stone-300 hover:bg-stone-700 transition-transform active:translate-y-0.5"
               >
                 Back
               </button>
@@ -656,7 +664,7 @@ export const MerchantScreen = memo(function MerchantScreen() {
               <button
                 onClick={() => setUpgradePhase('none')}
                 style={{ boxShadow: '3px 3px 2px rgba(0,0,0,0.7)' }}
-                className="px-6 py-2 text-sm rounded-sm bg-amber-800 text-amber-200 hover:bg-amber-700 transition-transform active:translate-y-0.5"
+                className="px-6 py-2 text-sm font-bold rounded-sm bg-amber-800 text-amber-200 hover:bg-amber-700 transition-transform active:translate-y-0.5"
               >
                 Back to Merchant
               </button>

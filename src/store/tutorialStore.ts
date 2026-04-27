@@ -6,8 +6,26 @@ export interface TutorialStep {
   text: string;
   /** Optional spotlight rectangle in 960x540 virtual coordinates. */
   spotlight?: { x: number; y: number; width: number; height: number };
-  /** Force tooltip placement direction. Auto-calculated if omitted. */
-  tooltipPosition?: 'top' | 'bottom' | 'left' | 'right';
+  /** Spotlight rectangle in actual viewport pixels, anchored to a corner.
+   *  Use this when the highlighted element is positioned in screen-coords
+   *  outside the 960x540 design space (e.g. seed input, version label,
+   *  viewport-anchored character tabs). Specify exactly one of left/right
+   *  and one of top/bottom for the anchor edges. */
+  viewportSpotlight?: {
+    left?: number;
+    right?: number;
+    top?: number;
+    bottom?: number;
+    vCenter?: boolean;
+    hCenter?: boolean;
+    applyScale?: boolean;
+    width: number;
+    height: number;
+  };
+  /** Force tooltip placement direction. Auto-calculated if omitted.
+   *  'center' anchors the dialog to the middle of the screen regardless of
+   *  the spotlight position (useful for screen-wide intro steps). */
+  tooltipPosition?: 'top' | 'bottom' | 'left' | 'right' | 'center';
   /** Show a "skip all tutorials" option on this step. */
   showSkip?: boolean;
 }

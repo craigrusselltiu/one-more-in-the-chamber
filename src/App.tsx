@@ -947,7 +947,7 @@ export default function App() {
   // Screens whose background gets a translucent dim layer for foreground readability.
   const DIM_BG_SCREENS: Set<Screen> = new Set([
     'reputation-shop', 'customize', 'ledger', 'leaderboard', 'combat', 'map',
-    'campfire', 'merchant', 'tile-select',
+    'campfire', 'merchant', 'tile-select', 'score',
   ]);
 
   const dimBackground = DIM_BG_SCREENS.has(screen);
@@ -1015,11 +1015,14 @@ export default function App() {
         </defs>
       </svg>
 
-      {/* Scaled overlay: 960x540 virtual pixels, CSS-transformed to match Phaser canvas */}
+      {/* Scaled overlay: 960x540 virtual pixels, CSS-transformed to match Phaser canvas.
+          No overflow-hidden so portal'd tooltips (e.g. HUD status effects) can extend
+          into the letterbox area instead of being clipped at the UI bounds. The
+          window-wide wrapper above still clips at the actual viewport edges. */}
       <div
         data-tooltip-root
         id="scaled-ui-root"
-        className={`absolute overflow-hidden select-none ${showTopBar ? 'flex flex-col' : ''}`}
+        className={`absolute select-none ${showTopBar ? 'flex flex-col' : ''}`}
         style={{
           width: UI_WIDTH,
           height: UI_HEIGHT,
@@ -1141,15 +1144,15 @@ export default function App() {
       {/* Loading screen -- covers the entire viewport, anchors text+bar bottom-right */}
       {!loadingDismissed && (
         <div
-          className={`absolute inset-0 bg-black z-[200] flex flex-col items-end justify-end p-8 ${bootComplete ? 'screen-wipe-out' : ''}`}
+          className={`absolute inset-0 bg-black z-[200] flex flex-col items-end justify-end p-4 sm:p-8 ${bootComplete ? 'screen-wipe-out' : ''}`}
           onAnimationEnd={() => setLoadingDismissed(true)}
         >
           {!bootComplete && (
-            <div className="flex flex-col items-end gap-4">
-              <span className="text-6xl text-white tracking-widest font-bold animate-loading-breathe">LOADING</span>
+            <div className="flex flex-col items-end gap-2 sm:gap-4 w-full">
+              <span className="text-3xl sm:text-6xl text-white tracking-widest font-bold animate-loading-breathe">LOADING</span>
               <div
-                className="relative overflow-hidden bg-stone-800 rounded-sm"
-                style={{ width: 720, height: 20, boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.6)' }}
+                className="relative overflow-hidden bg-stone-800 rounded-sm w-full max-w-[260px] h-2 sm:max-w-[720px] sm:h-5"
+                style={{ boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.6)' }}
               >
                 <div
                   className="h-full bg-amber-600 transition-[width] duration-150 ease-linear"
@@ -1160,7 +1163,7 @@ export default function App() {
                   }}
                 />
               </div>
-              <span className="text-2xl text-stone-400 font-bold tabular-nums">
+              <span className="text-sm sm:text-2xl text-stone-400 font-bold tabular-nums">
                 {bootProgress.loaded} / {bootProgress.total || '?'}
               </span>
             </div>
@@ -1170,8 +1173,8 @@ export default function App() {
 
       {/* Global version label -- viewport-anchored bottom-right */}
       <span
-        className="absolute right-2 bottom-1 pointer-events-none z-[60]"
-        style={{ fontSize: '17px', color: 'rgba(255,255,255,0.45)' }}
+        className="absolute right-2 bottom-1 pointer-events-none z-[60] text-[9px] sm:text-[17px]"
+        style={{ color: 'rgba(255,255,255,0.45)' }}
       >
         {APP_VERSION_LABEL.toUpperCase().replace(/^ALPHA V/, 'ALPHA v')}
       </span>
@@ -1187,8 +1190,7 @@ function SeedIndicator() {
   if (!seed) return null;
   return (
     <div
-      className="absolute left-2 bottom-1 z-[60] pointer-events-auto"
-      style={{ fontSize: '17px' }}
+      className="absolute left-2 bottom-1 z-[60] pointer-events-auto text-[9px] sm:text-[17px]"
     >
       <button
         className="text-white/45 hover:text-white/70 uppercase tracking-wider"
@@ -1212,11 +1214,11 @@ function MainMenuAccountIndicator() {
   const handleLogin = () => EventBus.emit(GameEvent.SCREEN_CHANGE, 'login' satisfies Screen);
 
   return (
-    <div className="absolute right-5 bottom-9 z-[60] pointer-events-auto text-right">
+    <div className="absolute right-2 bottom-3 sm:right-5 sm:bottom-9 z-[60] pointer-events-auto text-right">
       {auth.isLoggedIn ? (
         <span
+          className="text-xs sm:text-2xl"
           style={{
-            fontSize: '24px',
             color: '#b8b8b8',
             letterSpacing: '1px',
             textShadow: '1px 1px 3px rgba(0,0,0,1), 1px 1px 6px rgba(0,0,0,0.95)',
@@ -1227,8 +1229,8 @@ function MainMenuAccountIndicator() {
       ) : (
         <button
           onClick={handleLogin}
-          style={{ boxShadow: '2px 2px 1px rgba(0,0,0,0.4)', cursor: 'pointer', fontSize: '24px' }}
-          className="px-7 py-3 uppercase rounded-sm bg-amber-800 text-amber-200 hover:bg-amber-700 active:translate-y-0.5 transition-transform"
+          style={{ boxShadow: '2px 2px 1px rgba(0,0,0,0.4)', cursor: 'pointer' }}
+          className="px-3 py-1.5 text-xs sm:px-7 sm:py-3 sm:text-2xl uppercase font-bold rounded-sm bg-amber-800 text-amber-200 hover:bg-amber-700 active:translate-y-0.5 transition-transform"
         >
           Login
         </button>

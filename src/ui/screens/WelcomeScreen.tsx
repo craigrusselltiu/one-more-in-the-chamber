@@ -47,14 +47,14 @@ export const WelcomeScreen = memo(function WelcomeScreen() {
           <button
             onClick={goLogin}
             style={{ boxShadow: BUTTON_SHADOW, cursor: 'pointer' }}
-            className="w-full px-4 py-1.5 text-[11px] rounded-sm bg-amber-800 text-amber-200 hover:bg-amber-700 active:translate-y-0.5 transition-transform"
+            className="w-full px-4 py-1.5 text-[11px] font-bold rounded-sm bg-amber-800 text-amber-200 hover:bg-amber-700 active:translate-y-0.5 transition-transform"
           >
             Log In / Sign Up
           </button>
           <button
             onClick={goGuest}
             style={{ boxShadow: BUTTON_SHADOW, cursor: 'pointer' }}
-            className="w-full px-4 py-1.5 text-[11px] rounded-sm bg-stone-800 text-stone-300 hover:bg-stone-700 active:translate-y-0.5 transition-transform"
+            className="w-full px-4 py-1.5 text-[11px] font-bold rounded-sm bg-stone-800 text-stone-300 hover:bg-stone-700 active:translate-y-0.5 transition-transform"
           >
             Continue as Guest
           </button>

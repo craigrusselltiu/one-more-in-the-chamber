@@ -796,7 +796,7 @@ export const EventScreen = memo(function EventScreen() {
           <button
             onClick={handleContinue}
             style={{ fontSize: 10, boxShadow: '3px 3px 2px rgba(0,0,0,0.7)' }}
-            className="pointer-events-auto px-6 py-2 rounded-sm bg-amber-800 text-amber-200 hover:bg-amber-700 transition-transform active:translate-y-0.5"
+            className="pointer-events-auto px-6 py-2 font-bold rounded-sm bg-amber-800 text-amber-200 hover:bg-amber-700 transition-transform active:translate-y-0.5"
           >
             Continue
           </button>

@@ -304,7 +304,7 @@ export const LeaderboardScreen = memo(function LeaderboardScreen() {
         <button
           onClick={handleBack}
           style={{ boxShadow: '2px 2px 1px rgba(0,0,0,0.4)', cursor: 'pointer' }}
-          className="px-5 py-1.5 text-xs rounded-sm bg-stone-800 text-stone-300 hover:bg-stone-700 active:translate-y-0.5 transition-transform"
+          className="px-5 py-1.5 text-xs font-bold rounded-sm bg-stone-800 text-stone-300 hover:bg-stone-700 active:translate-y-0.5 transition-transform"
         >
           Back
         </button>

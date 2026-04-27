@@ -56,15 +56,50 @@ export const CHARACTERS: CharacterInfo[] = [
     exclusiveArtifactId: 'rigged_deck',
     exclusiveTileType: 'chip',
   },
-];
-
-/** Placeholder "Coming soon" tabs in the character-select left rail. The
- *  sheet path resolves under public/assets/sprites/. */
-const COMING_SOON_CHARACTERS: { name: string; sheet: string }[] = [
-  { name: 'Rudy', sheet: 'rudy_sheet.png' },
-  { name: 'Reap', sheet: 'reap_sheet.png' },
-  { name: 'Rita', sheet: 'rita_sheet.png' },
-  { name: 'Riff', sheet: 'riff_sheet.png' },
+  {
+    id: 'rudy',
+    name: 'Rudy',
+    hp: 100,
+    ability: 'TBD',
+    abilityCharge: 0,
+    abilityDescription: 'TBD',
+    bg: 'backgrounds/rudy_bg.png',
+    exclusiveArtifactId: 'bamboo_canteen',
+    exclusiveTileType: 'bullet',
+  },
+  {
+    id: 'reap',
+    name: 'Reap',
+    hp: 100,
+    ability: 'Shadow Veil',
+    abilityCharge: 0,
+    abilityDescription: 'TBD',
+    bg: 'backgrounds/reap_bg.png',
+    exclusiveArtifactId: 'bamboo_canteen',
+    exclusiveTileType: 'bullet',
+  },
+  {
+    id: 'rita',
+    name: 'Rita',
+    hp: 90,
+    ability: 'Blade Dance',
+    abilityCharge: 0,
+    abilityDescription: 'TBD',
+    bg: 'backgrounds/rita_bg.png',
+    exclusiveArtifactId: 'bamboo_canteen',
+    exclusiveTileType: 'bullet',
+  },
+  {
+    id: 'riff',
+    name: 'Riff',
+    hp: 110,
+    ability: 'Jazz Solo',
+    abilityCharge: 0,
+    abilityDescription: 'TBD',
+    bg: 'backgrounds/riff_bg.png',
+    exclusiveArtifactId: 'bamboo_canteen',
+    exclusiveTileType: 'bullet',
+  },
 ];
 
 export const CharacterSelectScreen = memo(function CharacterSelectScreen() {
@@ -204,9 +239,6 @@ export const CharacterSelectScreen = memo(function CharacterSelectScreen() {
             </Tooltip>
           ) : button;
         })}
-        {COMING_SOON_CHARACTERS.map((char) => (
-          <LockedCharTab key={char.name} name={char.name} sheet={char.sheet} />
-        ))}
           </div>
         </div>,
         document.body,
@@ -249,50 +281,64 @@ export const CharacterSelectScreen = memo(function CharacterSelectScreen() {
         <ExclusiveRow artifactId={char.exclusiveArtifactId} tileType={char.exclusiveTileType} />
       </div>
 
-      {/* Seed input - bottom left (no background panel) */}
-      <div className="absolute bottom-6 left-4 flex items-center gap-2">
-        <span
-          className="text-stone-500 font-bold uppercase"
-          style={{ fontSize: '9px', WebkitTextStroke: '1px #000', paintOrder: 'stroke fill' }}
+      {/* Seed input + wanted level + Back/Confirm are portal'd to body so
+          they anchor to the actual viewport corners (not the 960x540 design
+          space). Keeps controls flush with the screen edges across letterbox
+          aspect ratios. */}
+      {createPortal(
+        <div
+          className="fixed z-[70] flex items-center gap-2"
+          style={{ left: 50, bottom: 50, transform: `scale(${uiScale})`, transformOrigin: 'bottom left' }}
         >
-          Seed
-        </span>
-        <input
-          type="text"
-          value={customSeed}
-          onChange={(e) => setCustomSeed(e.target.value)}
-          placeholder="random"
-          className="bg-stone-900/80 border border-stone-600 text-stone-300 text-xs px-2 py-1 w-32 outline-none focus:border-amber-600"
-          style={{ borderRadius: 2 }}
-        />
-      </div>
-
-      {/* Wanted Level + Back / Confirm - bottom right (selector centered above buttons) */}
-      <div className="absolute bottom-6 right-4 flex flex-col items-center gap-3">
-        {maxSelectable > 0 && (
-          <WantedLevelSelector
-            level={wantedLevel}
-            maxLevel={maxSelectable}
-            onChange={setWantedLevel}
+          <span
+            className="text-stone-500 font-bold uppercase"
+            style={{ fontSize: '9px', WebkitTextStroke: '1px #000', paintOrder: 'stroke fill' }}
+          >
+            Seed
+          </span>
+          <input
+            type="text"
+            value={customSeed}
+            onChange={(e) => setCustomSeed(e.target.value)}
+            placeholder="random"
+            className="bg-stone-900/80 border border-stone-600 text-stone-300 text-xs px-2 py-1 w-32 outline-none focus:border-amber-600"
+            style={{ borderRadius: 2 }}
           />
-        )}
-        <div className="flex gap-3">
-          <button
-            onClick={handleBack}
-            style={{ boxShadow: '3px 3px 2px rgba(0,0,0,0.7)' }}
-            className="px-4 py-1.5 text-xs rounded-sm bg-stone-800 text-stone-400 hover:bg-stone-700 transition-transform active:translate-y-0.5"
-          >
-            Back
-          </button>
-          <button
-            onClick={handleConfirm}
-            style={{ boxShadow: '3px 3px 2px rgba(0,0,0,0.7)' }}
-            className="px-5 py-1.5 text-xs rounded-sm bg-amber-800 text-amber-200 hover:bg-amber-700 transition-transform active:translate-y-0.5"
-          >
-            Confirm
-          </button>
-        </div>
-      </div>
+        </div>,
+        document.body,
+      )}
+
+      {createPortal(
+        <div
+          className="fixed z-[70] flex flex-col items-center gap-3"
+          style={{ right: 50, bottom: 50, transform: `scale(${uiScale})`, transformOrigin: 'bottom right' }}
+        >
+          {maxSelectable > 0 && (
+            <WantedLevelSelector
+              level={wantedLevel}
+              maxLevel={maxSelectable}
+              onChange={setWantedLevel}
+            />
+          )}
+          <div className="flex gap-3">
+            <button
+              onClick={handleBack}
+              style={{ boxShadow: '3px 3px 2px rgba(0,0,0,0.7)' }}
+              className="px-4 py-1.5 text-xs font-bold rounded-sm bg-stone-800 text-stone-400 hover:bg-stone-700 transition-transform active:translate-y-0.5"
+            >
+              Back
+            </button>
+            <button
+              onClick={handleConfirm}
+              style={{ boxShadow: '3px 3px 2px rgba(0,0,0,0.7)' }}
+              className="px-5 py-1.5 text-xs font-bold rounded-sm bg-amber-800 text-amber-200 hover:bg-amber-700 transition-transform active:translate-y-0.5"
+            >
+              Confirm
+            </button>
+          </div>
+        </div>,
+        document.body,
+      )}
     </div>
   );
 });
@@ -421,65 +467,6 @@ const WANTED_LEVEL_EFFECTS: string[] = [
   'The first tile selection is replaced with a single Charcoal tile.',
 ];
 
-function LockedCharTab({ name, sheet }: { name: string; sheet: string }) {
-  return (
-    <Tooltip text="Coming soon" position="top">
-      <button
-        disabled
-        className="flex items-center gap-2"
-        style={{
-          padding: '10px 16px 10px 48px',
-          backgroundColor: 'rgba(28, 25, 23, 0.8)',
-          borderRadius: '0 6px 6px 0',
-          transform: 'translateX(-20px)',
-          minWidth: 170,
-          cursor: 'not-allowed',
-        }}
-      >
-        <div className="relative" style={{ width: 40, height: 40 }}>
-          {/* Show the (0,0) frame of a 256x128 sheet (4x2 grid of 64x64).
-              Scale 64 -> 40, so background-size 160x80. */}
-          <div
-            aria-label={name}
-            role="img"
-            style={{
-              width: 40,
-              height: 40,
-              backgroundImage: `url(${import.meta.env.BASE_URL}assets/sprites/${sheet})`,
-              backgroundSize: '160px 80px',
-              backgroundPosition: '0 0',
-              backgroundRepeat: 'no-repeat',
-              imageRendering: 'pixelated',
-              filter: 'brightness(0)',
-            }}
-          />
-          <div
-            style={{
-              position: 'absolute',
-              inset: 0,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              pointerEvents: 'none',
-            }}
-          >
-            <SpriteIcon frame={HAZARD_FRAMES.lock} scale={1} outline="#000" outlineWidth={2} />
-          </div>
-        </div>
-        <span
-          className="text-sm font-bold"
-          style={{
-            color: '#57534e',
-            WebkitTextStroke: '2px #000',
-            paintOrder: 'stroke fill',
-          }}
-        >
-          {name}
-        </span>
-      </button>
-    </Tooltip>
-  );
-}
 
 function WantedLevelSelector({
   level,

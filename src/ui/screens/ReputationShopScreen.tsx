@@ -261,7 +261,7 @@ export const ReputationShopScreen = memo(function ReputationShopScreen() {
         <button
           onClick={handleBack}
           style={{ boxShadow: '2px 2px 1px rgba(0,0,0,0.4)', cursor: 'pointer' }}
-          className="px-6 py-1.5 text-xs rounded-sm bg-stone-800 text-stone-300 hover:bg-stone-700 active:translate-y-0.5 transition-transform"
+          className="px-6 py-1.5 text-xs font-bold rounded-sm bg-stone-800 text-stone-300 hover:bg-stone-700 active:translate-y-0.5 transition-transform"
         >
           Back
         </button>
@@ -272,7 +272,7 @@ export const ReputationShopScreen = memo(function ReputationShopScreen() {
             boxShadow: canPurchase ? '2px 2px 1px rgba(0,0,0,0.4)' : 'none',
             cursor: canPurchase ? 'pointer' : 'not-allowed',
           }}
-          className={`px-6 py-1.5 text-xs rounded-sm transition-transform ${
+          className={`px-6 py-1.5 text-xs font-bold rounded-sm transition-transform ${
             canPurchase
               ? 'bg-amber-800 text-amber-200 hover:bg-amber-700 active:translate-y-0.5'
               : 'bg-stone-900 text-stone-600'

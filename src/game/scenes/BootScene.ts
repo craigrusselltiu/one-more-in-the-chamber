@@ -82,6 +82,7 @@ export class BootScene extends Phaser.Scene {
     this.load.audio('sfx_revolver_cock', `${base}assets/audio/sfx/revolver_cock.wav`);
     this.load.audio('sfx_deadeye_activate', `${base}assets/audio/sfx/deadeye.wav`);
     this.load.audio('sfx_holster', `${base}assets/audio/sfx/holster.wav`);
+    this.load.audio('sfx_heal', `${base}assets/audio/sfx/heal.wav`);
     // Backgrounds
     this.load.image('act1_bg', `${base}assets/backgrounds/act1_bg.png`);
     this.load.image('act2_bg', `${base}assets/backgrounds/act2_bg.png`);
@@ -342,6 +343,8 @@ export class BootScene extends Phaser.Scene {
   /** Play a music track with fade-in. If already playing, do nothing. */
   private playTrack(key: string, volume = 0.5): void {
     if (this.currentKey === key && this.currentMusic) return;
+
+    if (key === 'main_menu') volume = 0.7;
 
     // Fade out current music first
     this.fadeOut(() => {

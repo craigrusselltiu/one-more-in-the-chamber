@@ -121,7 +121,7 @@ const AbilityStateRow = memo(function AbilityStateRow({
 }: AbilityStateRowProps) {
   const label = (
     <span
-      className={`text-[8px] leading-none font-bold whitespace-nowrap${ready ? ' ability-ready-text ability-ready-electric' : ''}${!ready && !isDeadeyeActive ? ' text-stone-300' : ''}`}
+      className={`text-[8px] leading-none font-bold whitespace-nowrap${ready ? ' ability-ready-text' : ''}${!ready && !isDeadeyeActive ? ' text-stone-300' : ''}`}
       style={{
         color: ready || isDeadeyeActive ? '#FFD700' : undefined,
         WebkitTextStroke: '2px #000',
@@ -162,9 +162,6 @@ const AbilityStateRow = memo(function AbilityStateRow({
           alt="SPACE"
           style={{ top: 0, imageRendering: 'pixelated' }}
         />
-        <span className="ability-spark" style={{ top: -2, left: -3, animationDelay: '0s' }} />
-        <span className="ability-spark" style={{ top: 0, right: -4, animationDelay: '0.3s' }} />
-        <span className="ability-spark" style={{ bottom: -2, left: 8, animationDelay: '0.6s' }} />
       </div>
     );
   }

@@ -274,7 +274,7 @@ export const StarterScreen = memo(function StarterScreen() {
                 }}
                 disabled={isApplying}
                 style={{ boxShadow: '3px 3px 2px rgba(0,0,0,0.7)' }}
-                className="px-4 py-2 text-sm rounded-sm bg-stone-800 text-stone-300 hover:bg-stone-700 transition-transform active:translate-y-0.5 disabled:opacity-70 disabled:cursor-not-allowed"
+                className="px-4 py-2 text-sm font-bold rounded-sm bg-stone-800 text-stone-300 hover:bg-stone-700 transition-transform active:translate-y-0.5 disabled:opacity-70 disabled:cursor-not-allowed"
               >
                 Back
               </button>
@@ -284,7 +284,7 @@ export const StarterScreen = memo(function StarterScreen() {
                 }}
                 disabled={!upgradeSelectedTile || isApplying}
                 style={{ boxShadow: '3px 3px 2px rgba(0,0,0,0.7)' }}
-                className={`px-6 py-2 text-sm rounded-sm transition-transform ${
+                className={`px-6 py-2 text-sm font-bold rounded-sm transition-transform ${
                   upgradeSelectedTile
                     ? 'bg-amber-800 text-amber-200 hover:bg-amber-700 active:translate-y-0.5'
                     : 'bg-stone-800 text-stone-600 cursor-not-allowed opacity-70'

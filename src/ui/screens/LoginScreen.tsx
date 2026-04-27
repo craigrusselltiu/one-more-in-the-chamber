@@ -94,7 +94,7 @@ function AmberButton({
       onClick={onClick}
       disabled={disabled}
       style={{ boxShadow: disabled ? 'none' : BUTTON_SHADOW }}
-      className={`px-4 py-1.5 text-[11px] rounded-sm transition-transform ${
+      className={`px-4 py-1.5 text-[11px] font-bold rounded-sm transition-transform ${
         disabled
           ? 'bg-stone-800 text-stone-600 cursor-not-allowed opacity-70'
           : 'bg-amber-800 text-amber-200 hover:bg-amber-700 active:translate-y-0.5'
@@ -118,7 +118,7 @@ function StoneButton({
     <button
       onClick={onClick}
       style={{ boxShadow: BUTTON_SHADOW, cursor: 'pointer' }}
-      className={`px-4 py-1.5 text-[11px] rounded-sm bg-stone-800 text-stone-300 hover:bg-stone-700 active:translate-y-0.5 transition-transform ${
+      className={`px-4 py-1.5 text-[11px] font-bold rounded-sm bg-stone-800 text-stone-300 hover:bg-stone-700 active:translate-y-0.5 transition-transform ${
         full ? 'w-full' : ''
       }`}
     >
@@ -460,7 +460,7 @@ export const LoginScreen = memo(function LoginScreen() {
         <button
           onClick={handleGoogle}
           style={{ boxShadow: BUTTON_SHADOW, cursor: 'pointer' }}
-          className="w-full flex items-center justify-center gap-2 px-4 py-1.5 text-[11px] rounded-sm bg-stone-900 text-stone-200 hover:bg-stone-800 active:translate-y-0.5 transition-transform"
+          className="w-full flex items-center justify-center gap-2 px-4 py-1.5 text-[11px] font-bold rounded-sm bg-stone-900 text-stone-200 hover:bg-stone-800 active:translate-y-0.5 transition-transform"
         >
           <GoogleMark />
           Continue with Google

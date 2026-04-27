@@ -13,10 +13,13 @@ import { TraitSystem } from './TraitSystem';
 import { ArtifactSystem } from './ArtifactSystem';
 import type { ResourceOutput } from './ResourceResolver';
 import { BoardHazardManager } from '../board/BoardHazardManager';
+import { TILE_SIZE } from '../board/Tile';
 import { TILE_COLORS, TILE_DEFINITIONS } from '../../data/tiles';
+import { TILE_HAZARD_TUTORIALS, TILE_POWERUP_TUTORIALS, buildTileTutorial, type TileTutorialEntry } from '../../data/tutorials';
+import { useTutorialStore } from '../../store/tutorialStore';
 import { chooseEnemyIntent } from './EnemyAI';
 import { BossController } from './BossController';
-import { playSwapFail, playMatch, playDeadeyeShot, playDeadeyeActivate, playHolster, playHit, playBlock, playBomb, playAbilityReady, playShuffle, playRevolverSpin } from '../../services/sfx';
+import { playSwapFail, playMatch, playDeadeyeShot, playDeadeyeActivate, playHolster, playHit, playBlock, playBomb, playAbilityReady, playShuffle, playRevolverSpin, playHeal } from '../../services/sfx';
 import { useRunStore } from '../../store/runStore';
 import { useCombatStore } from '../../store/combatStore';
 import { useMetaStore } from '../../store/metaStore';
@@ -259,13 +262,13 @@ export class CombatManager {
         for (const action of sof) {
           // Only execute board-level actions (poison, bury, lock, etc.)
           // Skip attacks/blocks since combat hasn't started yet
-          if (action.kind === 'poison_tiles') { if (!startOfFightHazardImmune) this.hazardManager.placeRandomPoison(action.value); }
-          else if (action.kind === 'bury') { if (!startOfFightHazardImmune) this.hazardManager.placeRandomSand(action.value); }
-          else if (action.kind === 'lock') { if (!startOfFightHazardImmune) this.hazardManager.placeRandomLocks(action.value); }
-          else if (action.kind === 'lock_row') { if (!startOfFightHazardImmune) this.hazardManager.lockRow(Math.floor(Math.random() * 8)); }
-          else if (action.kind === 'lock_column') { if (!startOfFightHazardImmune) this.hazardManager.lockColumn(Math.floor(Math.random() * 8)); }
-          else if (action.kind === 'suppress') { if (!startOfFightHazardImmune && !this.traits.isSuppressImmune()) this.hazardManager.placeRandomSuppress(action.value); }
-          else if (action.kind === 'bomb') { if (!startOfFightHazardImmune) this.hazardManager.placeRandomBombs(action.value, 3 + this.traits.getBombCountdownBonus()); }
+          if (action.kind === 'poison_tiles') { if (!startOfFightHazardImmune) this.triggerHazardTutorial('poison', this.hazardManager.placeRandomPoison(action.value).map(p => p.position)); }
+          else if (action.kind === 'bury') { if (!startOfFightHazardImmune) this.triggerHazardTutorial('sand', this.hazardManager.placeRandomSand(action.value).map(p => p.position)); }
+          else if (action.kind === 'lock') { if (!startOfFightHazardImmune) this.triggerHazardTutorial('lock', this.hazardManager.placeRandomLocks(action.value).map(p => p.position)); }
+          else if (action.kind === 'lock_row') { if (!startOfFightHazardImmune) this.triggerHazardTutorial('lock', this.hazardManager.lockRow(Math.floor(Math.random() * 8)).map(p => p.position)); }
+          else if (action.kind === 'lock_column') { if (!startOfFightHazardImmune) this.triggerHazardTutorial('lock', this.hazardManager.lockColumn(Math.floor(Math.random() * 8)).map(p => p.position)); }
+          else if (action.kind === 'suppress') { if (!startOfFightHazardImmune && !this.traits.isSuppressImmune()) this.triggerHazardTutorial('suppress', this.hazardManager.placeRandomSuppress(action.value).map(p => p.position)); }
+          else if (action.kind === 'bomb') { if (!startOfFightHazardImmune) this.triggerHazardTutorial('bomb', this.hazardManager.placeRandomBombs(action.value, 3 + this.traits.getBombCountdownBonus()).map(p => p.position)); }
           else if (action.kind === 'gain_cloak') enemy.state.cloak += action.value;
           else if (action.kind === 'gain_hardened') enemy.state.hardened += action.value;
           else if (action.kind === 'gain_grace') enemy.state.graceStacks += action.value;
@@ -864,6 +867,13 @@ export class CombatManager {
     EventBus.emit(GameEvent.GOLD_CHANGE, this.player.gold);
     EventBus.emit(GameEvent.SWAPS_CHANGE, this.swapsRemaining, this.swapsPerTurn);
     EventBus.emit(GameEvent.ABILITY_CHARGE_CHANGE, this.player.abilityCharge, this.player.abilityThreshold);
+
+    // If the resumed combat already has a full ability meter, replay the
+    // ready cue so the player isn't surprised by an active ability with no
+    // audio confirmation on continue.
+    if (this.player.abilityCharge >= this.player.abilityThreshold && !this.isDeadeyeActive) {
+      playAbilityReady();
+    }
   }
 
   // ---------------------------------------------------------------------------
@@ -882,6 +892,12 @@ export class CombatManager {
     // Tinnitus only hides intents on turn 1 -- reveal from turn 2 onward.
     if (this.turnNumber > 1) {
       useCombatStore.getState().setIntentsHidden(false);
+    }
+
+    // First-time spotlight tutorials for special player-side tiles already
+    // sitting on the board at fight start (Showdown/Mirage/Tumbleweed/Shadow).
+    if (this.turnNumber === 1) {
+      this.scanBoardForPowerupTutorials();
     }
 
     this.resetTurnSwapState();
@@ -928,11 +944,18 @@ export class CombatManager {
     }
 
     // Per-turn: +1 ability charge (capped at threshold). Defer while Deadeye is active.
+    const wasAlreadyReady = this.player.abilityCharge >= this.player.abilityThreshold;
     if (this.isDeadeyeActive) {
       this.pendingAbilityCharge++;
     } else if (this.player.abilityCharge < this.player.abilityThreshold) {
       this.player.abilityCharge++;
       if (this.player.abilityCharge >= this.player.abilityThreshold) playAbilityReady();
+    }
+
+    // Fresh combat that begins with a carry-over full ability meter (no
+    // increment fires) still needs the ready cue on turn 1.
+    if (this.turnNumber === 1 && wasAlreadyReady && !this.isDeadeyeActive) {
+      playAbilityReady();
     }
 
     // Trait turn-start effects (Sheriff block, etc.)
@@ -1005,14 +1028,19 @@ export class CombatManager {
       || transformedTileTypes.some((type, index) => type !== this.player.activeTileTypes[index]);
 
     let boardTilesChanged = false;
-    for (const row of this.board.getGrid()) {
-      for (const tile of row) {
+    let firstCheesePos: GridPosition | null = null;
+    for (let r = 0; r < this.board.getGrid().length; r++) {
+      const row = this.board.getGrid()[r];
+      for (let c = 0; c < row.length; c++) {
+        const tile = row[c];
         if (tile?.type === 'milk') {
           tile.setType('cheese');
           boardTilesChanged = true;
+          if (!firstCheesePos) firstCheesePos = { row: r, col: c };
         }
       }
     }
+    if (firstCheesePos) this.triggerPowerupTutorial('cheese', firstCheesePos);
 
     if (!ownedTilesChanged && !boardTilesChanged) return;
 
@@ -1113,6 +1141,9 @@ export class CombatManager {
     }
     if (this.phase !== 'swap-phase' || this.swapsRemaining <= 0) return;
     if (this.board.getIsResolving()) return;
+    // Block input while a tutorial dialog is active -- the player should
+    // dismiss the dialog before continuing to swap.
+    if (useTutorialStore.getState().activeSequence) return;
 
     // If the board has no legal swaps, reshuffle first and don't consume a swap.
     if (!this.board.hasValidMoves() && this.lassoSwapsRemaining <= 0) {
@@ -1262,6 +1293,7 @@ export class CombatManager {
    */
   endTurnEarly(): void {
     if (this.phase !== 'swap-phase' && this.phase !== 'consumable-window') return;
+    if (useTutorialStore.getState().activeSequence) return;
     this.endTurn();
   }
 
@@ -1291,6 +1323,7 @@ export class CombatManager {
   activateDeadeye(): boolean {
     if (this.phase !== 'swap-phase' && this.phase !== 'consumable-window') return false;
     if (!this.player.isDeadeyeReady()) return false;
+    if (useTutorialStore.getState().activeSequence) return false;
 
     playDeadeyeActivate();
     this.isDeadeyeActive = true;
@@ -1548,6 +1581,7 @@ export class CombatManager {
    */
   async useConsumable(consumableId: string): Promise<boolean> {
     if (this.phase !== 'consumable-window' && this.phase !== 'swap-phase') return false;
+    if (useTutorialStore.getState().activeSequence) return false;
 
     // Last Call Bell: consumables trigger twice
     const triggerCount = this.artifacts.has('last_call_bell') ? 2 : 1;
@@ -1844,9 +1878,10 @@ export class CombatManager {
 
       // Ace stacks: consumed on direct player swaps and explicit player-used
       // specials like Showdown. Explosive/cascade spillover does not consume it.
+      // A miss (Chip miss, Twin Revolvers miss) does not consume Ace.
       const aceEligible = match.consumesAce
         || (comboMultiplier === 1.0 && !forceCascadeForCloak && !match.isChainDestruction);
-      if (match.tileType !== 'ace' && aceEligible && this.player.aceStacks > 0) {
+      if (match.tileType !== 'ace' && aceEligible && !output.missed && this.player.aceStacks > 0) {
         multiplier *= this.player.consumeAce();
       }
 
@@ -2161,12 +2196,66 @@ export class CombatManager {
     EventBus.emit(GameEvent.FLOATING_NUMBER, 'player', 0, text, color, fontSize);
   }
 
+  /** Trigger the matching tutorial for a hazard placement (lock/poison/etc.)
+   *  the first time the player encounters it. Spotlight is anchored to the
+   *  actual board tile so the player knows which cell the dialog is about. */
+  private triggerHazardTutorial(hazardType: string, positions: GridPosition[]): void {
+    if (positions.length === 0) return;
+    const entry = TILE_HAZARD_TUTORIALS[hazardType];
+    if (!entry) return;
+    this.spotlightTileTutorial(entry, positions[0]);
+  }
+
+  /** Trigger the matching tutorial for a special "powerup" tile state
+   *  (Cheese transformation, Showdown, Mirage reveal, etc.) when the player
+   *  first encounters it. */
+  private triggerPowerupTutorial(tileType: string, position: GridPosition): void {
+    const entry = TILE_POWERUP_TUTORIALS[tileType];
+    if (!entry) return;
+    this.spotlightTileTutorial(entry, position);
+  }
+
+  /** Scan the board on combat start and trigger powerup-tile tutorials for
+   *  any special tile types the player hasn't seen on the board before
+   *  (Showdown, Mirage, Tumbleweed, Shadow). Only one tutorial is queued per
+   *  call; the next eligible one fires on a later combat. */
+  private scanBoardForPowerupTutorials(): void {
+    const grid = this.board.getGrid();
+    for (let r = 0; r < grid.length; r++) {
+      const row = grid[r];
+      for (let c = 0; c < row.length; c++) {
+        const tile = row[c];
+        if (!tile) continue;
+        const t = tile.type as string;
+        if (TILE_POWERUP_TUTORIALS[t]) {
+          this.triggerPowerupTutorial(t, { row: r, col: c });
+          return;
+        }
+      }
+    }
+  }
+
+  private spotlightTileTutorial(entry: TileTutorialEntry, position: GridPosition): void {
+    if (useMetaStore.getState().isTutorialComplete(entry.id)) return;
+    const padding = 4;
+    const x = this.board.tileX(position.col) - padding;
+    const y = this.board.tileY(position.row) - padding;
+    const sequence = buildTileTutorial(entry, {
+      x,
+      y,
+      width: TILE_SIZE + padding * 2,
+      height: TILE_SIZE + padding * 2,
+    });
+    useTutorialStore.getState().startTutorial(sequence);
+  }
+
   private emitPlayerBlood(): void {
     EventBus.emit(GameEvent.PLAYER_BLOOD_EFFECT);
   }
 
   private emitPlayerHealEffect(): void {
     EventBus.emit(GameEvent.PLAYER_HEAL_EFFECT);
+    playHeal();
   }
 
   private emitEnemyBlood(enemy: Enemy): void {
@@ -2175,6 +2264,7 @@ export class CombatManager {
 
   private emitEnemyHealEffect(enemy: Enemy): void {
     EventBus.emit(GameEvent.ENEMY_HEAL_EFFECT, enemy.state.id);
+    playHeal();
   }
 
   /** Grant Jail Cell Keys block per lock cleared by consumables (Skeleton Key, Panacea). */
@@ -2970,16 +3060,16 @@ export class CombatManager {
         if (this.isBossEnemy(enemy)) this.artifacts.onBossGainedBlock(this.player);
         break;
       case 'lock':
-        if (this.player.protectedStacks <= 0) this.hazardManager.placeRandomLocks(ma.value);
+        if (this.player.protectedStacks <= 0) this.triggerHazardTutorial('lock', this.hazardManager.placeRandomLocks(ma.value).map(p => p.position));
         break;
       case 'lock_row':
-        if (this.player.protectedStacks <= 0) this.hazardManager.lockRow(Math.floor(Math.random() * 8));
+        if (this.player.protectedStacks <= 0) this.triggerHazardTutorial('lock', this.hazardManager.lockRow(Math.floor(Math.random() * 8)).map(p => p.position));
         break;
       case 'lock_column':
-        if (this.player.protectedStacks <= 0) this.hazardManager.lockColumn(Math.floor(Math.random() * 8));
+        if (this.player.protectedStacks <= 0) this.triggerHazardTutorial('lock', this.hazardManager.lockColumn(Math.floor(Math.random() * 8)).map(p => p.position));
         break;
       case 'poison_tiles':
-        if (this.player.protectedStacks <= 0) this.hazardManager.placeRandomPoison(ma.value);
+        if (this.player.protectedStacks <= 0) this.triggerHazardTutorial('poison', this.hazardManager.placeRandomPoison(ma.value).map(p => p.position));
         break;
       case 'apply_poison':
         if (this.player.protectedStacks <= 0 && !this.player.tryAbsorbDebuff()) {
@@ -2988,19 +3078,20 @@ export class CombatManager {
         }
         break;
       case 'bomb':
-        if (this.player.protectedStacks <= 0) this.hazardManager.placeRandomBombs(ma.value, 3 + this.traits.getBombCountdownBonus());
+        if (this.player.protectedStacks <= 0) this.triggerHazardTutorial('bomb', this.hazardManager.placeRandomBombs(ma.value, 3 + this.traits.getBombCountdownBonus()).map(p => p.position));
         break;
       case 'bury':
-        if (this.player.protectedStacks <= 0) this.hazardManager.placeRandomSand(ma.value);
+        if (this.player.protectedStacks <= 0) this.triggerHazardTutorial('sand', this.hazardManager.placeRandomSand(ma.value).map(p => p.position));
         break;
       case 'suppress':
-        if (this.player.protectedStacks <= 0 && !this.traits.isSuppressImmune()) this.hazardManager.placeRandomSuppress(ma.value);
+        if (this.player.protectedStacks <= 0 && !this.traits.isSuppressImmune()) this.triggerHazardTutorial('suppress', this.hazardManager.placeRandomSuppress(ma.value).map(p => p.position));
         break;
       case 'fools_gold':
         if (this.player.protectedStacks <= 0) {
           const placements = this.hazardManager.placeRandomFoolsGold(ma.value);
           if (placements.length > 0) {
             useMetaStore.getState().discoverTile('fools_gold');
+            this.triggerPowerupTutorial('fake_coin', placements[0].position);
           }
           await this.resolveBoardCascades(true);
         }

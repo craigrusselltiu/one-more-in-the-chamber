@@ -306,7 +306,7 @@ function TilesPopup({
               <Tooltip key={tileType} content={tooltipContent} secondContent={keywordTooltip} position="bottom" align="left">
                 <div className="flex items-center gap-2">
                   <SpriteIcon frame={TILE_FRAMES[tileType]} scale={1} />
-                  <span className="text-amber-300 text-xs font-bold">{def.label}</span>
+                  <span className="text-yellow-400 text-xs font-bold">{def.label}</span>
                   <span className="text-yellow-400" style={{ fontSize: '8px' }}>
                     Lv {baseLevel + 1}{bonus > 0 ? ` (+${bonus})` : ''}
                   </span>

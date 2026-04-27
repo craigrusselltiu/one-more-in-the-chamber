@@ -574,6 +574,10 @@ export const TILE_DEFINITIONS: Record<TileType, TileDefinition> = {
 export const CHARACTER_TILES: Record<import('../types/game').CharacterId, TileType[]> = {
   red_panda: ['bullet', 'iron', 'shank', 'bounty'],
   reno: ['ace', 'iron', 'gold', 'chip'],
+  rudy: ['bullet', 'iron', 'shank', 'bounty'],
+  reap: ['bullet', 'iron', 'shank', 'bounty'],
+  rita: ['bullet', 'iron', 'shank', 'bounty'],
+  riff: ['bullet', 'iron', 'shank', 'bounty'],
 };
 
 export const STARTER_POOL: TileType[] = [

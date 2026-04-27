@@ -1,6 +1,7 @@
 import { memo, useEffect, useRef } from 'react';
 import { useRunStore } from '../../store/runStore';
 import { EventBus, GameEvent } from '../../game/EventBus';
+import { playHeal, playHit } from '../../services/sfx';
 
 /**
  * Subscribes to run store gold/health and emits topbar floating numbers
@@ -32,6 +33,8 @@ export const NonCombatFloats = memo(function NonCombatFloats() {
         const text = delta > 0 ? `+${delta}` : `${delta}`;
         const color = delta > 0 ? '#66ff66' : '#ff6666';
         EventBus.emit(GameEvent.FLOATING_NUMBER, 'topbar-health', 0, text, color, 13);
+        if (delta > 0) playHeal();
+        else if (delta < 0) playHit();
       }
       healthRef.current = run.health;
     });

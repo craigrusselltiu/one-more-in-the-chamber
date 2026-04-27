@@ -225,6 +225,7 @@ export class ArtifactSystem {
     if (twinRevolversActive) {
       if (twinRevolversMissed) {
         modified.damage = 0;
+        modified.missed = true;
       } else {
         modified.damage = Math.round(modified.damage * 1.5);
       }

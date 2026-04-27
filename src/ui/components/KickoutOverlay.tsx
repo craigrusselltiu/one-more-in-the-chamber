@@ -37,7 +37,7 @@ export const KickoutOverlay = memo(function KickoutOverlay() {
         <button
           onClick={handleReturn}
           style={{ boxShadow: '2px 2px 1px rgba(0,0,0,0.4)', cursor: 'pointer' }}
-          className="px-5 py-1.5 text-[11px] rounded-sm bg-amber-800 text-amber-200 hover:bg-amber-700 active:translate-y-0.5 transition-transform"
+          className="px-5 py-1.5 text-[11px] font-bold rounded-sm bg-amber-800 text-amber-200 hover:bg-amber-700 active:translate-y-0.5 transition-transform"
         >
           Back to Main Menu
         </button>

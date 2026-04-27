@@ -168,7 +168,7 @@ export const TileSelectScreen = memo(function TileSelectScreen() {
         onClick={handleConfirm}
         disabled={!selected}
         style={{ boxShadow: '3px 3px 2px rgba(0,0,0,0.7)' }}
-        className={`mt-10 px-5 py-1.5 text-xs rounded-sm transition-transform ${
+        className={`mt-10 px-5 py-1.5 text-xs font-bold rounded-sm transition-transform ${
           selected
             ? 'bg-amber-800 text-amber-200 hover:bg-amber-700 active:translate-y-0.5'
             : 'bg-stone-800 text-stone-600 cursor-not-allowed opacity-70'

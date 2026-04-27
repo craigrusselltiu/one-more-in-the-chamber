@@ -82,7 +82,7 @@ export const CampfireScreen = memo(function CampfireScreen() {
         <button
           onClick={handleLeave}
           style={{ boxShadow: '3px 3px 2px rgba(0,0,0,0.7)' }}
-          className="px-6 py-2 text-sm rounded-sm bg-amber-800 text-amber-200 hover:bg-amber-700 transition-transform active:translate-y-0.5"
+          className="px-6 py-2 text-sm font-bold rounded-sm bg-amber-800 text-amber-200 hover:bg-amber-700 transition-transform active:translate-y-0.5"
         >
           Continue
         </button>
@@ -103,7 +103,7 @@ export const CampfireScreen = memo(function CampfireScreen() {
         <button
           onClick={handleLeave}
           style={{ boxShadow: '3px 3px 2px rgba(0,0,0,0.7)' }}
-          className="px-6 py-2 text-sm rounded-sm bg-amber-800 text-amber-200 hover:bg-amber-700 transition-transform active:translate-y-0.5"
+          className="px-6 py-2 text-sm font-bold rounded-sm bg-amber-800 text-amber-200 hover:bg-amber-700 transition-transform active:translate-y-0.5"
         >
           Continue
         </button>

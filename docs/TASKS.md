@@ -44,4 +44,9 @@ todo:
 - add artifacts
 - add character
 - add more sound effects, ult animation
-- cascade keyword
+- ace should not get consumed if chip misses
+- make ironeye harder
+- make monkeys easier
+- add dark overlay to victory/defeat screen
+- remove pre-1.0.0 changelog entries
+- status effect tooltips are cut off

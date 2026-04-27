@@ -11,6 +11,8 @@ import { EventBus, GameEvent } from '../EventBus';
 import { TILE_COLORS } from '../../data/tiles';
 import { playMatch } from '../../services/sfx';
 import { useMetaStore } from '../../store/metaStore';
+import { useTutorialStore } from '../../store/tutorialStore';
+import { TILE_POWERUP_TUTORIALS, buildTileTutorial } from '../../data/tutorials';
 
 const BOARD_SIZE = 8;
 
@@ -1082,14 +1084,33 @@ export class Board {
 
     if (kind === 'explosive') {
       tile.setExplosive(true);
+      this.maybeTriggerTilePowerupTutorial('explosive', row, col);
     } else if (kind === 'showdown') {
       tile.setShowdown(true);
       useMetaStore.getState().discoverTile('showdown');
+      this.maybeTriggerTilePowerupTutorial('showdown', row, col);
     } else if (kind === 'shadow') {
       tile.setShadow(true);
+      this.maybeTriggerTilePowerupTutorial('shadow', row, col);
     }
 
     this.grid[row][col] = tile;
+  }
+
+  /** Fire the matching tile-powerup tutorial if the player hasn't seen it
+   *  yet, with a spotlight on the actual tile that just appeared. */
+  private maybeTriggerTilePowerupTutorial(key: string, row: number, col: number): void {
+    const entry = TILE_POWERUP_TUTORIALS[key];
+    if (!entry) return;
+    if (useMetaStore.getState().isTutorialComplete(entry.id)) return;
+    const padding = 4;
+    const spotlight = {
+      x: this.tileX(col) - padding,
+      y: this.tileY(row) - padding,
+      width: TILE_SIZE + padding * 2,
+      height: TILE_SIZE + padding * 2,
+    };
+    useTutorialStore.getState().startTutorial(buildTileTutorial(entry, spotlight));
   }
 
   /** Apply Shadow augment to N random non-hazarded, non-special tiles. */

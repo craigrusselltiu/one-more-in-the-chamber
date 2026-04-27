@@ -25,6 +25,9 @@ export interface ResourceOutput {
   chipDamageIfHit?: number;
   /** Double Down artifact: HP penalty on chip miss. */
   doubleDownPenalty?: number;
+  /** True when the attack rolled a miss (Chip miss, Twin Revolvers miss).
+   *  Suppresses Ace consumption since no shot landed. */
+  missed?: boolean;
   isAoE: boolean;
   /** If true, damage pierces block. */
   piercesBlock: boolean;
@@ -289,6 +292,7 @@ export class ResourceResolver {
         output.damage = hit ? total : 0;
         output.chipHit = hit;
         output.chipDamageIfHit = total;
+        if (!hit) output.missed = true;
         break;
       }
 

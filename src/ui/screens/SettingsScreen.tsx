@@ -143,6 +143,33 @@ function VolumeSlider({
   );
 }
 
+/** TEMP: dev/playtest button to wipe tutorial completion flags so every
+ *  tutorial fires fresh next time it's encountered. Remove once tutorials
+ *  are finalized. */
+function ResetTutorialsRow() {
+  const resetTutorials = useMetaStore((s) => s.resetTutorials);
+  const [justReset, setJustReset] = useState(false);
+  return (
+    <SettingRow
+      label="Reset Tutorials (Temp)"
+      description={justReset ? 'Cleared! All tutorials will replay.' : 'Replay every tutorial from scratch.'}
+      control={
+        <button
+          onClick={() => {
+            resetTutorials();
+            setJustReset(true);
+            setTimeout(() => setJustReset(false), 2000);
+          }}
+          style={{ boxShadow: '2px 2px 1px rgba(0,0,0,0.4)', cursor: 'pointer' }}
+          className="px-3 py-1 text-[10px] font-bold rounded-sm bg-stone-800 text-stone-300 hover:bg-stone-700 active:translate-y-0.5 transition-transform"
+        >
+          Reset
+        </button>
+      }
+    />
+  );
+}
+
 /** Amber primary button, matching the tile-select / merchant idiom. */
 function AmberButton({
   children,
@@ -160,7 +187,7 @@ function AmberButton({
       onClick={onClick}
       disabled={disabled}
       style={{ boxShadow: disabled ? 'none' : '2px 2px 1px rgba(0,0,0,0.4)' }}
-      className={`${small ? 'px-3 py-1 text-[10px]' : 'px-5 py-1.5 text-xs'} rounded-sm transition-transform ${
+      className={`${small ? 'px-3 py-1 text-[10px] font-bold' : 'px-5 py-1.5 text-xs font-bold'} rounded-sm transition-transform ${
         disabled
           ? 'bg-stone-800 text-stone-600 cursor-not-allowed opacity-70'
           : 'bg-amber-800 text-amber-200 hover:bg-amber-700 active:translate-y-0.5'
@@ -184,7 +211,7 @@ function StoneButton({
     <button
       onClick={onClick}
       style={{ boxShadow: '2px 2px 1px rgba(0,0,0,0.4)', cursor: 'pointer' }}
-      className={`${small ? 'px-3 py-1 text-[10px]' : 'px-5 py-1.5 text-xs'} rounded-sm bg-stone-800 text-stone-300 hover:bg-stone-700 active:translate-y-0.5 transition-transform`}
+      className={`${small ? 'px-3 py-1 text-[10px] font-bold' : 'px-5 py-1.5 text-xs font-bold'} rounded-sm bg-stone-800 text-stone-300 hover:bg-stone-700 active:translate-y-0.5 transition-transform`}
     >
       {children}
     </button>
@@ -204,7 +231,7 @@ function RedButton({
     <button
       onClick={onClick}
       style={{ boxShadow: '2px 2px 1px rgba(0,0,0,0.4)', cursor: 'pointer' }}
-      className={`${small ? 'px-3 py-1 text-[10px]' : 'px-5 py-1.5 text-xs'} rounded-sm bg-red-900 text-red-200 hover:bg-red-800 active:translate-y-0.5 transition-transform`}
+      className={`${small ? 'px-3 py-1 text-[10px] font-bold' : 'px-5 py-1.5 text-xs font-bold'} rounded-sm bg-red-900 text-red-200 hover:bg-red-800 active:translate-y-0.5 transition-transform`}
     >
       {children}
     </button>
@@ -370,6 +397,10 @@ export const SettingsScreen = memo(function SettingsScreen() {
             checked={tutorialsEnabled}
             onChange={setTutorialsEnabled}
           />
+          {/* TEMP: dev/playtest helper -- wipes the per-tutorial completion
+              flags so every tutorial fires fresh on the next encounter.
+              Remove once tutorials are finalized. */}
+          <ResetTutorialsRow />
         </div>
       </div>
 
@@ -454,7 +485,7 @@ export const CombatSettingsPopup = memo(function CombatSettingsPopup({
         style={{ width: 280, backgroundColor: 'rgba(28, 25, 23, 0.95)', boxShadow: '3px 3px 2px rgba(0,0,0,0.7)' }}
       >
         <h3
-          className="text-[11px] text-amber-400 text-center font-bold uppercase"
+          className="font-title text-sm text-amber-400 text-center font-bold uppercase mb-1"
           style={{ WebkitTextStroke: '2px #000', paintOrder: 'stroke fill', letterSpacing: '1px' }}
         >
           Settings

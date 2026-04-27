@@ -93,7 +93,7 @@ export interface LastRunSummary {
   endedAt: number;
 }
 
-export type CharacterId = 'red_panda' | 'reno';
+export type CharacterId = 'red_panda' | 'reno' | 'rudy' | 'reap' | 'rita' | 'riff';
 
 export type Act = 1 | 2 | 3;
 

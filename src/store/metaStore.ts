@@ -106,6 +106,7 @@ interface MetaStore {
   setEquippedTitle: (id: string | null) => void;
   markTutorialComplete: (id: string) => void;
   isTutorialComplete: (id: string) => boolean;
+  resetTutorials: () => void;
   /** Clear all account-scoped progression back to first-launch defaults. Used on sign-out
    *  so a subsequent login doesn't merge the previous account's unlocks into the new one. */
   resetToDefaults: () => void;
@@ -410,6 +411,13 @@ export const useMetaStore = create<MetaStore>((set, get) => ({
   isTutorialComplete: (id) => {
     return get().meta.completedTutorials.includes(id);
   },
+
+  resetTutorials: () =>
+    set((state) => {
+      const meta = { ...state.meta, completedTutorials: [] };
+      persistMeta(meta);
+      return { meta };
+    }),
 
   resetToDefaults: () =>
     set(() => {

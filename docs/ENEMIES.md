@@ -218,13 +218,13 @@ I want just the text prompt that I can copy straight into Gemini. No formatting,
 
 ## Early Normal Encounters
 - 1 Prospector Gone Mad
-- 2 Powder Monkeys
+- 1 Powder Monkey, 1 Mining Canary
 - 2 Tunnel Rats
 - 3 Mining Canaries
 
 ## Late Normal Encounters
 - 1 Prospector, 2 Mining Canaries
-- 3 Powder Monkeys
+- 2 Powder Monkeys
 - 1 Tunnel Rat, 1 Powder Monkey, 1 Mining Canary
 - Any 2 Normal Enemy (Can't be Mining Canaries or both be Prospectors)
 
@@ -342,6 +342,6 @@ I want just the text prompt that I can copy straight into Gemini. No formatting,
 - When HP drops below 50%, Gain 5 Rageful, 1 Invulnerable, Apply 1 Terrified, Apply 1 Vulnerable. Sprite changes to ironeye_alt.
 - Moves:
     - Attack 15, Lock 1 row, Lock 1 column
-    - Attack 22, Suppress 2
-    - Attack 28
-    - Suppress 4
+    - Attack 22, Suppress 2, Bury 5
+    - Attack 28, Poison 5
+    - Suppress 4, Bomb 4

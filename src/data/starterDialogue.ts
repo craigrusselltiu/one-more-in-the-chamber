@@ -12,6 +12,14 @@ export const CHARACTER_GREETINGS: Record<CharacterId, string> = {
     "Well, I'll be. {{yellow:Rust}}. Thought you'd be halfway to the territory by now. Sit a spell before you ride out.",
   reno:
     "{{yellow:Reno}}. You got that look in your eye again -- the one that gets a man buried. Come 'ere.",
+  rudy:
+    "{{yellow:Rudy}}. You always were the stubborn sort. Watch your back out there.",
+  reap:
+    "{{yellow:Reap}}. Can't say I'm surprised to see you in these parts.",
+  rita:
+    "{{yellow:Rita}}. I thought I felt a chill in the air.",
+  riff:
+    "{{yellow:Riff}}. Play us a tune before you go, would ya?",
 };
 
 /** Shared second line that kicks off the offer. */

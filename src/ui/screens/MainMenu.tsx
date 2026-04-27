@@ -367,14 +367,14 @@ export const MainMenu = memo(function MainMenu({
               <button
                 onClick={handleConfirmNewGame}
                 style={{ boxShadow: '2px 2px 1px rgba(0,0,0,0.4)', cursor: 'pointer' }}
-                className="px-4 py-1.5 text-[11px] rounded-sm bg-red-900 text-red-200 hover:bg-red-800 active:translate-y-0.5 transition-transform"
+                className="px-4 py-1.5 text-[11px] font-bold rounded-sm bg-red-900 text-red-200 hover:bg-red-800 active:translate-y-0.5 transition-transform"
               >
                 Delete &amp; Start New
               </button>
               <button
                 onClick={handleCancelNewGame}
                 style={{ boxShadow: '2px 2px 1px rgba(0,0,0,0.4)', cursor: 'pointer' }}
-                className="px-4 py-1.5 text-[11px] rounded-sm bg-stone-800 text-stone-300 hover:bg-stone-700 active:translate-y-0.5 transition-transform"
+                className="px-4 py-1.5 text-[11px] font-bold rounded-sm bg-stone-800 text-stone-300 hover:bg-stone-700 active:translate-y-0.5 transition-transform"
               >
                 Cancel
               </button>
@@ -422,7 +422,7 @@ export const MainMenu = memo(function MainMenu({
             </div>
             <button
               onClick={() => setShowChangelog(false)}
-              className="mt-3 px-4 py-1.5 text-[11px] rounded-sm bg-stone-800 text-stone-300 hover:bg-stone-700 active:translate-y-0.5 transition-transform self-center"
+              className="mt-3 px-4 py-1.5 text-[11px] font-bold rounded-sm bg-stone-800 text-stone-300 hover:bg-stone-700 active:translate-y-0.5 transition-transform self-center"
               style={{ boxShadow: '2px 2px 1px rgba(0,0,0,0.4)', cursor: 'pointer' }}
             >
               Close
