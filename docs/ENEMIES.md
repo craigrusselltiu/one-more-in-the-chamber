@@ -153,7 +153,6 @@ I want just the text prompt that I can copy straight into Gemini. No formatting,
     - Attack 9, Lock 2
     - Attack 2x3, Bury 4
     - Attack 3, Lock 5
-- NOTE: If there are multiple of them, only 1 of them should be doing Attack 2x3, Bury 4
 
 ### Tunnel Rat
 - Base HP: 84
@@ -232,14 +231,16 @@ I want just the text prompt that I can copy straight into Gemini. No formatting,
 
 ### "Copperhead" Cassidy
 - Base HP: 287
+- Start of fight: Poison 4 Tiles
 - Starts with 1 Rattlesnake (with full HP, not 1/3)
 - When HP drops below 50%, clear ALL statuses, and should show a float text "SHED SKIN", then locks all tiles on the edge of the board.
 - Moves:
     - Attack 24, Poison 4 Tiles
-    - Attack 16, Block 16, Apply 3 Poison
-    - Multi-attack 4x<number-of-poison-tiles-on-board>
+    - Attack 16, Block 16, Poison 3 Tiles
+    - Multi-attack 4x(3+<number-of-poison-tiles-on-board>)
     - Attack 12, Poison 2 Tiles, Fool's Gold 8
-    - Clear all poison tiles on the board and heal 2% max HP for each. If none, gain 2 Vulnerable
+    - Heal 5% + 2%*<number-of-poison-tiles-on-board> max HP and clear all Poison tiles; if none, gain 2 Vulnerable
+- NOTE: The move she does after healing is always Block 30, Poison 6 Tiles
 
 # Act 3 -- The Town
 

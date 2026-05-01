@@ -8,6 +8,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
 ### Changed
 - Updated the visible alpha version to v1.2.0.
+- Updated Act 2 encounter presets and Copperhead Cassidy's poison-focused boss pattern.
 
 ### Fixed
 - Iron Eye Isabella now uses her full boss move set, including buried tiles, poison tiles, and bombs.

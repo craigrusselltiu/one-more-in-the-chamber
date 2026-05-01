@@ -8,3 +8,10 @@ dist/
 .claude/worktrees/
 docs/references/
 AGENTS.md
+
+# togi (local sprite/background processing)
+tools/raw/
+tools/processed/
+tools/togi.toml
+tools/*.hex
+tools/*palette*.txt

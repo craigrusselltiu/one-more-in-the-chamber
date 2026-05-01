@@ -294,13 +294,14 @@ export const COPPERHEAD_CASSIDY: EnemyDefinition = {
   health: 287,
   minDamage: 4, maxDamage: 24,
   abilities: ['poison', 'block', 'fools_gold'],
+  startOfFight: [poisonTiles(4)],
   // Phase transition at 50% HP handled by BossController (clear statuses, lock edges)
   moves: [
     m(atk(24), poisonTiles(4)),
-    m(atk(16), block(16), applyPoison(3)),
-    m(multiAtk(4, 3)),  // hits = poison tiles on board (handled by boss controller)
+    m(atk(16), block(16), poisonTiles(3)),
+    m(multiAtk(4, 3)),  // hits = 3 + poison tiles on board (handled by CombatManager)
     m(atk(12), poisonTiles(2), foolsGold(8)),
-    m(heal(0)),  // clear poison tiles + heal 2% per tile (handled by boss controller)
+    m(heal(0)),  // heal based on poison tiles, clear them, then force Block 30 + Poison 6
   ],
 };
 
@@ -308,14 +309,14 @@ export const ACT2_ENEMIES: Record<string, EnemyDefinition> = { ...ACT2_NORMAL, .
 
 export const ACT2_EARLY_ENCOUNTERS: string[][] = [
   ['prospector_gone_mad'],
-  ['powder_monkey', 'powder_monkey'],
+  ['powder_monkey', 'mining_canary'],
   ['tunnel_rat', 'tunnel_rat'],
   ['mining_canary', 'mining_canary', 'mining_canary'],
 ];
 
 export const ACT2_LATE_ENCOUNTERS: string[][] = [
   ['prospector_gone_mad', 'mining_canary', 'mining_canary'],
-  ['powder_monkey', 'powder_monkey', 'powder_monkey'],
+  ['powder_monkey', 'powder_monkey'],
   ['tunnel_rat', 'powder_monkey', 'mining_canary'],
 ];
 

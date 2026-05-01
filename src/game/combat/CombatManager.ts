@@ -3032,11 +3032,10 @@ export class CombatManager {
         if (enemy.state.ragefulStacks > 0) enemy.state.ragefulStacks--;
         break;
       case 'multi_attack': {
-        // Copperhead: hits = number of poison tiles on board
+        // Copperhead: hits = 3 + number of poison tiles on board
         let hits = ma.hits ?? 2;
         if (enemy.getDefinition().type === 'copperhead_cassidy') {
-          hits = this.hazardManager.countHazards('poison');
-          if (hits <= 0) hits = 1;
+          hits = 3 + this.hazardManager.countHazards('poison');
         }
         for (let i = 0; i < hits; i++) {
           this.executeEnemyAttack(enemy, ma.value);
@@ -3101,17 +3100,22 @@ export class CombatManager {
         break;
       case 'heal': {
         let healAmount = ma.value;
-        // Copperhead: clear all poison tiles and heal 2% max HP per tile cleared.
-        // If there are no poison tiles on the board, she gains 2 Vulnerable on herself instead.
+        // Copperhead: heal 5% + 2% max HP per poison tile, clear poison tiles, then force a recovery move.
+        // If there are no poison tiles on the board, she gains 2 Vulnerable instead.
         if (enemy.getDefinition().type === 'copperhead_cassidy' && ma.value === 0) {
-          const poisonCleared = this.hazardManager.clearAllOfType('poison');
-          if (poisonCleared.length === 0) {
+          const poisonTiles = this.hazardManager.countHazards('poison');
+          enemy.forcedNextMove = [
+            { kind: 'block', value: 30 },
+            { kind: 'poison_tiles', value: 6 },
+          ];
+          if (poisonTiles === 0) {
             enemy.addVulnerable(2);
             this.floatOnEnemy(enemy, '+2 VULNERABLE', '#C070D0', 9);
             EventBus.emit(GameEvent.ENEMY_HP_CHANGE, { ...enemy.state });
             break;
           }
-          healAmount = Math.round(enemy.state.maxHealth * 0.02 * poisonCleared.length);
+          this.hazardManager.clearAllOfType('poison');
+          healAmount = Math.round(enemy.state.maxHealth * (0.05 + 0.02 * poisonTiles));
         }
         if (healAmount > 0) {
           // Hellfire Preacher: heal injured ally if one exists, otherwise heal self
@@ -3709,7 +3713,7 @@ export class CombatManager {
     if (enemy.getDefinition().type === 'copperhead_cassidy' && enemy.state.intent.actions) {
       for (const a of enemy.state.intent.actions) {
         if (a.kind === 'multi_attack') {
-          a.hits = Math.max(1, this.hazardManager.countHazards('poison'));
+          a.hits = 3 + this.hazardManager.countHazards('poison');
         }
       }
     }
