@@ -497,9 +497,9 @@ export const IRON_EYE_ISABELLA: EnemyDefinition = {
   }],
   moves: [
     m(atk(15), lockRow(), lockCol()),
-    m(atk(22), suppress(2)),
-    m(atk(28)),
-    m(suppress(4)),
+    m(atk(22), suppress(2), bury(5)),
+    m(atk(28), poisonTiles(5)),
+    m(suppress(4), bomb(4)),
   ],
 };
 

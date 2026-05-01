@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## v1.2.0
+
+### Changed
+- Updated the visible alpha version to v1.2.0.
+
+### Fixed
+- Iron Eye Isabella now uses her full boss move set, including buried tiles, poison tiles, and bombs.
+
 ## v1.1.0
 
 ### Added
