@@ -4,6 +4,7 @@ import { SpriteIcon } from '../components/SpriteIcon';
 import { INTENT_FRAMES, INTENT_COLORS, STATUS_FRAMES, HAZARD_FRAMES, TRAIT_FRAMES, TILE_FRAMES } from '../../data/spriteConfig';
 import { useCombatStore } from '../../store/combatStore';
 import { Tooltip } from '../components/Tooltip';
+import { ALL_ENEMIES } from '../../data/enemies';
 
 /** Intent kinds that use an existing status/hazard icon. */
 const INTENT_STATUS_FRAMES: Record<string, number | undefined> = {
@@ -93,6 +94,17 @@ const ACTION_NAMES: Record<string, string> = {
   gain_scavenger: 'Gain Scavenger',
 };
 
+function formatEnemyTypeName(type: string): string {
+  const enemyName = ALL_ENEMIES[type]?.name;
+  if (enemyName) return enemyName;
+
+  return type
+    .split('_')
+    .filter(Boolean)
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ');
+}
+
 function describeAction(action: MoveAction, rageful: number): string {
   switch (action.kind) {
     case 'attack':
@@ -122,7 +134,7 @@ function describeAction(action: MoveAction, rageful: number): string {
     case 'fools_gold':
       return `Place ${action.value} Fool's Gold tiles.`;
     case 'summon':
-      return action.summonType ? `Summon ${action.summonType}.` : 'Summon an enemy.';
+      return action.summonType ? `Summon ${formatEnemyTypeName(action.summonType)}.` : 'Summon an enemy.';
     case 'heal':
       return `Heal ${action.value} HP.`;
     case 'gain_rageful':

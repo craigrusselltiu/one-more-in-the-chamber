@@ -582,7 +582,7 @@ export const MerchantScreen = memo(function MerchantScreen() {
 
       {/* Upgrade: tile selection (same layout as campfire) */}
       {upgradePhase === 'selecting' && (
-        <FullScreenOverlay backdropClass="bg-black/40" zIndex={120}>
+        <FullScreenOverlay backdropClass="bg-black/65" zIndex={120}>
           <div className="flex flex-col items-center justify-center">
             <h2 className="text-xl text-amber-400 mb-2 font-bold uppercase" style={{ WebkitTextStroke: '4px #000', paintOrder: 'stroke fill' }}>Upgrade a Tile</h2>
             <p className="text-stone-400 text-xs mb-4">Permanent +1 tier for the rest of the run</p>
@@ -654,7 +654,7 @@ export const MerchantScreen = memo(function MerchantScreen() {
       {upgradePhase === 'upgraded' && (() => {
         const tileDef = upgradeSelectedTile ? TILE_DEFINITIONS[upgradeSelectedTile] : null;
         return (
-          <FullScreenOverlay backdropClass="bg-black/40" zIndex={120}>
+          <FullScreenOverlay backdropClass="bg-black/65" zIndex={120}>
             <div className="flex flex-col items-center justify-center">
               <div className="mb-4"><SpriteIcon frame={UI_FRAMES.upgrade} scale={3} /></div>
               <h2 className="text-xl text-amber-400 mb-2 font-bold uppercase" style={{ WebkitTextStroke: '4px #000', paintOrder: 'stroke fill' }}>Upgraded</h2>

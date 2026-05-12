@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## v1.2.1
+
+### Fixed
+- Merchant upgrade selection now dims the background more clearly.
+- Summon intent tooltips now show enemy names instead of internal IDs.
+
 ## v1.2.0
 
 ### Changed
