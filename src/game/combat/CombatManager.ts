@@ -12,6 +12,7 @@ import { ResourceResolver } from './ResourceResolver';
 import { TraitSystem } from './TraitSystem';
 import { ArtifactSystem } from './ArtifactSystem';
 import type { ResourceOutput } from './ResourceResolver';
+import { applyDynamicTileResources, scaleResourceOutput } from './resourceModifiers';
 import { BoardHazardManager } from '../board/BoardHazardManager';
 import { TILE_SIZE } from '../board/Tile';
 import { TILE_COLORS, TILE_DEFINITIONS } from '../../data/tiles';
@@ -1820,6 +1821,12 @@ export class CombatManager {
         upgradeLevel += this.player.chainStacks;
       }
       let output = this.resolver.resolve(match, upgradeLevel);
+      output = this.applyDynamicTileResources(
+        output,
+        match.tileType,
+        match.tiles.length,
+        upgradeLevel,
+      );
 
       // Poison tiles: apply venomous stacks to player
       if (match.poisonCount && match.poisonCount > 0) {
@@ -1938,30 +1945,7 @@ export class CombatManager {
       // barricade, vulnerable) and bonus flags are preserved via the spread.
       const totalMultiplier = multiplier * comboMultiplier;
       const damageMultiplier = totalMultiplier * damageOnlyMult * (cloakActive ? 0.5 : 1);
-      const scaled: ResourceOutput = {
-        ...output,
-        damage: Math.floor(output.damage * damageMultiplier),
-        block: Math.floor(output.block * totalMultiplier),
-        gold: Math.floor(output.gold * totalMultiplier),
-        healing: Math.floor(output.healing * totalMultiplier),
-        aceStacks: Math.floor(output.aceStacks * totalMultiplier),
-        poisonStacks: Math.floor(output.poisonStacks * totalMultiplier),
-        luckyStacks: Math.floor(output.luckyStacks * totalMultiplier),
-        bountyStacks: Math.floor(output.bountyStacks * totalMultiplier),
-        lootStacks: Math.floor(output.lootStacks * totalMultiplier),
-        abilityCharges: Math.floor(output.abilityCharges * totalMultiplier),
-      };
-
-      // Boulder: damage = floor(block / 5) * tiles
-      if (match.tileType === 'boulder') {
-        scaled.damage = Math.floor(this.player.block / 5) * match.tiles.length;
-      }
-
-      // Stampede: +1 damage per tile for each currently-alive enemy
-      if (match.tileType === 'stampede') {
-        const aliveCount = this.aliveEnemies().length;
-        scaled.damage += aliveCount * match.tiles.length;
-      }
+      const scaled = scaleResourceOutput(output, totalMultiplier, damageMultiplier);
 
       // Tombstone: double damage when the targeted enemy is below 50% HP
       if (match.tileType === 'tombstone') {
@@ -1982,19 +1966,6 @@ export class CombatManager {
       // Cactus: grant +1 Thorns per tile on every match
       if (match.tileType === 'cactus') {
         this.player.thorns += match.tiles.length;
-      }
-
-      // Hourglass: +swaps-remaining * tiles bonus damage
-      if (match.tileType === 'hourglass') {
-        scaled.damage += this.swapsRemaining * match.tiles.length;
-      }
-
-      // Chainsaw: damage = floor(missingHP * (0.09 + level * 0.01)) per tile
-      if (match.tileType === 'chainsaw') {
-        const level = this.player.getUpgradeLevel('chainsaw');
-        const missing = Math.max(0, this.player.maxHealth - this.player.health);
-        const pct = 0.09 + level * 0.01;
-        scaled.damage += Math.floor(missing * pct) * match.tiles.length;
       }
 
       // Sacrificial Blade: lose 1 HP (cannot drop below 1)
@@ -2155,8 +2126,8 @@ export class CombatManager {
         const tile = grid[r]?.[c];
         if (!tile || tile.type === 'saloon' || tile.type === 'showdown' || tile.type === 'tumbleweed' || tile.type === 'fools_gold') continue;
 
-        const upgradeLevel = this.player.getUpgradeLevel(tile.type);
-        const output = this.resolver.resolveSingle(tile.type, upgradeLevel, this.player.block, this.swapsRemaining);
+        let output = this.resolveSingleTileResources(tile.type);
+        output = this.artifacts.modifyTileHitOutput(tile.type, output);
         this.capFlatEffects(output, capSeen);
         this.applyResourceOutput(output, false, true);
       }
@@ -3639,12 +3610,32 @@ export class CombatManager {
   private resolveDestroyedTiles(destroyed: DestroyedTileInfo[]): void {
     const seen = new Set<string>();
     for (const info of destroyed) {
-      const upgradeLevel = this.player.getUpgradeLevel(info.type);
-      const output = this.resolver.resolveSingle(info.type, upgradeLevel, this.player.block, this.swapsRemaining);
+      const output = this.resolveSingleTileResources(info.type);
       this.capFlatEffects(output, seen);
       this.applyResourceOutput(output, false, true);
       if (info.isShadow) this.fireShadowBolts(1);
     }
+  }
+
+  private resolveSingleTileResources(tileType: TileType): ResourceOutput {
+    const upgradeLevel = this.player.getUpgradeLevel(tileType);
+    const output = this.resolver.resolveSingle(tileType, upgradeLevel);
+    return this.applyDynamicTileResources(output, tileType, 1, upgradeLevel);
+  }
+
+  private applyDynamicTileResources(
+    output: ResourceOutput,
+    tileType: TileType,
+    tileCount: number,
+    upgradeLevel: number,
+  ): ResourceOutput {
+    return applyDynamicTileResources(output, tileType, tileCount, upgradeLevel, {
+      playerBlock: this.player.block,
+      playerHealth: this.player.health,
+      playerMaxHealth: this.player.maxHealth,
+      swapsRemaining: this.swapsRemaining,
+      aliveEnemyCount: this.aliveEnemies().length,
+    });
   }
 
   private getBroomTileClearPositions(): GridPosition[] {

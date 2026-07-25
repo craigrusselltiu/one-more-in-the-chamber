@@ -4,6 +4,16 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## v1.3.0
+
+### Changed
+- Updated the visible alpha version to v1.3.0.
+
+### Fixed
+- Combat now recovers automatically if the board fails to initialize during a screen transition.
+- Chainsaw and other combat-state damage tiles now receive Ace, crit, consumable, and cascade modifiers correctly.
+- Saloon-generated gun hits now trigger effects such as Envenomed Ammo.
+
 ## v1.2.1
 
 ### Fixed

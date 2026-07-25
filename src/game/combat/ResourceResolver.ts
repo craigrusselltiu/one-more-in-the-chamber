@@ -108,7 +108,7 @@ export class ResourceResolver {
     return this.buildOutput(match.tileType, baseTotal, upgradeBonus, count);
   }
 
-  resolveSingle(type: TileType, upgradeLevel: number, playerBlock = 0, swapsRemaining = 0): ResourceOutput {
+  resolveSingle(type: TileType, upgradeLevel: number): ResourceOutput {
     const def = TILE_DEFINITIONS[type];
     if (!def) return this.emptyOutput();
 
@@ -116,12 +116,7 @@ export class ResourceResolver {
 
     // Flat-upgrade tiles: divide upgrade bonus by 3 on single resolve
     const adjustedBonus = PER_TILE_UPGRADE.has(type) ? upgradeBonus : Math.floor(upgradeBonus / 3);
-    const output = this.buildOutput(type, baseTotal, adjustedBonus, 1);
-    // Boulder: damage = floor(block / 5) on single resolve
-    if (type === 'boulder') output.damage = Math.floor(playerBlock / 5);
-    // Hourglass: add swaps-remaining bonus damage on single resolve
-    if (type === 'hourglass') output.damage += swapsRemaining;
-    return output;
+    return this.buildOutput(type, baseTotal, adjustedBonus, 1);
   }
 
   resolveCount(type: TileType, count: number, upgradeLevel: number): ResourceOutput {
@@ -227,7 +222,7 @@ export class ResourceResolver {
         break;
 
       case 'boulder':
-        // Per-tile damage. CombatManager adds player.block as bonus.
+        // CombatManager replaces the base with current-block damage.
         output.damage = total;
         break;
 
@@ -334,14 +329,13 @@ export class ResourceResolver {
         break;
 
       case 'hourglass':
-        // Damage scales with swaps used this turn (added in CombatManager).
-        // Base is per-tile upgrade only; 0 without swaps.
+        // CombatManager adds current swaps before match modifiers.
+        // Base is the per-tile upgrade contribution.
         output.damage = total;
         break;
 
       case 'chainsaw':
-        // Damage = player's missing-HP fraction scaled per tile (added in CombatManager).
-        // Upgrade contributes +1% missing HP per tile per level; base is 0 here.
+        // CombatManager adds the missing-HP damage before match modifiers.
         output.damage = 0;
         break;
 

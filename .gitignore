@@ -9,9 +9,5 @@ dist/
 docs/references/
 AGENTS.md
 
-# togi (local sprite/background processing)
-tools/raw/
-tools/processed/
-tools/togi.toml
-tools/*.hex
-tools/*palette*.txt
+# Local sprite/background processing
+tools/

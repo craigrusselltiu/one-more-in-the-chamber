@@ -49,6 +49,3 @@ todo:
 - make monkeys easier
 - add dark overlay to victory/defeat screen
 - remove pre-1.0.0 changelog entries
-- status effect tooltips are cut off
-- dark overlay not dark enough for merchant upgrade
-- summon intent tooltip shows technical enemy name, e.g. prospector_gone_mad
