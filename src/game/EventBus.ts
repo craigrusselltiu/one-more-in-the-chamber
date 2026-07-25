@@ -138,6 +138,7 @@ export const GameEvent = {
   // Mid-combat save
   COMBAT_SAVE_REQUESTED: 'combat:save-requested',
   COMBAT_SCENE_RUN: 'combat:scene-run',
+  COMBAT_SCENE_READY: 'combat:scene-ready',
   COMBAT_SCENE_STOP: 'combat:scene-stop',
 
   // Music control
@@ -171,6 +172,7 @@ export interface EventPayloads {
   [GameEvent.RUN_STARTED]: [];
   [GameEvent.RUN_ENDED]: [completed: boolean];
   [GameEvent.COMBAT_SCENE_RUN]: [payload: { config?: CombatConfig; snapshot?: CombatSnapshot }];
+  [GameEvent.COMBAT_SCENE_READY]: [];
   [GameEvent.COMBAT_SCENE_STOP]: [];
   [GameEvent.ENEMY_DIED]: [payload: { enemyId: string; enemyIndex: number; flashBeforeDust?: boolean }];
   [GameEvent.DEADEYE_ACTIVATED]: [];

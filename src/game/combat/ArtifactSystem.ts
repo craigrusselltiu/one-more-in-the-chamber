@@ -4,6 +4,7 @@ import type { ResourceOutput } from './ResourceResolver';
 import type { Player } from './Player';
 import type { Enemy } from './Enemy';
 import { getArtifactGoldGainMultiplier } from '../../utils/goldGain';
+import { applyTileHitArtifactModifiers } from './resourceModifiers';
 
 /**
  * ArtifactSystem: applies individual artifact effects at combat hook points.
@@ -207,6 +208,18 @@ export class ArtifactSystem {
   // Match Modification
   // ---------------------------------------------------------------------------
 
+  /**
+   * Apply effects tied to the generated tile hit. Saloon uses this hook for
+   * copied adjacent resources without firing full-match effects.
+   */
+  modifyTileHitOutput(tileType: MatchResult['tileType'], output: ResourceOutput): ResourceOutput {
+    return applyTileHitArtifactModifiers(tileType, output, {
+      twinRevolvers: this.has('twin_revolvers'),
+      envenomedAmmo: this.has('envenomed_ammo'),
+      renosCoin: this.has('renos_coin'),
+    });
+  }
+
   modifyMatchOutput(
     match: MatchResult,
     output: ResourceOutput,
@@ -214,37 +227,7 @@ export class ArtifactSystem {
     _targetEnemy: Enemy | null,
     _enemies: Enemy[],
   ): ResourceOutput {
-    const modified = { ...output };
-
-    const isGunTile = match.tileType === 'bullet' || match.tileType === 'fifty_cal'
-      || match.tileType === 'buckshot' || match.tileType === 'ricochet';
-
-    // Twin Revolvers: bullets deal 50% more damage, 10% chance to miss
-    const twinRevolversActive = this.has('twin_revolvers') && isGunTile;
-    const twinRevolversMissed = twinRevolversActive && Math.random() < 0.1;
-    if (twinRevolversActive) {
-      if (twinRevolversMissed) {
-        modified.damage = 0;
-        modified.missed = true;
-      } else {
-        modified.damage = Math.round(modified.damage * 1.5);
-      }
-    }
-
-    // Envenomed Ammo: Bullet-type tile matches apply 1 venom stack to target
-    // (A missed shot should not apply poison.)
-    if (this.has('envenomed_ammo') && isGunTile && !twinRevolversMissed) {
-      modified.poisonStacks += 1;
-    }
-
-    // Reno's Coin: damage doubled, 1 HP on miss (hit chance handled by bucket)
-    if (this.has('renos_coin') && match.tileType === 'chip') {
-      if (modified.chipHit) {
-        modified.damage *= 2;
-      } else {
-        modified.doubleDownPenalty = 1;
-      }
-    }
+    const modified = this.modifyTileHitOutput(match.tileType, output);
 
     // Gillie Suit: first 5+ in-a-line match each combat grants 1 Grace
     // (crosses/L/T shapes with 5+ total tiles don't count)

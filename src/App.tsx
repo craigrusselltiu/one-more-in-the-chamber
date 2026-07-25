@@ -104,9 +104,13 @@ interface EncounterInfo {
 }
 
 type CombatScenePayload = { config?: CombatConfig; snapshot?: CombatSnapshot };
+type CombatSceneLaunch = { payload: CombatScenePayload; attempt: number };
 type CombatRuntimeScene = Phaser.Scene & {
   combatManager?: { createSnapshot: (runId: string) => CombatSnapshot };
 };
+
+const COMBAT_SCENE_READY_TIMEOUT_MS = 2000;
+const COMBAT_SCENE_RETRY_DELAY_MS = 100;
 
 function getCombatScene(game: Phaser.Game): CombatRuntimeScene | null {
   try {
@@ -269,6 +273,10 @@ export default function App() {
   const wipeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pendingScreenRef = useRef<Screen | null>(null);
   const applyScreenChangeRef = useRef<((next: Screen) => void) | null>(null);
+  const combatSceneReadyRef = useRef(false);
+  const combatSceneLaunchRef = useRef<CombatSceneLaunch | null>(null);
+  const combatSceneReadyTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const combatSceneRetryTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   /** Handle a wipe phase completion (shared by onAnimationEnd and safety timeout). */
   const handleWipeComplete = useRef<(() => void) | null>(null);
@@ -540,6 +548,68 @@ export default function App() {
     return () => clearTimeout(id);
   }, [shouldAnimateMainMenuButtons]);
 
+  const clearCombatSceneLaunchTimers = () => {
+    if (combatSceneReadyTimeoutRef.current) {
+      clearTimeout(combatSceneReadyTimeoutRef.current);
+      combatSceneReadyTimeoutRef.current = null;
+    }
+    if (combatSceneRetryTimeoutRef.current) {
+      clearTimeout(combatSceneRetryTimeoutRef.current);
+      combatSceneRetryTimeoutRef.current = null;
+    }
+  };
+
+  const launchCombatScene = (payload: CombatScenePayload, attempt = 0) => {
+    clearCombatSceneLaunchTimers();
+    combatSceneReadyRef.current = false;
+    combatSceneLaunchRef.current = { payload, attempt };
+
+    // Arm the watchdog before emitting: scene creation and the ready handshake
+    // can both complete synchronously inside the EventBus call.
+    combatSceneReadyTimeoutRef.current = setTimeout(() => {
+      combatSceneReadyTimeoutRef.current = null;
+      const launch = combatSceneLaunchRef.current;
+      const game = gameRef.current;
+      if (!launch || !game || currentScreenRef.current !== 'combat') return;
+
+      logCombatSceneStatus(game, 'ready-timeout', currentScreenRef.current);
+      if (launch.attempt >= 1) {
+        console.error('[app] combat scene failed to become ready after recovery');
+        combatSceneLaunchRef.current = null;
+        return;
+      }
+
+      // Reuse the exact payload. This avoids rerolling the encounter or
+      // consuming a pending snapshot twice.
+      EventBus.emit(GameEvent.COMBAT_SCENE_STOP);
+      combatSceneRetryTimeoutRef.current = setTimeout(() => {
+        combatSceneRetryTimeoutRef.current = null;
+        if (currentScreenRef.current !== 'combat') return;
+        launchCombatScene(launch.payload, launch.attempt + 1);
+      }, COMBAT_SCENE_RETRY_DELAY_MS);
+    }, COMBAT_SCENE_READY_TIMEOUT_MS);
+
+    setCombatSceneData(payload);
+    EventBus.emit(GameEvent.COMBAT_SCENE_RUN, payload);
+  };
+
+  // A ready event means CombatScene has constructed both its Board and
+  // CombatManager. Clear the watchdog only for an expected combat launch.
+  useEffect(() => {
+    const handleCombatSceneReady = () => {
+      if (currentScreenRef.current !== 'combat' || !combatSceneLaunchRef.current) return;
+      clearCombatSceneLaunchTimers();
+      combatSceneLaunchRef.current = null;
+      combatSceneReadyRef.current = true;
+    };
+
+    EventBus.on(GameEvent.COMBAT_SCENE_READY, handleCombatSceneReady);
+    return () => {
+      EventBus.off(GameEvent.COMBAT_SCENE_READY, handleCombatSceneReady);
+      clearCombatSceneLaunchTimers();
+    };
+  }, []);
+
   // Start/stop CombatScene based on screen transitions
   useEffect(() => {
     const game = gameRef.current;
@@ -548,7 +618,8 @@ export default function App() {
     const combatSceneRunningLike = isCombatSceneRunningLike(game, combatSceneStatus);
 
     if (screen === 'combat') {
-      if (combatSceneRunningLike) return;
+      if (combatSceneLaunchRef.current) return;
+      if (combatSceneRunningLike && combatSceneReadyRef.current) return;
 
       let scenePayload: CombatScenePayload | null = null;
 
@@ -691,12 +762,29 @@ export default function App() {
         }
       }
 
-      setCombatSceneData(scenePayload);
-      EventBus.emit(GameEvent.COMBAT_SCENE_RUN, scenePayload);
+      if (combatSceneRunningLike) {
+        // A scene left active by a rapid transition belongs to the previous
+        // combat. Stop it fully before launching the newly-built payload.
+        EventBus.emit(GameEvent.COMBAT_SCENE_STOP);
+        combatSceneLaunchRef.current = { payload: scenePayload, attempt: 0 };
+        combatSceneRetryTimeoutRef.current = setTimeout(() => {
+          combatSceneRetryTimeoutRef.current = null;
+          if (currentScreenRef.current !== 'combat') return;
+          launchCombatScene(scenePayload);
+        }, COMBAT_SCENE_RETRY_DELAY_MS);
+        return;
+      }
+
+      launchCombatScene(scenePayload);
       return;
     }
 
-    if (!combatSceneRunningLike) return;
+    const hadPendingCombatLaunch = combatSceneLaunchRef.current !== null;
+    combatSceneReadyRef.current = false;
+    combatSceneLaunchRef.current = null;
+    clearCombatSceneLaunchTimers();
+
+    if (!combatSceneRunningLike && !hadPendingCombatLaunch) return;
 
     // Leaving combat: stop CombatScene and clear combat store so the HUD
     // (consumable slots, etc.) reports `inCombat = false` on the map.

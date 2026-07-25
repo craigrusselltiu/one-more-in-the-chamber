@@ -145,6 +145,10 @@ export class CombatScene extends Phaser.Scene {
       } else {
         this.startFresh(data?.config);
       }
+
+      // React waits for this handshake before considering the transition
+      // complete. At this point both the board and combat manager exist.
+      EventBus.emit(GameEvent.COMBAT_SCENE_READY);
     } catch (error) {
       console.error('[combat] bootstrap failed', bootstrapMeta, error);
       throw error;
